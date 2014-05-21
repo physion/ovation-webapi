@@ -7,7 +7,7 @@
                  (num 200)
                  )
         body (if (= 200 status)
-               (str "{ \"type\" : \"Project\",
+               (str "[{ \"type\" : \"Project\",
   \"access\" : \"write\",
   \"_id\": \"bb1fda63-ee8a-46af-b986-958d924bfbcf\",
   \"_rev\": \"4-2185cd00eaf3c5f002626fc1713dc563\",
@@ -36,7 +36,7 @@
           \"count\" : 0
       }
   }
-}"
+}]"
                )
                (str "Please log in to get your Projects")
              )
