@@ -19,4 +19,5 @@
 
 (def app
   (-> (handler/site app-routes)
-      (wrap-cors :access-control-allow-origin #"http://localhost:9000")))
+      (wrap-cors :access-control-allow-origin #"http://localhost:9000" ; FIXME - accept only what we want here
+                 :access-control-allow-methods [:get :put :post :delete])))
