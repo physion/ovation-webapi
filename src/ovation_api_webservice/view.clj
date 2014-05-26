@@ -15,7 +15,7 @@
       \"name\": \"Alice's project\",
       \"purpose\": \"qPCR experiments and analysis\",
       \"start\": \"2014-01-29T02:21:24.236-05:00\",
-      \"startZone\": \"America/New_York\",
+      \"startZone\": \"America/New_York\"
   },
   
   \"links\" : {
