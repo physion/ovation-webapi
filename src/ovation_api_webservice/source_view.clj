@@ -12,6 +12,7 @@
     \"access\" : \"write\",
     \"_id\": \"0f9ee7e9-3a7b-41fa-922b-c4dded245f36\",
     \"_rev\": \"1-de5bb5f8ff628274b6fe0fe6251b6e49\",
+    \"name\": \"Naprox_11-0002\",
     \"attributes\" : {
         \"version\": \"2.1.5\",
         \"label\": \"Naprox_11-0002\",
