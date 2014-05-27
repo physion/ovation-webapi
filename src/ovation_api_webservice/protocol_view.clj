@@ -12,6 +12,7 @@
     \"access\" : \"write\",
     \"_id\": \"05a616f8-7d71-4129-b124-c29093fb732e\",
     \"_rev\": \"3-6db2238391395141e4827130a1ececa0\",
+    \"name\": \"SNP variation\",
     \"attributes\" : {
         \"version\": \"2.0.0\",
         \"name\": \"SNP variation\",

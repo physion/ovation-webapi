@@ -11,6 +11,7 @@
   \"access\" : \"write\",
   \"_id\": \"bb1fda63-ee8a-46af-b986-958d924bfbcf\",
   \"_rev\": \"4-2185cd00eaf3c5f002626fc1713dc563\",
+  \"name\": \"Alice's project\",
   \"attributes\" : {
       \"name\": \"Alice's project\",
       \"purpose\": \"qPCR experiments and analysis\",
