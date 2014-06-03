@@ -1,0 +1,10 @@
+2014-06-03 15:17:35,272 INFO o.e.j.s.Server [main] jetty-7.6.8.v20121106
+2014-06-03 15:17:35,324 INFO o.e.j.s.AbstractConnector [main] Started SelectChannelConnector@0.0.0.0:3000
+2014-06-03 16:34:35,926 INFO o.e.j.s.Server [main] jetty-7.6.8.v20121106
+2014-06-03 16:34:35,971 INFO o.e.j.s.AbstractConnector [main] Started SelectChannelConnector@0.0.0.0:3000
+2014-06-03 17:20:33,116 INFO o.e.j.s.Server [main] jetty-7.6.8.v20121106
+2014-06-03 17:20:33,157 INFO o.e.j.s.AbstractConnector [main] Started SelectChannelConnector@0.0.0.0:3000
+2014-06-03 17:26:01,197 INFO o.e.j.s.Server [main] jetty-7.6.8.v20121106
+2014-06-03 17:26:01,225 INFO o.e.j.s.AbstractConnector [main] Started SelectChannelConnector@0.0.0.0:3000
+2014-06-03 17:49:41,408 INFO o.e.j.s.Server [main] jetty-7.6.8.v20121106
+2014-06-03 17:49:41,449 INFO o.e.j.s.AbstractConnector [main] Started SelectChannelConnector@0.0.0.0:3000
