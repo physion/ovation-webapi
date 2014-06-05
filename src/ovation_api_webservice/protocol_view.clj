@@ -15,7 +15,7 @@
     \"attributes\" : {
         \"version\": \"2.0.0\",
         \"name\": \"SNP variation\",
-        \"protocolDocument\": \"This is the protocol document\",
+        \"protocolDocument\": \"This is the protocol document\"
     },
     \"links\" : {
         \"owner\" : {
