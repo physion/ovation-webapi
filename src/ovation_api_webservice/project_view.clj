@@ -21,7 +21,7 @@
   
   \"links\" : {
       \"experiments\" : {
-          \"href\" : \"/api/v1/entities/bb1fda63-ee8a-46af-b986-958d924bfbcf/experiments\",
+          \"href\" : \"/experiment\",
           \"count\" : 0
       },
       \"projects\" : {

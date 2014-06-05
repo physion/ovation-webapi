@@ -35,7 +35,7 @@
             \"count\" : 0
         },
         \"children\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/children\",
+            \"href\" : \"/source\",
             \"count\" : 0
         }
     }
