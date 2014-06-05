@@ -16,4 +16,6 @@ To start a web server for the application, run:
 
 ## License
 
-Copyright © 2014 FIXME
+[GNU Affero General Public License](http://www.gnu.org/licenses/agpl-3.0.html)
+
+Copyright © 2014 Physion LLC
