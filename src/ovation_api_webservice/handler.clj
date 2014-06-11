@@ -20,8 +20,6 @@
             [ring.middleware.cors :refer [wrap-cors]]))
 
 (defroutes app-routes
-  (GET "/" {params :params} (test-get-projects params))
-
   (context "/project" [] (defroutes index-routes
     (GET "/" {params :params} (index-project params))
     (POST "/" {params :params} (create-project params))
