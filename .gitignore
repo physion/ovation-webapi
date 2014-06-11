@@ -5,6 +5,8 @@
 .lein-failures
 .lein-plugins/
 .lein-repl-history
+.log
+.log.gz
 /.lein-*
 /.nrepl-port
 /checkouts
