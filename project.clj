@@ -13,7 +13,7 @@
   
   :plugins [[lein-ring "0.8.10"]
             [lein-localrepo "0.5.3"]
-            [lein-maven-s3-wagon "0.2.3"]]
+            [s3-wagon-private "1.1.2"]]
   
   :ring {:handler ovation-api-webservice.handler/app}
   
