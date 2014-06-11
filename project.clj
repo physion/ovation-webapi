@@ -2,8 +2,8 @@
   :description "FIXME: write description"
   :url "http://ovation.io"
 
-  :repositories [["s3-ovation-snapshot-repository" {:url "s3://maven.ovation.io/snapshot"}]
-                  ["s3-ovation-release-repository" {:url "s3://maven.oation.io/release"}]]
+  :repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]
+                  ["s3-ovation-release-repository" {:url "s3p://maven.ovation.io/release"}]]
 
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.incubator "0.1.3"]
