@@ -21,7 +21,7 @@
 
 (defroutes app-routes
   (context "/project" [] (defroutes index-routes
-    (GET "/" {params :params} (index-project params))
+    (GET "/" request (index-project request))
     (POST "/" {params :params} (create-project params))
     (context "/:id" [id] (defroutes index-routes
       (GET "/" {params :params} (get-project params))

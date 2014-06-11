@@ -16,6 +16,15 @@
   )
 )
 
-(defn mung-strings [s]
-  (.replaceAll (new java.lang.String s) "ovation://" "https://localhost:3000/")
+(defn host-from-request [request]
+  (let [
+        scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
+        host (get (get request :headers) "host")
+       ]
+    (clojure.string/join "" [scheme host "/"])
+  )
+)
+
+(defn mung-strings [s host]
+  (.replaceAll (new java.lang.String s) "ovation://" host)
 )

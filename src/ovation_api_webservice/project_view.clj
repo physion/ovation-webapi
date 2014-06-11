@@ -10,19 +10,24 @@
   )
 )
 
-(defn index-project [params]
+(defn test-service [request]
+  (str (get :query-params request))
+)
+
+(defn index-project [request]
   (let [
-        status (if-not (contains? params :api-key)
+        params (get request :query-params)
+        status (if-not (contains? params "api-key")
                  (num 401)
                  (num 200)
                )
         body (if (= 200 status)
-               (str (project-to-json "8QxPNipE4zxPuxEr4xps"))
+               (str (project-to-json (get params "api-key")))
                (str "Please log in to get your Projects")
              )
        ]
     {:status status
-     :body (mung-strings body)}
+     :body (mung-strings body (host-from-request request))}
   )
 )
 

@@ -12,7 +12,6 @@
                  [us.physion/ovation-api "3.0.0-SNAPSHOT"]]
   
   :plugins [[lein-ring "0.8.10"]
-            [lein-localrepo "0.5.3"]
             [s3-wagon-private "1.1.2"]]
   
   :ring {:handler ovation-api-webservice.handler/app}
