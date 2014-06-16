@@ -22,11 +22,11 @@
 (defroutes app-routes
   (context "/project" [] (defroutes index-routes
     (GET "/" request (index-project request))
-    (POST "/" {params :params} (create-project params))
+    (POST "/" request (create-project request))
     (context "/:id" [id] (defroutes index-routes
-      (GET "/" {params :params} (get-project params))
-      (PUT "/" {params :params} (update-project params))
-      (DELETE "/" {params :params} (delete-project params))
+      (GET "/" request (get-project id request))
+      (PUT "/" request (update-project id request))
+      (DELETE "/" request (delete-project id request))
     ))
   ))
 
