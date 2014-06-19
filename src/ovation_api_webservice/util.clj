@@ -6,6 +6,10 @@
   )
 )
 
+(defn get-body-from-request [request]
+  (slurp (get request :body))
+)
+
 (defn object-to-json [obj]
   (-> 
     (new com.fasterxml.jackson.databind.ObjectMapper)
@@ -21,7 +25,7 @@
     (new com.fasterxml.jackson.databind.ObjectMapper)
     (.registerModule (new com.fasterxml.jackson.datatype.guava.GuavaModule))
     (.registerModule (new com.fasterxml.jackson.datatype.joda.JodaModule))
-    (.readValue json)
+    (.readValue json java.util.Map)
   )
 )
 
@@ -44,6 +48,10 @@
 
 (defn munge-strings [s host]
   (.replaceAll (new java.lang.String s) "ovation://" host)
+)
+
+(defn unmunge-strings [s host]
+  (.replaceAll (new java.lang.String s) host "ovation://")
 )
 
 (defn auth-filter [request f]

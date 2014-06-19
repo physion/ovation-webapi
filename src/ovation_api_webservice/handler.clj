@@ -10,6 +10,7 @@
         ring.middleware.params)
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
+            [ring.middleware.json :as middleware]
             [ovation-api-webservice.project-view :as project-view]
             [ovation-api-webservice.experiment-view :as experiment-view]
             [ovation-api-webservice.epoch-view :as epoch-view]
@@ -100,5 +101,7 @@
 
 (def app
   (-> (handler/site app-routes)
-      (wrap-cors :access-control-allow-origin #"http://localhost:9000" ; FIXME - accept only what we want here
+      (middleware/wrap-json-body)
+      (middleware/wrap-json-response)
+      (wrap-cors :access-control-allow-origin #".+"; FIXME - accept only what we want here
                  :access-control-allow-methods [:get :put :post :delete])))
