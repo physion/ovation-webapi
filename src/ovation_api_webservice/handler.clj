@@ -83,11 +83,11 @@
 
   (context "/user" [] (defroutes index-routes
     (GET "/" {params :params} (index-user params))
-    (POST "/" {params :params} (create-user params))
+;    (POST "/" {params :params} (create-user params))
     (context "/:id" [id] (defroutes index-routes
       (GET "/" {params :params} (get-user params))
-      (PUT "/" {params :params} (update-user params))
-      (DELETE "/" {params :params} (delete-user params))
+;      (PUT "/" {params :params} (update-user params))
+;      (DELETE "/" {params :params} (delete-user params))
     ))
   ))
 

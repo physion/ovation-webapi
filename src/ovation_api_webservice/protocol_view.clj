@@ -1,105 +1,65 @@
-(ns ovation-api-webservice.protocol-view)
+(ns ovation-api-webservice.protocol-view
+  (:use ovation-api-webservice.util)
+)
 
-(defn index-protocol [params]
-  (let [
-        status (if-not (contains? params :api-key)
-                 (num 401)
-                 (num 200)
-               )
-        body (if (= 200 status)
-               (str "[{
-    \"type\" : \"Protocol\",
-    \"access\" : \"write\",
-    \"_id\": \"05a616f8-7d71-4129-b124-c29093fb732e\",
-    \"_rev\": \"3-6db2238391395141e4827130a1ececa0\",
-    \"attributes\" : {
-        \"version\": \"2.0.0\",
-        \"name\": \"SNP variation\",
-        \"protocolDocument\": \"This is the protocol document\"
-    },
-    \"links\" : {
-        \"owner\" : {
-            \"href\" : \"/api/v1/entities/1dbbba70-08c7-0131-2b72-22000aa62e2d\",
-            \"count\" : 1
-        },
-        \"experiments\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/experiments\",
-            \"count\" : 0
-        },
-        \"projects\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/projects\",
-            \"count\" : 1
-        },
-        \"analysis_records\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/analyses\",
-            \"count\" : 0
-        }
-    }
-}]"
-               )
-               (str "Please log in to get your protocols")
-             )
-       ]
-    {:status status
-     :body body}
+(defn index-protocol-helper [api_key]
+  (entities-to-json 
+    (seq (-> (ctx api_key) (. getProtocols)))
   )
 )
 
-(defn get-protocol [params]
-  (let [
-    status (if (or (not (contains? params :api-key)) (not (contains? params :id)))
-             (num 401)
-             (num 200)
-           )
-    body (if (= 200 status)
-           (str "[{
-    \"type\" : \"Protocol\",
-    \"access\" : \"write\",
-    \"_id\": \"PUT-ID-HERE\",
-    \"_rev\": \"3-6db2238391395141e4827130a1ececa0\",
-    \"attributes\" : {
-        \"version\": \"2.0.0\",
-        \"name\": \"SNP variation\",
-        \"protocolDocument\": \"This is the protocol document\",
-    },
-    \"links\" : {
-        \"owner\" : {
-            \"href\" : \"/api/v1/entities/1dbbba70-08c7-0131-2b72-22000aa62e2d\",
-            \"count\" : 1
-        },
-        \"experiments\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/experiments\",
-            \"count\" : 0
-        },
-        \"projects\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/projects\",
-            \"count\" : 1
-        },
-        \"analysis_records\" : {
-            \"href\" : \"/api/v1/entities/{attributes._id}/analyses\",
-            \"count\" : 0
-        }
-    }
-}]"
-               )
-           (str "Please log in to get your protocols")
-         )
-       ]
-    {:status status
-     :body body}
+(defn get-protocol-helper [uuid api_key]
+  (entities-to-json 
+    (seq [(-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)))])
   )
 )
 
-(defn create-protocol [params]
-  "TODO"
+(defn update-protocol-helper [uuid request api_key]
+  (let [
+        body (unmunge-strings (get-body-from-request request) (host-from-request request))
+        in_json (json-to-object body)
+        do_convert (-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)) (.update in_json))
+       ]
+    (get-protocol-helper uuid api_key)
+  )
 )
 
-(defn update-protocol [params]
-  "TODO"
+(defn create-protocol-helper [request api_key]
+  (let [
+        body (get-body-from-request request)
+        in_json (json-to-object body)
+        protocol (-> (ctx api_key) (.insertProtocol (.get in_json "name") (.get in_json "procedure")))
+       ]
+    (entities-to-json (seq [protocol]))
+  )
 )
 
-(defn delete-protocol [params]
-  "TODO"
+(defn delete-protocol-helper [uuid request api_key]
+  (let [
+        protocol (-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)))
+        trash_resp (-> (ctx api_key) (. trash protocol) (.get))
+       ]
+    (str "{\"success\": 1}")
+  )
 )
 
+(defn index-protocol [request]
+  (auth-filter request (partial index-protocol-helper))
+)
+
+(defn get-protocol [id request]
+  (auth-filter request (partial get-protocol-helper id))
+)
+
+(defn create-protocol [request]
+  (auth-filter request (partial create-protocol-helper request))
+)
+
+(defn update-protocol [id request]
+  (auth-filter request (partial update-protocol-helper id request))
+)
+
+(defn delete-protocol [id request]
+  (auth-filter request (partial delete-protocol-helper id request))
+)
 
