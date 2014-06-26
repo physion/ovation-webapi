@@ -1,8 +1,8 @@
 (ns ovation-api-webservice.util)
 
 (defn ctx [api_key]
-  (do 
-    (. (. (. (. us.physion.ovation.api.web.Server make (new java.net.URI "https://dev.ovation.io") api_key) toBlockingObservable) first) getContext)
+  (do
+    (. (. us.physion.ovation.api.web.Server make (new java.net.URI "https://dev.ovation.io") api_key) getContext)
   )
 )
 
@@ -11,7 +11,7 @@
 )
 
 (defn object-to-json [obj]
-  (-> 
+  (->
     (new com.fasterxml.jackson.databind.ObjectMapper)
     (.registerModule (new com.fasterxml.jackson.datatype.guava.GuavaModule))
     (.registerModule (new com.fasterxml.jackson.datatype.joda.JodaModule))
@@ -21,7 +21,7 @@
 )
 
 (defn json-to-object [json]
-  (-> 
+  (->
     (new com.fasterxml.jackson.databind.ObjectMapper)
     (.registerModule (new com.fasterxml.jackson.datatype.guava.GuavaModule))
     (.registerModule (new com.fasterxml.jackson.datatype.joda.JodaModule))
