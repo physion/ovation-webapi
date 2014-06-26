@@ -1,9 +1,7 @@
 (ns ovation-api-webservice.util)
 
 (defn ctx [api_key]
-  (do
-    (. (. us.physion.ovation.api.web.Server make (new java.net.URI "https://dev.ovation.io") api_key) getContext)
-  )
+  (.. us.physion.ovation.api.web.Server (make (java.net.URI. "https://dev.ovation.io") api_key) (getContext))
 )
 
 (defn get-body-from-request [request]
