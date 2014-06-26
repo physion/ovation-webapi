@@ -15,3 +15,6 @@
 /target
 pom.xml
 pom.xml.asc
+.idea
+
+ovation_api_webservice.iml
