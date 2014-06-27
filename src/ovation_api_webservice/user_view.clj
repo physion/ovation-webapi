@@ -3,14 +3,14 @@
 )
 
 (defn index-user-helper [api_key]
-  (entities-to-json 
+  (entities-to-json
     (seq (-> (ctx api_key) (. getusers)))
   )
 )
 
 (defn get-user-helper [uuid api_key]
-  (entities-to-json 
-    (seq [(-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)))])
+  (entities-to-json
+    (seq [(-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))])
   )
 )
 

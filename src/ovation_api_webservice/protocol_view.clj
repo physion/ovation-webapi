@@ -3,14 +3,14 @@
 )
 
 (defn index-protocol-helper [api_key]
-  (entities-to-json 
+  (entities-to-json
     (seq (-> (ctx api_key) (. getProtocols)))
   )
 )
 
 (defn get-protocol-helper [uuid api_key]
-  (entities-to-json 
-    (seq [(-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)))])
+  (entities-to-json
+    (seq [(-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))])
   )
 )
 
@@ -18,7 +18,7 @@
   (let [
         body (unmunge-strings (get-body-from-request request) (host-from-request request))
         in_json (json-to-object body)
-        do_convert (-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)) (.update in_json))
+        do_convert (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)) (.update in_json))
        ]
     (get-protocol-helper uuid api_key)
   )
@@ -36,7 +36,7 @@
 
 (defn delete-protocol-helper [uuid request api_key]
   (let [
-        protocol (-> (ctx api_key) (. getObjectWithUuid (java.util.UUID/fromString uuid)))
+        protocol (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
         trash_resp (-> (ctx api_key) (. trash protocol) (.get))
        ]
     (str "{\"success\": 1}")

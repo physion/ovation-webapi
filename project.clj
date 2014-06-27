@@ -11,12 +11,14 @@
                  [ring/ring-json "0.3.1"]
                  [ring-cors "0.1.2"]
                  [us.physion/ovation-api "3.0.0-SNAPSHOT"]]
-  
+
   :plugins [[lein-ring "0.8.10"]
-            [s3-wagon-private "1.1.2"]]
-  
+            [s3-wagon-private "1.1.2"]
+            [lein-midje "3.0.0"]]
+
   :ring {:handler ovation-api-webservice.handler/app}
-  
+
   :profiles {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
-                        [ring-mock "0.1.5"]]}})
+                        [ring-mock "0.1.5"]
+                        [midje "1.5.1"]]}})
 
