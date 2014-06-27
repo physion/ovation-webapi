@@ -104,8 +104,7 @@
       (middleware/wrap-json-response)
       (wrap-cors :access-control-allow-origin #".+"; FIXME - accept only what we want here
                  :access-control-allow-methods [:get :put :post :delete]
-                 :access-control-allow-headers ["Origin" "X-Requested-With"
-                                                "Content-Type" "Accept"])))
+                 :access-control-allow-headers ["Content-Type" "Accept"])))
 
 
 ;;(middleware/wrap-json-body)
