@@ -68,7 +68,8 @@
                 )
          ]
     {:status status
-     :body   (munge-strings body (host-from-request request))}
+     :body   (munge-strings body (host-from-request request))
+     :content-type "application/json"}
     )
   )
 
