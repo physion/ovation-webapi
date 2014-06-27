@@ -101,7 +101,10 @@
 
 (def app
   (-> (handler/site app-routes)
-      (middleware/wrap-json-body)
       (middleware/wrap-json-response)
       (wrap-cors :access-control-allow-origin #".+"; FIXME - accept only what we want here
                  :access-control-allow-methods [:get :put :post :delete])))
+
+
+;;(middleware/wrap-json-body)
+;;

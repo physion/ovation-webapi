@@ -1,12 +1,13 @@
 (ns ovation-api-webservice.util
-  (:import (java.net URI)))
+  (:import (java.net URI))
+  (:require clojure.pprint))
 
 (defn ctx [api_key]
   (.. us.physion.ovation.api.web.Server (make (URI. "https://dev.ovation.io") api_key) (getContext))
   )
 
 (defn get-body-from-request [request]
-  (:body request)
+  (slurp (:body request))
   )
 
 (defn object-to-json [obj]
