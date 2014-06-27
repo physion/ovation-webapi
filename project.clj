@@ -1,5 +1,5 @@
 (defproject ovation-api-webservice "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "Ovation REST API"
   :url "http://ovation.io"
 
   :repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]

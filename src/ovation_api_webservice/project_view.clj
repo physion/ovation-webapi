@@ -1,5 +1,6 @@
 (ns ovation-api-webservice.project-view
   (:use ovation-api-webservice.util)
+  (:require clojure.pprint)
 )
 
 (defn index-project-helper [api_key]
@@ -18,9 +19,10 @@
   (let [
         body (unmunge-strings (get-body-from-request request) (host-from-request request))
         in_json (json-to-object body)
-        do_convert (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)) (.update in_json))
        ]
-    (get-project-helper uuid api_key)
+    (do
+      (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)) (.update in_json))
+      (get-project-helper uuid api_key))
   )
 )
 

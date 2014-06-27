@@ -1,11 +1,12 @@
-(ns ovation-api-webservice.util)
+(ns ovation-api-webservice.util
+  (:import (java.net URI)))
 
 (defn ctx [api_key]
-  (.. us.physion.ovation.api.web.Server (make (java.net.URI. "https://dev.ovation.io") api_key) (getContext))
+  (.. us.physion.ovation.api.web.Server (make (URI. "https://dev.ovation.io") api_key) (getContext))
   )
 
 (defn get-body-from-request [request]
-  (slurp (get request :body))
+  (:body request)
   )
 
 (defn object-to-json [obj]
@@ -29,7 +30,7 @@
 
 (defn entities-to-json [entity_seq]
   (let [
-         array (into-array (map (fn [p] (. p toMap)) entity_seq))
+         array (into-array (map (fn [p] (.toMap p)) entity_seq))
          ]
     (object-to-json array)
     )
@@ -49,6 +50,7 @@
   )
 
 (defn unmunge-strings [s host]
+  (clojure.pprint/pprint (.getClass s))
   (.replaceAll (new java.lang.String s) host "ovation://")
   )
 
@@ -71,7 +73,7 @@
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
-           (let [buffer (java.nio.ByteBuffer/wrap
-                          (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-             (java.util.UUID. (.getLong buffer) (.getLong buffer)))
-           (java.util.UUID/fromString s)))
+    (let [buffer (java.nio.ByteBuffer/wrap
+                   (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))
