@@ -53,7 +53,7 @@
   (-> (handler/site app-routes)
       (middleware/wrap-json-response)
       (wrap-cors :access-control-allow-origin #".+"; FIXME - accept only what we want here
-                 :access-control-allow-methods [:get :put :post :delete]
+                 :access-control-allow-methods [:get :put :post :delete :options]
                  :access-control-allow-headers ["Content-Type" "Accept"])))
 
 
