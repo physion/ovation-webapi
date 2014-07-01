@@ -10,7 +10,9 @@
                  [compojure "1.1.6"]
                  [ring/ring-json "0.3.1"]
                  [ring-cors "0.1.2"]
-                 [us.physion/ovation-api "3.0.0-SNAPSHOT"]]
+                 [org.clojure/core.memoize "0.5.6"]
+                 [us.physion/ovation-api "3.0.0-SNAPSHOT"]
+                 [us.physion/ovation-logging "3.0.0-SNAPSHOT"]]
 
   :plugins [[lein-ring "0.8.10"]
             [s3-wagon-private "1.1.2"]

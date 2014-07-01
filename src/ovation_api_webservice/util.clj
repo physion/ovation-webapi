@@ -1,10 +1,10 @@
 (ns ovation-api-webservice.util
   (:import (java.net URI))
-  (:require clojure.pprint))
+  (:require [clojure.pprint]
+            [ovation-api-webservice.context :as context]))
 
 (defn ctx [api_key]
-  (.. us.physion.ovation.api.web.Server (make (URI. "https://dev.ovation.io") api_key) (getContext))
-  )
+  (context/cached-context api_key))
 
 (defn get-body-from-request [request]
   (slurp (:body request))
@@ -47,12 +47,12 @@
   )
 
 (defn munge-strings [s host]
-  (.replaceAll (new java.lang.String s) "ovation://" host)
+  (.replaceAll (new String s) "ovation://" host)
   )
 
 (defn unmunge-strings [s host]
   (clojure.pprint/pprint (.getClass s))
-  (.replaceAll (new java.lang.String s) host "ovation://")
+  (.replaceAll (new String s) host "ovation://")
   )
 
 (defn auth-filter [request f]

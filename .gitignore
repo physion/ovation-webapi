@@ -18,3 +18,6 @@ pom.xml.asc
 .idea
 
 ovation_api_webservice.iml
+
+ovation.log
+*.log.gz
