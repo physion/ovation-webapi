@@ -1,5 +1,6 @@
 (ns ovation-api-webservice.handler
   (:use compojure.core
+        ovation-api-webservice.entity-view
         ovation-api-webservice.project-view
         ovation-api-webservice.experiment-view
         ovation-api-webservice.epoch-view
@@ -21,6 +22,12 @@
             [ring.middleware.cors :refer [wrap-cors]]))
 
 (defroutes app-routes
+  (context "/entity" [] (defroutes index-routes
+    (context "/:id" [id] (defroutes index-routes
+      (GET "/" request (get-entity id request))
+    ))
+  ))
+
   (context "/project" [] (defroutes index-routes
     (GET "/" request (index-project request))
     (POST "/" request (create-project request))
