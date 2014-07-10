@@ -40,7 +40,7 @@
 )
 
 (defn update-entity [id request]
-  (auth-filter request (partial update-entity-helper id))
+  (auth-filter request (partial update-entity-helper id request))
 )
 
 (defn create-entity-helper [request api_key]
