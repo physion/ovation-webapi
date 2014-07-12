@@ -1,5 +1,6 @@
 (ns ovation-api-webservice.entity-view
-  (:use ovation-api-webservice.util)
+  (:use ovation-api-webservice.util
+        clojure.pprint)
 )
 
 (defn get-entity-helper [uuid api_key]
@@ -31,7 +32,7 @@
   (let [
          body (unmunge-strings (get-body-from-request request) (host-from-request request))
          in_json (json-to-object body)
-         ]
+       ]
     (do
       (-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)) (.update in_json))
       (get-entity-helper uuid api_key)
@@ -43,11 +44,33 @@
   (auth-filter request (partial update-entity-helper id request))
 )
 
+(defn create-multimap [m]
+  (us.physion.ovation.util.MultimapUtils/createMultimap m)
+)
+
 (defn create-entity-helper [request api_key]
   (let [
+         hi (do
+              (pprint request)
+              1
+            )
          body (get-body-from-request request)
+         what (do
+                (pprint body)
+                1
+              )
          json_map (json-to-object body)
-         entity (-> (ctx api_key) (.insertEntity json_map))
+         entity (-> (ctx api_key)
+                    (.insertEntity 
+                      (do
+                        (pprint json_map)
+                        (.put json_map "links" (create-multimap (.get json_map "links")))
+                        (pprint json_map)
+                        json_map
+;                        (update-in json_map ["named_links"] us.physion.ovation.util.MultimapUtils/createMultimap)
+                      )
+                    )
+                )
        ]
     (entities-to-json (seq [entity]))
   )
