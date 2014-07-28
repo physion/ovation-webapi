@@ -12,6 +12,6 @@
                (:body response) => "Ovation REST API")))
 
   (facts "about invalid routes"
-         (fact "returns 404"
-               (let [response (handler/app (request :get "/invalid?api-key=123"))]
+         (fact "returns 404 for invalid path"
+               (let [response (handler/app (request :get "/invalid/path?api-key=123"))]
                  (:status response) => 404)))
