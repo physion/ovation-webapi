@@ -7,11 +7,11 @@
        (fact "returns 200"
              (let [response (handler/app (request :get "/"))]
                (:status response) => 200))
-       (fact "body is \"Hello World\""
+       (fact "body is \"Ovation REST API\""
              (let [response (handler/app (request :get "/"))]
-               (:body response) => "Hello World")))
+               (:body response) => "Ovation REST API")))
 
   (facts "about invalid routes"
          (fact "returns 404"
-               (let [response (handler/app (request :get "/invalid"))]
+               (let [response (handler/app (request :get "/invalid?api-key=123"))]
                  (:status response) => 404)))

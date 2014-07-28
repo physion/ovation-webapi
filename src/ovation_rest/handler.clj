@@ -32,8 +32,9 @@
            (context "/:resource" [resource] (defroutes index-routes
                                                        (GET "/" request (entity/index-resource resource request))))
 
-           (route/resources "/")
-           (route/not-found "Not Found"))
+           (GET "/" [] "Ovation REST API")
+           (route/not-found "<h1>Not Found</h1>"))
+
 
 
 (def app
