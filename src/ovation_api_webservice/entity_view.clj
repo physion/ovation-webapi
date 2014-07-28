@@ -18,9 +18,8 @@
          entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
          relation (-> entity (. getEntities rel))
        ]
-    (entities-to-json
-      (seq relation)
-    )
+
+    (entities-to-json (seq relation))
   )
 )
 
@@ -50,24 +49,15 @@
 
 (defn create-entity-helper [request api_key]
   (let [
-         hi (do
-              (pprint request)
-              1
-            )
          body (get-body-from-request request)
-         what (do
-                (pprint body)
-                1
-              )
          json_map (json-to-object body)
          entity (-> (ctx api_key)
-                    (.insertEntity 
-                      (do
-                        (pprint json_map)
-                        (.put json_map "links" (create-multimap (.get json_map "links")))
-                        (pprint json_map)
-                        json_map
-;                        (update-in json_map ["named_links"] us.physion.ovation.util.MultimapUtils/createMultimap)
+                    (.insertEntity
+                      (-> json_map
+                        ;(.put json_map "links" (create-multimap (.get json_map "links")))
+                        ;json_map
+                        (update-in ["links"] create-multimap)
+                        ;(update-in json_map ["named_links"] us.physion.ovation.util.MultimapUtils/createMultimap)
                       )
                     )
                 )

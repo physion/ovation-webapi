@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.test.handler
+(ns ovation-api-webservice.test.test_handler
   (:use clojure.test
         midje.sweet
         ring.mock.request

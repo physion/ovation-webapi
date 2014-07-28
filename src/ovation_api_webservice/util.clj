@@ -16,8 +16,8 @@
 (defn object-to-json [obj]
   (->
     (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (new com.fasterxml.jackson.datatype.guava.GuavaModule))
-    (.registerModule (new com.fasterxml.jackson.datatype.joda.JodaModule))
+    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
     (.configure com.fasterxml.jackson.databind.SerializationFeature/WRITE_DATES_AS_TIMESTAMPS false)
     (.writeValueAsString obj)
   )
@@ -26,19 +26,22 @@
 (defn json-to-object [json]
   (->
     (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (new com.fasterxml.jackson.datatype.guava.GuavaModule))
-    (.registerModule (new com.fasterxml.jackson.datatype.joda.JodaModule))
+    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
     (.readValue json java.util.Map)
   )
 )
 
 (defn entities-to-json [entity_seq]
   (let [
-         array (into-array (map (fn [p] (.toMap p)) entity_seq))
+         array (into-array (map (fn [p] (entity-to-map p)) entity_seq))
        ]
     (object-to-json array)
   )
 )
+
+(defn entity-to-map [entity]
+  (.toMap entity))
 
 (defn host-from-request [request]
   (let [
