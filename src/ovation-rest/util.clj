@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.util
+(ns ovation-rest.util
   (:import (java.net URI))
   (:require [clojure.pprint]
             [ovation-api-webservice.context :as context]
@@ -32,6 +32,10 @@
   )
 )
 
+
+(defn entity-to-map [entity]
+  (.toMap entity))
+
 (defn entities-to-json [entity_seq]
   (let [
          array (into-array (map (fn [p] (entity-to-map p)) entity_seq))
@@ -39,9 +43,6 @@
     (object-to-json array)
   )
 )
-
-(defn entity-to-map [entity]
-  (.toMap entity))
 
 (defn host-from-request [request]
   (let [

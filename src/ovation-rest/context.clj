@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.context
+(ns ovation-rest.context
   (:require [clojure.core.memoize :as memo])
   (:import (java.net URI)))
 

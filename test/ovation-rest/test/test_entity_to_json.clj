@@ -1,7 +1,8 @@
-(ns ovation-api-webservice.test.test-entity-to-json
+(ns ovation-rest.test.test_entity_to_json.clj
+  (:import (us.physion.ovation.domain DtoBuilder)))
   (:require [midje.sweet :refer :all])
   (:require [ovation-api-webservice.util :as util])
-  (:import (us.physion.ovation.domain DtoBuilder)))
+  (:import (us.physion.ovation.domain DtoBuilder))
 
 (defn parse-json [json-string-seq]
   (map util/json-to-object json-string-seq))

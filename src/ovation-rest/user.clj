@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.user-view
+(ns ovation-rest.user
   (:use ovation-api-webservice.util)
 )
 

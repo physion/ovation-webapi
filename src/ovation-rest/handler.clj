@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.handler
+(ns ovation-rest.handler
   (:use compojure.core
         ovation-api-webservice.entity-view
         ovation-api-webservice.user-view
@@ -45,9 +45,7 @@
   (route/not-found "Not Found")
 )
 
-;(def handler
-;  (wrap-cors my-routes :access-control-allow-origin #"*"
-;                       :access-control-allow-methods [:get :put :post :delete]))
+                    :access-control-allow-methods [:get :put :post :delete]))
 
 (def app
   (-> (handler/site app-routes)
@@ -55,7 +53,3 @@
       (wrap-cors :access-control-allow-origin #".+"; FIXME - accept only what we want here
                  :access-control-allow-methods [:get :put :post :delete :options]
                  :access-control-allow-headers ["Content-Type" "Accept"])))
-
-
-;;(middleware/wrap-json-body)
-;;

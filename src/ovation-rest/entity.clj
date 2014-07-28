@@ -1,4 +1,4 @@
-(ns ovation-api-webservice.entity-view
+(ns ovation-rest.entity
   (:use ovation-api-webservice.util
         clojure.pprint)
 )
