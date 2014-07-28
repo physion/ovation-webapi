@@ -18,7 +18,7 @@
             [s3-wagon-private "1.1.2"]
             [lein-midje "3.0.0"]]
 
-  :ring {:handler ovation-api-webservice.handler/app}
+  :ring {:handler ovation-rest.handler/app}
 
   :profiles {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring-mock "0.1.5"]
