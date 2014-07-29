@@ -10,7 +10,7 @@
 )
 
 (defn get-entity [id request]
-  (auth-filter request (partial get-entity-helper id))
+  (auth-filter-middleware request (partial get-entity-helper id))
 )
 
 (defn get-entity-rel-helper [uuid rel api_key]
@@ -24,7 +24,7 @@
 )
 
 (defn get-entity-rel [id rel request]
-  (auth-filter request (partial get-entity-rel-helper id rel))
+  (auth-filter-middleware request (partial get-entity-rel-helper id rel))
 )
 
 (defn update-entity-helper [uuid request api_key]
@@ -40,7 +40,7 @@
 )
 
 (defn update-entity [id request]
-  (auth-filter request (partial update-entity-helper id request))
+  (auth-filter-middleware request (partial update-entity-helper id request))
 )
 
 (defn create-multimap [m]
@@ -54,10 +54,7 @@
          entity (-> (ctx api_key)
                     (.insertEntity
                       (-> json_map
-                        ;(.put json_map "links" (create-multimap (.get json_map "links")))
-                        ;json_map
-                        (update-in ["links"] create-multimap)
-                        ;(update-in json_map ["named_links"] us.physion.ovation.util.MultimapUtils/createMultimap)
+                          (update-in ["links"] create-multimap)
                       )
                     )
                 )
@@ -67,7 +64,7 @@
 )
 
 (defn create-entity [request]
-  (auth-filter request (partial create-entity-helper request))
+  (auth-filter-middleware request (partial create-entity-helper request))
 )
 
 (defn delete-entity-helper [uuid request api_key]
@@ -80,7 +77,7 @@
 )
 
 (defn delete-entity [id request]
-  (auth-filter request (partial delete-entity-helper id request))
+  (auth-filter-middleware request (partial delete-entity-helper id request))
 )
 
 (defn index-resource-helper [resource api_key]
@@ -92,12 +89,12 @@
                    )
        ]
     (entities-to-json
-      (seq resources)
+      (seq resources)                                       ; THIS IS THE SLOW PART :(
     )
   )
 )
 
 (defn index-resource [resource request]
-  (auth-filter request (partial index-resource-helper resource))
+  (auth-filter-middleware request (partial index-resource-helper resource))
 )
 

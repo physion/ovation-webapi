@@ -15,10 +15,10 @@
 )
 
 (defn index-user [request]
-  (auth-filter request (partial index-user-helper))
+  (auth-filter-middleware request (partial index-user-helper))
 )
 
 (defn get-user [id request]
-  (auth-filter request (partial get-user-helper id))
+  (auth-filter-middleware request (partial get-user-helper id))
 )
 
