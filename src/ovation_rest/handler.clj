@@ -32,7 +32,9 @@
            (context "/:resource" [resource] (defroutes index-routes
                                                        (GET "/" request (entity/index-resource resource request))))
 
-           (GET "/" [] "Ovation REST API")
+           ;; For ElasticBeanstalk
+           (HEAD "/" [] "")
+
            (route/not-found "<h1>Not Found</h1>"))
 
 
