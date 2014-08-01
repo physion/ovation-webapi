@@ -4,15 +4,20 @@
 
 
 
+(defn make-server
+  "Make an us.physion.ovation.api.web.Server instance"
+  [api-endpoint api-key]
+  (us.physion.ovation.api.web.Server/make (URI. api-endpoint) api-key))
+
 (defn make-context
   "Make an Ovation DataContext for the given API key"
-  [api_key]
+  [api-key]
 
-  (let [api_endpoint (if (System/getProperty "OVATION_IO_HOST_URI")
+  (let [api-endpoint (if (System/getProperty "OVATION_IO_HOST_URI")
                        (System/getProperty "OVATION_IO_HOST_URI")
                        "https://dev.ovation.io")]
 
-    (-> (us.physion.ovation.api.web.Server/make (URI. api_endpoint) api_key)
+    (-> (make-server api-endpoint api-key)
         (.getContext))))
 
 
