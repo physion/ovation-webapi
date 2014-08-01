@@ -17,18 +17,19 @@
             :plugins [[lein-ring "0.8.10"]
                       [s3-wagon-private "1.1.2"]
                       [lein-midje "3.0.0"]
-                      [lein-beanstalk "0.2.7"]]
+                      [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
             :ring {:handler ovation-rest.handler/app}
 
-            :aws {:beanstalk {:environments [{:name "development"
-                                              :env {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
+            :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
+                              :environments [{:name "development"
+                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
                                              {:name "staging"
-                                              :env {"OVATION_IO_HOST_URI" "https://ovation.io"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
 
                                              {:name "production"
-                                              :env {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
 
             :profiles {:dev     {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                 [ring-mock "0.1.5"]
