@@ -16,5 +16,5 @@
 pom.xml
 pom.xml.asc
 .idea
-
+.repository
 ovation_api_webservice.iml
