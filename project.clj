@@ -12,7 +12,8 @@
                            [ring-cors "0.1.2"]
                            [org.clojure/core.memoize "0.5.6"]
                            [us.physion/ovation-api "3.0.0-SNAPSHOT"]
-                           [us.physion/ovation-logging "3.0.0-SNAPSHOT"]]
+                           [us.physion/ovation-logging "3.0.0-SNAPSHOT"]
+                           [com.newrelic.agent.java/newrelic-agent "3.9.0"]]
 
             :plugins [[lein-ring "0.8.10"]
                       [s3-wagon-private "1.1.2"]
@@ -23,13 +24,16 @@
 
             :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                               :environments [{:name "development"
-                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
+                                                     "NEWRELIC" "license_key"}}
 
                                              {:name "staging"
-                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
+                                                     "NEWRELIC" "license_key"}}
 
                                              {:name "production"
-                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
+                                                     "NEWRELIC" "license_key"}}]}}
 
             :profiles {:dev     {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                 [ring-mock "0.1.5"]
