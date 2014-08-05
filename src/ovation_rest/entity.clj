@@ -84,7 +84,7 @@
   (let [
          resources (case resource
                      "project" (-> (ctx api_key) (.getProjects))
-                     "source" (-> (ctx api_key) (.getSources))
+                     "source" (-> (ctx api_key) (.getTopLevelSources))
                      "protocol" (-> (ctx api_key) (.getProtocols))
                    )
        ]

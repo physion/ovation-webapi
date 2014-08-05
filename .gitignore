@@ -5,8 +5,8 @@
 .lein-failures
 .lein-plugins/
 .lein-repl-history
-.log
-.log.gz
+*.log
+*.log.gz
 /.lein-*
 /.nrepl-port
 /checkouts
@@ -16,8 +16,5 @@
 pom.xml
 pom.xml.asc
 .idea
-
+.repository
 ovation_api_webservice.iml
-
-ovation.log
-*.log.gz

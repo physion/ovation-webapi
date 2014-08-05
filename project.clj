@@ -12,28 +12,40 @@
                            [ring-cors "0.1.2"]
                            [org.clojure/core.memoize "0.5.6"]
                            [us.physion/ovation-api "3.0.0-SNAPSHOT"]
-                           [us.physion/ovation-logging "3.0.0-SNAPSHOT"]]
+                           [us.physion/ovation-logging "3.0.0-SNAPSHOT"]
+                           [com.newrelic.agent.java/newrelic-agent "3.9.0"]]
 
             :plugins [[lein-ring "0.8.10"]
                       [s3-wagon-private "1.1.2"]
                       [lein-midje "3.0.0"]
-                      [lein-beanstalk "0.2.7"]]
+                      [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
             :ring {:handler ovation-rest.handler/app}
 
-            :aws {:beanstalk {:environments [{:name "development"
-                                              :env {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
+            :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
+                              :environments [{:name "development"
+                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
+                                                     "NEWRELIC" "license_key"}}
 
                                              {:name "staging"
-                                              :env {"OVATION_IO_HOST_URI" "https://ovation.io"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
+                                                     "NEWRELIC" "license_key"}}
 
                                              {:name "production"
-                                              :env {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
+                                                     "NEWRELIC" "license_key"}}]}}
 
             :profiles {:dev     {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                 [ring-mock "0.1.5"]
                                                 [midje "1.6.3"]]}
 
-                       :jenkins {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                                       :secret-key ~(System/getenv "AWS_SECRET_KEY")}}})
+                       :jenkins {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
+                                                :secret-key ~(System/getenv "AWS_SECRET_KEY")}
+                                 :repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"
+                                                                                   :username   :env/AWS_ACCESS_KEY
+                                                                                   :passphrase :env/AWS_SECRET_KEY}]
+                                                ["s3-ovation-release-repository" {:url        "s3p://maven.ovation.io/release"
+                                                                                  :username   :env/AWS_ACCESS_KEY
+                                                                                  :passphrase :env/AWS_SECRET_KEY}]]
+                                 :local-repo ".repository"}})
 
