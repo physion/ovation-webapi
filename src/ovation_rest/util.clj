@@ -7,12 +7,10 @@
   )
 
 (defn ctx [api_key]
-  (context/make-context api_key)
-  )
+  (context/cached-context api_key))
 
 (defn get-body-from-request [request]
-  (slurp (:body request))
-  )
+  (slurp (:body request)))
 
 (defn object-to-json [obj]
   (->
