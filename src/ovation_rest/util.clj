@@ -33,7 +33,7 @@
 
 
 (defn entity-to-dto
-  ;; Clojure wrapper for entity.toMap()
+  "Clojure wrapper for entity.toMap()"
   [entity]
   (.toMap entity))
 
@@ -44,7 +44,7 @@
     dto))
 
 (defn convert-entity-to-map
-  ;; Converts an entity to a map suitable for response (e.g. adds additional links=>self)
+  "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [entity]
   (augment-entity-dto (entity-to-dto entity)))
 

@@ -9,7 +9,7 @@
   [api-endpoint api-key]
   (us.physion.ovation.api.web.Server/make (URI. api-endpoint) api-key))
 
-(defn get-context-from-dsc
+(defn- get-context-from-dsc
   "Gets a new DataContext from a DataStoreCoordinator"
   [dsc]
   (.getContext dsc))
