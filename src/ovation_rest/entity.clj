@@ -3,17 +3,23 @@
         clojure.pprint)
 )
 
-(defn get-entity-helper [uuid api_key]
+(defn get-entity-helper
+  "Helper to return the json array for a single entity after retrieving from the database"
+  [uuid api_key]
   (entities-to-json
     (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
   )
 )
 
-(defn get-entity [id request]
+(defn get-entity
+  "Gets a single entity by ID (uuid)"
+  [id request]
   (auth-filter-middleware request (partial get-entity-helper id))
 )
 
-(defn get-entity-rel-helper [uuid rel api_key]
+(defn get-entity-rel-helper
+  "Helper to return the json array of the target of an entity relation by entity [UU]ID and relation name"
+  [uuid rel api_key]
   (let [
          entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
          relation (-> entity (. getEntities rel))
@@ -23,7 +29,9 @@
   )
 )
 
-(defn get-entity-rel [id rel request]
+(defn get-entity-rel
+  "Gets the target of an entity relation by entity ID and relation name for the given request"
+  [id rel request]
   (auth-filter-middleware request (partial get-entity-rel-helper id rel))
 )
 
