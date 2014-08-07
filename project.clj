@@ -25,15 +25,15 @@
             :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                               :environments [{:name "development"
                                               :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
-                                                     "NEWRELIC" "license_key"}}
+                                                     "NEWRELIC" "newrelic_license_key"}}
 
                                              {:name "staging"
                                               :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                                     "NEWRELIC" "license_key"}}
+                                                     "NEWRELIC" "newrelic_license_key"}}
 
                                              {:name "production"
                                               :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                                     "NEWRELIC" "license_key"}}]}}
+                                                     "NEWRELIC" "newrelic_license_key"}}]}}
 
             :profiles {:dev     {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                 [ring-mock "0.1.5"]
