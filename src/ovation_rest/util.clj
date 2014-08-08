@@ -23,12 +23,12 @@
   )
 
 (defn json-to-object [json]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.readValue json java.util.Map)
-    )
+  (into {} (->
+             (new com.fasterxml.jackson.databind.ObjectMapper)
+             (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+             (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
+             (.readValue json java.util.Map)
+             ))
   )
 
 
