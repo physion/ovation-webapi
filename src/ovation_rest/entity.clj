@@ -38,7 +38,7 @@
 (defn update-entity-helper [uuid request api_key]
   (let [
          body (unmunge-strings (get-body-from-request request) (host-from-request request))
-         in_json (json-to-object body)
+         in_json (json-to-map body)
        ]
     (do
       (-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)) (.update in_json))
@@ -58,7 +58,7 @@
 (defn create-entity-helper [request api_key]
   (let [
          body (get-body-from-request request)
-         json_map (json-to-object body)
+         json_map (into {} (json-to-map body))
          entity (-> (ctx api_key)
                     (.insertEntity
                       (-> json_map
