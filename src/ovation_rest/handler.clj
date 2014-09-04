@@ -1,23 +1,11 @@
 (ns ovation-rest.handler
   (:require [ring.util.http-response :refer :all]
             [compojure.api.sweet :refer :all]
+            [schema.core :as s]
             [ring.swagger.schema :refer [field describe]]
             [ovation-rest.entity :as entity]
-            [ovation-rest.user :as user]
-            [schema.core :as s]))
+            [ring.swagger.json-schema-dirty]))
 
-;(ns ovation-rest.handler
-;  (:use compojure.core
-;        ring.middleware.params)
-;  (:require [compojure.handler :as handler]
-;            [compojure.route :as route]
-;            [ring.middleware.json :as middleware]
-;            [ovation-rest.entity :as entity]
-;            [ovation-rest.user :as user]
-;            [ring.middleware.cors :refer [wrap-cors]]
-;            [ring.util.http-response :refer :all]
-;            [compojure.api.sweet :refer :all]
-;            [schema.core :as s]))
 
 ;{"_rev":"2-d330d60c5d22eeeb85dfb8ef4208055d",
 ;"_id":"3dc9e647-9ecc-4fac-9f21-3d5cd08621e4",
@@ -28,18 +16,27 @@
 ;              "name":"name","purpose":"purpose"},
 ;"type":"Project"}
 
+;;; --- Schema Definitions --- ;;;
+
 (s/defschema Success {:success 1})
 
 (s/defschema Entity {
-;                     :type (s/enum :Project :Protocol :User :Source) 
-                     :_rev String
-                     :_id String
+                     :type (s/enum :Project :Protocol :User :Source)
+                     :_rev s/Str
+                     :_id s/Str
                      :links {}
-                     :named_links {}
-                     :annotations {}
+                     :attributes {(s/optional-key String) String}
+                     :named_links {(s/optional-key String) String}
+                     :test {(s/optional-key String) (s/maybe {})}
+; WHY DOESNT THIS WORK :(                     :annotations {(s/optional-key String) {(s/optional-key String) {(s/optional-key String) [{(s/optional-key String) String}]}}}
                     }
 )
 
+
+;;; --- Routes --- ;;;
+
+(defroutes* head-ping
+  (HEAD* "/" [] ""))
 
 (defapi app
 ;  (middleware/wrap-json-response)
@@ -53,6 +50,7 @@
 
   (swaggered "ovation-api-webservice"
     :description "Ovation API Webservice"
+    head-ping
 
     (context "/api" []
       (context "/entity" []
@@ -89,59 +87,6 @@
         (ok (entity/index-resource resource request)))
     )
 
-;    (HEAD "/" [] "")
-
-;    (GET* "/" []
-;      :return         s/Str
-;      :query-params   []
-;      :summary        "Default return"
-;      (ok "")
-;    )
   )
 )
 
-;      (context "/user" [] 
-;        (GET* "/" [] ;{params :params}
-;          :return       [{:user User}]
-;          :query-params [api-key :- String]
-;          :summary      "returns all Users"
-;          (ok {:user "all users"}))
-;;          (ok {:user (user/index-user params})))
-;        (GET* "/:id" [id] ;{params :params}
-;          :return User
-;          :query-params [api-key :- String]
-;          :summary      "returns a User"
-;          (ok {:user "one user"}))
-;;          (ok {:user (user/get-user params}))))
-
-;(defroutes app-routes
-;
-;           (context "/user" [] (defroutes index-routes
-;                                          ; POST not allowed
-;                                          (GET "/" {params :params} (user/index-user params))
-;                                          (context "/:id" [id] (defroutes index-routes
-;                                                                          ; PUT, DELETE not allowed
-;                                                                          (GET "/" {params :params} (user/get-user params))))))
-;
-;           (context "/entity" [] (defroutes index-routes
-;                                   (POST "/" request (entity/create-entity request))
-;                                   (context "/:id" [id] (defroutes index-routes
-;                                    (GET "/" request (entity/get-entity id request))
-;                                    (PUT "/" request (entity/update-entity id request))
-;                                    (DELETE "/" request (entity/delete-entity id request))
-;                                    (context "/:rel" [rel] (defroutes index-routes
-;                                      (GET "/" request (entity/get-entity-rel id rel request))))))))
-;
-;           (context "/:resource" [resource] (defroutes index-routes
-;                                                       (GET "/" request (entity/index-resource resource request))))
-;
-;           (GET "/" [] "Ovation REST API")
-;           (route/not-found "<h1>Not Found</h1>"))
-;
-;
-;(def app
-;  (-> (handler/site app-routes)
-;      (middleware/wrap-json-response)
-;      (wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
-;                 :access-control-allow-methods [:get :put :post :delete :options]
-;                 :access-contol-allow-headers ["Content-Type" "Accept"])))
