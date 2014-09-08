@@ -29,7 +29,8 @@
   (HEAD* "/" [] ""))
 
 (defapi app
-;  (middleware/wrap-json-response)
+
+  (middleware/wrap-json-response)
 ;  (wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
 ;             :access-control-allow-methods [:get :put :post :delete :options]
 ;             :access-control-allow-headers ["Content-Type" "Accept"])
@@ -70,7 +71,7 @@
     )
 
     (context "/:resource" [resource]
-      (GET* "/" request 
+      (GET* "/" request
         :return        [Entity]
         :query-params  [api-key :- String]
         :summary       "Special endpoint for /project /protocol /source"
