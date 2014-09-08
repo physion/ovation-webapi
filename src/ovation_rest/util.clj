@@ -3,6 +3,7 @@
            (us.physion.ovation.domain URIs))
   (:require [clojure.pprint]
             [ovation-rest.context :as context]
+            [ovation-rest.interop :as interop]
             )
   )
 
@@ -16,18 +17,18 @@
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
   [entity]
-  (.toMap entity))                                          ;;TODO convert to clojure types
+  (interop/clojurify (.toMap entity)))
 
 (defn augment-entity-dto [dto]                              ;; TODO update-in a clojure map
-  (let [links (.get dto "links")]
-    (.put links "self" (str (URIs/create dto)))
+  (let [links {:self (str (URIs/create dto)}]
+    (.put links ))
     (.put dto "links" links)
     dto))
 
 (defn convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [entity]
-  (augment-entity-dto (entity-to-dto entity)))              ;; TODO convert java types to clojure types
+  (augment-entity-dto (entity-to-dto entity)))
 
 (defn entities-to-json [entity_seq]
   ;(object-to-json (into-array (map convert-entity-to-map entity_seq))))

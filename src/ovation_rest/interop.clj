@@ -6,9 +6,8 @@
 
 (defmethod clojurify Map [m]
   "Converts a java.util.Map into a Clojure map"
-  (into {} (map (fn [entry]
-                    (let [[k v] entry]
-                      [(keyword k) (clojurify v)])) m)))
+  (into {} (map #(let [[k v] %1]
+                  [(keyword k) (clojurify v)]) m)))
 
 (defmethod clojurify Set [s]
   "Converts a java.util.Set into a Clojure set"
