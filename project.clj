@@ -25,7 +25,7 @@
   :plugins [[lein-clojars "0.9.1"]
             [lein-ring "0.8.10"]
             [s3-wagon-private "1.1.2"]
-            [lein-midje "3.0.0"]
+;            [lein-midje "3.0.0"]
             [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation-rest.handler/app}
@@ -46,8 +46,8 @@
   :profiles {
               :ovation-web-api {:ring {:handler ovation-rest.handler/app}}
               :dev {:dependencies [[javax.servlet/servlet-api "2.5"]
-                                   [ring-mock "0.1.5"]
-                                   [midje "1.6.3"]] }
+                                   [ring-mock "0.1.5"]]}
+;                                   [midje "1.6.3"]] }
               :jenkins {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                               :secret-key ~(System/getenv "AWS_SECRET_KEY")}
                               :repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"

@@ -49,17 +49,15 @@
   (augment-entity-dto (entity-to-dto entity)))
 
 (defn entities-to-json [entity_seq]
-  (object-to-json (into-array (map convert-entity-to-map entity_seq)))
-  )
+  ;(object-to-json (into-array (map convert-entity-to-map entity_seq))))
+  (into-array (map convert-entity-to-map entity_seq)))
 
 (defn host-from-request [request]
   (let [
          scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
          host (get (get request :headers) "host")
          ]
-    (clojure.string/join "" [scheme host "/"])
-    )
-  )
+    (clojure.string/join "" [scheme host "/"])))
 
 (defn munge-strings [s host]
   (.replaceAll (new String s) "ovation://" host))
@@ -79,16 +77,11 @@
 
     {:status       status
      :body         (munge-strings body (host-from-request request))
-     :content-type "application/json"}
-    )
-  )
+     :content-type "application/json"})) 
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
     (let [buffer (java.nio.ByteBuffer/wrap
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (java.util.UUID. (.getLong buffer) (.getLong buffer))
-      )
-    (java.util.UUID/fromString s)
-    )
-  )
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))

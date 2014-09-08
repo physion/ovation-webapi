@@ -95,10 +95,11 @@
                      "source" (-> (ctx api_key) (.getTopLevelSources))
                      "protocol" (-> (ctx api_key) (.getProtocols))
                    )
+;         jsond_entities (seq resources)
+         jsond_entities (entities-to-json (seq resources))
+         yo (pprint jsond_entities)
        ]
-    (entities-to-json
-      (seq resources)                                       ; THIS IS THE SLOW PART :(
-    )
+    jsond_entities
   )
 )
 
