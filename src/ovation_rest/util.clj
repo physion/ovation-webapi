@@ -12,32 +12,13 @@
 (defn get-body-from-request [request]
   (slurp (:body request)))
 
-(defn object-to-json [obj]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.configure com.fasterxml.jackson.databind.SerializationFeature/WRITE_DATES_AS_TIMESTAMPS false)
-    (.writeValueAsString obj)
-    )
-  )
-
-(defn json-to-map [json]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.readValue json java.util.Map)
-    )
-  )
-
 
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
   [entity]
-  (.toMap entity))
+  (.toMap entity))                                          ;;TODO convert to clojure types
 
-(defn augment-entity-dto [dto]
+(defn augment-entity-dto [dto]                              ;; TODO update-in a clojure map
   (let [links (.get dto "links")]
     (.put links "self" (str (URIs/create dto)))
     (.put dto "links" links)
@@ -46,7 +27,7 @@
 (defn convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [entity]
-  (augment-entity-dto (entity-to-dto entity)))
+  (augment-entity-dto (entity-to-dto entity)))              ;; TODO convert java types to clojure types
 
 (defn entities-to-json [entity_seq]
   ;(object-to-json (into-array (map convert-entity-to-map entity_seq))))
@@ -60,11 +41,11 @@
     (clojure.string/join "" [scheme host "/"])))
 
 (defn munge-strings [s host]
-  (.replaceAll (new String s) "ovation://" host))
+  (.replaceAll (new String s) "ovation://" host))           ;; TODO munge only primary URIs (no query parameters) in links, named_links, notes, properties
 
 (defn unmunge-strings [s host]
   (clojure.pprint/pprint (.getClass s))
-  (.replaceAll (new String s) host "ovation://"))
+  (.replaceAll (new String s) host "ovation://"))           ;; TODO unmunge only primary URIs (no query parameters) in links, named_links, notes, properties
 
 (defn auth-filter-middleware [request handler-fn]
   (let [params (get request :query-params)
@@ -76,8 +57,8 @@
                (str "Please log in to access resource"))]
 
     {:status       status
-     :body         (munge-strings body (host-from-request request))
-     :content-type "application/json"})) 
+     :body         (munge-strings body (host-from-request request)) ; TODO return map here. defapi automatically adds json handling
+     :content-type "application/json"}))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))

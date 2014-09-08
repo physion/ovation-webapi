@@ -1,5 +1,6 @@
 (ns ovation-rest.handler
   (:require [ring.util.http-response :refer :all]
+            [ring.middleware.cors :refer [wrap-cors]]
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
             [ring.swagger.schema :refer [field describe]]
@@ -30,10 +31,9 @@
 
 (defapi app
 
-  (middleware/wrap-json-response)
-;  (wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
-;             :access-control-allow-methods [:get :put :post :delete :options]
-;             :access-control-allow-headers ["Content-Type" "Accept"])
+  ;(wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
+  ;           :access-control-allow-methods [:get :put :post :delete :options]
+  ;           :access-control-allow-headers ["Content-Type" "Accept"])
 ;  (swagger-ui)
   (swagger-docs
     :title "ovation-api-webservice"
