@@ -3,6 +3,26 @@
         clojure.pprint)
 )
 
+(defn object-to-json [obj]
+  (->
+    (new com.fasterxml.jackson.databind.ObjectMapper)
+    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
+    (.configure com.fasterxml.jackson.databind.SerializationFeature/WRITE_DATES_AS_TIMESTAMPS false)
+    (.writeValueAsString obj)
+    )
+  )
+
+(defn json-to-map [json]
+  (->
+    (new com.fasterxml.jackson.databind.ObjectMapper)
+    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
+    (.readValue json java.util.Map)
+    )
+  )
+
+
 (defn get-entity-helper
   "Helper to return the json array for a single entity after retrieving from the database"
   [uuid api_key]

@@ -19,11 +19,14 @@
   [entity]
   (interop/clojurify (.toMap entity)))
 
-(defn augment-entity-dto [dto]                              ;; TODO update-in a clojure map
-  (let [links {:self (str (URIs/create dto)}]
-    (.put links ))
-    (.put dto "links" links)
-    dto))
+(defn entity-uri [dto]
+  "Constructs an ovation://entities/... URI string from a clojure dto"
+  (format "ovation://entities/%s" (:_id dto)))
+
+
+(defn augment-entity-dto [dto]
+  "Augment an entity dto with the links.self reference"
+  (merge-with conj dto {:links {:self #{(entity-uri dto)}}}))
 
 (defn convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
