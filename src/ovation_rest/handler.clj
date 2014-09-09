@@ -11,19 +11,20 @@
 
 (s/defschema Success {:success 1})
 
-(s/defschema Entity {
-                     :type (s/enum :Project :Protocol :User :Source)
-                     :_rev s/Str
-                     :_id s/Str
-
-                     :attributes {s/Keyword s/Str}
-
-                     :links {s/Keyword [s/Str]}
-                     :named_links {s/Keyword {s/Keyword [s/Str]}}
-
-                     :annotations {s/Keyword {s/Keyword {s/Keyword [{s/Keyword s/Str}]}}}
-                    }
-)
+;(s/defschema Entity {
+;                     :type (s/enum :Project :Protocol :User :Source)
+;                     :_rev s/Str
+;                     :_id s/Str
+;
+;                     :attributes {s/Keyword s/Str}
+;
+;                     :links {s/Keyword [s/Str]}
+;                     :named_links {s/Keyword {s/Keyword [s/Str]}}
+;
+;                     :annotations {s/Keyword {s/Keyword {s/Keyword [{s/Keyword s/Str}]}}}
+;                    }
+;)
+(s/defschema Entity s/Any)
 
 
 ;;; --- Routes --- ;;;
