@@ -42,8 +42,8 @@
     :title "ovation-web-api"
     :description "Ovation Web API")
 
-  (swaggered "ovation-api-webservice"
-    :description "Ovation API Webservice"
+  (swaggered "ovation-web-api"
+    :description "Ovation REST API"
     head-ping
 
     (context "/api" []
