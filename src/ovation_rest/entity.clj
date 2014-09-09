@@ -1,17 +1,5 @@
 (ns ovation-rest.entity
-  (:use ovation-rest.util
-        clojure.pprint)
-)
-
-(defn object-to-json [obj]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.configure com.fasterxml.jackson.databind.SerializationFeature/WRITE_DATES_AS_TIMESTAMPS false)
-    (.writeValueAsString obj)
-    )
-  )
+  (:use ovation-rest.util))
 
 (defn json-to-map [json]
   (->
@@ -26,7 +14,7 @@
 (defn get-entity-helper
   "Helper to return the json array for a single entity after retrieving from the database"
   [uuid api_key]
-  (entities-to-json
+  (into-map-array
     (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
   )
 )
@@ -45,7 +33,7 @@
          relation (-> entity (. getEntities rel))
        ]
 
-    (entities-to-json (seq relation))
+    (into-map-array (seq relation))
   )
 )
 
@@ -87,7 +75,7 @@
                     )
                 )
        ]
-    (entities-to-json (seq [entity]))
+    (into-map-array (seq [entity]))
   )
 )
 
@@ -115,10 +103,9 @@
                      "source" (-> (ctx api_key) (.getTopLevelSources))
                      "protocol" (-> (ctx api_key) (.getProtocols))
                    )
-;         jsond_entities (seq resources)
-         jsond_entities (entities-to-json (seq resources))
-         yo (pprint jsond_entities)
+         jsond_entities (into-map-array (seq resources))
        ]
+
     jsond_entities
   )
 )

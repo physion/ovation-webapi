@@ -3,13 +3,13 @@
 )
 
 (defn index-user-helper [api_key]
-  (entities-to-json
+  (into-map-array
     (seq (-> (ctx api_key) (. getusers)))
   )
 )
 
 (defn get-user-helper [uuid api_key]
-  (entities-to-json
+  (into-map-array
     (seq [(-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))])
   )
 )

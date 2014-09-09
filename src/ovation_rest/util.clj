@@ -4,6 +4,7 @@
   (:require [clojure.pprint]
             [ovation-rest.context :as context]
             [ovation-rest.interop :as interop]
+            [clojurewerkz.urly.core :refer [url-like host-of path-of query-of resolve mutate-query normalize-url]]
             )
   )
 
@@ -33,8 +34,8 @@
   [entity]
   (augment-entity-dto (entity-to-dto entity)))
 
-(defn entities-to-json [entity_seq]
-  ;(object-to-json (into-array (map convert-entity-to-map entity_seq))))
+(defn into-map-array [entity_seq]
+  "Converts a seq of entities into an array of Maps"
   (into-array (map convert-entity-to-map entity_seq)))
 
 (defn host-from-request [request]
@@ -70,3 +71,18 @@
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
       (java.util.UUID. (.getLong buffer) (.getLong buffer)))
     (java.util.UUID/fromString s)))
+
+(defn to-web-uri [entity-uri base-uri]
+  "Converts an ovation:// URI to a web (http[s]://) URI for the given server base URI"
+  (let [entity-urly (url-like entity-uri)]
+
+    (normalize-url (mutate-query (resolve base-uri (clojure.string/join "/" [(host-of entity-urly) (path-of entity-urly)]))
+                                 (query-of entity-urly)))))
+
+(defn to-ovation-uri [web-uri base-uri]
+  "Converts a web URI with the given server base to an ovation:// URI"
+  (let [web-urly (url-like web-uri)
+        base-urly (url-like (normalize-url base-uri))
+        part (.relativize (-> base-urly (.toURL) (.toURI)) (-> web-urly (.toURL) (.toURI)))]
+
+    (normalize-url (format "ovation://%s" part))))
