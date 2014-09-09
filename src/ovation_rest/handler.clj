@@ -15,11 +15,13 @@
                      :type (s/enum :Project :Protocol :User :Source)
                      :_rev s/Str
                      :_id s/Str
-                     :links {s/Any s/Any}
-                     :attributes {(s/optional-key String) String}
-                     :named_links {(s/optional-key String) String}
-                     :annotations {}
-                     ;:annotations {(s/optional-key String) {(s/optional-key String) {(s/optional-key String) [{(s/optional-key String) String}]}}}
+
+                     :attributes {s/Keyword s/Str}
+
+                     :links {s/Keyword [s/Str]}
+                     :named_links {s/Keyword {s/Keyword [s/Str]}}
+
+                     :annotations {s/Keyword {s/Keyword {s/Keyword [{s/Keyword s/Str}]}}}
                     }
 )
 
@@ -34,10 +36,11 @@
   ;(wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
   ;           :access-control-allow-methods [:get :put :post :delete :options]
   ;           :access-control-allow-headers ["Content-Type" "Accept"])
-;  (swagger-ui)
+
+  (swagger-ui)
   (swagger-docs
-    :title "ovation-api-webservice"
-    :description "Ovation API Webservice")
+    :title "ovation-web-api"
+    :description "Ovation Web API")
 
   (swaggered "ovation-api-webservice"
     :description "Ovation API Webservice"

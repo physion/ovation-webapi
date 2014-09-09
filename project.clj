@@ -44,7 +44,8 @@
                                                      "NEWRELIC"            "newrelic_license_key"}}]}}
 
             :profiles {
-                        :ovation-web-api {:ring {:handler ovation-rest.handler/app}}
+                        :ovation-web-api {:ring {:handler ovation-rest.handler/app}
+                                          :reload-paths ["src"]}
                         :dev             {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                          [ring-mock "0.1.5"]
                                                          [midje "1.6.3"]]}
@@ -58,7 +59,7 @@
                                                                                            :passphrase :env/AWS_SECRET_KEY}]]
                                           :local-repo   ".repository"}}
 
-            :aliases {"start-ovation-api-webservice" ["with-profile" "ovation-web-api" "ring" "server"]}
+            :aliases {"start-ovation-web" ["with-profile" "ovation-web-api" "ring" "server"]}
 
             )
 
