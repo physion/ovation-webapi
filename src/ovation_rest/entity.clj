@@ -1,12 +1,20 @@
 (ns ovation-rest.entity
-  (:use ovation-rest.util
-        clojure.pprint)
-)
+  (:use ovation-rest.util))
+
+(defn json-to-map [json]
+  (->
+    (new com.fasterxml.jackson.databind.ObjectMapper)
+    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
+    (.readValue json java.util.Map)
+    )
+  )
+
 
 (defn get-entity-helper
   "Helper to return the json array for a single entity after retrieving from the database"
   [uuid api_key]
-  (entities-to-json
+  (into-map-array
     (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
   )
 )
@@ -25,7 +33,7 @@
          relation (-> entity (. getEntities rel))
        ]
 
-    (entities-to-json (seq relation))
+    (into-map-array (seq relation))
   )
 )
 
@@ -67,7 +75,7 @@
                     )
                 )
        ]
-    (entities-to-json (seq [entity]))
+    (into-map-array (seq [entity]))
   )
 )
 
@@ -95,10 +103,10 @@
                      "source" (-> (ctx api_key) (.getTopLevelSources))
                      "protocol" (-> (ctx api_key) (.getProtocols))
                    )
+         jsond_entities (into-map-array (seq resources))
        ]
-    (entities-to-json
-      (seq resources)                                       ; THIS IS THE SLOW PART :(
-    )
+
+    jsond_entities
   )
 )
 

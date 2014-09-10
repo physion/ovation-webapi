@@ -1,47 +1,89 @@
 (ns ovation-rest.handler
-  (:use compojure.core
-        ring.middleware.params
-        )
-  (:require [compojure.handler :as handler]
-            [compojure.route :as route]
-            [ring.middleware.json :as middleware]
-            [ovation-rest.entity :as entity]
-            [ovation-rest.user :as user]
+  (:require [ring.util.http-response :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
-            )
+            [compojure.api.sweet :refer :all]
+            [schema.core :as s]
+            [ring.swagger.schema :refer [field describe]]
+            [ovation-rest.entity :as entity]
+            [ring.swagger.json-schema-dirty]))
+
+;;; --- Schema Definitions --- ;;;
+
+(s/defschema Success {:success 1})
+
+(s/defschema Entity {
+                     :type (s/enum :Project :Protocol :User :Source)
+                     :_rev s/Str
+                     :_id s/Str
+
+                     :attributes {s/Keyword s/Str}
+
+                     :links {s/Keyword [s/Str]}
+                     :named_links {s/Keyword {s/Keyword [s/Str]}}
+
+                     :annotations {s/Keyword {s/Keyword {s/Keyword [{s/Keyword s/Str}]}}}
+                    })
+
+(s/defschema EntityList [Entity])
+
+
+;;; --- Routes --- ;;;
+
+(defroutes* head-ping
+  (HEAD* "/" [] ""))
+
+(defapi app
+
+  ;(wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
+  ;           :access-control-allow-methods [:get :put :post :delete :options]
+  ;           :access-control-allow-headers ["Content-Type" "Accept"])
+
+  (swagger-ui)
+  (swagger-docs
+    :title "ovation-web-api"
+    :description "Ovation Web API")
+
+  (swaggered "ovation-web-api"
+    :description "Ovation REST API"
+    head-ping
+
+    (context "/api" []
+      (context "/entity" []
+        (POST* "/" request
+          :return        [Entity]
+          :query-params  [api-key :- String]
+          :summary       "Creates and returns an entity"
+          (ok (entity/create-entity request)))
+        (context "/:id" [id]
+          (GET* "/" request
+            :return        [Entity]
+            :query-params  [api-key :- String]
+            :summary       "Returns entity with :id"
+            (ok (entity/get-entity id request)))
+          (PUT* "/" request
+            :return        [Entity]
+            :query-params  [api-key :- String]
+            :summary       "Updates and returns updated entity with :id"
+            (ok (entity/update-entity id request)))
+          (DELETE* "/" request
+            :return        Success
+            :query-params  [api-key :- String]
+            :summary       "Deletes entity with :id"
+            (ok (entity/update-entity id request)))
+        )
+      )
+    )
+
+    (context "/:resource" [resource]
+      (GET* "/" request
+        :return        [EntityList]
+        :query-params  [api-key :- String]
+        :summary       "Special endpoint for /project /protocol /source"
+;        (ok [{:type :Project :_rev "123" :_id "123" :links {} :attributes {} :named_links {} :annotations {}}])))
+;        (ok (entity/index-resource resource request))))
+         (ok (entity/index-resource-helper "project" api-key))))
+
+    (ANY* "*" [] (not-found "Illegal path"))
   )
+)
 
-(defroutes app-routes
-
-           (context "/user" [] (defroutes index-routes
-                                          ; POST not allowed
-                                          (GET "/" {params :params} (user/index-user params))
-                                          (context "/:id" [id] (defroutes index-routes
-                                                                          ; PUT, DELETE not allowed
-                                                                          (GET "/" {params :params} (user/get-user params))))))
-
-           (context "/entity" [] (defroutes index-routes
-                                            (POST "/" request (entity/create-entity request))
-                                            (context "/:id" [id] (defroutes index-routes
-                                                                            (GET "/" request (entity/get-entity id request))
-                                                                            (PUT "/" request (entity/update-entity id request))
-                                                                            (DELETE "/" request (entity/delete-entity id request))
-                                                                            (context "/:rel" [rel] (defroutes index-routes
-                                                                                                              (GET "/" request (entity/get-entity-rel id rel request))))))))
-
-           (context "/:resource" [resource] (defroutes index-routes
-                                                       (GET "/" request (entity/index-resource resource request))))
-
-           ;; For ElasticBeanstalk
-           (HEAD "/" [] "")
-
-           (route/not-found "<h1>Not Found</h1>"))
-
-
-
-(def app
-  (-> (handler/site app-routes)
-      (middleware/wrap-json-response)
-      (wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
-                 :access-control-allow-methods [:get :put :post :delete :options]
-                 :access-control-allow-headers ["Content-Type" "Accept"])))

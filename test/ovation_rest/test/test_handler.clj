@@ -3,9 +3,9 @@
               [ring.mock.request :refer :all]
               [ovation-rest.handler :as handler]))
 
-(facts "about main route"
-       (fact "HEAD /returns 200"
-             (let [response (handler/app (request :head "/"))]
+(facts "about doc route"
+       (fact "HEAD /index.html returns 200"
+             (let [response (handler/app (request :head "/index.html"))]
                   (:status response) => 200)))
 
 (facts "about invalid routes"
