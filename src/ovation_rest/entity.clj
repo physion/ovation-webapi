@@ -1,5 +1,11 @@
 (ns ovation-rest.entity
+  (:import (us.physion.ovation.domain URIs))
   (:use ovation-rest.util))
+
+(defn- api-key
+  "Extracts the API key from request query parameters"
+  [request]
+  ("api-key" (:query-params request)))
 
 (defn json-to-map [json]
   (->
@@ -11,97 +17,58 @@
   )
 
 
-(defn get-entity-helper
-  "Helper to return the json array for a single entity after retrieving from the database"
-  [uuid api_key]
-  (into-map-array
-    (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
-    )
-  )
-
 (defn get-entity
   "Gets a single entity by ID (uuid)"
-  [id request]
-  (auth-filter-middleware request (partial get-entity-helper id))
-  )
+  [api-key uuid host-url]
+  (into-map-array
+    (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])
+    host-url))
 
-(defn get-entity-rel-helper
-  "Helper to return the json array of the target of an entity relation by entity [UU]ID and relation name"
-  [uuid rel api_key]
-  (let [
-         entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
-         relation (-> entity (. getEntities rel))
-         ]
+;(defn get-entity-rel
+;  "Helper to return the json array of the target of an entity relation by entity [UU]ID and relation name"
+;  [uuid rel api_key]
+;  (let [
+;         entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
+;         relation (-> entity (. getEntities rel))
+;         ]
+;
+;    (into-map-array (seq relation))
+;    )
+;  )
 
-    (into-map-array (seq relation))
-    )
-  )
-
-(defn get-entity-rel
-  "Gets the target of an entity relation by entity ID and relation name for the given request"
-  [id rel request]
-  (auth-filter-middleware request (partial get-entity-rel-helper id rel))
-  )
-
-(defn update-entity-helper [uuid request api_key]
-  (let [
-         body (unmunge-strings (get-body-from-request request) (host-from-request request))
-         in_json (json-to-map body)
-         ]
-    (do
-      (-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)) (.update in_json))
-      (get-entity-helper uuid api_key)
-      )
-    )
-  )
-
-(defn update-entity [id request]
-  (auth-filter-middleware request (partial update-entity-helper id request))
-  )
 
 (defn create-multimap [m]
-  (us.physion.ovation.util.MultimapUtils/createMultimap m)
-  )
+  (us.physion.ovation.util.MultimapUtils/createMultimap m))
 
-(defn create-entity-helper [request api_key]
-  (let [
-         body (get-body-from-request request)
-         json_map (into {} (json-to-map body))
-         entity (-> (ctx api_key)
-                    (.insertEntity
-                      (-> json_map
-                          (update-in ["links"] create-multimap)
-                          )
-                      )
-                    )
-         ]
-    (into-map-array (seq [entity]))
-    )
-  )
+(defn create-entity
+  "Creates a new Entity from a DTO map"
+  [api-key new-dto host-url]
+  (let [entity (-> (ctx api-key)
+                   (.insertEntity
+                     (-> new-dto
+                         (update-in [:links] create-multimap))))]
 
-(defn create-entity [request]
-  (auth-filter-middleware request (partial create-entity-helper request))
-  )
+    (into-map-array (seq [entity]) host-url)))
 
-(defn delete-entity-helper [uuid request api_key]
-  (let [
-         entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
-         trash_resp (-> (ctx api_key) (. trash entity) (.get))
-         ]
-    (str "{\"success\": 1}")
-    )
-  )
 
-(defn delete-entity [id request]
-  (auth-filter-middleware request (partial delete-entity-helper id request))
-  )
+(defn update-entity [api-key id dto host-url]
+  (let [entity     (-> (ctx api-key) (.getObjectWithUUID (parse-uuid id)))]
+    (.update entity (update-in dto [:links] create-multimap))
+    (into-map-array [entity] host-url)
+    ))
 
-(defn index-resource [resource api_key]
+(defn delete-entity [api_key id]
+  (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid id)))
+        trash_resp (-> (ctx api_key) (. trash entity) (.get))]
+
+    {:success (not (empty? trash_resp))}))
+
+(defn index-resource [api-key resource host-url]
   (let [resources (case resource
-                    "project" (-> (ctx api_key) (.getProjects))
-                    "source" (-> (ctx api_key) (.getTopLevelSources))
-                    "protocol" (-> (ctx api_key) (.getProtocols))
+                    "project" (-> (ctx api-key) (.getProjects))
+                    "source" (-> (ctx api-key) (.getTopLevelSources))
+                    "protocol" (-> (ctx api-key) (.getProtocols))
                     )]
 
-    (into-map-array resources)))
+    (into-map-array resources host-url)))
 

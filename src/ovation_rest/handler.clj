@@ -5,24 +5,26 @@
             [schema.core :as s]
             [ring.swagger.schema :refer [field describe]]
             [ovation-rest.entity :as entity]
+            [ovation-rest.util :as util]
             [ring.swagger.json-schema-dirty]))
 
 ;;; --- Schema Definitions --- ;;;
 
-(s/defschema Success {:success 1})
+(s/defschema Success {:success s/Bool})
 
-(s/defschema Entity {
-                      :type                         s/Str   ;(s/enum :Project :Protocol :User :Source)
-                      :_rev                         s/Str
-                      :_id                          s/Str
+(s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
+                     :_rev                         s/Str
+                     :_id                          s/Str
 
-                      (s/optional-key :attributes)  {s/Keyword s/Str}
+                     (s/optional-key :attributes)  {s/Keyword s/Str}
 
-                      :links                        {s/Keyword #{s/Str}}
-                      (s/optional-key :named_links) {s/Keyword {s/Keyword #{s/Str}}}
+                     :links                        {s/Keyword #{s/Str}}
+                     (s/optional-key :named_links) {s/Keyword {s/Keyword #{s/Str}}}
 
-                      (s/optional-key :annotations) {s/Keyword {s/Keyword {s/Keyword #{{s/Keyword s/Str}}}}}
-                      })
+                     (s/optional-key :annotations) {s/Keyword {s/Keyword {s/Keyword #{{s/Keyword s/Str}}}}}
+                     })
+
+(s/defschema NewEntity (dissoc Entity :_id :_rev))
 
 
 (s/defschema EntityList [Entity])
@@ -53,24 +55,26 @@
                                      (POST* "/" request
                                             :return EntityList
                                             :query-params [api-key :- String]
+                                            :body [new-dto NewEntity]
                                             :summary "Creates and returns an entity"
-                                            (ok (entity/create-entity request)))
+                                            (ok (entity/create-entity api-key new-dto (util/host-from-request request))))
                                      (context "/:id" [id]
                                               (GET* "/" request
                                                     :return EntityList
                                                     :query-params [api-key :- String]
                                                     :summary "Returns entity with :id"
-                                                    (ok (entity/get-entity id request)))
+                                                    (ok (entity/get-entity api-key id (util/host-from-request request))))
                                               (PUT* "/" request
                                                     :return EntityList
                                                     :query-params [api-key :- String]
+                                                    :body [dto Entity]
                                                     :summary "Updates and returns updated entity with :id"
-                                                    (ok (entity/update-entity id request)))
+                                                    (ok (entity/update-entity api-key id dto (util/host-from-request request))))
                                               (DELETE* "/" request
                                                        :return Success
                                                        :query-params [api-key :- String]
                                                        :summary "Deletes entity with :id"
-                                                       (ok (entity/update-entity id request)))
+                                                       (ok (entity/delete-entity api-key id)))
                                               )
                                      )
                             )
@@ -81,7 +85,7 @@
                                   :query-params [api-key :- String]
                                   :summary "Special endpoint for /project /protocol /source"
 
-                                  (ok (entity/index-resource resource api-key))))
+                                  (ok (entity/index-resource api-key resource (util/host-from-request request)))))
 
                    (ANY* "*" [] (not-found "Illegal path"))
                    )
