@@ -103,10 +103,9 @@
                      "source" (-> (ctx api_key) (.getTopLevelSources))
                      "protocol" (-> (ctx api_key) (.getProtocols))
                    )
-         jsond_entities (seq (into-map-array resources))
-         yo (clojure.pprint/pprint jsond_entities)
-       ]
+         jsond_entities (into-map-array resources)]
 
+    (clojure.pprint/pprint jsond_entities)
     jsond_entities
   )
 )
