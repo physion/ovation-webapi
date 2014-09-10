@@ -1,20 +1,21 @@
 (ns ovation-rest.entity
   (:import (us.physion.ovation.domain URIs))
-  (:use ovation-rest.util))
+  (:use ovation-rest.util)
+  (:require [clojure.walk :refer [stringify-keys]]))
 
 (defn- api-key
   "Extracts the API key from request query parameters"
   [request]
   ("api-key" (:query-params request)))
 
-(defn json-to-map [json]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.readValue json java.util.Map)
-    )
-  )
+;(defn json-to-map [json]
+;  (->
+;    (new com.fasterxml.jackson.databind.ObjectMapper)
+;    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
+;    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
+;    (.readValue json java.util.Map)
+;    )
+;  )
 
 
 (defn get-entity
@@ -40,20 +41,18 @@
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
 
-(defn create-entity
+(defn create-entity [api-key new-dto host-url]
   "Creates a new Entity from a DTO map"
-  [api-key new-dto host-url]
   (let [entity (-> (ctx api-key)
                    (.insertEntity
-                     (-> new-dto
-                         (update-in [:links] create-multimap))))]
+                     (stringify-keys (update-in new-dto [:links] create-multimap))))]
 
     (into-map-array (seq [entity]) host-url)))
 
 
 (defn update-entity [api-key id dto host-url]
   (let [entity     (-> (ctx api-key) (.getObjectWithUUID (parse-uuid id)))]
-    (.update entity (update-in dto [:links] create-multimap))
+    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
     (into-map-array [entity] host-url)
     ))
 
