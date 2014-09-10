@@ -81,7 +81,7 @@
         :summary       "Special endpoint for /project /protocol /source"
 ;        (ok [{:type :Project :_rev "123" :_id "123" :links {} :attributes {} :named_links {} :annotations {}}])))
 ;        (ok (entity/index-resource resource request))))
-         (ok (entity/index-resource-helper "project" api-key))))
+         (ok (entity/index-resource-helper resource api-key))))
 
     (ANY* "*" [] (not-found "Illegal path"))
   )
