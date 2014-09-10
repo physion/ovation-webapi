@@ -22,8 +22,9 @@
                      :named_links {s/Keyword {s/Keyword [s/Str]}}
 
                      :annotations {s/Keyword {s/Keyword {s/Keyword [{s/Keyword s/Str}]}}}
-                    }
-)
+                    })
+
+(s/defschema EntityList [Entity])
 
 
 ;;; --- Routes --- ;;;
@@ -75,7 +76,7 @@
 
     (context "/:resource" [resource]
       (GET* "/" request
-        :return        [Entity]
+        :return        [EntityList]
         :query-params  [api-key :- String]
         :summary       "Special endpoint for /project /protocol /source"
 ;        (ok [{:type :Project :_rev "123" :_id "123" :links {} :attributes {} :named_links {} :annotations {}}])))
