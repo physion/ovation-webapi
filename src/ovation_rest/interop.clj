@@ -27,5 +27,3 @@
 (defmethod clojurify Object [o]
   o)
 
-(defn javafy [m])
-

@@ -62,9 +62,12 @@
 
     {:success (not (empty? trash_resp))}))
 
+(defn- ^{:testable true} get-projects [ctx]
+  (.getProjects ctx))
+
 (defn index-resource [api-key resource host-url]
   (let [resources (case resource
-                    "project" (-> (ctx api-key) (.getProjects))
+                    "project" (get-projects (ctx api-key))
                     "source" (-> (ctx api-key) (.getTopLevelSources))
                     "protocol" (-> (ctx api-key) (.getProtocols))
                     )]
