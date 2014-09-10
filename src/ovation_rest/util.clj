@@ -4,7 +4,7 @@
   (:require [clojure.pprint]
             [ovation-rest.context :as context]
             [ovation-rest.interop :as interop]
-            [clojurewerkz.urly.core :refer [url-like host-of path-of query-of resolve mutate-query normalize-url]]
+            [clojurewerkz.urly.core :as urly]
             )
   )
 
@@ -72,17 +72,27 @@
       (java.util.UUID. (.getLong buffer) (.getLong buffer)))
     (java.util.UUID/fromString s)))
 
+(defn- split-query [u]
+  (clojure.string/split u #"\?" 2))
+
 (defn to-web-uri [entity-uri base-uri]
   "Converts an ovation:// URI to a web (http[s]://) URI for the given server base URI"
-  (let [entity-urly (url-like entity-uri)]
+  (let [entity-urly (urly/url-like entity-uri)
+        q (urly/query-of entity-uri)
+        result-base (urly/resolve base-uri (clojure.string/join "/" [(urly/host-of entity-urly) (urly/path-of entity-urly)]))]
 
-    (normalize-url (mutate-query (resolve base-uri (clojure.string/join "/" [(host-of entity-urly) (path-of entity-urly)]))
-                                 (query-of entity-urly)))))
+    (if q
+      (format "%s?%s" result-base q)
+      result-base)))
 
 (defn to-ovation-uri [web-uri base-uri]
   "Converts a web URI with the given server base to an ovation:// URI"
-  (let [web-urly (url-like web-uri)
-        base-urly (url-like (normalize-url base-uri))
-        part (.relativize (-> base-urly (.toURL) (.toURI)) (-> web-urly (.toURL) (.toURI)))]
+  (let [[web-base q] (split-query web-uri)
+        web-urly (urly/url-like web-base)
+        base-urly (urly/url-like (urly/normalize-url base-uri))
+        part (.relativize (-> base-urly (.toURL) (.toURI)) (-> web-urly (.toURL) (.toURI)))
+        result-base (urly/normalize-url (format "ovation://%s" part))]
 
-    (normalize-url (format "ovation://%s" part))))
+    (if q
+      (format "%s?%s" result-base q)
+      result-base)))
