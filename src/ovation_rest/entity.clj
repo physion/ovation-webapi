@@ -16,14 +16,14 @@
   [uuid api_key]
   (into-map-array
     (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
+    )
   )
-)
 
 (defn get-entity
   "Gets a single entity by ID (uuid)"
   [id request]
   (auth-filter-middleware request (partial get-entity-helper id))
-)
+  )
 
 (defn get-entity-rel-helper
   "Helper to return the json array of the target of an entity relation by entity [UU]ID and relation name"
@@ -31,37 +31,37 @@
   (let [
          entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
          relation (-> entity (. getEntities rel))
-       ]
+         ]
 
     (into-map-array (seq relation))
+    )
   )
-)
 
 (defn get-entity-rel
   "Gets the target of an entity relation by entity ID and relation name for the given request"
   [id rel request]
   (auth-filter-middleware request (partial get-entity-rel-helper id rel))
-)
+  )
 
 (defn update-entity-helper [uuid request api_key]
   (let [
          body (unmunge-strings (get-body-from-request request) (host-from-request request))
          in_json (json-to-map body)
-       ]
+         ]
     (do
       (-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)) (.update in_json))
       (get-entity-helper uuid api_key)
+      )
     )
   )
-)
 
 (defn update-entity [id request]
   (auth-filter-middleware request (partial update-entity-helper id request))
-)
+  )
 
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m)
-)
+  )
 
 (defn create-entity-helper [request api_key]
   (let [
@@ -71,46 +71,37 @@
                     (.insertEntity
                       (-> json_map
                           (update-in ["links"] create-multimap)
+                          )
                       )
                     )
-                )
-       ]
+         ]
     (into-map-array (seq [entity]))
+    )
   )
-)
 
 (defn create-entity [request]
   (auth-filter-middleware request (partial create-entity-helper request))
-)
+  )
 
 (defn delete-entity-helper [uuid request api_key]
   (let [
          entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid uuid)))
          trash_resp (-> (ctx api_key) (. trash entity) (.get))
-       ]
+         ]
     (str "{\"success\": 1}")
+    )
   )
-)
 
 (defn delete-entity [id request]
   (auth-filter-middleware request (partial delete-entity-helper id request))
-)
-
-(defn index-resource-helper [resource api_key]
-  (let [
-         resources (case resource
-                     "project" (-> (ctx api_key) (.getProjects))
-                     "source" (-> (ctx api_key) (.getTopLevelSources))
-                     "protocol" (-> (ctx api_key) (.getProtocols))
-                   )
-         jsond_entities (into-map-array resources)]
-
-    (clojure.pprint/pprint jsond_entities)
-    jsond_entities
   )
-)
 
-(defn index-resource [resource request]
-  (auth-filter-middleware request (partial index-resource-helper resource))
-)
+(defn index-resource [resource api_key]
+  (let [resources (case resource
+                    "project" (-> (ctx api_key) (.getProjects))
+                    "source" (-> (ctx api_key) (.getTopLevelSources))
+                    "protocol" (-> (ctx api_key) (.getProtocols))
+                    )]
+
+    (into-map-array resources)))
 

@@ -61,9 +61,7 @@
                (str (handler-fn (get params "api-key")))
                (str "Please log in to access resource"))]
 
-    {:status       status
-     :body         (munge-strings body (host-from-request request)) ; TODO return map here. defapi automatically adds json handling
-     :content-type "application/json"}))
+    body))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
