@@ -4,12 +4,13 @@
   (:require [clojure.pprint]
             [ovation-rest.context :as context]
             [ovation-rest.interop :as interop]
+            [ovation-rest.paths :as paths]
+            [clojure.string :refer [join]]
             [clojurewerkz.urly.core :as urly]
-            )
-  )
+            [pathetic.core :refer [url-normalize up-dir]]))
 
-(defn ctx [api_key]
-  (context/cached-context api_key))
+(defn ctx [api-key]
+  (context/cached-context api-key))
 
 (defn get-body-from-request [request]
   (slurp (:body request)))
@@ -22,7 +23,6 @@
   (let [entity_urly (urly/url-like entity_uri)
         q (urly/query-of entity_uri)
         result_base (urly/resolve base_uri (clojure.string/join "/" [(urly/host-of entity_urly) (urly/path-of entity_urly)]))]
-;        yo (clojure.pprint/pprint result_base)]
 
     (if q
       (format "%s?%s" result_base q)
@@ -41,21 +41,23 @@
       result_base)))
 
 (defn host-from-request [request]
-  (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
-        host   (clojure.string/join "" [(get (get request :headers) "host" "/")])]
-    (clojure.string/join "" [scheme host "/"])))
+   (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
+         host (get (get request :headers) "host")]
+     (clojure.string/join "" [scheme host "/"])))
 
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
   [entity]
   (interop/clojurify (.toMap entity)))
 
-(defn entity-uri [dto]
+(defn entity-uri
   "Constructs an ovation://entities/... URI string from a clojure dto"
+  [dto]
   (format "ovation://entities/%s" (:_id dto)))
 
-(defn augment-entity-dto [dto base_uri]
+(defn augment-entity-dto
   "Augment an entity dto with the links.self reference"
+  [dto base_uri]
   (let [add_self         (merge-with conj dto {:links {:self #{(entity-uri dto)}}})
         new_links_map    (into {} (map (fn [x] [(first x) (set (map (fn [y] (to-web-uri base_uri y)) (second x)))]) (add_self :links)))]
     (assoc-in add_self [:links] new_links_map)))
@@ -65,27 +67,11 @@
   [base_uri entity]
   (augment-entity-dto (entity-to-dto entity) base_uri))
 
-(defn into-seq [entity_seq base_uri]
+(defn into-seq
   "Converts a seq of entities into an array of Maps"
+  [entity_seq base_uri]
   (seq (into-array (map (partial convert-entity-to-map base_uri) entity_seq))))
 
-(defn munge-strings [s host]
-  (.replaceAll (new String s) "ovation://" host))           ;; TODO munge only primary URIs (no query parameters) in links, named_links, notes, properties
-
-(defn unmunge-strings [s host]
-  (clojure.pprint/pprint (.getClass s))
-  (.replaceAll (new String s) host "ovation://"))           ;; TODO unmunge only primary URIs (no query parameters) in links, named_links, notes, properties
-
-(defn auth-filter-middleware [request handler-fn]
-  (let [params (get request :query-params)
-        status (if-not (contains? params "api-key")
-                 (num 401)
-                 (num 200))
-        body (if (= 200 status)
-               (str (handler-fn (get params "api-key")))
-               (str "Please log in to access resource"))]
-
-    body))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
@@ -94,3 +80,8 @@
       (java.util.UUID. (.getLong buffer) (.getLong buffer)))
     (java.util.UUID/fromString s)))
 
+
+(defn host-context
+  [request]
+  (let [host-url (host-from-request request)]
+    (url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))
