@@ -60,34 +60,34 @@
 
                    (context "/api" []
                             (context "/v1" []
-                                     (context "/views" []
-                                              (GET* "*" request
-                                                    :return [Entity]
-                                                    :query-params [api-key :- String]
-                                                    :summary "Returns entities in view"
-                                                    (let [host (util/host-from-request request)]
-                                                      (ok (entity/get-view api-key
-                                                                           (url-normalize (join "/" [host (:uri request)]))
-                                                                           (util/host-context request))))))
+                                     (GET* "/views/*" request ; We don't use a context because we want /views in the URL
+                                           :return [Entity]
+                                           :query-params [api-key :- String]
+                                           :summary "Returns entities in view"
+                                           (let [host (util/host-from-request request)]
+                                             (ok (entity/get-view api-key
+                                                                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
+                                                                  (util/host-context request)))))
+
                                      (context "/entities" []
                                               (POST* "/" request
                                                      :return [Entity]
                                                      :query-params [api-key :- String]
                                                      :body [new-dto NewEntity]
                                                      :summary "Creates and returns an entity"
-                                                     (ok (entity/create-entity api-key new-dto (util/host-from-request request))))
+                                                     (ok (entity/create-entity api-key new-dto (util/host-context request))))
                                               (context "/:id" [id]
                                                        (GET* "/" request
                                                              :return [Entity]
                                                              :query-params [api-key :- String]
                                                              :summary "Returns entity with :id"
-                                                             (ok (entity/get-entity api-key id (util/host-from-request request))))
+                                                             (ok (entity/get-entity api-key id (util/host-context request))))
                                                        (PUT* "/" request
                                                              :return [Entity]
                                                              :query-params [api-key :- String]
                                                              :body [dto Entity]
                                                              :summary "Updates and returns updated entity with :id"
-                                                             (ok (entity/update-entity api-key id dto (util/host-from-request request))))
+                                                             (ok (entity/update-entity api-key id dto (util/host-context request))))
                                                        (DELETE* "/" request
                                                                 :return Success
                                                                 :query-params [api-key :- String]

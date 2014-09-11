@@ -34,7 +34,7 @@
         web_urly (urly/url-like web_base)
         base_urly (urly/url-like (urly/normalize-url base_uri))
         part (.relativize (-> base_urly (.toURL) (.toURI)) (-> web_urly (.toURL) (.toURI)))
-        result_base (urly/normalize-url (format "ovation://%s" part))]
+        result_base  (format "ovation://%s" (str part))]
 
     (if q
       (format "%s?%s" result_base q)
@@ -85,4 +85,8 @@
   [request]
   (let [host-url (host-from-request request)]
     (url-normalize (paths/join [host-url (:context request)]))))
-    ;(url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))
+
+(defn ovation-query
+  [request]
+  (let [params (:query-params request)]
+    (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))

@@ -75,9 +75,8 @@
     (into-seq resources host-url)))
 
 (defn- get-view-results [ctx uri]
-  :unfinished)
+  (.getObjectsWithURI ctx (clojure.string/replace uri "\"" "%22")))
 
 (defn get-view [api-key full-url host-url]
-  (clojure.pprint/pprint [full-url host-url])
   (into-seq (get-view-results (ctx api-key) (to-ovation-uri full-url host-url)) host-url))
 
