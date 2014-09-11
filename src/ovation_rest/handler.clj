@@ -47,12 +47,12 @@
         {:formats [:application/json]}
 
         (swagger-ui)
-        (swagger-docs "/api/docs"
-                      :apiVersion "1.0.0"
-                      :title "ovation-web-api"
-                      :description "Ovation Web API"
-                      :contact "support@ovation.io"
-                      :termsOfServicdUrl "https://ovation.io/terms_of_service")
+        (swagger-docs
+          :apiVersion "1.0.0"
+          :title "ovation-web-api"
+          :description "Ovation Web API"
+          :contact "support@ovation.io"
+          :termsOfServicdUrl "https://ovation.io/terms_of_service")
 
         (swaggered "ovation-web-api"
                    :description "Ovation REST API"
@@ -68,8 +68,8 @@
                                                     (let [host (util/host-from-request request)]
                                                       (ok (entity/get-view api-key
                                                                            (url-normalize (join "/" [host (:uri request)]))
-                                                                           (url-normalize (join "/" [host (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))])))))))
-                                     (context "/entity" []
+                                                                           (util/host-context request))))))
+                                     (context "/entities" []
                                               (POST* "/" request
                                                      :return [Entity]
                                                      :query-params [api-key :- String]
@@ -97,13 +97,13 @@
                                               )
 
 
-                                     ;(context "/:resource" [resource]
-                                     ;         (GET* "/" request
-                                     ;               :return [Entity]
-                                     ;               :query-params [api-key :- String]
-                                     ;               :summary "Special endpoint for /project /protocol /source"
-                                     ;
-                                     ;               (ok (entity/index-resource api-key resource (util/host-from-request request)))))
+                                     (context "/:resource" [resource :- (s/Enum "projects" "sources" "protocols")]
+                                              (GET* "/" request
+                                                    :return [Entity]
+                                                    :query-params [api-key :- String]
+                                                    :summary "Special endpoint for /project /protocol /source"
+
+                                                    (ok (entity/index-resource api-key resource (util/host-context request)))))
                                      ))
 
                    (ANY* "*" [] (not-found "Unkonwn resource"))))

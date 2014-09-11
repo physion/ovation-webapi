@@ -1,8 +1,7 @@
 (ns ovation-rest.entity
   (:import (us.physion.ovation.domain URIs))
-  (:use ovation-rest.util)
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :as util]))
+            [ovation-rest.util :refer :all]))
 
 (defn- api-key
   "Extracts the API key from request query parameters"
@@ -68,9 +67,9 @@
 
 (defn index-resource [api-key resource host-url]
   (let [resources (case resource
-                    "project" (get-projects (ctx api-key))
-                    "source" (-> (ctx api-key) (.getTopLevelSources))
-                    "protocol" (-> (ctx api-key) (.getProtocols))
+                    "projects" (get-projects (ctx api-key))
+                    "sources" (-> (ctx api-key) (.getTopLevelSources))
+                    "protocols" (-> (ctx api-key) (.getProtocols))
                     )]
 
     (into-seq resources host-url)))
@@ -80,5 +79,5 @@
 
 (defn get-view [api-key full-url host-url]
   (clojure.pprint/pprint [full-url host-url])
-  (into-map-array (get-view-results (ctx api-key) (util/to-ovation-uri full-url host-url)) host-url))
+  (into-seq (get-view-results (ctx api-key) (to-ovation-uri full-url host-url)) host-url))
 
