@@ -51,41 +51,42 @@
                    head-ping
 
                    (context "/api" []
-                            (context "/entity" []
-                                     (POST* "/" request
-                                            :return EntityList
-                                            :query-params [api-key :- String]
-                                            :body [new-dto NewEntity]
-                                            :summary "Creates and returns an entity"
-                                            (ok (entity/create-entity api-key new-dto (util/host-from-request request))))
-                                     (context "/:id" [id]
+                            (context "/v1" []
+                                     (context "/entity" []
+                                              (POST* "/" request
+                                                     :return EntityList
+                                                     :query-params [api-key :- String]
+                                                     :body [new-dto NewEntity]
+                                                     :summary "Creates and returns an entity"
+                                                     (ok (entity/create-entity api-key new-dto (util/host-from-request request))))
+                                              (context "/:id" [id]
+                                                       (GET* "/" request
+                                                             :return EntityList
+                                                             :query-params [api-key :- String]
+                                                             :summary "Returns entity with :id"
+                                                             (ok (entity/get-entity api-key id (util/host-from-request request))))
+                                                       (PUT* "/" request
+                                                             :return EntityList
+                                                             :query-params [api-key :- String]
+                                                             :body [dto Entity]
+                                                             :summary "Updates and returns updated entity with :id"
+                                                             (ok (entity/update-entity api-key id dto (util/host-from-request request))))
+                                                       (DELETE* "/" request
+                                                                :return Success
+                                                                :query-params [api-key :- String]
+                                                                :summary "Deletes entity with :id"
+                                                                (ok (entity/delete-entity api-key id)))
+                                                       )
+                                              )
+
+
+                                     (context "/:resource" [resource]
                                               (GET* "/" request
                                                     :return EntityList
                                                     :query-params [api-key :- String]
-                                                    :summary "Returns entity with :id"
-                                                    (ok (entity/get-entity api-key id (util/host-from-request request))))
-                                              (PUT* "/" request
-                                                    :return EntityList
-                                                    :query-params [api-key :- String]
-                                                    :body [dto Entity]
-                                                    :summary "Updates and returns updated entity with :id"
-                                                    (ok (entity/update-entity api-key id dto (util/host-from-request request))))
-                                              (DELETE* "/" request
-                                                       :return Success
-                                                       :query-params [api-key :- String]
-                                                       :summary "Deletes entity with :id"
-                                                       (ok (entity/delete-entity api-key id)))
-                                              )
-                                     )
-                            )
+                                                    :summary "Special endpoint for /project /protocol /source"
 
-                   (context "/:resource" [resource]
-                            (GET* "/" request
-                                  :return EntityList
-                                  :query-params [api-key :- String]
-                                  :summary "Special endpoint for /project /protocol /source"
-
-                                  (ok (entity/index-resource api-key resource (util/host-from-request request)))))
+                                                    (ok (entity/index-resource api-key resource (util/host-from-request request)))))))
 
                    (ANY* "*" [] (not-found "Illegal path"))
                    )
