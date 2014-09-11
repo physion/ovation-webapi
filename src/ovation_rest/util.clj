@@ -85,3 +85,8 @@
   [request]
   (let [host-url (host-from-request request)]
     (url-normalize (paths/join [host-url (:context request)]))))
+
+(defn ovation-query
+  [request]
+  (let [params (:query-params request)]
+    (join "&" (map (fn [k v] (format "%s=%v" (name k) (str v))) (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))))))
