@@ -14,4 +14,6 @@
                     (paths/split "abc/def/ghi") => ["abc" "def" "ghi"]))
        (facts "about path joining"
               (fact "joins a vector of paths"
-                    (paths/join ["abc" "def"]) => "abc/def")))
+                    (paths/join ["abc" "def"]) => "abc/def")
+              (fact "joins a vector of paths with trailing /"
+                    (paths/join ["abc" "def" ""]) => "abc/def/")))

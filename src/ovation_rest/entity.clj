@@ -22,7 +22,7 @@
 (defn get-entity
   "Gets a single entity by ID (uuid)"
   [api-key uuid host-url]
-  (into-map-array
+  (into-seq
     (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])
     host-url))
 
@@ -34,7 +34,7 @@
 ;         relation (-> entity (. getEntities rel))
 ;         ]
 ;
-;    (into-map-array (seq relation))
+;    (into-seq (seq relation))
 ;    )
 ;  )
 
@@ -48,13 +48,13 @@
                    (.insertEntity
                      (stringify-keys (update-in new-dto [:links] create-multimap))))]
 
-    (into-map-array (seq [entity]) host-url)))
+    (into-seq (seq [entity]) host-url)))
 
 
 (defn update-entity [api-key id dto host-url]
   (let [entity     (-> (ctx api-key) (.getObjectWithUUID (parse-uuid id)))]
     (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
-    (into-map-array [entity] host-url)
+    (into-seq [entity] host-url)
     ))
 
 (defn delete-entity [api_key id]
@@ -73,7 +73,7 @@
                     "protocol" (-> (ctx api-key) (.getProtocols))
                     )]
 
-    (into-map-array resources host-url)))
+    (into-seq resources host-url)))
 
 (defn- get-view-results [ctx uri]
   :unfinished)

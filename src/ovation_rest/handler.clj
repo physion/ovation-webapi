@@ -44,6 +44,8 @@
         ;           :access-control-allow-methods [:get :put :post :delete :options]
         ;           :access-control-allow-headers ["Content-Type" "Accept"])
 
+        {:formats [:application/json]}
+
         (swagger-ui)
         (swagger-docs "/api/docs"
                       :apiVersion "1.0.0"
