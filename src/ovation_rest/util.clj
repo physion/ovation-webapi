@@ -23,7 +23,6 @@
   (let [entity_urly (urly/url-like entity_uri)
         q (urly/query-of entity_uri)
         result_base (urly/resolve base_uri (clojure.string/join "/" [(urly/host-of entity_urly) (urly/path-of entity_urly)]))]
-;        yo (clojure.pprint/pprint result_base)]
 
     (if q
       (format "%s?%s" result_base q)
@@ -85,4 +84,4 @@
 (defn host-context
   [request]
   (let [host-url (host-from-request request)]
-    (url-normalize (paths/join [host-url (up-dir (vec (conj (paths/split (:context request)) "")))]))))
+    (url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))

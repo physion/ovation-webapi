@@ -97,11 +97,11 @@
                                               )
 
 
-                                     (context "/:resource" [resource :- (s/Enum "projects" "sources" "protocols")]
+                                     (context "/:resource" [resource]
                                               (GET* "/" request
                                                     :return [Entity]
                                                     :query-params [api-key :- String]
-                                                    :summary "Special endpoint for /project /protocol /source"
+                                                    :summary "Special endpoint for /projects, /protocols, /sources"
 
                                                     (ok (entity/index-resource api-key resource (util/host-context request)))))
                                      ))
