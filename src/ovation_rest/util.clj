@@ -34,7 +34,7 @@
         web_urly (urly/url-like web_base)
         base_urly (urly/url-like (urly/normalize-url base_uri))
         part (.relativize (-> base_urly (.toURL) (.toURI)) (-> web_urly (.toURL) (.toURI)))
-        result_base (urly/normalize-url (format "ovation://%s" part))]
+        result_base  (format "ovation://%s" (str part))]
 
     (if q
       (format "%s?%s" result_base q)
@@ -70,6 +70,7 @@
 (defn into-seq
   "Converts a seq of entities into an array of Maps"
   [entity_seq base_uri]
+  (clojure.pprint/pprint [entity_seq base_uri])
   (seq (into-array (map (partial convert-entity-to-map base_uri) entity_seq))))
 
 
@@ -89,4 +90,4 @@
 (defn ovation-query
   [request]
   (let [params (:query-params request)]
-    (join "&" (map (fn [k v] (format "%s=%v" (name k) (str v))) (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))))))
+    (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))

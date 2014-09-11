@@ -60,16 +60,15 @@
 
                    (context "/api" []
                             (context "/v1" []
-                                     (context "/views" []
-                                              (GET* "*" request
-                                                    :return [Entity]
-                                                    :query-params [api-key :- String]
-                                                    :summary "Returns entities in view"
-                                                    (let [host (util/host-from-request request)
-                                                          yo (clojure.pprint/pprint request)]
-                                                      (ok (entity/get-view api-key
-                                                                           (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
-                                                                           (util/host-context request))))))
+                                     (GET* "/views/*" request ; We don't use a context because we want /views in the URL
+                                           :return [Entity]
+                                           :query-params [api-key :- String]
+                                           :summary "Returns entities in view"
+                                           (let [host (util/host-from-request request)]
+                                             (ok (entity/get-view api-key
+                                                                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
+                                                                  (util/host-context request)))))
+
                                      (context "/entities" []
                                               (POST* "/" request
                                                      :return [Entity]
