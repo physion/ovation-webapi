@@ -10,5 +10,5 @@
 
 (defn join
   "Joins path components"
-  [path-vec]
-  (clojure.string/join separator path-vec))
+  [path-seq]
+  (clojure.string/join separator path-seq))

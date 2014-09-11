@@ -82,11 +82,23 @@
       (java.util.UUID. (.getLong buffer) (.getLong buffer)))
     (java.util.UUID/fromString s)))
 
+(defn- request-context
+  [request]
+  (:context request))
 
 (defn host-context
-  [request]
-  (let [host-url (host-from-request request)]
-    (url-normalize (paths/join [host-url (:context request)]))))
+  "Calculates the host context for a given request. The host context is the host (e.g. https://server.com/)
+  plus the context path (e.g. /api/v1). If :remove-levels is provided, the given number of levels are removed
+  from the context path. For example, :remove-levels 1 would give https://server.com/api instead of
+  https://server.com/api/v1"
+
+  [request & {:keys [remove-levels] :or {:remove-levels 0}}]
+  (let [host-url (host-from-request request)
+        context-vec (paths/split (request-context request))
+        truncated-vec (if remove-levels (vec (take (- (alength (into-array context-vec)) remove-levels) context-vec))
+                                        context-vec)]
+    (url-normalize (paths/join [host-url (paths/join truncated-vec)]))))
+
 
 (defn ovation-query
   [request]

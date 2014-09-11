@@ -30,3 +30,16 @@
              (util/to-ovation-uri "https://server.com:123/api/views/123-abc?q=ovation://entities/456-def" "https://server.com:123/api/") => "ovation://views/123-abc?q=ovation://entities/456-def")
        (fact "does not replace query array parameters"
              (util/to-ovation-uri '"https://server.com:123/api/views/123-abc?q=[%22ovation://entities/456-def%22]" "https://server.com:123/api/") => "ovation://views/123-abc?q=[%22ovation://entities/456-def%22]"))
+
+
+(facts "about host context"
+       (fact "gives whole context path"
+             (util/host-context ...request...) => "https://server.com/api/v1"
+             (provided
+               (util/host-from-request ...request...) => "https://server.com/"
+               (#'ovation-rest.util/request-context ...request...) => "/api/v1/"))
+       (fact "optionally dir-ups context path"
+             (util/host-context ...request... :remove-levels 1) => "https://server.com/api"
+             (provided
+               (util/host-from-request ...request...) => "https://server.com/"
+               (#'ovation-rest.util/request-context ...request...) => "/api/v1/")))
