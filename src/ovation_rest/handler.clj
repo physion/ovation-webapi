@@ -49,12 +49,12 @@
         (swagger-ui)
         (swagger-docs
           :apiVersion "1.0.0"
-          :title "ovation-web-api"
+          :title "Ovation"
           :description "Ovation Web API"
           :contact "support@ovation.io"
           :termsOfServicdUrl "https://ovation.io/terms_of_service")
 
-        (swaggered "ovation-web-api"
+        (swaggered "v1"
                    :description "Ovation REST API"
                    head-ping
 
@@ -76,7 +76,7 @@
                                                      :query-params [api-key :- String]
                                                      :body [new-dto NewEntity]
                                                      :summary "Creates and returns an entity"
-                                                     (ok (entity/create-entity api-key new-dto (util/host-context request :remove-levels 1))))
+                                                     (ok (entity/create-entity api-key new-dto (util/host-context request))))
                                               (context "/:id" [id]
                                                        (GET* "/" request
                                                              :return [Entity]

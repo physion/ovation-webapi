@@ -51,7 +51,7 @@
 
 
 (defn update-entity [api-key id dto host-url]
-  (let [entity     (-> (ctx api-key) (.getObjectWithUUID (parse-uuid id)))]
+  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
     (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
     (into-seq [entity] host-url)
     ))
