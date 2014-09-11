@@ -41,11 +41,10 @@
       result_base)))
 
 (defn host-from-request [request]
-  (let [
-         scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
-         host (get (get request :headers) "host")
-         ]
-    (clojure.string/join "" [scheme host "/"])))
+;  (let [a (request :scheme)] a))
+   (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
+         host (get (get request :headers) "host")]
+     (clojure.string/join "" [scheme host "/"])))
 
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
@@ -67,7 +66,7 @@
   [base_uri entity]
   (augment-entity-dto (entity-to-dto entity) base_uri))
 
-(defn into-seq-array [entity_seq request]
+(defn into-seq [entity_seq request]
   "Converts a seq of entities into an array of Maps"
   (let [base_uri  (host-from-request request)
         seq_array (seq (into-array (map (partial convert-entity-to-map base_uri) entity_seq)))]
