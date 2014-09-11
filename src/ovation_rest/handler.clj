@@ -6,7 +6,10 @@
             [ring.swagger.schema :refer [field describe]]
             [ovation-rest.entity :as entity]
             [ovation-rest.util :as util]
-            [ring.swagger.json-schema-dirty]))
+            [ring.swagger.json-schema-dirty]
+            [clojure.string :refer [join]]
+            [pathetic.core :refer [url-normalize up-dir]]
+            [ovation-rest.paths :as paths]))
 
 ;;; --- Schema Definitions --- ;;;
 
@@ -14,7 +17,7 @@
 
 (s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
                      :_rev                         s/Str
-                     :_id                          s/Str
+                     :_id                          s/Str    ; could we use s/uuid here?
 
                      (s/optional-key :attributes)  {s/Keyword s/Str}
 
@@ -42,9 +45,12 @@
         ;           :access-control-allow-headers ["Content-Type" "Accept"])
 
         (swagger-ui)
-        (swagger-docs
-          :title "ovation-web-api"
-          :description "Ovation Web API")
+        (swagger-docs "/api/docs"
+                      :apiVersion "1.0.0"
+                      :title "ovation-web-api"
+                      :description "Ovation Web API"
+                      :contact "support@ovation.io"
+                      :termsOfServicdUrl "https://ovation.io/terms_of_service")
 
         (swaggered "ovation-web-api"
                    :description "Ovation REST API"
@@ -52,21 +58,30 @@
 
                    (context "/api" []
                             (context "/v1" []
+                                     (context "/views" []
+                                              (GET* "*" request
+                                                    :return [Entity]
+                                                    :query-params [api-key :- String]
+                                                    :summary "Returns entities in view"
+                                                    (let [host (util/host-from-request request)]
+                                                      (ok (entity/get-view api-key
+                                                                           (url-normalize (join "/" [host (:uri request)]))
+                                                                           (url-normalize (join "/" [host (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))])))))))
                                      (context "/entity" []
                                               (POST* "/" request
-                                                     :return EntityList
+                                                     :return [Entity]
                                                      :query-params [api-key :- String]
                                                      :body [new-dto NewEntity]
                                                      :summary "Creates and returns an entity"
                                                      (ok (entity/create-entity api-key new-dto (util/host-from-request request))))
                                               (context "/:id" [id]
                                                        (GET* "/" request
-                                                             :return EntityList
+                                                             :return [Entity]
                                                              :query-params [api-key :- String]
                                                              :summary "Returns entity with :id"
                                                              (ok (entity/get-entity api-key id (util/host-from-request request))))
                                                        (PUT* "/" request
-                                                             :return EntityList
+                                                             :return [Entity]
                                                              :query-params [api-key :- String]
                                                              :body [dto Entity]
                                                              :summary "Updates and returns updated entity with :id"
@@ -80,15 +95,14 @@
                                               )
 
 
-                                     (context "/:resource" [resource]
-                                              (GET* "/" request
-                                                    :return EntityList
-                                                    :query-params [api-key :- String]
-                                                    :summary "Special endpoint for /project /protocol /source"
+                                     ;(context "/:resource" [resource]
+                                     ;         (GET* "/" request
+                                     ;               :return [Entity]
+                                     ;               :query-params [api-key :- String]
+                                     ;               :summary "Special endpoint for /project /protocol /source"
+                                     ;
+                                     ;               (ok (entity/index-resource api-key resource (util/host-from-request request)))))
+                                     ))
 
-                                                    (ok (entity/index-resource api-key resource (util/host-from-request request)))))))
-
-                   (ANY* "*" [] (not-found "Illegal path"))
-                   )
-        )
+                   (ANY* "*" [] (not-found "Unkonwn resource"))))
 

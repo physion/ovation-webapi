@@ -8,12 +8,8 @@
             )
   )
 
-(defn ctx [api_key]
-  (context/cached-context api_key))
-
-(defn get-body-from-request [request]
-  (slurp (:body request)))
-
+(defn ctx [api-key]
+  (context/cached-context api-key))
 
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
@@ -45,23 +41,6 @@
          ]
     (clojure.string/join "" [scheme host "/"])))
 
-(defn munge-strings [s host]
-  (.replaceAll (new String s) "ovation://" host))           ;; TODO munge only primary URIs (no query parameters) in links, named_links, notes, properties
-
-(defn unmunge-strings [s host]
-  (clojure.pprint/pprint (.getClass s))
-  (.replaceAll (new String s) host "ovation://"))           ;; TODO unmunge only primary URIs (no query parameters) in links, named_links, notes, properties
-
-(defn auth-filter-middleware [request handler-fn]
-  (let [params (get request :query-params)
-        status (if-not (contains? params "api-key")
-                 (num 401)
-                 (num 200))
-        body (if (= 200 status)
-               (str (handler-fn (get params "api-key")))
-               (str "Please log in to access resource"))]
-
-    body))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))

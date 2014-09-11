@@ -21,7 +21,8 @@
                            [metosin/compojure-api "0.15.1-edn"]
                            [com.newrelic.agent.java/newrelic-agent "3.9.0"]
                            [com.google.guava/guava "13.0.1"]
-                           [clojurewerkz/urly "1.0.0"]]
+                           [clojurewerkz/urly "1.0.0"]
+                           [pathetic "0.5.1"]]
 
             :plugins [[lein-clojars "0.9.1"]
                       [lein-ring "0.8.10"]
