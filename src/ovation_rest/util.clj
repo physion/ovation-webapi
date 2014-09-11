@@ -84,4 +84,5 @@
 (defn host-context
   [request]
   (let [host-url (host-from-request request)]
-    (url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))
+    (url-normalize (paths/join [host-url (:context request)]))))
+    ;(url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))
