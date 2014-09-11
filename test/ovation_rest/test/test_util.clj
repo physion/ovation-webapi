@@ -13,13 +13,13 @@
 
 (facts "about entity link munging"
        (fact "replaces scheme and host"
-             (util/to-web-uri "ovation://entities/123-abc" "https://server.com/api/") => "https://server.com/api/entities/123-abc")
+             (util/to-web-uri "https://server.com/api/" "ovation://entities/123-abc") => "https://server.com/api/entities/123-abc")
        (fact "optionally replaces port"
-             (util/to-web-uri "ovation://entities/123-abc" "https://server.com:123/api/") => "https://server.com:123/api/entities/123-abc")
+             (util/to-web-uri "https://server.com:123/api/" "ovation://entities/123-abc") => "https://server.com:123/api/entities/123-abc")
        (fact "does not replace query parameters"
-             (util/to-web-uri "ovation://views/123-abc?q=ovation://entities/456-def" "https://server.com:123/api/") => "https://server.com:123/api/views/123-abc?q=ovation://entities/456-def")
+             (util/to-web-uri "https://server.com:123/api/" "ovation://views/123-abc?q=ovation://entities/456-def") => "https://server.com:123/api/views/123-abc?q=ovation://entities/456-def")
        (fact "does not munge array parameters"
-             (util/to-web-uri "ovation://views/123-abc?q=[%22ovation://entities/456-def%22]" "https://server.com:123/api/") => "https://server.com:123/api/views/123-abc?q=[%22ovation://entities/456-def%22]"))
+             (util/to-web-uri "https://server.com:123/api/" "ovation://views/123-abc?q=[%22ovation://entities/456-def%22]") => "https://server.com:123/api/views/123-abc?q=[%22ovation://entities/456-def%22]"))
 
 (facts "about entity link unmunging"
        (fact "replaces scheme and host"

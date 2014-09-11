@@ -18,8 +18,9 @@
 (defn- split-query [u]
   (clojure.string/split u #"\?" 2))
 
-(defn to-web-uri [base_uri entity_uri]
+(defn to-web-uri
   "Converts an ovation:// URI to a web (http[s]://) URI for the given server base URI"
+  [base_uri entity_uri]
   (let [entity_urly (urly/url-like entity_uri)
         q (urly/query-of entity_uri)
         result_base (urly/resolve base_uri (clojure.string/join "/" [(urly/host-of entity_urly) (urly/path-of entity_urly)]))]
@@ -28,8 +29,9 @@
       (format "%s?%s" result_base q)
       result_base)))
 
-(defn to-ovation-uri [web_uri base_uri]
+(defn to-ovation-uri
   "Converts a web URI with the given server base to an ovation:// URI"
+  [web_uri base_uri]
   (let [[web_base q] (split-query web_uri)
         web_urly (urly/url-like web_base)
         base_urly (urly/url-like (urly/normalize-url base_uri))
