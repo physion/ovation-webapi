@@ -14,7 +14,7 @@
 (defn get-entity-helper
   "Helper to return the json array for a single entity after retrieving from the database"
   [uuid api_key]
-  (into-map-array
+  (into-seq-array
     (seq [(-> (ctx api_key) (.getObjectWithUuid (parse-uuid uuid)))])
     )
   )
@@ -33,7 +33,7 @@
          relation (-> entity (. getEntities rel))
          ]
 
-    (into-map-array (seq relation))
+    (into-seq-array (seq relation))
     )
   )
 
@@ -75,7 +75,7 @@
                       )
                     )
          ]
-    (into-map-array (seq [entity]))
+    (into-seq-array (seq [entity]))
     )
   )
 
@@ -96,12 +96,13 @@
   (auth-filter-middleware request (partial delete-entity-helper id request))
   )
 
-(defn index-resource [resource api_key]
-  (let [resources (case resource
+(defn index-resource [resource request api_key]
+  (let [
+        resources (case resource
                     "project" (-> (ctx api_key) (.getProjects))
                     "source" (-> (ctx api_key) (.getTopLevelSources))
                     "protocol" (-> (ctx api_key) (.getProtocols))
                     )]
 
-    (into-map-array resources)))
+    (seq (into-seq-array resources request))))
 

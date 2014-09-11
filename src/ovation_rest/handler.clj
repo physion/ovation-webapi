@@ -39,6 +39,8 @@
         ;           :access-control-allow-methods [:get :put :post :delete :options]
         ;           :access-control-allow-headers ["Content-Type" "Accept"])
 
+        {:formats [:application/json]}
+
         (swagger-ui)
         (swagger-docs
           :title "ovation-web-api"
@@ -81,7 +83,7 @@
                                   :query-params [api-key :- String]
                                   :summary "Special endpoint for /project /protocol /source"
 
-                                  (ok (entity/index-resource resource api-key))))
+                                  (ok (entity/index-resource resource request api-key))))
 
                    (ANY* "*" [] (not-found "Illegal path"))
                    )
