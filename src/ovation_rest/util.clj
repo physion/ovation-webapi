@@ -67,8 +67,9 @@
   [base_uri entity]
   (augment-entity-dto (entity-to-dto entity) base_uri))
 
-(defn into-seq [entity_seq base_uri]
+(defn into-seq
   "Converts a seq of entities into an array of Maps"
+  [entity_seq base_uri]
   (seq (into-array (map (partial convert-entity-to-map base_uri) entity_seq))))
 
 
@@ -83,4 +84,4 @@
 (defn host-context
   [request]
   (let [host-url (host-from-request request)]
-    (url-normalize (paths/join [host-url (paths/join (up-dir (vec (conj (paths/split (:context request)) ""))))]))))
+    (url-normalize (paths/join [host-url (:context request)]))))
