@@ -10,5 +10,8 @@
 
 (defn join
   "Joins path components"
-  [path-seq]
-  (clojure.string/join separator path-seq))
+  [path-seq & {:keys [trailing-separator] :or {:trailing-separator false}}]
+  (let [joined-path (clojure.string/join separator path-seq)]
+    (if trailing-separator
+      (format "%s/" joined-path)
+      joined-path)))

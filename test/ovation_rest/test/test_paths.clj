@@ -16,4 +16,6 @@
               (fact "joins a vector of paths"
                     (paths/join ["abc" "def"]) => "abc/def")
               (fact "joins a vector of paths with trailing /"
-                    (paths/join ["abc" "def" ""]) => "abc/def/")))
+                    (paths/join ["abc" "def" ""]) => "abc/def/")
+              (fact "joins a vector of paths with a trailing / using calling option"
+                    (paths/join ["abc" "def"] :trailing-separator true) => "abc/def/")))
