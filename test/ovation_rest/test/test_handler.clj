@@ -8,7 +8,8 @@
              (let [response (handler/app (request :head "/index.html"))]
                   (:status response) => 200)))
 
-(facts "about invalid routes"
-       (fact "returns 404 for invalid path"
-             (let [response (handler/app (request :get "/invalid/path?api-key=123"))]
-                  (:status response) => 404)))
+;(facts "about invalid routes"
+;       (fact "returns 404 for invalid path"
+;             (let [response (handler/app (request :get "/invalid/path?api-key=123"))]
+;                  (:status response) => 404))
+       )
