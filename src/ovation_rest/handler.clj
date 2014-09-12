@@ -46,6 +46,8 @@
 
         {:formats [:application/json]}
 
+        head-ping
+
         (swagger-ui)
         (swagger-docs
           :apiVersion "1.0.0"
@@ -54,22 +56,21 @@
           :contact "support@ovation.io"
           :termsOfServicdUrl "https://ovation.io/terms_of_service")
 
-        (swaggered "v1"
-                   :description "Ovation REST API"
-                   head-ping
+        (swaggered "top-level"
+                   (context "/api" []
+                            (context "/v1" []
+                                     (context "/:resource" [resource]
+                                              (GET* "/" request
+                                                    :return [Entity]
+                                                    :query-params [api-key :- String]
+                                                    :summary "Special endpoint for /projects, /protocols, /sources"
+
+                                                    (ok (entity/index-resource api-key resource (util/host-context request))))))))
+
+        (swaggered "entities"
 
                    (context "/api" []
                             (context "/v1" []
-                                     (context "/views" []
-                                              (GET* "/*" request
-                                                    :return [Entity]
-                                                    :query-params [api-key :- String]
-                                                    :summary "Returns entities in view"
-                                                    (let [host (util/host-from-request request)]
-                                                      (ok (entity/get-view api-key
-                                                                           (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
-                                                                           (util/host-context request :remove-levels 1))))))
-
                                      (context "/entities" []
                                               (POST* "/" request
                                                      :return [Entity]
@@ -95,17 +96,20 @@
                                                                 :summary "Deletes entity with :id"
                                                                 (ok (entity/delete-entity api-key id)))
                                                        )
-                                              )
+                                              ))))
 
-
-                                     (context "/:resource" [resource]
-                                              (GET* "/" request
+        (swaggered "views"
+                   (context "/api" []
+                            (context "/v1" []
+                                     (context "/views" []
+                                              (GET* "/*" request
                                                     :return [Entity]
                                                     :query-params [api-key :- String]
-                                                    :summary "Special endpoint for /projects, /protocols, /sources"
+                                                    :summary "Returns entities in view"
+                                                    (let [host (util/host-from-request request)]
+                                                      (ok (entity/get-view api-key
+                                                                           (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
+                                                                           (util/host-context request :remove-levels 1))))))))))
 
-                                                    (ok (entity/index-resource api-key resource (util/host-context request)))))
-                                     ))
-
-                   (ANY* "*" [] (not-found "Unkonwn resource"))))
+        ; (ANY* "*" [] (not-found "Unkonwn resource")))
 
