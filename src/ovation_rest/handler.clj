@@ -35,9 +35,6 @@
 
 ;;; --- Routes --- ;;;
 
-(defroutes* head-ping
-            (HEAD* "/" [] ""))
-
 (defapi app
 
         ;(wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
@@ -46,7 +43,6 @@
 
         {:formats [:application/json]}
 
-        head-ping
 
         (swagger-ui)
         (swagger-docs
@@ -110,6 +106,4 @@
                                                       (ok (entity/get-view api-key
                                                                            (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
                                                                            (util/host-context request :remove-levels 1))))))))))
-
-        ; (ANY* "*" [] (not-found "Unkonwn resource")))
 
