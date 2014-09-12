@@ -59,7 +59,8 @@
                                               (GET* "/" request
                                                     :return [Entity]
                                                     :query-params [api-key :- String]
-                                                    :summary "Special endpoint for /projects, /protocols, /sources"
+                                                    :path-params [resource :- (s/enum "projects" "sources" "protocols")]
+                                                    :summary "Get Projects, Protocols and Top-level Sources"
 
                                                     (ok (entity/index-resource api-key resource (util/host-context request))))))))
 
@@ -101,7 +102,7 @@
                                               (GET* "/*" request
                                                     :return [Entity]
                                                     :query-params [api-key :- String]
-                                                    :summary "Returns entities in view"
+                                                    :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
                                                     (let [host (util/host-from-request request)]
                                                       (ok (entity/get-view api-key
                                                                            (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
