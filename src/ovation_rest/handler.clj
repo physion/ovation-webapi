@@ -1,15 +1,16 @@
 (ns ovation-rest.handler
-  (:require [ring.util.http-response :refer :all]
+  (:require [clojure.string :refer [join]]
+            [ring.util.http-response :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
+            [ring.swagger.schema :refer [field describe]]
+            [ring.swagger.json-schema-dirty]
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
-            [ring.swagger.schema :refer [field describe]]
+            [pathetic.core :refer [url-normalize up-dir]]
+            [ovation-rest.paths :as paths]
             [ovation-rest.entity :as entity]
             [ovation-rest.util :as util]
-            [ring.swagger.json-schema-dirty]
-            [clojure.string :refer [join]]
-            [pathetic.core :refer [url-normalize up-dir]]
-            [ovation-rest.paths :as paths]))
+            ))
 
 ;;; --- Schema Definitions --- ;;;
 
@@ -35,10 +36,17 @@
 
 ;;; --- Routes --- ;;;
 
+(defn ov-wrap-cors [handler]
+  (wrap-cors handler
+             :access-control-allow-origin #".+" ; FIXME - accept only what we want here
+             :access-control-allow-methods [:get :put :post :delete :options]
+             :access-control-allow-headers ["Content-Type" "Accept"]))
 (defapi app
 
-        ;(wrap-cors :access-control-allow-origin #".+"         ; FIXME - accept only what we want here
-        ;           :access-control-allow-methods [:get :put :post :delete :options]
+        (middlewares [ov-wrap-cors])
+
+        ;(wrap-cors :access-control-allow-origin #".+"
+        ;           :access-control-allow-methods [:get :put :post :delete :options])
         ;           :access-control-allow-headers ["Content-Type" "Accept"])
 
         {:formats [:application/json]}
@@ -65,7 +73,6 @@
                                                     (ok (entity/index-resource api-key resource (util/host-context request))))))))
 
         (swaggered "entities"
-
                    (context "/api" []
                             (context "/v1" []
                                      (context "/entities" []
