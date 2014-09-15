@@ -1,7 +1,7 @@
 (ns ovation-rest.handler
   (:require [clojure.string :refer [join]]
             [ring.util.http-response :refer :all]
-            [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.cors]
             [ring.swagger.schema :refer [field describe]]
             [ring.swagger.json-schema-dirty]
             [compojure.api.sweet :refer :all]
@@ -36,18 +36,14 @@
 
 ;;; --- Routes --- ;;;
 
-(defn ov-wrap-cors [handler]
-  (wrap-cors handler
+(defn wrap-cors [handler]
+  (ring.middleware.cors/wrap-cors handler
              :access-control-allow-origin #".+" ; FIXME - accept only what we want here
              :access-control-allow-methods [:get :put :post :delete :options]
              :access-control-allow-headers ["Content-Type" "Accept"]))
 (defapi app
 
-        (middlewares [ov-wrap-cors])
-
-        ;(wrap-cors :access-control-allow-origin #".+"
-        ;           :access-control-allow-methods [:get :put :post :delete :options])
-        ;           :access-control-allow-headers ["Content-Type" "Accept"])
+        (middlewares [wrap-cors])
 
         {:formats [:application/json]}
 
