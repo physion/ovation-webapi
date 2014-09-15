@@ -39,9 +39,8 @@
 
         (middlewares [(wrap-cors
                         :access-control-allow-origin #".+"  ; FIXME - accept only what we want here
-                        :access-control-allow-methods [:get :put :post :delete :options])])
-        ;:access-control-allow-headers ["Content-Type" "Accept"]))
-
+                        :access-control-allow-methods [:get :put :post :delete :options]
+                        :access-control-allow-headers ["Content-Type" "Accept"])])
 
         {:formats [:application/json]}
 
