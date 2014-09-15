@@ -6,7 +6,7 @@
             [ring.swagger.json-schema-dirty]
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
-            [pathetic.core :refer [url-normalize up-dir]]
+            [pathetic.core :refer [url-normalize]]
             [ovation-rest.paths :as paths]
             [ovation-rest.entity :as entity]
             [ovation-rest.util :as util]
@@ -35,10 +35,10 @@
 
 ;;; --- Middleware --- ;;;
 (defn wrap-cors [handler]
-  (ring.middleware.cors/wrap-cors handler
-                                  :access-control-allow-origin #".+" ; FIXME - accept only what we want here
-                                  :access-control-allow-methods [:get :put :post :delete :options]
-                                  :access-control-allow-headers ["Content-Type" "Accept"]))
+  (ring.middleware.cors/wrap-cors handler #".*")) ; FIXME - accept only what we want here
+                                  ;:access-control-allow-origin #".+" ; FIXME - accept only what we want here
+                                  ;:access-control-allow-methods [:get :put :post :delete :options]
+                                  ;:access-control-allow-headers ["Content-Type" "Accept"]))
 
 
 ;;; --- Routes --- ;;;
