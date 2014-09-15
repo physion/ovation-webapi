@@ -37,6 +37,8 @@
 ;;; --- Routes --- ;;;
 (defapi app
 
+        {:formats [:application/json]}
+
         (middlewares [(wrap-cors
                         :access-control-allow-origin #".+"  ; FIXME - accept only what we want here
                         :access-control-allow-methods [:get :put :post :delete :options]
@@ -100,7 +102,5 @@
                                                                  (let [host (util/host-from-request request)]
                                                                    (ok (entity/get-view api-key
                                                                                         (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
-                                                                                        (util/host-context request :remove-levels 1))))))))))
-
-        {:formats [:application/json]})
+                                                                                        (util/host-context request :remove-levels 1)))))))))))
 
