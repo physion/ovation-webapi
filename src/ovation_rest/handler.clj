@@ -91,9 +91,7 @@
                                                                 :return Success
                                                                 :query-params [api-key :- String]
                                                                 :summary "Deletes entity with :id"
-                                                                (ok (entity/delete-entity api-key id)))
-                                                       )
-                                              ))))
+                                                                (ok (entity/delete-entity api-key id))))))))
 
         (swaggered "views"
                    (context "/api" []
