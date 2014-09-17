@@ -100,7 +100,5 @@
                                                                  (let [host (util/host-from-request request)]
                                                                    (ok (entity/get-view api-key
                                                                                         (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
-                                                                                        (util/host-context request :remove-levels 1))))))))))
-
-        {:formats [:application/json]})
+                                                                                        (util/host-context request :remove-levels 1)))))))))))
 
