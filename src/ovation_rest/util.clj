@@ -18,6 +18,48 @@
 (defn- split-query [u]
   (clojure.string/split u #"\?" 2))
 
+
+(defn entity-to-dto
+  "Clojure wrapper for entity.toMap()"
+  [entity]
+  (interop/clojurify (.toMap entity)))
+
+(defn single-link
+  "Return a single link from an id and relationship name"
+  [id, rel]
+  (if (= (name rel) "self")
+    (clojure.string/join ["/entities/" id])
+    (clojure.string/join ["/entities/" id "/links/" (name rel)])))
+
+(defn links-to-rel-path
+  "Augment an entity dto with the links.self reference"
+  [dto]
+  (let [add_self         (merge-with conj dto {:links {:self ""}})
+        new_links_map    (into {} (map (fn [x] [(first x) (single-link (dto :_id) (first x))]) (add_self :links)))]
+    (assoc-in add_self [:links] new_links_map)))
+
+(defn convert-entity-to-map
+  "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
+  [entity]
+  (links-to-rel-path (entity-to-dto entity)))
+
+(defn into-seq
+  "Converts a seq of entities into an array of Maps"
+  [entity_seq]
+  (seq (into-array (map (partial convert-entity-to-map) entity_seq))))
+
+
+(defn parse-uuid [s]
+  (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
+    (let [buffer (java.nio.ByteBuffer/wrap
+                   (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))
+
+(defn- request-context
+  [request]
+  (:context request))
+
 (defn to-web-uri
   "Converts an ovation:// URI to a web (http[s]://) URI for the given server base URI"
   [base_uri entity_uri]
@@ -46,45 +88,6 @@
    (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
          host (get (get request :headers) "host")]
      (clojure.string/join "" [scheme host "/"])))
-
-(defn entity-to-dto
-  "Clojure wrapper for entity.toMap()"
-  [entity]
-  (interop/clojurify (.toMap entity)))
-
-(defn entity-uri
-  "Constructs an ovation://entities/... URI string from a clojure dto"
-  [dto]
-  (format "ovation://entities/%s" (:_id dto)))
-
-(defn augment-entity-dto
-  "Augment an entity dto with the links.self reference"
-  [dto base_uri]
-  (let [add_self         (merge-with conj dto {:links {:self #{(entity-uri dto)}}})
-        new_links_map    (into {} (map (fn [x] [(first x) (set (map (fn [y] (to-web-uri base_uri y)) (second x)))]) (add_self :links)))]
-    (assoc-in add_self [:links] new_links_map)))
-
-(defn convert-entity-to-map
-  "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
-  [base_uri entity]
-  (augment-entity-dto (entity-to-dto entity) base_uri))
-
-(defn into-seq
-  "Converts a seq of entities into an array of Maps"
-  [entity_seq base_uri]
-  (seq (into-array (map (partial convert-entity-to-map base_uri) entity_seq))))
-
-
-(defn parse-uuid [s]
-  (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
-    (let [buffer (java.nio.ByteBuffer/wrap
-                   (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
-    (java.util.UUID/fromString s)))
-
-(defn- request-context
-  [request]
-  (:context request))
 
 (defn host-context
   "Calculates the host context for a given request. The host context is the host (e.g. https://server.com/)

@@ -22,8 +22,7 @@
   "Gets a single entity by ID (uuid)"
   [api-key uuid host-url]
   (into-seq
-    (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])
-    host-url))
+    (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])))
 
 ;(defn get-entity-rel
 ;  "Helper to return the json array of the target of an entity relation by entity [UU]ID and relation name"
@@ -41,20 +40,20 @@
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
 
-(defn create-entity [api-key new-dto host-url]
+(defn create-entity [api-key new-dto]
   "Creates a new Entity from a DTO map"
   (let [entity (-> (ctx api-key)
                    (.insertEntity
                      (stringify-keys (update-in new-dto [:links] create-multimap))))]
 
-    (into-seq (seq [entity]) host-url)))
+    (into-seq (seq [entity]))))
 
 
-(defn update-entity [api-key id dto host-url]
-  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
-    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
-    (into-seq [entity] host-url)
-    ))
+;(defn update-entity [api-key id dto host-url]
+;  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
+;    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
+;    (into-seq [entity] host-url)
+;    ))
 
 (defn delete-entity [api_key id]
   (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid id)))
@@ -65,14 +64,14 @@
 (defn- ^{:testable true} get-projects [ctx]
   (.getProjects ctx))
 
-(defn index-resource [api-key resource host-url]
+(defn index-resource [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
                     "sources" (-> (ctx api-key) (.getTopLevelSources))
                     "protocols" (-> (ctx api-key) (.getProtocols))
                     )]
 
-    (into-seq resources host-url)))
+    (into-seq resources)))
 
 (defn- get-view-results [ctx uri]
   (.getObjectsWithURI ctx (clojure.string/replace uri "\"" "%22")))
