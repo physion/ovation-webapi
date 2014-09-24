@@ -16,6 +16,6 @@ To start a web server for the application, run:
 
 ## License
 
-[GNU Affero General Public License](http://www.gnu.org/licenses/agpl-3.0.html)
+[Eclipse Public License](https://www.eclipse.org/legal/epl-v10.html)
 
 Copyright © 2014 Physion LLC
