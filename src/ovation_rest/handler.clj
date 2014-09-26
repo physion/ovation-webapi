@@ -19,16 +19,13 @@
 (s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
                      :_rev                         s/Str
                      :_id                          s/Str    ; could we use s/uuid here?
-
-                     (s/optional-key :attributes)  {s/Keyword s/Str}
-
                      :links                        {s/Keyword s/Str}
+                     :attributes                   {s/Keyword s/Str}
                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
-
                      (s/optional-key :annotations) {s/Keyword {s/Keyword {s/Keyword #{{s/Keyword s/Str}}}}}
                      })
 
-(s/defschema NewEntity (dissoc Entity :_id :_rev))
+(s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links) (s/optional-key :links) {s/Keyword [s/Str]}))
 
 
 (s/defschema EntityList [Entity])
@@ -47,7 +44,7 @@
  :title "Ovation"
  :description "Ovation Web API"
  :contact "support@ovation.io"
- :termsOfServicdUrl "https://ovation.io/terms_of_service")
+ :termsOfServiceUrl "https://ovation.io/terms_of_service")
 
 (swaggered "top-level"
           (context "/api" []
@@ -77,17 +74,23 @@
                                                     :query-params [api-key :- String]
                                                     :summary "Returns entity with :id"
                                                     (ok (entity/get-entity api-key id)))
-;                                                                    (PUT* "/" request
-;                                                                          :return [Entity]
-;                                                                          :query-params [api-key :- String]
-;                                                                          :body [dto Entity]
-;                                                                          :summary "Updates and returns updated entity with :id"
-;                                                                          (ok (entity/update-entity api-key id dto (util/host-context request :remove-levels 1))))
+;                                              (PUT* "/" request
+;                                                    :return [Entity]
+;                                                    :query-params [api-key :- String]
+;                                                    :body [dto Entity]
+;                                                    :summary "Updates and returns updated entity with :id"
+;                                                    (ok (entity/update-entity api-key id dto (util/host-context request :remove-levels 1))))
                                               (DELETE* "/" request
                                                        :return Success
                                                        :query-params [api-key :- String]
                                                        :summary "Deletes entity with :id"
-                                                       (ok (entity/delete-entity api-key id))))))))
+                                                       (ok (entity/delete-entity api-key id)))
+                                       (context "/links/:link" [link]
+                                          (GET* "/" request
+                                            :return [Entity]
+                                            :query-params [api-key :- String]
+                                            :summary "Returns all entities associated with entity/link"
+                                            (ok (entity/get-entity-link api-key id link)))))))))
 
 (swaggered "views"
           (context "/api" []

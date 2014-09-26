@@ -1,8 +1,7 @@
 (ns ovation-rest.util
   (:import (java.net URI)
            (us.physion.ovation.domain URIs))
-  (:require [clojure.pprint]
-            [ovation-rest.context :as context]
+  (:require [ovation-rest.context :as context]
             [ovation-rest.interop :as interop]
             [ovation-rest.paths :as paths]
             [clojure.string :refer [join]]
