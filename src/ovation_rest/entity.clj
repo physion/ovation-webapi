@@ -30,9 +30,13 @@
   "Creates a new Entity from a DTO map"
     (into-seq (seq [(-> (ctx api-key) (.insertEntity (stringify-keys new-dto)))])))
 
-(defn get-entity-link [api-key id link]
+(defn get-entity-link [api-key id rel]
+  "Returns all entities from entity(id)->rel and returns them"
+  (into-seq (into [] (.getEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel))))
+
+(defn get-entity-named-link [api-key id rel named]
   "Returns all entities from entity(id)->link and returns them"
-  (into-seq (into [] (.getEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) link))))
+  (into-seq (into [] (.getNamedEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel named))))
 
 ;(defn update-entity [api-key id dto]
 ;  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]

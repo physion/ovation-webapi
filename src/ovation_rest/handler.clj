@@ -85,12 +85,18 @@
                                                        :query-params [api-key :- String]
                                                        :summary "Deletes entity with :id"
                                                        (ok (entity/delete-entity api-key id)))
-                                       (context "/links/:link" [link]
+                                       (context "/links/:rel" [rel]
                                           (GET* "/" request
                                             :return [Entity]
                                             :query-params [api-key :- String]
-                                            :summary "Returns all entities associated with entity/link"
-                                            (ok (entity/get-entity-link api-key id link)))))))))
+                                            :summary "Returns all entities associated with entity/rel"
+                                            (ok (entity/get-entity-link api-key id rel))))
+                                       (context "/named_links/:rel/:named" [rel named]
+                                          (GET* "/" request
+                                            :return [Entity]
+                                            :query-params [api-key :- String]
+                                            :summary "Returns all entities associated with entity/rel/named"
+                                            (ok (entity/get-entity-named-link api-key id rel named)))))))))
 
 (swaggered "views"
           (context "/api" []
