@@ -8,6 +8,8 @@
             [clojurewerkz.urly.core :as urly]
             [pathetic.core :refer [url-normalize up-dir]]))
 
+(def version-path "/v1")
+
 (defn ctx [api-key]
   (context/cached-context api-key))
 
@@ -16,7 +18,6 @@
 
 (defn- split-query [u]
   (clojure.string/split u #"\?" 2))
-
 
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
@@ -27,8 +28,8 @@
   "Return a single link from an id and relationship name"
   [id, rel]
   (if (= (name rel) "self")
-    (clojure.string/join ["/entities/" id])
-    (clojure.string/join ["/entities/" id "/links/" (name rel)])))
+    (clojure.string/join ["/api" version-path "/entities/" id])
+    (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
 
 (defn links-to-rel-path
   "Augment an entity dto with the links.self reference"
