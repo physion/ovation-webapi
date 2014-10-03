@@ -19,9 +19,8 @@
 
 (defn get-entity
   "Gets a single entity by ID (uuid)"
-  [api-key uuid]
-  (into-seq
-    (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])))
+  [api-key id]
+  (into-seq (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))])))
 
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
@@ -30,23 +29,51 @@
   "Creates a new Entity from a DTO map"
     (into-seq (seq [(-> (ctx api-key) (.insertEntity (stringify-keys new-dto)))])))
 
-(defn get-entity-link [api-key id rel]
+(defn get-link [api-key id rel]
   "Returns all entities from entity(id)->rel and returns them"
   (into-seq (into [] (.getEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel))))
 
-(defn get-entity-named-link [api-key id rel named]
-  "Returns all entities from entity(id)->link and returns them"
+(defn create-link [api-key id rel target inverse]
+  "Creates a new link from entity(id) -> entity(target)"
+  (let [entity (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))
+        linked (.addLink entity rel (create-uri target) inverse)]
+    (into-seq (seq [linked]))))
+
+(defn delete-link [api-key id rel target]
+  "Deletes a named link on entity(id)"
+  (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
+        delete (.removeLink entity rel (create-uri target))]
+  {:success (not (empty? delete))}))
+
+(defn get-named-link [api-key id rel named inverse]
+  "Returns all entities from entity(id)->link"
   (into-seq (into [] (.getNamedEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel named))))
 
-;(defn update-entity [api-key id dto]
-;  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
-;    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
-;    (into-seq [entity])
-;    ))
+(defn create-named-link [api-key id rel target inverse]
+  "Creates a new link from entity(id) -> entity(target)"
+  (let [entity ((ctx api-key) (.getObjectWithUuid (parse-uuid id)))
+        linked (.addNamedLink entity rel (create-uri target) inverse)]
+    (into-seq (seq [linked]))))
 
-(defn delete-entity [api_key id]
-  (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid id)))
-        trash_resp (-> (ctx api_key) (. trash entity) (.get))]
+(defn delete-named-link [api-key id rel named target]
+  "Deletes a named link on entity(id)"
+  (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
+        delete (.removeNamedLink entity rel named (create-uri target))]
+  {:success (not (empty? delete))}))
+
+(defn get-annotations [api-key id]
+  "Returns all annotations associated with entity(id)"
+  (into [] (.getAnnotations (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))))
+
+(defn update-entity [api-key id dto]
+  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
+    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
+    (into-seq [entity])
+    ))
+
+(defn delete-entity [api-key id]
+  (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
+        trash_resp (-> (ctx api-key) (. trash entity) (.get))]
 
     {:success (not (empty? trash_resp))}))
 

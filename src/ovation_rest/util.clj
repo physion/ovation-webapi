@@ -48,13 +48,16 @@
   [entity_seq]
   (seq (into-array (map (partial convert-entity-to-map) entity_seq))))
 
-
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
     (let [buffer (java.nio.ByteBuffer/wrap
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
       (java.util.UUID. (.getLong buffer) (.getLong buffer)))
     (java.util.UUID/fromString s)))
+
+(defn create-uri [id]
+  "Creates an ovation URI from string id"
+  (us.physion.ovation.domain.URIs/create id))
 
 (defn- request-context
   [request]
