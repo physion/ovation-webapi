@@ -19,7 +19,7 @@
                            [metosin/ring-swagger "0.13.0"]
                            [metosin/ring-swagger-ui "2.0.17"]
                            [metosin/compojure-api "0.16.2"]
-                           [com.newrelic.agent.java/newrelic-agent "3.9.0"]
+                           ;[com.newrelic.agent.java/newrelic-agent "3.9.0"]
                            [com.google.guava/guava "13.0.1"]
                            [clojurewerkz/urly "1.0.0"]
                            [pathetic "0.5.1"]]
@@ -34,16 +34,13 @@
 
             :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                               :environments [{:name "development"
-                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
-                                                     "NEWRELIC"            "newrelic_license_key"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
                                              {:name "staging"
-                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                                     "NEWRELIC"            "newrelic_license_key"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
 
                                              {:name "production"
-                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                                     "NEWRELIC"            "newrelic_license_key"}}]}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
 
             :profiles {
                         :ovation-web-api {:ring {:handler ovation-rest.handler/app}
@@ -61,7 +58,5 @@
                                                                                            :passphrase :env/AWS_SECRET_KEY}]]
                                           :local-repo   ".repository"}}
 
-            :aliases {"start-ovation-web" ["with-profile" "ovation-web-api" "ring" "server"]}
-
-            )
+            :aliases {"start-ovation-web" ["with-profile" "ovation-web-api" "ring" "server"]})
 
