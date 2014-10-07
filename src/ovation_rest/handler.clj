@@ -1,4 +1,5 @@
 (ns ovation-rest.handler
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
   (:require [clojure.string :refer [join]]
             [ring.util.http-response :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -28,42 +29,46 @@
 (s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links) (s/optional-key :links) {s/Keyword [s/Str]}))
 
 
-(s/defschema EntityList [Entity])
-
-(def NewAnnotationBase {:user   s/Str
-                        :entity s/Str})
-
-(def AnnotationMeta {:_id  s/Str
-                     :_rev s/Str})
-
-(s/defschema NewTagRecord (assoc NewAnnotationBase :annotation_type "keywords"
-                                                   :annotation {:tag s/Str}))
-(s/defschema TagRecord (conj NewTagRecord AnnotationMeta))
 
 
-(s/defschema NewPropertyRecord (assoc NewAnnotationBase :annotation_type "properties"
-                                                        :annotation {:key   s/Str
-                                                                     :value s/Any}))
-(s/defschema PropertyRecord (conj NewPropertyRecord AnnotationMeta))
+(def AnnotationBase {:_id    s/Str
+                     :_rev   s/Str
+                     :user   s/Str
+                     :entity s/Str})
+
+(s/defschema AnnotationTypes (s/enum OvationEntity$AnnotationKeys/TAGS
+                               OvationEntity$AnnotationKeys/PROPERTIES
+                               OvationEntity$AnnotationKeys/NOTES
+                               OvationEntity$AnnotationKeys/TIMELINE_EVENTS))
+
+(s/defschema TagRecord {:tag s/Str})
+(s/defschema TagAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TAGS
+                                                 :annotation      TagRecord}))
 
 
-(s/defschema NewNoteRecord (assoc NewAnnotationBase :annotation_type "notes"
-                                                    :annotation {:text      s/Str
-                                                                 :timestamp s/Str}))
-(s/defschema NoteRecord (conj NewNoteRecord AnnotationMeta))
+(s/defschema PropertyRecord {:key   s/Str
+                             :value (describe s/Str "(may be any JSON type)")})
+(s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/PROPERTIES
+                                                      :annotation      PropertyRecord}))
 
 
-(s/defschema NewTimelineEventRecord (assoc NewAnnotationBase :annotation_type "timeline_events"
-                                                             :annotation {:name  s/Str
-                                                                          :notes s/Str
-                                                                          :start s/Str
-                                                                          :end   s/Str}))
-(s/defschema TimelineEventRecord (conj NewTimelineEventRecord AnnotationMeta))
+(s/defschema NoteRecord {:text      s/Str
+                         :timestamp s/Str})
+(s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/NOTES
+                                                  :annotation      NoteRecord}))
+
+
+(s/defschema TimelineEventRecord {:name  s/Str
+                                  :notes s/Str
+                                  :start s/Str
+                                  (s/optional-key :end) s/Str})
+(s/defschema TimelineEventAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TIMELINE_EVENTS
+                                                           :annotation      TimelineEventRecord}))
 
 
 
-(s/defschema NewAnnotation (or NewTagRecord NewPropertyRecord NewNoteRecord NewTimelineEventRecord))
-(s/defschema Annotation (or TagRecord PropertyRecord NoteRecord TimelineEventRecord))
+(s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
+(s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
 
 
 
@@ -83,7 +88,7 @@
       :contact "support@ovation.io"
       :termsOfServiceUrl "https://ovation.io/terms_of_service")
 
-    (swaggered "top-level"
+    (swaggered "entities"
       (context "/api" []
         (context "/v1" []
           (context "/:resource" [resource]
@@ -93,11 +98,8 @@
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
 
-              (ok (entity/index-resource api-key resource)))))))
+              (ok (entity/index-resource api-key resource))))
 
-    (swaggered "entities"
-      (context "/api" []
-        (context "/v1" []
           (context "/entities" []
             (POST* "/" request
               :return [Entity]
@@ -111,13 +113,6 @@
                 :query-params [api-key :- String]
                 :summary "Returns entity with :id"
                 (ok (entity/get-entity api-key id)))
-              (context "/annotations" []
-                (POST* "/" request
-                  :return Annotation
-                  :query-params [api-key :- String]
-                  :body [new-annotation NewAnnotation]
-                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                  nil))
               ;                                              (PUT* "/" request
               ;                                                    :return [Entity]
               ;                                                    :query-params [api-key :- String]
@@ -141,6 +136,40 @@
                   :query-params [api-key :- String]
                   :summary "Returns all entities associated with entity/rel/named"
                   (ok (entity/get-entity-named-link api-key id rel named)))))))))
+
+    (swaggered "annotations"
+      (context "/api" []
+        (context "/v1" []
+          (context "/entities" []
+            (context "/annotations" []
+              (context "/keywords" []
+                (POST* "/" request
+                  :return TagAnnotation
+                  :query-params [api-key :- String]
+                  :body [new-annotation TagRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok "ANNOTATIONS!")))
+              (context "/properties" []
+                (POST* "/" request
+                  :return PropertyAnnotation
+                  :query-params [api-key :- String]
+                  :body [new-annotation PropertyRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok "ANNOTATIONS!")))
+              (context "/timeline_events" []
+                (POST* "/" request
+                  :return TimelineEventAnnotation
+                  :query-params [api-key :- String]
+                  :body [new-annotation TimelineEventRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok "ANNOTATIONS!")))
+              (context "/notes" []
+                (POST* "/" request
+                  :return NoteAnnotation
+                  :query-params [api-key :- String]
+                  :body [new-annotation NoteRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok "ANNOTATIONS!"))))))))
 
     (swaggered "views"
       (context "/api" []
