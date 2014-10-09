@@ -72,8 +72,11 @@
     (into-seq resources)))
 
 (defn- get-view-results [ctx uri]
-  (.getObjectsWithURI ctx (clojure.string/replace uri "\"" "%22")))
+  (.getObjectsWithURI ctx uri))
 
-(defn get-view [api-key full-url host-url]
-  (into-seq (get-view-results (ctx api-key) full-url)))
+(defn escape-quotes [full-url]
+  (clojure.string/replace full-url "\"" "%22"))
+
+(defn get-view [api-key full-url]
+  (into-seq (get-view-results (ctx api-key) (escape-quotes full-url))))
 
