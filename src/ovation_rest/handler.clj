@@ -54,6 +54,7 @@
               :body [new-dto NewEntity]
               :summary "Creates and returns an entity"
               (created (entity/create-entity api-key new-dto)))
+
             (context "/:id" [id]
               (GET* "/" request
                 :return [Entity]
