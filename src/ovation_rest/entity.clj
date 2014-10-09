@@ -12,7 +12,7 @@
 (defn get-entity
   "Gets a single entity by ID (uuid string)"
   [api-key id]
-  (into-seq (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))])))
+  (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
@@ -44,7 +44,7 @@
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
                     "sources" (-> (ctx api-key) (.getTopLevelSources))
-                    "protocols" (-> (ctx api-key) (.getProtocols)))] 
+                    "protocols" (-> (ctx api-key) (.getProtocols)))]
     (into-seq resources)))
 
 (defn- get-view-results [ctx uri]

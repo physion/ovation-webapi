@@ -59,7 +59,7 @@
                 :return [Entity]
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
-                (ok (entity/get-entity api-key id)))
+                (ok (conj [] (entity/get-entity api-key id))))
               (PUT* "/" request
                 :return [Entity]
                 :query-params [api-key :- s/Str]
