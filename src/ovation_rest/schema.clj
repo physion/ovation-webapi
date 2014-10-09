@@ -12,11 +12,14 @@
                      :attributes                   {s/Keyword s/Str}
                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
                      (s/optional-key :annotations) s/Any
-                     })
+})
 
 (s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links) (s/optional-key :links) {s/Keyword [s/Str]}))
 
 
-(s/defschema NewLink {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
-                      :target_id                    s/Uuid
-                      (s/optional-key :inverse_rel) s/Str})
+(s/defschema Link {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
+                   :target_id                    s/Uuid
+                   :rel                          s/Str
+                   (s/optional-key :inverse_rel) s/Str})
+
+(s/defschema NamedLink (assoc Link :name s/Str))

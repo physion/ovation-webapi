@@ -25,11 +25,12 @@
   (.removeLink entity rel (create-uri target))
   true)
 
-(defn create-link [api-key id rel link]
+(defn create-link [api-key id link]
   "Creates a new link from entity(id) -> entity(target)"
   (let [entity (get-entity api-key id)
         target (:target_id link)
-        inverse (:inverse_rel link)]
+        inverse (:inverse_rel link)
+        rel (:rel link)]
     (if (add-link entity rel target :inverse inverse)
       [entity]
       (r/internal-server-error! "Unable to create link"))))
@@ -66,10 +67,12 @@
 
 (defn create-named-link
   "Creates a new link from entity(id) -> entity(target)"
-  [api-key id rel named link]
+  [api-key id link]
   (let [entity (get-entity api-key id)
         target (:target_id link)
-        inverse (:inverse_rel link)]
+        inverse (:inverse_rel link)
+        rel (:rel link)
+        named (:name link)]
     (if (add-named-link entity rel named target :inverse inverse)
       [entity]
       (r/internal-server-error! "Unable to create link")))

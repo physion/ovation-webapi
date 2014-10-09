@@ -15,21 +15,23 @@
       (links/get-entities ...entity... ...rel...) => ...links...
       (util/into-seq (into [] ...links...)) => ...links...))
 
-  (fact "POST /links/:rel adds a link with inverse"
-    (links/create-link ...api... ...id... ...rel... {:target_id   ...target...
-                                                     :inverse_rel ...inverse...}) => [...entity...]
+  (fact "POST /links adds a link with inverse"
+    (links/create-link ...api... ...id... {:target_id   ...target...
+                                           :rel         ...rel...
+                                           :inverse_rel ...inverse...}) => [...entity...]
     (provided
       (entity/get-entity ...api... ...id...) => ...entity...
       (links/add-link ...entity... ...rel... ...target... :inverse ...inverse...) => true))
 
-  (fact "POST /links/:rel adds a link without inverse"
-    (links/create-link ...api... ...id... ...rel... {:target_id   ...target...}) => [...entity...]
+  (fact "POST /links adds a link without inverse"
+    (links/create-link ...api... ...id... {:target_id ...target...
+                                           :rel       ...rel...}) => [...entity...]
     (provided
       (entity/get-entity ...api... ...id...) => ...entity...
       (links/add-link ...entity... ...rel... ...target... :inverse nil) => true))
 
 
-  (fact "DELETE /links/:rel/:link-id deletes a link"
+  (fact "DELETE /links/:rel/:target deletes a link"
     (links/delete-link ...api... ...id... ...rel... ...target...) => {:success true}
     (provided
       (entity/get-entity ...api... ...id...) => ...entity...
@@ -44,15 +46,17 @@
       (links/get-named-entities ...entity... ...rel... ...named...) => ...links...
       (util/into-seq (into [] ...links...)) => ...entities...))
 
-  (fact "POST /named_links/:rel/:name adds a link with inverse"
-    (links/create-named-link ...api... ...id... ...rel... ...name... {:target_id   ...target...
-                                                                      :inverse_rel ...inverse...}) => [...entity...]
+  (fact "POST /named_links adds a link with inverse"
+    (links/create-named-link ...api... ...id... {:target_id   ...target...
+                                                 :inverse_rel ...inverse...
+                                                 :rel         ...rel...
+                                                 :name        ...name...}) => [...entity...]
     (provided
       (entity/get-entity ...api... ...id...) => ...entity...
       (links/add-named-link ...entity... ...rel... ...name... ...target... :inverse ...inverse...) => true))
 
   (fact "DELETE /named_links/:rel/:name/:target deletes a link"
-    (links/delete-named-link ...api... ...id... ...rel... ...named... ...target...) =>  {:success true}
+    (links/delete-named-link ...api... ...id... ...rel... ...named... ...target...) => {:success true}
     (provided
       (entity/get-entity ...api... ...id...) => ...entity...
       (links/remove-named-link ...entity... ...rel... ...named... ...target...) => true)))
