@@ -23,12 +23,3 @@
                       })
 
 (s/defschema NewNamedLink (assoc NewLink :name s/Str))
-
-(s/defschema Link (assoc NewLink :_id s/Str
-                                 :_rev s/Str
-                                 :source_id s/Str           ;; URI
-                                 :target_id s/Str           ;; URI
-                                 :rel s/Str
-                                 (s/optional-key :name) s/Str
-                                 (s/optional-key :inverse_rel) s/Str
-                                 :links {:_collaboration_roots [s/Str]}))
