@@ -2,7 +2,7 @@
   (:import (us.physion.ovation.domain URIs)
            (us.physion.ovation.exceptions OvationException))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :refer [ctx get-entity entity-to-dto]]
+            [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation-rest.context :refer [transaction]]
             [ovation-rest.links :as links]))
