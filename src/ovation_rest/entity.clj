@@ -4,13 +4,9 @@
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation-rest.util :refer :all]
             [slingshot.slingshot :refer [try+ throw+]]
-            [ovation-rest.context :refer [transaction]]))
+            [ovation-rest.context :refer [transaction]]
+            [ovation-rest.links :as links]))
 
-
-(defn get-entity
-  "Gets a single entity by ID (uuid string)"
-  [api-key id]
-  (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
@@ -25,12 +21,22 @@
   [api-key new-dto]
 
   (let [links (:links new-dto)
-        named-links (:named-links new-dto)
+        named-links (:named_links new-dto)
         dto (stringify-keys (dissoc new-dto :links :named_links))]
     (let [c (ctx api-key)]
       (transaction c
         (let [entity (insert-entity c dto)]
-          ;; handle links and named-links
+          ;; For all links, add the link
+          (doseq [[rel rel-links] links]
+            (doseq [link rel-links]
+              (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link))))
+
+          ;; For all named links, add the named link
+          (doseq [[rel names] named-links]
+            (doseq [[named rel-links] names]
+              (doseq [link rel-links]
+                (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
+
           (into-seq (conj () entity)))))))
 
 (defn get-annotations [api-key id]

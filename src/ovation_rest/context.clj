@@ -6,6 +6,7 @@
 
 
 
+
 (defn make-server
   "Make an us.physion.ovation.api.web.Server instance"
   [api-endpoint api-key]
@@ -25,6 +26,13 @@
                        "https://dev.ovation.io")]
 
     (get-context-from-dsc (make-server api-endpoint api-key))))
+
+(def DEFAULT_LRU_THRESHOLD 5)
+(def LRU_THRESHOLD "LRU_THRESHOLD_PROPERTY")
+(def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
+                                                               (Integer/parseInt threshold)
+                                                               DEFAULT_LRU_THRESHOLD)))
+
 
 (defn begin-transaction
   [ctx]
@@ -50,10 +58,3 @@
        (catch OvationException _#
          (abort-transaction context#)
          (throw+)))))
-
-
-(def DEFAULT_LRU_THRESHOLD 5)
-(def LRU_THRESHOLD "LRU_THRESHOLD_PROPERTY")
-(def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
-                                                               (Integer/parseInt threshold)
-                                                               DEFAULT_LRU_THRESHOLD)))
