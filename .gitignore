@@ -20,3 +20,5 @@ pom.xml.asc
 ovation_api_webservice.iml
 
 *.orig
+
+ovation_rest.iml
