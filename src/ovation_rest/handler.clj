@@ -32,14 +32,13 @@
       :contact "support@ovation.io"
       :termsOfServiceUrl "https://ovation.io/terms_of_service")
 
-    ; Note: if you change context version, also change ovation-rest.util/version-path to match
     (swaggered "top-level"
       (context "/api" []
         (context "/v1" []
           (context "/:resource" [resource]
             (GET* "/" request
               :return [Entity]
-              :query-params [api-key :- s/Str]
+              :query-params [api-key :- String]
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
 
