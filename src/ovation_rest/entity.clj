@@ -1,12 +1,10 @@
 (ns ovation-rest.entity
-  (:import (us.physion.ovation.domain URIs))
+  (:import (us.physion.ovation.domain URIs)
+           (us.physion.ovation.exceptions OvationException))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :refer :all]))
-
-(defn- api-key
-  "Extracts the API key from request query parameters"
-  [request]
-  ("api-key" (:query-params request)))
+            [ovation-rest.util :refer :all]
+            [slingshot.slingshot :refer [try+ throw+]]
+            [ovation-rest.context :refer [transaction]]))
 
 
 (defn get-entity
@@ -17,16 +15,30 @@
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
 
-(defn create-entity [api-key new-dto]
+(defn insert-entity
+  "Inserts dto as an entity into the given DataContext"
+  [context dto]
+  (-> context (.insertEntity dto)))
+
+(defn create-entity
   "Creates a new Entity from a DTO map"
-    (into-seq (seq [(-> (ctx api-key) (.insertEntity (stringify-keys new-dto)))])))
+  [api-key new-dto]
+
+  (let [links (:links new-dto)
+        named-links (:named-links new-dto)
+        dto (stringify-keys (dissoc new-dto :links :named_links))]
+    (let [c (ctx api-key)]
+      (transaction c
+        (let [entity (insert-entity c dto)]
+          ;; handle links and named-links
+          (into-seq (conj () entity)))))))
 
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
   (into [] (.getAnnotations (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))))
 
 (defn update-entity [api-key id dto]
-  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
+  (let [entity (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
     (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
     (into-seq [entity])
     ))

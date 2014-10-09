@@ -46,7 +46,7 @@
 (defn into-seq
   "Converts a seq of entities into an array of Maps"
   [entity_seq]
-  (seq (into-array (map (partial convert-entity-to-map) entity_seq))))
+  (doall (map (partial convert-entity-to-map) entity_seq)))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))

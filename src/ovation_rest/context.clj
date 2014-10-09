@@ -1,6 +1,8 @@
 (ns ovation-rest.context
-  (:import (java.net URI))
-  (:require [clojure.core.memoize :as memo]))
+  (:import (java.net URI)
+           (us.physion.ovation.exceptions OvationException))
+  (:require [clojure.core.memoize :as memo]
+            [slingshot.slingshot :refer [try+ throw+]]))
 
 
 
@@ -23,6 +25,31 @@
                        "https://dev.ovation.io")]
 
     (get-context-from-dsc (make-server api-endpoint api-key))))
+
+(defn begin-transaction
+  [ctx]
+  (.beginTransaction ctx))
+
+(defn commit-transaction
+  [ctx]
+  (.commitTransaction ctx))
+
+(defn abort-transaction
+  [ctx]
+  (.abortTransaction ctx))
+
+(defmacro transaction
+  "Wraps body in a DataContext transaction. Exceptions are rethrown."
+  [context & body]
+  `(let [context# ~context]
+     (try+
+       (begin-transaction context#)
+       (let [result# (do ~@body)]
+         (commit-transaction context#)
+         result#)
+       (catch OvationException _#
+         (abort-transaction context#)
+         (throw+)))))
 
 
 (def DEFAULT_LRU_THRESHOLD 5)
