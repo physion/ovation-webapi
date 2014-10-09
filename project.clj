@@ -19,7 +19,7 @@
                  [metosin/ring-swagger "0.13.0"]
                  [metosin/ring-swagger-ui "2.0.17"]
                  [metosin/compojure-api "0.16.2"]
-                 [com.newrelic.agent.java/newrelic-agent "3.9.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.11.0"]
                  [com.google.guava/guava "13.0.1"]
                  [clojurewerkz/urly "1.0.0"]
                  [pathetic "0.5.1"]]
