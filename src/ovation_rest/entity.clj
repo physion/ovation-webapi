@@ -58,11 +58,17 @@
 (defn- ^{:testable true} get-projects [ctx]
   (.getProjects ctx))
 
+(defn- ^{:testable true} get-sources [ctx]
+  (.getTopLevelSources ctx))
+
+(defn- ^{:testable true} get-protocols [ctx]
+  (.getProtocols ctx))
+
 (defn index-resource [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
-                    "sources" (-> (ctx api-key) (.getTopLevelSources))
-                    "protocols" (-> (ctx api-key) (.getProtocols)))]
+                    "sources" (get-sources (ctx api-key))
+                    "protocols" (get-protocols (ctx api-key)))]
     (into-seq resources)))
 
 (defn- get-view-results [ctx uri]
