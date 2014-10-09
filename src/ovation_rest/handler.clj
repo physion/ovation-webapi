@@ -66,12 +66,13 @@
                 :query-params [api-key :- s/Str]
                 :body [dto Entity]
                 :summary "Updates and returns updated entity with :id"
-                (ok (entity/update-entity api-key id dto (util/host-context request :remove-levels 1))))
+                (ok (entity/update-entity-attributes api-key id (:attributes dto))))
               (DELETE* "/" request
                 :return Success
                 :query-params [api-key :- s/Str]
                 :summary "Deletes entity with :id"
-                (ok (entity/delete-entity api-key id)))
+                (accepted (entity/delete-entity api-key id)))
+
               (context "/annotations" []
                 (GET* "/" request
                   :query-params [api-key :- s/Str]
@@ -83,6 +84,13 @@
                   (ok (entity/get-annotations api-key id))))
 
               (context "/links" []
+                (POST* "/" []
+                  :return [Entity]
+                  :body [link Link]
+                  :query-params [api-key :- s/Str]
+                  :summary "Creates a new link to from this entity"
+                  (created (links/create-link api-key id link)))
+
                 (context "/:rel" [rel]
                   (GET* "/" []
                     :return [Entity]
@@ -94,16 +102,16 @@
                     :return Success
                     :query-params [api-key :- s/Str]
                     :summary "Deletes a link to the given target (uuid)"
-                    (ok (links/delete-link api-key id rel target))))
-
-                (POST* "/" []
-                   :return [Entity]
-                   :body [link Link]
-                   :query-params [api-key :- s/Str]
-                   :summary "Creates a new link to from this entity"
-                   (created (links/create-link api-key id link))))
+                    (ok (links/delete-link api-key id rel target)))))
 
               (context "/named_links" []
+                (POST* "/" request
+                  :return [Entity]
+                  :body [link NamedLink]
+                  :query-params [api-key :- s/Str]
+                  :summary "Creates a new named link to id :target with no inverse rel"
+                  (created (links/create-named-link api-key id link)))
+
                 (context "/:rel/:named" [rel named]
                   (GET* "/" request
                     :return [Entity]
@@ -114,15 +122,7 @@
                     :return Success
                     :query-params [api-key :- s/Str]
                     :summary "Deletes a named link to the given target (uuid)"
-                    (ok (links/delete-named-link api-key id rel named target))))
-
-                (POST* "/" request
-                  :return [Entity]
-                  :body [link NamedLink]
-                  :query-params [api-key :- s/Str]
-                  :summary "Creates a new named link to id :target with no inverse rel"
-                  (created (links/create-named-link api-key id link)))
-                ))))))
+                    (ok (links/delete-named-link api-key id rel named target))))))))))
 
     (swaggered "views"
       (context "/api" []

@@ -50,6 +50,24 @@
       (util/create-uri ...target...) => ...uri...
       (links/add-named-link ...entity... "my-rel" "my-name" ...uri... :inverse ...inverse...) => true
       (context/commit-transaction ...ctx...) => true
+      (util/into-seq '(...entity...)) => ...result...))
+
+  (fact "updates entity attributes"
+    (entity/update-entity-attributes ...api... ...id... {:attr1 1
+                                                         :attr2 "value"}) => ...result...
+    (provided
+      (util/get-entity ...api... ...id...) => ...entity...
+      (util/entity-to-dto ...entity...) => {:_id        "123"
+                                            :_rev       "rev1"
+                                            :attributes {:attr1 0
+                                                         :attr3 "foo"}
+                                            :links      {:self "/entity/uri/"}}
+
+      (#'ovation-rest.entity/update-entity ...entity... {:_id        "123"
+                                                                 :_rev       "rev1"
+                                                                 :attributes {:attr1 1
+                                                                              :attr2 "value"}
+                                                                 :links      {:self "/entity/uri/"}}) => ...entity...
       (util/into-seq '(...entity...)) => ...result...)))
 
 (facts "About top-level handlers"
