@@ -19,7 +19,4 @@
 
 (s/defschema NewLink {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
                       :target_id                    s/Uuid
-                      (s/optional-key :inverse_rel) s/Str
-                      })
-
-(s/defschema NewNamedLink (assoc NewLink :name s/Str))
+                      (s/optional-key :inverse_rel) s/Str})

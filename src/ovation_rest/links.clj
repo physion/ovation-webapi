@@ -41,18 +41,43 @@
       {:success true}
       (r/internal-server-error! {:success false}))))
 
-(defn get-named-link [api-key id rel named inverse]
-  "Returns all entities from entity(id)->link"
-  (into-seq (into [] (.getNamedEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel named))))
 
-(defn create-named-link [api-key id rel target inverse]
+(defn get-named-entities
+  "Calls entity.getNamedEntities"
+  [entity rel name]
+  (.getNamedEntities entity rel name))
+
+(defn add-named-link
+  "Adds a named link via entity.addNamedLink"
+  [entity rel named target & {:keys [inverse] :or {inverse nil}}]
+  (.addNamedLink entity rel named (create-uri target) inverse)
+  true)
+
+(defn remove-named-link
+  "Removes a named link via entity.removeNamedLink"
+  [entity rel named target]
+  (.removeNamedLink entity rel named (create-uri target))
+  true)
+
+(defn get-named-link "Returns all entities from entity(id)->link"
+  [api-key id rel named]
+
+  (into-seq (into () (get-named-entities (get-entity api-key id) rel named))))
+
+(defn create-named-link
   "Creates a new link from entity(id) -> entity(target)"
-  (let [entity ((ctx api-key) (.getObjectWithUuid (parse-uuid id)))
-        linked (.addNamedLink entity rel (create-uri target) inverse)]
-    (into-seq (seq [linked]))))
+  [api-key id rel named link]
+  (let [entity (get-entity api-key id)
+        target (:target_id link)
+        inverse (:inverse_rel link)]
+    (if (add-named-link entity rel named target :inverse inverse)
+      [entity]
+      (r/internal-server-error! "Unable to create link")))
+  )
 
 (defn delete-named-link [api-key id rel named target]
   "Deletes a named link on entity(id)"
-  (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
-        delete (.removeNamedLink entity rel named (create-uri target))]
-    {:success (not (empty? delete))}))
+  (let [entity (get-entity api-key id)]
+    (if (remove-named-link entity rel named target)
+      {:success true}
+      (r/internal-server-error! {:success false}))))

@@ -86,7 +86,7 @@
                 (GET* "/" request
                   :return [Entity]
                   :query-params [api-key :- s/Str]
-                  :summary "Returns all entities associated with entity/rel"
+                  :summary "Returns all entities associated with entity by the given relation"
                   (ok (links/get-link api-key id rel)))
                 (POST* "/" []
                    :return [Entity]
@@ -97,29 +97,25 @@
                 (DELETE* "/:target" [target]
                    :return Success
                    :query-params [api-key :- s/Str]
-                   :summary "Deletes a link to id :target"
+                   :summary "Deletes a link to the given target (uuid)"
                    (ok (links/delete-link api-key id rel target))))
 
               (context "/named_links/:rel/:named" [rel named]
                 (GET* "/" request
                   :return [Entity]
                   :query-params [api-key :- s/Str]
-                  :summary "Returns all entities associated with entity/rel/named"
+                  :summary "Returns all entities associated with entity by the given relation and name"
                   (ok (links/get-named-link api-key id rel named)))
-                (POST* "/:target/" [target]
+                (POST* "/" request
                   :return [Entity]
+                  :body [link NewLink]
                   :query-params [api-key :- s/Str]
                   :summary "Creates a new named link to id :target with no inverse rel"
-                  (ok (links/create-named-link api-key id rel named target nil)))
-                (POST* "/:target/:inverse" [target inverse]
-                  :return [Entity]
-                  :query-params [api-key :- s/Str]
-                  :summary "Creates a new named link to id :target with inverse rel :inverse"
-                  (ok (links/create-named-link api-key id rel named target inverse)))
+                  (created (links/create-named-link api-key id rel named link)))
                 (DELETE* "/:target" [target]
                   :return Success
                   :query-params [api-key :- s/Str]
-                  :summary "Deletes a named link"
+                  :summary "Deletes a named link to the given target (uuid)"
                   (ok (links/delete-named-link api-key id rel named target)))))))))
 
     (swaggered "views"
