@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test_handler
+(ns ovation-rest.test.handler
   (:require [midje.sweet :refer :all]
             [ring.mock.request :refer :all]
             [ovation-rest.handler :as handler]))

@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test_entity
+(ns ovation-rest.test.entity
   (:use midje.sweet)
   (:import (us.physion.ovation.domain DtoBuilder URIs)
            (java.util UUID))
@@ -8,11 +8,6 @@
 
 
 
-;(facts "about augmeting entity DTO"
-;         (fact "adds self link"
-;               (let [id (UUID/randomUUID)]
-;                 (->> (util/augment-entity-dto (clojurify (.. (DtoBuilder. "Project" id) (build))) "http://host.com/") (:links) (:self)) => #{(format "http://host.com/entities/%s" (str id))})))
-;
 ;(facts "about entity handlers"
 ;       (facts "index-resource"
 ;              (fact "gets projects"

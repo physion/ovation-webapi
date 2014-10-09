@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test-util
+(ns ovation-rest.test.util
   (:import (java.util UUID))
   (:use midje.sweet)
   (:require [ovation-rest.util :as util]))

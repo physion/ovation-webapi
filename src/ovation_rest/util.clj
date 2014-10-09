@@ -110,3 +110,4 @@
   [request]
   (let [params (:query-params request)]
     (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
+

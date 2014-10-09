@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test-interop
+(ns ovation-rest.test.interop
   (:import (com.google.common.collect HashMultimap)
            (java.util HashMap HashSet LinkedList))
   (:use midje.sweet)
