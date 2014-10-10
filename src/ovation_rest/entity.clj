@@ -27,17 +27,19 @@
       (transaction c
         (let [entity (insert-entity c dto)]
           ;; For all links, add the link
-          (doseq [[rel rel-links] links]
-            (doseq [link rel-links]
-              (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link))))
+          (when links
+            (doseq [[rel rel-links] links]
+              (doseq [link rel-links]
+                (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
 
           ;; For all named links, add the named link
-          (doseq [[rel names] named-links]
-            (doseq [[named rel-links] names]
-              (doseq [link rel-links]
-                (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
+          (when named-links
+            (doseq [[rel names] named-links]
+              (doseq [[named rel-links] names]
+                (doseq [link rel-links]
+                  (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
 
-          (into-seq [entity]))))))
+          (into-seq (conj () entity)))))))
 
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
