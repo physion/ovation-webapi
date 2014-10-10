@@ -1,5 +1,6 @@
 (ns ovation-rest.test.util
-  (:import (java.util UUID))
+  (:import (java.util UUID)
+           (us.physion.ovation.domain URIs))
   (:use midje.sweet)
   (:require [ovation-rest.util :as util]))
 
@@ -43,3 +44,15 @@
              (provided
                (util/host-from-request ...request...) => "https://server.com/"
                (#'ovation-rest.util/request-context ...request...) => "/api/v1/")))
+
+
+(facts "about URI creation"
+  (fact "creates URI from UUID string"
+    (let [id (str (UUID/randomUUID))]
+      (util/create-uri id) => (URIs/create id)))
+  (fact "creates URI from UUID"
+    (let [id (UUID/randomUUID)]
+      (util/create-uri id) => (URIs/create id)))
+  (fact "passes through URI"
+    (let [uri (util/create-uri (UUID/randomUUID))]
+      (util/create-uri uri) => uri)))

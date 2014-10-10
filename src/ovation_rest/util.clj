@@ -62,7 +62,9 @@
 
 (defn create-uri [id]
   "Creates an ovation URI from string id"
-  (us.physion.ovation.domain.URIs/create id))
+  (if (instance? URI id)
+    id
+    (URIs/create id)))
 
 (defn- request-context
   [request]

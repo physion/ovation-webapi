@@ -1,6 +1,6 @@
 (ns ovation-rest.handler
   (:require [clojure.string :refer [join]]
-            [ring.util.http-response :refer :all]
+            [ring.util.http-response :refer [created ok accepted]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.swagger.schema :refer [field describe]]
             [ring.swagger.json-schema-dirty]
