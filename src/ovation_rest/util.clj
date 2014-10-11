@@ -13,6 +13,18 @@
 (defn ctx [api-key]
   (context/cached-context api-key))
 
+(defn parse-uuid [s]
+  (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
+    (let [buffer (java.nio.ByteBuffer/wrap
+                   (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))
+
+(defn get-entity
+  "Gets a single entity by ID (uuid string)"
+  [api-key id]
+  (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
+
 (defn get-body-from-request [request]
   (slurp (:body request)))
 
@@ -46,15 +58,13 @@
 (defn into-seq
   "Converts a seq of entities into an array of Maps"
   [entity_seq]
-  (seq (into-array (map (partial convert-entity-to-map) entity_seq))))
+  (doall (map (partial convert-entity-to-map) entity_seq)))
 
-
-(defn parse-uuid [s]
-  (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
-    (let [buffer (java.nio.ByteBuffer/wrap
-                   (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
-    (java.util.UUID/fromString s)))
+(defn create-uri [id]
+  "Creates an ovation URI from string id"
+  (if (instance? URI id)
+    id
+    (URIs/create id)))
 
 (defn- request-context
   [request]
@@ -107,3 +117,4 @@
   [request]
   (let [params (:query-params request)]
     (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
+

@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test-context
+(ns ovation-rest.test.context
   (:use midje.sweet)
   (:require [ovation-rest.context :as context]))
 

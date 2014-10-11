@@ -47,7 +47,8 @@
                                 :reload-paths ["src"]}
               :dev             {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                [ring-mock "0.1.5"]
-                                               [midje "1.6.3"]]}
+                                               [midje "1.6.3"]
+                                               [org.clojure/data.json "0.2.5"]]}
               :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                                :secret-key ~(System/getenv "AWS_SECRET_KEY")}
                                 :repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"
