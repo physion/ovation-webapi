@@ -44,6 +44,12 @@
 ;    (into-seq [entity])
 ;    ))
 
+(defn add-annotation [api_key annotation-type record]
+  "Adds an annotation to an entity"
+  (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid (:entity record))))
+        add    (.addAnnotation entity annotation-type record)]
+    {:success true}))
+
 (defn delete-entity [api_key id]
   (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid id)))
         trash_resp (-> (ctx api_key) (. trash entity) (.get))]

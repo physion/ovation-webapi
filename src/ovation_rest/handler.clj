@@ -17,22 +17,6 @@
 
 (s/defschema Success {:success s/Bool})
 
-(s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
-                     :_rev                         s/Str
-                     :_id                          s/Str    ; could we use s/uuid here?
-                     :links                        {s/Keyword s/Str}
-                     :attributes                   {s/Keyword s/Str}
-                     (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
-                     (s/optional-key :annotations) s/Any
-;                     (s/optional-key :annotations) {s/Keyword {s/Keyword {s/Keyword #{{s/Keyword s/Str}}}}}
-                     })
-
-(s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links) (s/optional-key :links) {s/Keyword [s/Str]}))
-
-
-(s/defschema EntityList [Entity])
-
-
 (def AnnotationBase {:_id    s/Str
                      :_rev   s/Str
                      :user   s/Str
@@ -71,6 +55,22 @@
 
 (s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
 (s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
+
+
+(s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
+                     :_rev                         s/Str
+                     :_id                          s/Str    ; could we use s/uuid here?
+                     :links                        {s/Keyword s/Str}
+                     :attributes                   {s/Keyword s/Str}
+                     (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
+                     (s/optional-key :annotations) s/Any
+;                     (s/optional-key :annotations) Annotation
+                     })
+
+(s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links) (s/optional-key :links) {s/Keyword [s/Str]}))
+
+
+(s/defschema EntityList [Entity])
 
 
 
@@ -153,28 +153,28 @@
                   :query-params [api-key :- String]
                   :body [new-annotation TagRecord]
                   :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                  (ok "ANNOTATIONS!")))
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
               (context "/properties" []
                 (POST* "/" request
                   :return PropertyAnnotation
                   :query-params [api-key :- String]
                   :body [new-annotation PropertyRecord]
                   :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                  (ok "ANNOTATIONS!")))
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
               (context "/timeline_events" []
                 (POST* "/" request
                   :return TimelineEventAnnotation
                   :query-params [api-key :- String]
                   :body [new-annotation TimelineEventRecord]
                   :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                  (ok "ANNOTATIONS!")))
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
               (context "/notes" []
                 (POST* "/" request
                   :return NoteAnnotation
                   :query-params [api-key :- String]
                   :body [new-annotation NoteRecord]
                   :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                  (ok "ANNOTATIONS!"))))))))
+                  (ok (entity/add-annotation api-key "properties" new-annotation))))))))))))
 
 (swaggered "views"
           (context "/api" []
