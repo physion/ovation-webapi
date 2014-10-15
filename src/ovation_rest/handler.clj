@@ -11,7 +11,7 @@
             [ovation-rest.entity :as entity]
             [ovation-rest.links :as links]
             [ovation-rest.util :as util]
-            [ovation-rest.schema :refer [Success Entity NewEntity Link NamedLink]]
+            [ovation-rest.schema :refer :all]
             ))
 
 
