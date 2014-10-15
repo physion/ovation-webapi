@@ -1,4 +1,4 @@
-(ns ovation-rest.test.test-paths
+(ns ovation-rest.test.paths
   (:use midje.sweet)
   (:import (us.physion.ovation.domain DtoBuilder URIs)
            (java.util UUID))

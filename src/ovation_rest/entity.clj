@@ -1,48 +1,60 @@
 (ns ovation-rest.entity
-  (:import (us.physion.ovation.domain URIs))
+  (:import (us.physion.ovation.domain URIs)
+           (us.physion.ovation.exceptions OvationException))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :refer :all]))
+            [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
+            [slingshot.slingshot :refer [try+ throw+]]
+            [ovation-rest.context :refer [transaction]]
+            [ovation-rest.links :as links]))
 
-(defn- api-key
-  "Extracts the API key from request query parameters"
-  [request]
-  ("api-key" (:query-params request)))
-
-;(defn json-to-map [json]
-;  (->
-;    (new com.fasterxml.jackson.databind.ObjectMapper)
-;    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-;    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-;    (.readValue json java.util.Map)
-;    )
-;  )
-
-(defn get-entity
-  "Gets a single entity by ID (uuid)"
-  [api-key uuid]
-  (into-seq
-    (seq [(-> (ctx api-key) (.getObjectWithUuid (parse-uuid uuid)))])))
 
 (defn create-multimap [m]
   (us.physion.ovation.util.MultimapUtils/createMultimap m))
 
-(defn create-entity [api-key new-dto]
+(defn insert-entity
+  "Inserts dto as an entity into the given DataContext"
+  [context dto]
+  (-> context (.insertEntity dto)))
+
+(defn create-entity
   "Creates a new Entity from a DTO map"
-    (into-seq (seq [(-> (ctx api-key) (.insertEntity (stringify-keys new-dto)))])))
+  [api-key new-dto]
 
-(defn get-entity-link [api-key id rel]
-  "Returns all entities from entity(id)->rel and returns them"
-  (into-seq (into [] (.getEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel))))
+  (let [links (:links new-dto)
+        named-links (:named_links new-dto)
+        dto (stringify-keys (dissoc new-dto :links :named_links))]
+    (let [c (ctx api-key)]
+      (transaction c
+        (let [entity (insert-entity c dto)]
+          ;; For all links, add the link
+          (when links
+            (doseq [[rel rel-links] links]
+              (doseq [link rel-links]
+                (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
 
-(defn get-entity-named-link [api-key id rel named]
-  "Returns all entities from entity(id)->link and returns them"
-  (into-seq (into [] (.getNamedEntities (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))) rel named))))
+          ;; For all named links, add the named link
+          (when named-links
+            (doseq [[rel names] named-links]
+              (doseq [[named rel-links] names]
+                (doseq [link rel-links]
+                  (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
 
-;(defn update-entity [api-key id dto]
-;  (let [entity     (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id)))]
-;    (.update entity (stringify-keys (update-in dto [:links] create-multimap)))
-;    (into-seq [entity])
-;    ))
+          (into-seq (conj () entity)))))))
+
+(defn get-annotations [api-key id]
+  "Returns all annotations associated with entity(id)"
+  (into [] (.getAnnotations (get-entity api-key id))))
+
+(defn- update-entity
+  [entity dto]
+  (.update entity (stringify-keys dto))
+  entity)
+
+
+(defn update-entity-attributes [api-key id attributes]
+  (let [entity (get-entity api-key id)
+        dto (entity-to-dto entity)]
+    (into-seq [(update-entity entity (assoc-in dto [:attributes] attributes))])))
 
 (defn add-annotation [api_key annotation-type record]
   "Adds an annotation to an entity"
@@ -50,25 +62,35 @@
         add    (.addAnnotation entity annotation-type record)]
     {:success true}))
 
-(defn delete-entity [api_key id]
-  (let [entity (-> (ctx api_key) (. getObjectWithUuid (parse-uuid id)))
-        trash_resp (-> (ctx api_key) (. trash entity) (.get))]
+
+(defn delete-entity [api-key id]
+  (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
+        trash_resp (-> (ctx api-key) (. trash entity) (.get))]
 
     {:success (not (empty? trash_resp))}))
 
 (defn- ^{:testable true} get-projects [ctx]
   (.getProjects ctx))
 
+(defn- ^{:testable true} get-sources [ctx]
+  (.getTopLevelSources ctx))
+
+(defn- ^{:testable true} get-protocols [ctx]
+  (.getProtocols ctx))
+
 (defn index-resource [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
-                    "sources" (-> (ctx api-key) (.getTopLevelSources))
-                    "protocols" (-> (ctx api-key) (.getProtocols)))] 
+                    "sources" (get-sources (ctx api-key))
+                    "protocols" (get-protocols (ctx api-key)))]
     (into-seq resources)))
 
 (defn- get-view-results [ctx uri]
-  (.getObjectsWithURI ctx (clojure.string/replace uri "\"" "%22")))
+  (.getObjectsWithURI ctx uri))
 
-(defn get-view [api-key full-url host-url]
-  (into-seq (get-view-results (ctx api-key) full-url)))
+(defn escape-quotes [full-url]
+  (clojure.string/replace full-url "\"" "%22"))
+
+(defn get-view [api-key full-url]
+  (into-seq (get-view-results (ctx api-key) (escape-quotes full-url))))
 
