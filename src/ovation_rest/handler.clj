@@ -124,6 +124,40 @@
                     :summary "Deletes a named link to the given target (uuid)"
                     (ok (links/delete-named-link api-key id rel named target))))))))))
 
+    (swaggered "annotations"
+      (context "/api" []
+        (context "/v1" []
+          (context "/entities" []
+            (context "/annotations" []
+              (context "/keywords" []
+                (POST* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TagRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
+              (context "/properties" []
+                (POST* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation PropertyRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
+              (context "/timeline_events" []
+                (POST* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TimelineEventRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key "properties" new-annotation)))
+              (context "/notes" []
+                (POST* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation NoteRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key "properties" new-annotation))))))))))))
+
     (swaggered "views"
       (context "/api" []
         (context "/v1" []
