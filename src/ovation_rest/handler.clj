@@ -131,31 +131,30 @@
           (context "/entities" []
             (context "/:id" [id]
               (context "/annotations" []
-                (context "/keywords" []
-                  (POST* "/tags" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation TagRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TAGS new-annotation)))
-                  (POST* "/properties" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation PropertyRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES new-annotation)))
-                  (POST* "/timelines" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation TimelineEventRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS new-annotation)))
-                  (POST* "/notes" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation NoteRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/NOTES new-annotation))))))))))
+                (POST* "/tags" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TagRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TAGS new-annotation)))
+                (POST* "/properties" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation PropertyRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES new-annotation)))
+                (POST* "/timeline-events" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TimelineEventRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS new-annotation)))
+                (POST* "/notes" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation NoteRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/NOTES new-annotation)))))))))
 
     (swaggered "views"
       (context "/api" []

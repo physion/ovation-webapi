@@ -60,7 +60,6 @@
 (defn add-annotation [api-key id annotation-type record]
   "Adds an annotation to an entity"
   (let [entity (get-entity api-key id)
-        yo (clojure.pprint/pprint "in add-annotation")
         add    (.addAnnotation entity annotation-type record)]
     {:success true}))
 
