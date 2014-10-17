@@ -1,4 +1,5 @@
 (ns ovation-rest.handler
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
   (:require [clojure.string :refer [join]]
             [ring.util.http-response :refer [created ok accepted]]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -11,7 +12,7 @@
             [ovation-rest.entity :as entity]
             [ovation-rest.links :as links]
             [ovation-rest.util :as util]
-            [ovation-rest.schema :refer [Success Entity NewEntity Link NamedLink]]
+            [ovation-rest.schema :refer :all]
             ))
 
 
@@ -123,6 +124,37 @@
                     :query-params [api-key :- s/Str]
                     :summary "Deletes a named link to the given target (uuid)"
                     (ok (links/delete-named-link api-key id rel named target))))))))))
+
+    (swaggered "annotations"
+      (context "/api" []
+        (context "/v1" []
+          (context "/entities" []
+            (context "/:id" [id]
+              (context "/annotations" []
+                (POST* "/tags" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TagRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TAGS new-annotation)))
+                (POST* "/properties" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation PropertyRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES new-annotation)))
+                (POST* "/timeline-events" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation TimelineEventRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS new-annotation)))
+                (POST* "/notes" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :body [new-annotation NoteRecord]
+                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/NOTES new-annotation)))))))))
 
     (swaggered "views"
       (context "/api" []

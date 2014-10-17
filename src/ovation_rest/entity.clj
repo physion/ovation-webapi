@@ -1,5 +1,6 @@
 (ns ovation-rest.entity
   (:import (us.physion.ovation.domain URIs)
+           (us.physion.ovation.domain OvationEntity$AnnotationKeys)
            (us.physion.ovation.exceptions OvationException))
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
@@ -56,6 +57,11 @@
         dto (entity-to-dto entity)]
     (into-seq [(update-entity entity (assoc-in dto [:attributes] attributes))])))
 
+(defn add-annotation [api-key id annotation-type record]
+  "Adds an annotation to an entity"
+  (let [entity (get-entity api-key id)
+        add    (.addAnnotation entity annotation-type record)]
+    {:success true}))
 
 
 (defn delete-entity [api-key id]
