@@ -2,9 +2,9 @@
   (:import (com.google.common.collect HashMultimap)
            (java.util HashMap HashSet LinkedList))
   (:use midje.sweet)
-  (:require [ovation-rest.interop :refer [clojurify]]))
+  (:require [ovation-rest.interop :refer [clojurify javafy]]))
 
-(facts "about Java interop"
+(facts "About Java --> Clojure interop"
        (facts "about collections"
               (fact "converts Java Map to clojure Map"
                     (let [jmap (doto (HashMap.)
@@ -35,3 +35,11 @@
                       (clojurify m) => {:multi {:key1 #{"value1.1" "value1.2"}
                                                 :key2 #{"value2.1"}
                                                 :key3 #{"value3.1"}}}))))
+
+(facts "About Clojure --> Java interop"
+  (facts "about Maps"
+    (fact "converts PersistentMap to mutable map"
+      (let [cmap {"key1" "val1" "key2" {"key2.1" "val2.1"}}
+            expected (doto (HashMap.) (.put "key1" "val1") (.put "key2" (HashMap. {"key2.1" "val2.1"})))]
+        (javafy cmap) => expected))))
+

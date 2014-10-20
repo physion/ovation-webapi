@@ -1,6 +1,7 @@
 (ns ovation-rest.interop
-  (:import (java.util Collection List Set Map)
-           (com.google.common.collect Multimap)))
+  (:import (java.util Collection List Set Map HashMap)
+           (com.google.common.collect Multimap))
+  (:require [clojure.walk :refer [stringify-keys]]))
 
 (defmulti clojurify class)
 
@@ -27,3 +28,11 @@
 (defmethod clojurify Object [o]
   o)
 
+
+
+(defmulti javafy class)
+(defmethod javafy Map [m]
+  (HashMap. (into {} (map #(let [[k v] %1]
+                            [k (javafy v)]) (stringify-keys m)))))
+(defmethod javafy Object [o]
+  o)

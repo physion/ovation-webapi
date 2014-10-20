@@ -41,12 +41,14 @@
                                                              :attributes {}
                                                              :type       "Project"}])))
 
-  (fact "PUT /entities/:id updates the attributes in entity (201)"
+  (fact "PUT /entities/:id updates the attributes in entity (200)"
     (let [uuid (UUID/randomUUID)
+          id (str uuid)
           dto {:type       "Project"
                :attributes {"attr1" 1
                             "attr2" "value"}
-               :_id        (str uuid)
+               :links      {}
+               :_id        id
                :_rev       "rev"}]
 
       (:status (handler/app (-> (mock/request :put "/api/v1/entities/123")
@@ -55,9 +57,10 @@
                               (mock/body (json/write-str (walk/stringify-keys dto)))))) => 200
       (provided
         (entity/update-entity-attributes "12345" "123" {:attr1 1
-                                             :attr2 "value"}) => [{:_id        (str uuid)
-                                                                   :_rev       "rev2"
-                                                                   :attributes {"attr1" 1}
-                                                                   :type       "Project"}])))
+                                                        :attr2 "value"}) => [{:_id        (str uuid)
+                                                                              :_rev       "rev2"
+                                                                              :attributes {"attr1" 1}
+                                                                              :links      {}
+                                                                              :type       "Project"}])))
   )
 
