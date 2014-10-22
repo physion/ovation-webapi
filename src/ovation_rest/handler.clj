@@ -74,16 +74,6 @@
                 :summary "Deletes entity with :id"
                 (accepted (entity/delete-entity api-key id)))
 
-              (context "/annotations" []
-                (GET* "/" request
-                  :query-params [api-key :- s/Str]
-                  :summary "Returns all annotations entities associated with entity"
-                  (ok (entity/get-annotations api-key id)))
-                (GET* "/:annotation-type/:user-id/:id" [annotation-type user-id id]
-                  :query-params [api-key :- s/Str]
-                  :summary "Returns the annotation with :id of :annotation-type for :user-id"
-                  (ok (entity/get-annotations api-key id))))
-
               (context "/links" []
                 (POST* "/" []
                   :return [Entity]
@@ -131,6 +121,18 @@
           (context "/entities" []
             (context "/:id" [id]
               (context "/annotations" []
+
+                (context "/:annotation-id" [annotation-id]
+                  (DELETE* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  (ok (entity/delete-annotation api-key id annotation-id))))
+
+                (GET* "/" request
+                  :return Success
+                  :query-params [api-key :- String]
+                  :summary "Returns all annotations associated with entity"
+                  (ok (entity/get-annotations api-key id)))
                 (POST* "/tags" request
                   :return Success
                   :query-params [api-key :- String]

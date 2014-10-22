@@ -51,18 +51,22 @@
   (.update entity (stringify-keys dto))
   entity)
 
-
 (defn update-entity-attributes [api-key id attributes]
   (let [entity (get-entity api-key id)
         dto (entity-to-dto entity)]
     (into-seq [(update-entity entity (assoc-in dto [:attributes] attributes))])))
+
+(defn delete-annotation [api-key entity-id annotation-type annotation-id]
+  "Deletes an annotation with :annotation-id for entity with id :entity-id"
+  (let [entity  (get-entity api-key entity-id)
+        success (.removeAnnotation entity annotation-type annotation-id)]
+    {:success true}))
 
 (defn add-annotation [api-key id annotation-type record]
   "Adds an annotation to an entity"
   (let [entity (get-entity api-key id)
         add    (.addAnnotation entity annotation-type record)]
     {:success true}))
-
 
 (defn delete-entity [api-key id]
   (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
