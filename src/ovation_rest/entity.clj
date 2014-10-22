@@ -6,7 +6,8 @@
             [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation-rest.context :refer [transaction]]
-            [ovation-rest.links :as links]))
+            [ovation-rest.links :as links]
+            [ovation-rest.interop :as interop]))
 
 
 (defn create-multimap [m]
@@ -48,13 +49,15 @@
 
 (defn- update-entity
   [entity dto]
-  (.update entity (stringify-keys dto))
-  entity)
+  (let [update (interop/javafy (stringify-keys dto))]
+    (.update entity update)
+    entity))
 
 (defn update-entity-attributes [api-key id attributes]
   (let [entity (get-entity api-key id)
-        dto (entity-to-dto entity)]
-    (into-seq [(update-entity entity (assoc-in dto [:attributes] attributes))])))
+        dto (entity-to-dto entity)
+        updated (update-entity entity (assoc-in dto [:attributes] attributes))]
+    (into-seq (conj () updated))))
 
 (defn delete-annotation [api-key entity-id annotation-type annotation-id]
   "Deletes an annotation with :annotation-id for entity with id :entity-id"
@@ -64,8 +67,8 @@
 
 (defn add-annotation [api-key id annotation-type record]
   "Adds an annotation to an entity"
-  (let [entity (get-entity api-key id)
-        add    (.addAnnotation entity annotation-type record)]
+  (let [entity (get-entity api-key id)]
+    (.addAnnotation entity annotation-type record)
     {:success true}))
 
 (defn delete-entity [api-key id]

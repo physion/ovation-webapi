@@ -54,7 +54,7 @@
                      :_rev                         s/Str
                      :_id                          s/Uuid
                      :links                        {s/Keyword s/Str}
-                     :attributes                   {s/Keyword s/Str}
+                     :attributes                   {s/Keyword s/Any}
                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
                      (s/optional-key :annotations) s/Any})
 
