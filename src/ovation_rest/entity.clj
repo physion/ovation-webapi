@@ -43,6 +43,10 @@
 
           (into-seq (conj () entity)))))))
 
+(defn get-specific-annotations [api-key id annotation-key]
+  "Returns specific annotations associated with entity(id)"
+  (into [] (.get (.getAnnotations (get-entity api-key id)) annotation-key)))
+
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
   (into [] (.getAnnotations (get-entity api-key id))))

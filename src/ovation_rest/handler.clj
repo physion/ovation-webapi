@@ -129,10 +129,43 @@
                   (ok (entity/delete-annotation api-key id annotation-id))))
 
                 (GET* "/" request
-                  :return Success
+                  :return [s/Any]
                   :query-params [api-key :- String]
                   :summary "Returns all annotations associated with entity"
                   (ok (entity/get-annotations api-key id)))
+
+;                (GET* "/keywords" request
+;                  :return [s/Any]
+;                  :query-params [api-key :- String]
+;                  :summary "Returns keywords annotations associated with entity"
+;                  (ok (entity/get-specific-annotations api-key id "keywords")))
+                (GET* "/tags" request
+                  :return [s/Any]
+                  :query-params [api-key :- String]
+                  :summary "Returns tags annotations associated with entity"
+                  (ok (entity/get-specific-annotations api-key id "tags")))
+                (GET* "/properties" request
+                  :return [s/Any]
+                  :query-params [api-key :- String]
+                  :summary "Returns properties annotations associated with entity"
+                  (ok (entity/get-specific-annotations api-key id "properties")))
+                (GET* "/timeline-events" request
+                  :return [s/Any]
+                  :query-params [api-key :- String]
+                  :summary "Returns timeline-events annotations associated with entity"
+                  (ok (entity/get-specific-annotations api-key id "timeline-events")))
+                (GET* "/notes" request
+                  :return [s/Any]
+                  :query-params [api-key :- String]
+                  :summary "Returns notes annotations associated with entity"
+                  (ok (entity/get-specific-annotations api-key id "notes")))
+
+;                (POST* "/keywords" request
+;                  :return Success
+;                  :query-params [api-key :- String]
+;                  :body [new-annotation TagRecord]
+;                  :summary "Adds a new annotation (owned by current authenticated user) to this entity"
+;                  (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/keywords new-annotation)))
                 (POST* "/tags" request
                   :return Success
                   :query-params [api-key :- String]
