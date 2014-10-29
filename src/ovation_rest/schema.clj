@@ -31,16 +31,19 @@
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/NOTES
                                                   :annotation      NoteRecord}))
 
-(s/defschema TimelineEventRecord {:name  s/Str
-                                  :notes s/Str
-                                  :start s/Str
+(s/defschema TimelineEventRecord {:name                 s/Str
+                                  :notes                s/Str
+                                  :start                s/Str
                                   (s/optional-key :end) s/Str})
 (s/defschema TimelineEventAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TIMELINE_EVENTS
                                                            :annotation      TimelineEventRecord}))
 
 (s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
 (s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
-
+(s/defschema AnnotationCollection {s/Str ;; User URI
+                                   [Annotation]})
+(s/defschema AnnotationsMap {s/Str                          ;; Annotation Type
+                             AnnotationCollection})
 (s/defschema Link {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
                    :target_id                    s/Uuid
                    :rel                          s/Str

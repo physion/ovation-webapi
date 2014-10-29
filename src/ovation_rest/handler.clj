@@ -123,7 +123,7 @@
               (context "/annotations" []
 
                 (GET* "/" []
-                  ;:return [Annotation]
+                  ;:return AnnotationsMap
                   :query-params [api-key :- String]
                   :summary "Returns all annotations associated with entity"
                   (ok (entity/get-annotations api-key id)))
@@ -131,7 +131,7 @@
 
                 (context "/keywords" []
                   (GET* "/" request
-                    ;:return [TagAnnotation]
+                    ;:return {s/Str [TagAnnotation]}
                     :query-params [api-key :- String]
                     :summary "Returns tags annotations associated with entity"
                     (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/TAGS)))
@@ -151,7 +151,7 @@
 
                 (context "/properties" []
                   (GET* "/" request
-                    :return [PropertyAnnotation]
+                    ;:return [PropertyAnnotation]
                     :query-params [api-key :- String]
                     :summary "Returns properties annotations associated with entity"
                     (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/PROPERTIES)))
