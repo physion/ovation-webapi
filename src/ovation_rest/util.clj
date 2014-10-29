@@ -1,94 +1,120 @@
 (ns ovation-rest.util
   (:import (java.net URI)
            (us.physion.ovation.domain URIs))
-  (:require [clojure.pprint]
-            [ovation-rest.context :as context]
-            )
-  )
+  (:require [ovation-rest.context :as context]
+            [ovation-rest.interop :as interop]
+            [ovation-rest.paths :as paths]
+            [clojure.string :refer [join]]
+            [clojurewerkz.urly.core :as urly]
+            [pathetic.core :refer [url-normalize up-dir]]))
 
-(defn ctx [api_key]
-  (context/cached-context api_key))
+(def version-path "/v1")
 
-(defn get-body-from-request [request]
-  (slurp (:body request)))
-
-(defn object-to-json [obj]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.configure com.fasterxml.jackson.databind.SerializationFeature/WRITE_DATES_AS_TIMESTAMPS false)
-    (.writeValueAsString obj)
-    )
-  )
-
-(defn json-to-map [json]
-  (->
-    (new com.fasterxml.jackson.databind.ObjectMapper)
-    (.registerModule (com.fasterxml.jackson.datatype.guava.GuavaModule.))
-    (.registerModule (com.fasterxml.jackson.datatype.joda.JodaModule.))
-    (.readValue json java.util.Map)
-    )
-  )
-
-
-(defn entity-to-dto
-  "Clojure wrapper for entity.toMap()"
-  [entity]
-  (.toMap entity))
-
-(defn augment-entity-dto [dto]
-  (let [links (.get dto "links")]
-    (.put links "self" (str (URIs/create dto)))
-    (.put dto "links" links)
-    dto))
-
-(defn convert-entity-to-map
-  "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
-  [entity]
-  (augment-entity-dto (entity-to-dto entity)))
-
-(defn entities-to-json [entity_seq]
-  (object-to-json (into-array (map convert-entity-to-map entity_seq)))
-  )
-
-(defn host-from-request [request]
-  (let [
-         scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
-         host (get (get request :headers) "host")
-         ]
-    (clojure.string/join "" [scheme host "/"])
-    )
-  )
-
-(defn munge-strings [s host]
-  (.replaceAll (new String s) "ovation://" host))
-
-(defn unmunge-strings [s host]
-  (clojure.pprint/pprint (.getClass s))
-  (.replaceAll (new String s) host "ovation://"))
-
-(defn auth-filter-middleware [request handler-fn]
-  (let [params (get request :query-params)
-        status (if-not (contains? params "api-key")
-                 (num 401)
-                 (num 200))
-        body (if (= 200 status)
-               (str (handler-fn (get params "api-key")))
-               (str "Please log in to access resource"))]
-
-    {:status       status
-     :body         (munge-strings body (host-from-request request))
-     :content-type "application/json"}
-    )
-  )
+(defn ctx [api-key]
+  (context/cached-context api-key))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
     (let [buffer (java.nio.ByteBuffer/wrap
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (java.util.UUID. (.getLong buffer) (.getLong buffer))
-      )
-    (java.util.UUID/fromString s)
-    )
-  )
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))
+
+(defn get-entity
+  "Gets a single entity by ID (uuid string)"
+  [api-key id]
+  (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
+
+(defn get-body-from-request [request]
+  (slurp (:body request)))
+
+(defn- split-query [u]
+  (clojure.string/split u #"\?" 2))
+
+(defn entity-to-dto
+  "Clojure wrapper for entity.toMap()"
+  [entity]
+  (interop/clojurify (.toMap entity)))
+
+(defn single-link
+  "Return a single link from an id and relationship name"
+  [id, rel]
+  (if (= (name rel) "self")
+    (clojure.string/join ["/api" version-path "/entities/" id])
+    (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
+
+(defn links-to-rel-path
+  "Augment an entity dto with the links.self reference"
+  [dto]
+  (let [add_self         (merge-with conj dto {:links {:self ""}})
+        new_links_map    (into {} (map (fn [x] [(first x) (single-link (dto :_id) (first x))]) (add_self :links)))]
+    (assoc-in add_self [:links] new_links_map)))
+
+(defn convert-entity-to-map
+  "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
+  [entity]
+  (links-to-rel-path (entity-to-dto entity)))
+
+(defn into-seq
+  "Converts a seq of entities into an array of Maps"
+  [entity_seq]
+  (doall (map (partial convert-entity-to-map) entity_seq)))
+
+(defn create-uri [id]
+  "Creates an ovation URI from string id"
+  (if (instance? URI id)
+    id
+    (URIs/create id)))
+
+(defn- request-context
+  [request]
+  (:context request))
+
+(defn to-web-uri
+  "Converts an ovation:// URI to a web (http[s]://) URI for the given server base URI"
+  [base_uri entity_uri]
+  (let [entity_urly (urly/url-like entity_uri)
+        q (urly/query-of entity_uri)
+        result_base (urly/resolve base_uri (clojure.string/join "/" [(urly/host-of entity_urly) (urly/path-of entity_urly)]))]
+
+    (if q
+      (format "%s?%s" result_base q)
+      result_base)))
+
+(defn to-ovation-uri
+  "Converts a web URI with the given server base to an ovation:// URI"
+  [web_uri base_uri]
+  (let [[web_base q] (split-query web_uri)
+        web_urly (urly/url-like web_base)
+        base_urly (urly/url-like (urly/normalize-url base_uri))
+        part (.relativize (-> base_urly (.toURL) (.toURI)) (-> web_urly (.toURL) (.toURI)))
+        result_base  (format "ovation://%s" (str part))]
+
+    (if q
+      (format "%s?%s" result_base q)
+      result_base)))
+
+(defn host-from-request [request]
+   (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
+         host (get (get request :headers) "host")]
+     (clojure.string/join "" [scheme host "/"])))
+
+(defn host-context
+  "Calculates the host context for a given request. The host context is the host (e.g. https://server.com/)
+  plus the context path (e.g. /api/v1). If :remove-levels is provided, the given number of levels are removed
+  from the context path. For example, :remove-levels 1 would give https://server.com/api instead of
+  https://server.com/api/v1"
+
+  [request & {:keys [remove-levels] :or {:remove-levels 0}}]
+  (let [host-url (host-from-request request)
+        context-vec (paths/split (request-context request))
+        truncated-vec (if remove-levels (vec (take (- (alength (into-array context-vec)) remove-levels) context-vec))
+                                        context-vec)]
+    (url-normalize (paths/join [host-url (paths/join truncated-vec)]))))
+
+
+(defn ovation-query
+  [request]
+  (let [params (:query-params request)]
+    (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
+

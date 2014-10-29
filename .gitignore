@@ -18,3 +18,9 @@ pom.xml.asc
 .idea
 .repository
 ovation_api_webservice.iml
+
+*.orig
+
+ovation_rest.iml
+
+examples/.ipynb_checkpoints/webapi-analysis-records-checkpoint.ipynb
