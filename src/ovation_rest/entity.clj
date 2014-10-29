@@ -1,7 +1,8 @@
 (ns ovation-rest.entity
   (:import (us.physion.ovation.domain URIs)
            (us.physion.ovation.domain OvationEntity$AnnotationKeys)
-           (us.physion.ovation.exceptions OvationException))
+           (us.physion.ovation.exceptions OvationException)
+           (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
             [slingshot.slingshot :refer [try+ throw+]]
@@ -11,7 +12,7 @@
 
 
 (defn create-multimap [m]
-  (us.physion.ovation.util.MultimapUtils/createMultimap m))
+  (MultimapUtils/createMultimap m))
 
 (defn insert-entity
   "Inserts dto as an entity into the given DataContext"
@@ -43,9 +44,14 @@
 
           (into-seq (conj () entity)))))))
 
+(defn get-specific-annotations [api-key id annotation-key]
+  "Returns specific annotations associated with entity(id)"
+  (let [_ (prn (.get (.getAnnotations (get-entity api-key id)) annotation-key))]
+    (into {} (.get (.getAnnotations (get-entity api-key id)) annotation-key))))
+
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
-  (into [] (.getAnnotations (get-entity api-key id))))
+  (into {} (.getAnnotations (get-entity api-key id))))
 
 (defn- update-entity
   [entity dto]
@@ -77,13 +83,13 @@
 
     {:success (not (empty? trash_resp))}))
 
-(defn- ^{:testable true} get-projects [ctx]
+(defn get-projects [ctx]
   (.getProjects ctx))
 
-(defn- ^{:testable true} get-sources [ctx]
+(defn get-sources [ctx]
   (.getTopLevelSources ctx))
 
-(defn- ^{:testable true} get-protocols [ctx]
+(defn get-protocols [ctx]
   (.getProtocols ctx))
 
 (defn index-resource [api-key resource]

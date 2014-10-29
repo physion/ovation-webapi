@@ -31,6 +31,15 @@
 (defn- split-query [u]
   (clojure.string/split u #"\?" 2))
 
+(defn add-annotation-links [e]
+  "Add links for annotation types"
+  (let [prefix          (clojure.string/join ["/api" version-path "/entities/" (:_id e) "/annotations/"])
+        properties      {:properties (clojure.string/join [prefix "properties"])}
+        tags            {:tags (clojure.string/join [prefix "tags"])}
+        timeline-events {:timeline-events (clojure.string/join [prefix "timeline-events"])}
+        notes           {:notes (clojure.string/join [prefix "notes"])}]
+    (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
+
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
   [entity]
@@ -53,7 +62,10 @@
 (defn convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [entity]
-  (links-to-rel-path (entity-to-dto entity)))
+  (let [convert-to-dto   (entity-to-dto entity)
+        convert-links    (links-to-rel-path convert-to-dto)
+        annotation-links (add-annotation-links convert-links)]
+    annotation-links))
 
 (defn into-seq
   "Converts a seq of entities into an array of Maps"
