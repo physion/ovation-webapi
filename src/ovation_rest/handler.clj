@@ -131,7 +131,7 @@
 
                 (context "/keywords" []
                   (GET* "/" request
-                    :return [TagAnnotation]
+                    ;:return [TagAnnotation]
                     :query-params [api-key :- String]
                     :summary "Returns tags annotations associated with entity"
                     (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/TAGS)))

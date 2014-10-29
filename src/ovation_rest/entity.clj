@@ -46,11 +46,12 @@
 
 (defn get-specific-annotations [api-key id annotation-key]
   "Returns specific annotations associated with entity(id)"
-  (into [] (.get (.getAnnotations (get-entity api-key id)) annotation-key)))
+  (let [_ (prn (.get (.getAnnotations (get-entity api-key id)) annotation-key))]
+    (into {} (.get (.getAnnotations (get-entity api-key id)) annotation-key))))
 
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
-  (into [] (.getAnnotations (get-entity api-key id))))
+  (into {} (.getAnnotations (get-entity api-key id))))
 
 (defn- update-entity
   [entity dto]
@@ -82,13 +83,13 @@
 
     {:success (not (empty? trash_resp))}))
 
-(defn- ^{:testable true} get-projects [ctx]
+(defn get-projects [ctx]
   (.getProjects ctx))
 
-(defn- ^{:testable true} get-sources [ctx]
+(defn get-sources [ctx]
   (.getTopLevelSources ctx))
 
-(defn- ^{:testable true} get-protocols [ctx]
+(defn get-protocols [ctx]
   (.getProtocols ctx))
 
 (defn index-resource [api-key resource]
