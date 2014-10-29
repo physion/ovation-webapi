@@ -40,6 +40,7 @@
 
 (s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
 (s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
+
 (s/defschema Link {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
                    :target_id                    s/Uuid
                    :rel                          s/Str

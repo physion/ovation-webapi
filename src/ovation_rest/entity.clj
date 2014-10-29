@@ -1,7 +1,8 @@
 (ns ovation-rest.entity
   (:import (us.physion.ovation.domain URIs)
            (us.physion.ovation.domain OvationEntity$AnnotationKeys)
-           (us.physion.ovation.exceptions OvationException))
+           (us.physion.ovation.exceptions OvationException)
+           (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
             [slingshot.slingshot :refer [try+ throw+]]
@@ -11,7 +12,7 @@
 
 
 (defn create-multimap [m]
-  (us.physion.ovation.util.MultimapUtils/createMultimap m))
+  (MultimapUtils/createMultimap m))
 
 (defn insert-entity
   "Inserts dto as an entity into the given DataContext"
