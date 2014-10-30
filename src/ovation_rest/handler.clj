@@ -18,28 +18,28 @@
 
 (defmacro annotation
   "Creates an annotation type endpoint"
-  [annotation-type annotation-key record-schema annotation-schema]
+  [id annotation-type annotation-key record-schema annotation-schema]
 
   `(context ~(str "/" annotation-type) []
     (GET* "/" []
       :return [~annotation-schema]
-      :query-params [api-key :- String]
-      :summary (str "Returns " annotation-type " annotations associated with entity")
-      (ok (entity/get-specific-annotations api-key id ~annotation-key)))
+      :query-params [api-key# :- String]
+      :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
+      (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))
 
     (POST* "/" []
       :return Success
-      :query-params [api-key :- String]
-      :body [new-annotation ~record-schema]
-      :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-      (ok (entity/add-annotation api-key id ~annotation-key new-annotation)))
+      :query-params [api-key# :- String]
+      :body [new-annotation# ~record-schema]
+      :summary ~(str "Adds a new " annotation-type " annotation to entity :id")
+      (ok (entity/add-annotation api-key# ~id ~annotation-key new-annotation#)))
 
-    (context "/:annotation-id" [annotation-id]
+    (context "/:annotation-id" [annotation-id#]
       (DELETE* "/" []
         :return Success
-        :query-params [api-key :- String]
-        :summary "Deletes an identified annotation from this entity"
-        (ok (entity/delete-annotation api-key id ~annotation-key annotation-id))))))
+        :query-params [api-key# :- String]
+        :summary ~(str "Removes a " annotation-type " annotation from entity :id")
+        (ok (entity/delete-annotation api-key# ~id ~annotation-key annotation-id#))))))
 
 
 
@@ -154,83 +154,10 @@
                   (ok (entity/get-annotations api-key id)))
 
 
-                (annotation "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-                ;(context "/keywords" []
-                ;  (GET* "/" request
-                ;    ;:return {s/Str [TagAnnotation]}
-                ;    :query-params [api-key :- String]
-                ;    :summary "Returns tags annotations associated with entity"
-                ;    (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/TAGS)))
-                ;
-                ;  (POST* "/" request
-                ;    :return Success
-                ;    :query-params [api-key :- String]
-                ;    :body [new-annotation TagRecord]
-                ;    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                ;    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TAGS new-annotation)))
-                ;
-                ;  (context "/:annotation-id" [annotation-id]
-                ;    (DELETE* "/" request
-                ;      :return Success
-                ;      :query-params [api-key :- String]
-                ;      (ok (entity/delete-annotation api-key id OvationEntity$AnnotationKeys/TAGS annotation-id)))))
-
-                (context "/properties" []
-                  (GET* "/" request
-                    ;:return [PropertyAnnotation]
-                    :query-params [api-key :- String]
-                    :summary "Returns properties annotations associated with entity"
-                    (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/PROPERTIES)))
-                  (POST* "/properties" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation PropertyRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES new-annotation)))
-                  (context "/:annotation-id" [annotation-id]
-                    (DELETE* "/" request
-                      :return Success
-                      :query-params [api-key :- String]
-                      (ok (entity/delete-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES annotation-id)))))
-
-
-                (context "timeline-events" []
-                  (GET* "/" []
-                    :return [TimelineEventAnnotation]
-                    :query-params [api-key :- String]
-                    :summary "Returns timeline-events annotations associated with entity"
-                    (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS)))
-                  (POST* "" request
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation TimelineEventRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS new-annotation)))
-
-                  (context "/:annotation-id" [annotation-id]
-                    (DELETE* "/" request
-                      :return Success
-                      :query-params [api-key :- String]
-                      (ok (entity/delete-annotation api-key id OvationEntity$AnnotationKeys/TIMELINE_EVENTS annotation-id)))))
-
-                (context "/notes" []
-                  (GET* "/" []
-                    :return [NoteAnnotation]
-                    :query-params [api-key :- String]
-                    :summary "Returns notes annotations associated with entity"
-                    (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/NOTES)))
-                  (POST* "/" []
-                    :return Success
-                    :query-params [api-key :- String]
-                    :body [new-annotation NoteRecord]
-                    :summary "Adds a new annotation (owned by current authenticated user) to this entity"
-                    (ok (entity/add-annotation api-key id OvationEntity$AnnotationKeys/NOTES new-annotation)))
-
-                  (context "/:annotation-id" [annotation-id]
-                    (DELETE* "/" request
-                      :return Success
-                      :query-params [api-key :- String]
-                      (ok (entity/delete-annotation api-key id OvationEntity$AnnotationKeys/NOTES annotation-id)))))))))))
+                (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
+                (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
+                (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
+                (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation)))))))
 
     (swaggered "views"
       (context "/api" []
@@ -242,7 +169,6 @@
               :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
               (let [host (util/host-from-request request)]
                 (ok (entity/get-view api-key
-                      (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))
-                      (util/host-context request :remove-levels 1)))
-                ))))))))
+                      (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
+    ))
 
