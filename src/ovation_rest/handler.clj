@@ -131,7 +131,7 @@
 
                 (context "/keywords" []
                   (GET* "/" request
-                    ;:return {s/Str [TagAnnotation]}
+                    :return [TagAnnotation]
                     :query-params [api-key :- String]
                     :summary "Returns tags annotations associated with entity"
                     (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/TAGS)))
@@ -151,7 +151,7 @@
 
                 (context "/properties" []
                   (GET* "/" request
-                    ;:return [PropertyAnnotation]
+                    :return [PropertyAnnotation]
                     :query-params [api-key :- String]
                     :summary "Returns properties annotations associated with entity"
                     (ok (entity/get-specific-annotations api-key id OvationEntity$AnnotationKeys/PROPERTIES)))
@@ -168,7 +168,7 @@
                       (ok (entity/delete-annotation api-key id OvationEntity$AnnotationKeys/PROPERTIES annotation-id)))))
 
 
-                (context "timeline-events" []
+                (context "/timeline-events" []
                   (GET* "/" []
                     :return [TimelineEventAnnotation]
                     :query-params [api-key :- String]
