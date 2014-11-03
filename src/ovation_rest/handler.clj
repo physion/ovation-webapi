@@ -87,7 +87,7 @@
                 :return [Entity]
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
-                (ok (dao/into-seq (conj () (dao/get-entity api-key id)))))
+                (ok (dao/into-seq api-key (conj () (dao/get-entity api-key id)))))
               (PUT* "/" request
                 :return [Entity]
                 :query-params [api-key :- s/Str]

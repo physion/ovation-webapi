@@ -10,8 +10,3 @@
         timeline-events {:timeline-events (clojure.string/join [prefix "timeline-events"])}
         notes           {:notes (clojure.string/join [prefix "notes"])}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
-
-(defn replace-uri-keys-with-usernames
-  "Replaces user URI keys in the annotations map with user names"
-  [api-key annotations]
-  )

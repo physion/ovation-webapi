@@ -43,7 +43,7 @@
                 (doseq [link rel-links]
                   (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
 
-          (into-seq (conj () entity)))))))
+          (into-seq api-key (conj () entity)))))))
 
 (defn get-specific-annotations [api-key id annotation-key]
   "Returns specific annotations associated with entity(id)"
@@ -60,11 +60,12 @@
     (.update entity update)
     entity))
 
-(defn update-entity-attributes [api-key id attributes]
+(defn update-entity-attributes
+  [api-key id attributes]
   (let [entity (get-entity api-key id)
         dto (entity-to-dto entity)
         updated (update-entity entity (assoc-in dto [:attributes] attributes))]
-    (into-seq (conj () updated))))
+    (into-seq api-key (conj () updated))))
 
 (defn delete-annotation [api-key entity-id annotation-type annotation-id]
   "Deletes an annotation with :annotation-id for entity with id :entity-id"
@@ -93,12 +94,13 @@
 (defn get-protocols [ctx]
   (.getProtocols ctx))
 
-(defn index-resource [api-key resource]
+(defn index-resource
+  [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
                     "sources" (get-sources (ctx api-key))
                     "protocols" (get-protocols (ctx api-key)))]
-    (into-seq resources)))
+    (into-seq api-key resources)))
 
 (defn- get-view-results [ctx uri]
   (.getObjectsWithURI ctx uri))
@@ -106,6 +108,7 @@
 (defn escape-quotes [full-url]
   (clojure.string/replace full-url "\"" "%22"))
 
-(defn get-view [api-key full-url]
-  (into-seq (get-view-results (ctx api-key) (escape-quotes full-url))))
+(defn get-view
+  [api-key full-url]
+  (into-seq api-key (get-view-results (ctx api-key) (escape-quotes full-url))))
 

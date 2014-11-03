@@ -8,9 +8,10 @@
 (defn get-entities [entity rel]
   (.getEntities entity rel))
 
-(defn get-link [api-key id rel]
+(defn get-link
   "Returns all entities from entity(id)->rel and returns them"
-  (into-seq (into () (get-entities (get-entity api-key id) rel))))
+  [api-key id rel]
+  (into-seq api-key (into () (get-entities (get-entity api-key id) rel))))
 
 (defn add-link
   "Adds a link (:rel) to entity with the given target and inverse"
@@ -60,10 +61,11 @@
   (.removeNamedLink entity rel named (create-uri target))
   true)
 
-(defn get-named-link "Returns all entities from entity(id)->link"
+(defn get-named-link
+  "Returns all entities from entity(id)->link"
   [api-key id rel named]
 
-  (into-seq (into () (get-named-entities (get-entity api-key id) rel named))))
+  (into-seq api-key (into () (get-named-entities (get-entity api-key id) rel named))))
 
 (defn create-named-link
   "Creates a new link from entity(id) -> entity(target)"
