@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:import (java.util UUID))
   (:require [ovation-rest.dao :as dao]
-            [ovation-rest.util :as util]))
+            [ovation-rest.util :as util]
+            [ovation-rest.annotations :as annotations]))
 
 (facts "About annotation maps"
   (fact "replaces root User URI keys with user names in annotations map"
@@ -38,3 +39,13 @@
       (provided
         (dao/username-from-user-uri ...api... uri1) => ...name1...
         (dao/username-from-user-uri ...api... uri2) => ...name2...))))
+
+
+(facts "About Entity-to-Map conversion"
+  (fact "Calls transformation pipeline"
+    (dao/convert-entity-to-map ...api... ...entity...) => ...map...
+    (provided
+      (dao/entity-to-dto ...entity...) => ...dto...
+      (dao/links-to-rel-path ...dto...) => ...rellinks...
+      (annotations/add-annotation-links ...rellinks...) => ...annotationlinks...
+      (dao/replace-annotation-keys ...api... ...annotationlinks...) => ...map...)))
