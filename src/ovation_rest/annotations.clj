@@ -10,3 +10,4 @@
         timeline-events {:timeline-events (clojure.string/join [prefix "timeline-events"])}
         notes           {:notes (clojure.string/join [prefix "notes"])}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
+

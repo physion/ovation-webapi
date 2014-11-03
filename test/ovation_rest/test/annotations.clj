@@ -17,3 +17,9 @@
 
 
 
+(facts "About annotation endpoints"
+  (fact "converts annotation map to annotation document seq"
+    (a/union-annotations {:type1 {:user1 [...doc1... ...doc2...]
+                                  :user2 [...doc3... ...doc4...]}
+                          :type2 {:user1 [...doc5... ...doc6...]
+                                  :user2 [...doc7... ...doc8...]}}) => (seq [...doc1... ...doc2... ...doc3... ...doc4... ...doc5... ...doc6... ...doc7... ...doc8...])))
