@@ -4,7 +4,8 @@
            (us.physion.ovation.exceptions OvationException)
            (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
+            [ovation-rest.dao :refer [get-entity entity-to-dto into-seq]]
+            [ovation-rest.util :refer [ctx create-uri parse-uuid]]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation-rest.context :refer [transaction]]
             [ovation-rest.links :as links]

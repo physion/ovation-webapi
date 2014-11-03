@@ -13,6 +13,7 @@
             [ovation-rest.links :as links]
             [ovation-rest.util :as util]
             [ovation-rest.schema :refer :all]
+            [ovation-rest.dao :as dao]
             ))
 
 
@@ -86,7 +87,7 @@
                 :return [Entity]
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
-                (ok (util/into-seq (conj () (util/get-entity api-key id)))))
+                (ok (dao/into-seq (conj () (dao/get-entity api-key id)))))
               (PUT* "/" request
                 :return [Entity]
                 :query-params [api-key :- s/Str]
