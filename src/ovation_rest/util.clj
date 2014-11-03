@@ -31,6 +31,11 @@
 (defn- split-query [u]
   (clojure.string/split u #"\?" 2))
 
+(defn username-from-couchview [api-key view]
+  (let [id (get (clojure.string/split view #"/") 3)
+        entity (get-entity api-key id)]
+    (.getUsername entity)))
+
 (defn add-annotation-links [e]
   "Add links for annotation types"
   (let [prefix          (clojure.string/join ["/api" version-path "/entities/" (:_id e) "/annotations/"])
