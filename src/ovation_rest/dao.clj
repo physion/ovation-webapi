@@ -13,7 +13,8 @@
   (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
 
-(defn remove-hidden-links
+(defn remove-private-links
+  "Removes private links (e.g. _collaboration_roots) from the dto.links"
   [dto]
   (if-let [links (:links dto)]
     (let [hidden-links (filter #(re-matches #"_.+" (name %)) (keys links))
@@ -22,24 +23,22 @@
     dto))
 
 (defn add-self-link
-  [prefix dto]
-  dto)
+  [link dto]
+  (assoc-in dto [:links :self] link))
 
 (defn get-entity-annotations
   "Gets the :annotations map for the entity with ID (uuid string)"
   [api-key id]
-  (->> (.getAnnotations (get-entity api-key id))
-    (remove-hidden-links)
-    (add-self-link "/prefix")))
+  (.getAnnotations (get-entity api-key id)))
 
 (defn entity-to-dto
   " Clojure wrapper for entity.toMap()"
   [entity]
   (interop/clojurify (.toMap entity)))
 
-(defn single-link
+(defn entity-single-link
   "Return a single link from an id and relationship name"
-  [id, rel]
+  [id rel]
   (if (= (name rel) "self")
     (clojure.string/join ["/api" version-path "/entities/" id])
     (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
@@ -48,7 +47,7 @@
   "Augment an entity dto with the links.self reference"
   [dto]
   (let [add_self (merge-with conj dto {:links {:self ""}})
-        new_links_map (into {} (map (fn [x] [(first x) (single-link (dto :_id) (first x))]) (add_self :links)))]
+        new_links_map (into {} (map (fn [x] [(first x) (entity-single-link (:_id dto) (first x))]) (:links add_self)))]
     (assoc-in add_self [:links] new_links_map)))
 
 
@@ -91,7 +90,7 @@
   [api-key entity]
   (->> entity
     (entity-to-dto)
-    (remove-hidden-links)
+    (remove-private-links)
     (links-to-rel-path)
     (annotations/add-annotation-links)                      ;; NB must come after links-to-rel-path
     (dissoc-annotations)))

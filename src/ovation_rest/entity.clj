@@ -47,13 +47,28 @@
 
           (into-seq api-key (conj () entity)))))))
 
-(defn get-specific-annotations [api-key id annotation-key]
-  "Returns specific annotations associated with entity(id)"
-  (annotations/union-annotations-map (.get (dao/get-entity-annotations api-key id) annotation-key)))
+(defn add-self-link
+  [entity-id annotation]
+  (let [annotation-id (:_id annotation)]
+    (dao/add-self-link (str (dao/entity-single-link entity-id "self") "/annotations/" annotation-id) annotation)))
 
-(defn get-annotations [api-key id]
+(defn process-annotations
+  [id annotations]
+
+  (map (fn [annotation] (->> annotation
+                          (dao/remove-private-links)
+                          (add-self-link id)))
+    (annotations/union-annotations-map annotations)))
+
+(defn get-specific-annotations
+  "Returns specific annotations associated with entity(id)"
+  [api-key id annotation-key]
+  (process-annotations id (.get (dao/get-entity-annotations api-key id) annotation-key)))
+
+(defn get-annotations
   "Returns all annotations associated with entity(id)"
-  (annotations/union-annotations-map (dao/get-entity-annotations api-key id)))
+  [api-key id]
+  (process-annotations id (dao/get-entity-annotations api-key id)))
 
 (defn- update-entity
   [entity dto]
@@ -70,7 +85,7 @@
 
 (defn delete-annotation [api-key entity-id annotation-type annotation-id]
   "Deletes an annotation with :annotation-id for entity with id :entity-id"
-  (let [entity  (get-entity api-key entity-id)
+  (let [entity (get-entity api-key entity-id)
         success (.removeAnnotation entity annotation-type annotation-id)]
     {:success true}))
 

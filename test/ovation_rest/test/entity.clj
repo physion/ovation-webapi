@@ -115,14 +115,26 @@
 
 (facts "About entity annotations"
   (fact "`get-annotations` returns union of dto annotation documents"
-    (entity/get-annotations ...api... ...id...) => (just #{{:_id ...doc1...} {:_id ...doc2...} {:_id ...doc3...} {:_id ...doc4...}})
+    (entity/get-annotations ...api... ...id...) => (just #{{:_id   ...doc1...
+                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc1..."}}
+                                                           {:_id   ...doc2...
+                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc2..."}}
+                                                           {:_id   ...doc3...
+                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc3..."}}
+                                                           {:_id   ...doc4...
+                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc4..."}}})
     (provided
       (dao/get-entity-annotations ...api... ...id...) => {:type  {"user1" #{{:_id ...doc1...} {:_id ...doc2...}}
                                                                   "user2" #{{:_id ...doc3...}}}
                                                           :type2 {"user1" #{{:_id ...doc4...}}}}))
 
   (fact "`get-specific-annotations` returns union of type annotation documents"
-    (entity/get-specific-annotations ...api... ...id... :type1) => (just #{{:_id ...doc1...} {:_id ...doc2...} {:_id ...doc3...}})
+    (entity/get-specific-annotations ...api... ...id... :type1) => (just #{{:_id   ...doc1...
+                                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc1..."}}
+                                                                           {:_id   ...doc2...
+                                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc2..."}}
+                                                                           {:_id   ...doc3...
+                                                                            :links {:self "/api/v1/entities/...id.../annotations/...doc3..."}}})
     (provided
       (dao/get-entity-annotations ...api... ...id...) => {:type1 {"user1" #{{:_id ...doc1...} {:_id ...doc2...}}
                                                                   "user2" #{{:_id ...doc3...}}}
