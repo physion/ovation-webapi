@@ -1,4 +1,6 @@
 (ns ovation-rest.dao
+  (:import (com.sun.xml.internal.bind.v2.model.core ID)
+           (clojure.java.api Clojure))
   (:require [ovation-rest.interop :as interop]
             [ovation-rest.annotations :as annotations]
             [ovation-rest.util :refer [parse-uuid ctx]]
@@ -10,13 +12,28 @@
   [api-key id]
   (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
+
+(defn remove-hidden-links
+  [dto]
+  (if-let [links (:links dto)]
+    (let [hidden-links (filter #(re-matches #"_.+" (name %)) (keys links))
+          cleaned (apply dissoc links hidden-links)]
+      (assoc-in dto [:links] cleaned))
+    dto))
+
+(defn add-self-link
+  [prefix dto]
+  dto)
+
 (defn get-entity-annotations
   "Gets the :annotations map for the entity with ID (uuid string)"
   [api-key id]
-  (.getAnnotations (get-entity api-key id)))
+  (->> (.getAnnotations (get-entity api-key id))
+    (remove-hidden-links)
+    (add-self-link "/prefix")))
 
 (defn entity-to-dto
-  "Clojure wrapper for entity.toMap()"
+  " Clojure wrapper for entity.toMap()"
   [entity]
   (interop/clojurify (.toMap entity)))
 
@@ -74,6 +91,7 @@
   [api-key entity]
   (->> entity
     (entity-to-dto)
+    (remove-hidden-links)
     (links-to-rel-path)
     (annotations/add-annotation-links)                      ;; NB must come after links-to-rel-path
     (dissoc-annotations)))
