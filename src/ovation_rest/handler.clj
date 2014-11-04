@@ -13,6 +13,7 @@
             [ovation-rest.links :as links]
             [ovation-rest.util :as util]
             [ovation-rest.schema :refer :all]
+            [ovation-rest.dao :as dao]
             ))
 
 
@@ -22,7 +23,7 @@
 
   `(context ~(str "/" annotation-type) []
     (GET* "/" []
-      :return [~annotation-schema]
+      ;:return [~annotation-schema]
       :query-params [api-key# :- String]
       :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
       (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))
@@ -86,7 +87,7 @@
                 :return [Entity]
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
-                (ok (util/into-seq (conj () (util/get-entity api-key id)))))
+                (ok (dao/into-seq api-key (conj () (dao/get-entity api-key id)))))
               (PUT* "/" request
                 :return [Entity]
                 :query-params [api-key :- s/Str]
