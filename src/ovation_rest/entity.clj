@@ -4,11 +4,14 @@
            (us.physion.ovation.exceptions OvationException)
            (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.util :refer [ctx get-entity entity-to-dto create-uri parse-uuid into-seq]]
+            [ovation-rest.dao :refer [get-entity entity-to-dto into-seq]]
+            [ovation-rest.util :refer [ctx create-uri parse-uuid]]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation-rest.context :refer [transaction]]
             [ovation-rest.links :as links]
-            [ovation-rest.interop :as interop]))
+            [ovation-rest.interop :as interop]
+            [ovation-rest.annotations :as annotations]
+            [ovation-rest.dao :as dao]))
 
 
 (defn create-multimap [m]
@@ -42,16 +45,31 @@
                 (doseq [link rel-links]
                   (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
 
-          (into-seq (conj () entity)))))))
+          (into-seq api-key (conj () entity)))))))
 
-(defn get-specific-annotations [api-key id annotation-key]
+(defn add-self-link
+  [entity-id annotation]
+  (let [annotation-id (:_id annotation)]
+    (dao/add-self-link (str (dao/entity-single-link entity-id "self") "/annotations/" annotation-id) annotation)))
+
+(defn process-annotations
+  [id annotations]
+
+  (map (fn [annotation] (->> annotation
+                          (into {})
+                          (dao/remove-private-links)
+                          (add-self-link id)))
+    (annotations/union-annotations-map annotations)))
+
+(defn get-specific-annotations
   "Returns specific annotations associated with entity(id)"
-  (let [_ (prn (.get (.getAnnotations (get-entity api-key id)) annotation-key))]
-    (into {} (.get (.getAnnotations (get-entity api-key id)) annotation-key))))
+  [api-key id annotation-key]
+  (process-annotations id (.get (dao/get-entity-annotations api-key id) annotation-key)))
 
-(defn get-annotations [api-key id]
+(defn get-annotations
   "Returns all annotations associated with entity(id)"
-  (into {} (.getAnnotations (get-entity api-key id))))
+  [api-key id]
+  (process-annotations id (dao/get-entity-annotations api-key id)))
 
 (defn- update-entity
   [entity dto]
@@ -59,15 +77,16 @@
     (.update entity update)
     entity))
 
-(defn update-entity-attributes [api-key id attributes]
+(defn update-entity-attributes
+  [api-key id attributes]
   (let [entity (get-entity api-key id)
         dto (entity-to-dto entity)
         updated (update-entity entity (assoc-in dto [:attributes] attributes))]
-    (into-seq (conj () updated))))
+    (into-seq api-key (conj () updated))))
 
 (defn delete-annotation [api-key entity-id annotation-type annotation-id]
   "Deletes an annotation with :annotation-id for entity with id :entity-id"
-  (let [entity  (get-entity api-key entity-id)
+  (let [entity (get-entity api-key entity-id)
         success (.removeAnnotation entity annotation-type annotation-id)]
     {:success true}))
 
@@ -92,12 +111,13 @@
 (defn get-protocols [ctx]
   (.getProtocols ctx))
 
-(defn index-resource [api-key resource]
+(defn index-resource
+  [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
                     "sources" (get-sources (ctx api-key))
                     "protocols" (get-protocols (ctx api-key)))]
-    (into-seq resources)))
+    (into-seq api-key resources)))
 
 (defn- get-view-results [ctx uri]
   (.getObjectsWithURI ctx uri))
@@ -105,6 +125,6 @@
 (defn escape-quotes [full-url]
   (clojure.string/replace full-url "\"" "%22"))
 
-(defn get-view [api-key full-url]
-  (into-seq (get-view-results (ctx api-key) (escape-quotes full-url))))
-
+(defn get-view
+  [api-key full-url]
+  (into-seq api-key (get-view-results (ctx api-key) (escape-quotes full-url))))
