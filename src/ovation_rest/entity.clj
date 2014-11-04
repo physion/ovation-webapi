@@ -56,6 +56,7 @@
   [id annotations]
 
   (map (fn [annotation] (->> annotation
+                          (into {})
                           (dao/remove-private-links)
                           (add-self-link id)))
     (annotations/union-annotations-map annotations)))
