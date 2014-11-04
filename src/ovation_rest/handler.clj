@@ -23,7 +23,7 @@
 
   `(context ~(str "/" annotation-type) []
     (GET* "/" []
-      :return [~annotation-schema]
+      ;:return [~annotation-schema]
       :query-params [api-key# :- String]
       :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
       (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))

@@ -9,7 +9,9 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation-rest.context :refer [transaction]]
             [ovation-rest.links :as links]
-            [ovation-rest.interop :as interop]))
+            [ovation-rest.interop :as interop]
+            [ovation-rest.annotations :as annotations]
+            [ovation-rest.dao :as dao]))
 
 
 (defn create-multimap [m]
@@ -47,12 +49,11 @@
 
 (defn get-specific-annotations [api-key id annotation-key]
   "Returns specific annotations associated with entity(id)"
-  (let [_ (prn (.get (.getAnnotations (get-entity api-key id)) annotation-key))]
-    (into {} (.get (.getAnnotations (get-entity api-key id)) annotation-key))))
+  (annotations/union-annotations-map (.get (dao/get-entity-annotations api-key id) annotation-key)))
 
 (defn get-annotations [api-key id]
   "Returns all annotations associated with entity(id)"
-  (into {} (.getAnnotations (get-entity api-key id))))
+  (annotations/union-annotations-map (dao/get-entity-annotations api-key id)))
 
 (defn- update-entity
   [entity dto]
@@ -111,4 +112,3 @@
 (defn get-view
   [api-key full-url]
   (into-seq api-key (get-view-results (ctx api-key) (escape-quotes full-url))))
-

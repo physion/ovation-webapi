@@ -10,6 +10,11 @@
   [api-key id]
   (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
+(defn get-entity-annotations
+  "Gets the :annotations map for the entity with ID (uuid string)"
+  [api-key id]
+  (.getAnnotations (get-entity api-key id)))
+
 (defn entity-to-dto
   "Clojure wrapper for entity.toMap()"
   [entity]
@@ -59,14 +64,19 @@
   (assoc-in dto [:annotations] (replace-uri-keys-with-usernames api-key (:annotations dto))))
 
 
+(defn dissoc-annotations
+  "Removes :annotations from the DTO"
+  [dto]
+  (dissoc dto :annotations))
+
 (defn convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [api-key entity]
   (->> entity
     (entity-to-dto)
     (links-to-rel-path)
-    (annotations/add-annotation-links)
-    (replace-annotation-keys api-key)))
+    (annotations/add-annotation-links)                      ;; NB must come after links-to-rel-path
+    (dissoc-annotations)))
 
 (defn into-seq
   "Converts a seq of entities into an array of Maps"

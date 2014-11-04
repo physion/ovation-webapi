@@ -59,16 +59,16 @@
     (provided
       (dao/get-entity ...api... ...id...) => ...entity...
       (dao/entity-to-dto ...entity...) => {:_id        "123"
-                                            :_rev       "rev1"
-                                            :attributes {:attr1 0
-                                                         :attr3 "foo"}
-                                            :links      {:self "/entity/uri/"}}
+                                           :_rev       "rev1"
+                                           :attributes {:attr1 0
+                                                        :attr3 "foo"}
+                                           :links      {:self "/entity/uri/"}}
 
       (#'ovation-rest.entity/update-entity ...entity... {:_id        "123"
-                                                                 :_rev       "rev1"
-                                                                 :attributes {:attr1 1
-                                                                              :attr2 "value"}
-                                                                 :links      {:self "/entity/uri/"}}) => ...entity...
+                                                         :_rev       "rev1"
+                                                         :attributes {:attr1 1
+                                                                      :attr2 "value"}
+                                                         :links      {:self "/entity/uri/"}}) => ...entity...
       (dao/into-seq ...api... '(...entity...)) => ...result...)))
 
 (facts "About top-level handlers"
@@ -111,3 +111,19 @@
   (fact "escape-quotes url-escapes \" in url"
     (entity/escape-quotes "https://myserver.com/views/_foo?keys=\"123\"") =>
     "https://myserver.com/views/_foo?keys=%22123%22"))
+
+
+(facts "About entity annotations"
+  (fact "`get-annotations` returns union of dto annotation documents"
+    (entity/get-annotations ...api... ...id...) => (just #{{:_id ...doc1...} {:_id ...doc2...} {:_id ...doc3...} {:_id ...doc4...}})
+    (provided
+      (dao/get-entity-annotations ...api... ...id...) => {:type  {"user1" #{{:_id ...doc1...} {:_id ...doc2...}}
+                                                                  "user2" #{{:_id ...doc3...}}}
+                                                          :type2 {"user1" #{{:_id ...doc4...}}}}))
+
+  (fact "`get-specific-annotations` returns union of type annotation documents"
+    (entity/get-specific-annotations ...api... ...id... :type1) => (just #{{:_id ...doc1...} {:_id ...doc2...} {:_id ...doc3...}})
+    (provided
+      (dao/get-entity-annotations ...api... ...id...) => {:type1 {"user1" #{{:_id ...doc1...} {:_id ...doc2...}}
+                                                                  "user2" #{{:_id ...doc3...}}}
+                                                          :type2 {"user1" #{{:_id ...doc4...}}}})))
