@@ -10,7 +10,7 @@
 (defn make-server
   "Make an us.physion.ovation.api.web.Server instance"
   [api-endpoint api-key]
-  (us.physion.ovation.api.web.Server/make (URI. api-endpoint) api-key))
+  (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
 
 (defn- get-context-from-dsc
   "Gets a new DataContext from a DataStoreCoordinator"
