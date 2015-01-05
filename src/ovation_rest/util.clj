@@ -8,7 +8,7 @@
             [clojurewerkz.urly.core :as urly]
             [pathetic.core :refer [url-normalize up-dir]]))
 
-(def version-path "/v1")
+(def version-path "/v1") ;; Make this VERSION_PATH
 
 (defn ctx [api-key]
   (context/cached-context api-key))

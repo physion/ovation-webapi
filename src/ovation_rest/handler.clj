@@ -60,7 +60,7 @@
 
     (swaggered "top-level"
       (context "/api" []
-        (context "/v1" []
+        (context "/v1" [] ;; TODO pull this from o.util/version-string
           (context "/:resource" [resource]
             (GET* "/" request
               :return [Entity]
