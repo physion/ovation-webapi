@@ -18,7 +18,7 @@
   [entity rel target & {:keys [inverse] :or {inverse nil}}]
 
   (.addLink entity rel (create-uri target) inverse)
-  true)
+  {:success true})
 
 (defn remove-link
   "Remoes a link (:rel) from an entity"
