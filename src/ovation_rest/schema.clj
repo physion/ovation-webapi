@@ -46,14 +46,13 @@
                                     [Annotation]})
 (s/defschema AnnotationsMap {s/Str                          ;; Annotation Type
                               AnnotationCollection})
-(s/defschema Link {:type                         Relation/RELATION_TYPE
-                   :target_id                    s/Uuid
+(s/defschema Link {:target_id                    s/Uuid
                    :rel                          s/Str
                    (s/optional-key :inverse_rel) s/Str})
 
 (s/defschema NamedLink (assoc Link :name s/Str))
 
-(s/defschema NewEntityLink {:target_id                    s/Uuid
+(s/defschema NewEntityLink {:target_id                    s/Str
                             (s/optional-key :inverse_rel) s/Str})
 
 (s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)

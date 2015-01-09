@@ -6,7 +6,8 @@
             [clojure.data.json :as json]
             [ovation-rest.util :as util]
             [ovation-rest.entity :as entity]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [ovation-rest.links :as links]))
 
 (facts "About doc route"
   (fact "HEAD / => 302"
@@ -62,5 +63,24 @@
                                                                               :attributes {"attr1" 1}
                                                                               :links      {}
                                                                               :type       "Project"}])))
+
+  (fact "POST /entities/:id/links creates a new link (201)"
+        (let [uuid (UUID/randomUUID)
+              project_uuid (UUID/randomUUID)
+              project_id (str project_uuid)
+              target_id (str uuid)
+              link [{:target_id   target_id
+                     :rel         "patients"
+                     :inverse_rel "projects"}]
+              body (json/write-str (walk/stringify-keys link))
+              path (str "/api/v1/entities/" project_id "/links")
+              apikey "12345"]
+
+          (:status (handler/app (-> (mock/request :post path)
+                                    (mock/query-string {"api-key" apikey})
+                                    (mock/content-type "application/json")
+                                    (mock/body body)))) => 201
+          (provided
+            (links/create-link apikey project_id link) => {:success true})))
   )
 

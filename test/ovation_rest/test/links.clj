@@ -19,14 +19,14 @@
   (fact "POST /links adds a link with inverse"
     (links/create-link ...api... ...id... {:target_id   ...target...
                                            :rel         ...rel...
-                                           :inverse_rel ...inverse...}) => [...entity...]
+                                           :inverse_rel ...inverse...}) => {:success true}
     (provided
       (dao/get-entity ...api... ...id...) => ...entity...
       (links/add-link ...entity... ...rel... ...target... :inverse ...inverse...) => true))
 
   (fact "POST /links adds a link without inverse"
     (links/create-link ...api... ...id... {:target_id ...target...
-                                           :rel       ...rel...}) => [...entity...]
+                                           :rel       ...rel...}) => {:success true}
     (provided
       (dao/get-entity ...api... ...id...) => ...entity...
       (links/add-link ...entity... ...rel... ...target... :inverse nil) => true))

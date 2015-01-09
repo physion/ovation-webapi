@@ -18,7 +18,7 @@
   [entity rel target & {:keys [inverse] :or {inverse nil}}]
 
   (.addLink entity rel (create-uri target) inverse)
-  {:success true})
+  true)
 
 (defn remove-link
   "Remoes a link (:rel) from an entity"
@@ -33,7 +33,7 @@
         inverse (:inverse_rel link)
         rel (:rel link)]
     (if (add-link entity rel target :inverse inverse)
-      [entity]
+      {:success true}
       (r/internal-server-error! "Unable to create link"))))
 
 (defn delete-link [api-key id rel target]
