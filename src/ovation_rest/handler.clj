@@ -102,7 +102,7 @@
 
               (context "/links" []
                 (POST* "/" []
-                  :return [Entity]
+                  :return [boolean]
                   :body [link Link]
                   :query-params [api-key :- s/Str]
                   :summary "Creates a new link to from this entity"

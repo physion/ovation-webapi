@@ -1,5 +1,6 @@
 (ns ovation-rest.schema
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)
+           (us.physion.ovation.values Relation))
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]))
 
@@ -45,7 +46,7 @@
                                     [Annotation]})
 (s/defschema AnnotationsMap {s/Str                          ;; Annotation Type
                               AnnotationCollection})
-(s/defschema Link {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
+(s/defschema Link {:type                         Relation/RELATION_TYPE
                    :target_id                    s/Uuid
                    :rel                          s/Str
                    (s/optional-key :inverse_rel) s/Str})
