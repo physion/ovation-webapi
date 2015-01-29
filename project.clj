@@ -59,5 +59,5 @@
                                                                                  :passphrase :env/AWS_SECRET_KEY}]]
                                 :local-repo   ".repository"}}
 
-  :aliases {"start-ovation-web" ["with-profile" "ovation-web-api" "ring" "server"]})
+  :aliases {"start-server" ["with-profile" "ovation-web-api" "ring" "server"]})
 
