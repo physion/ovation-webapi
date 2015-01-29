@@ -7,10 +7,11 @@
 
 (s/defschema Success {:success s/Bool})
 
-(def AnnotationBase {:_id    s/Str
-                     :_rev   s/Str
-                     :user   s/Str
-                     :entity s/Str})
+(def AnnotationBase {:_id                    s/Str
+                     :_rev                   s/Str
+                     :user                   s/Str
+                     :entity                 s/Str
+                     (s/optional-key :links) s/Any})
 
 (s/defschema AnnotationTypes (s/enum OvationEntity$AnnotationKeys/TAGS
                                OvationEntity$AnnotationKeys/PROPERTIES
@@ -40,10 +41,10 @@
 
 (s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
 (s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
-(s/defschema AnnotationCollection {s/Str ;; User URI
-                                   [Annotation]})
+(s/defschema AnnotationCollection {s/Str                    ;; User URI
+                                    [Annotation]})
 (s/defschema AnnotationsMap {s/Str                          ;; Annotation Type
-                             AnnotationCollection})
+                              AnnotationCollection})
 (s/defschema Link {:type                         us.physion.ovation.values.Relation/RELATION_TYPE
                    :target_id                    s/Uuid
                    :rel                          s/Str
