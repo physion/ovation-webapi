@@ -33,7 +33,7 @@
         inverse (:inverse_rel link)
         rel (:rel link)]
     (if (add-link entity rel target :inverse inverse)
-      [entity]
+      {:success true}
       (r/internal-server-error! "Unable to create link"))))
 
 (defn delete-link [api-key id rel target]
