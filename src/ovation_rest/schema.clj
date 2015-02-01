@@ -60,6 +60,7 @@
                      :_id                          s/Uuid
                      :links                        {s/Keyword s/Str}
                      :attributes                   {s/Keyword s/Any}
+                     (s/optional-key :api_version) s/Int
                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
                      (s/optional-key :annotations) s/Any})
 
