@@ -1,4 +1,4 @@
-(defproject ovation-rest "0.1.0-SNAPSHOT"
+(defproject ovation-webapi "0.1.0-SNAPSHOT"
   :description "Ovation REST API"
   :url "http://ovation.io"
 
@@ -30,7 +30,7 @@
             [lein-midje "3.1.3"]
             [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
-  :ring {:handler ovation-rest.handler/app}
+  :ring {:handler ovation.handler/app}
 
   ;; For New Relic, we need to bundle newrelic.yml and newrelic.jar
   :war-resources-path "war_resources"
@@ -43,7 +43,7 @@
                                     :env   {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
 
   :profiles {
-              :ovation-web-api {:ring         {:handler ovation-rest.handler/app}
+              :ovation-web-api {:ring         {:handler ovation.handler/app}
                                 :reload-paths ["src"]}
               :dev             {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                [ring-mock "0.1.5"]

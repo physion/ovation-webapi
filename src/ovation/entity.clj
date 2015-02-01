@@ -1,17 +1,17 @@
-(ns ovation-rest.entity
+(ns ovation.entity
   (:import (us.physion.ovation.domain URIs)
            (us.physion.ovation.domain OvationEntity$AnnotationKeys)
            (us.physion.ovation.exceptions OvationException)
            (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
-            [ovation-rest.dao :refer [get-entity entity-to-dto into-seq]]
-            [ovation-rest.util :refer [ctx create-uri parse-uuid]]
+            [ovation.dao :refer [get-entity entity-to-dto into-seq]]
+            [ovation.util :refer [ctx create-uri parse-uuid]]
             [slingshot.slingshot :refer [try+ throw+]]
-            [ovation-rest.context :refer [transaction]]
-            [ovation-rest.links :as links]
-            [ovation-rest.interop :as interop]
-            [ovation-rest.annotations :as annotations]
-            [ovation-rest.dao :as dao]))
+            [ovation.context :refer [transaction]]
+            [ovation.links :as links]
+            [ovation.interop :as interop]
+            [ovation.annotations :as annotations]
+            [ovation.dao :as dao]))
 
 
 (defn create-multimap [m]

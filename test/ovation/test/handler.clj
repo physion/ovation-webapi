@@ -1,13 +1,13 @@
-(ns ovation-rest.test.handler
+(ns ovation.test.handler
   (:import (java.util UUID))
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
-            [ovation-rest.handler :as handler]
+            [ovation.handler :as handler]
             [clojure.data.json :as json]
-            [ovation-rest.util :as util]
-            [ovation-rest.entity :as entity]
+            [ovation.util :as util]
+            [ovation.entity :as entity]
             [clojure.walk :as walk]
-            [ovation-rest.links :as links]))
+            [ovation.links :as links]))
 
 (facts "About doc route"
        (fact "HEAD / => 302"

@@ -1,9 +1,9 @@
-(ns ovation-rest.test.util
+(ns ovation.test.util
   (:import (java.util UUID)
            (us.physion.ovation.domain URIs))
   (:use midje.sweet)
-  (:require [ovation-rest.util :as util]
-            [ovation-rest.dao :as dao]))
+  (:require [ovation.util :as util]
+            [ovation.dao :as dao]))
 
 (facts "about UUID parsing"
        (fact "parses UUID string with dashes"
@@ -30,4 +30,4 @@
     (provided
       (util/get-entity-id ...uri...) => ...id...
       (dao/get-entity ...api... ...id...) => ...entity...
-      (#'ovation-rest.dao/get-username ...entity...) => ...user...)))
+      (#'ovation.dao/get-username ...entity...) => ...user...)))

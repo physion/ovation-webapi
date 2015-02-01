@@ -1,11 +1,11 @@
-(ns ovation-rest.dao
+(ns ovation.dao
   (:import (com.sun.xml.internal.bind.v2.model.core ID)
            (clojure.java.api Clojure))
-  (:require [ovation-rest.interop :as interop]
-            [ovation-rest.annotations :as annotations]
-            [ovation-rest.util :refer [parse-uuid ctx]]
-            [ovation-rest.version :refer [version-path]]
-            [ovation-rest.util :as util]))
+  (:require [ovation.interop :as interop]
+            [ovation.annotations :as annotations]
+            [ovation.util :refer [parse-uuid ctx]]
+            [ovation.version :refer [version-path]]
+            [ovation.util :as util]))
 
 (defn get-entity
   "Gets a single entity by ID (uuid string)"

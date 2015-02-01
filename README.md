@@ -14,6 +14,12 @@ To start a web server for the application, run:
 
     lein ring server
 
+Or from a REPL:
+
+    (use 'ring.util.serve)
+    (require 'ovation.handler)
+    (serve ovation.handler/app)
+
 ## License
 
 [Eclipse Public License](https://www.eclipse.org/legal/epl-v10.html)

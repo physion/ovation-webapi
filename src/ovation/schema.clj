@@ -1,4 +1,4 @@
-(ns ovation-rest.schema
+(ns ovation.schema
   (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)
            (us.physion.ovation.values Relation))
   (:require [ring.swagger.schema :refer [field describe]]

@@ -1,11 +1,11 @@
-(ns ovation-rest.test.links
+(ns ovation.test.links
   (:use midje.sweet)
   (:import (us.physion.ovation.domain DtoBuilder URIs)
            (java.util UUID))
-  (:require [ovation-rest.links :as links]
-            [ovation-rest.util :as util]
-            [ovation-rest.entity :as entity]
-            [ovation-rest.dao :as dao]))
+  (:require [ovation.links :as links]
+            [ovation.util :as util]
+            [ovation.entity :as entity]
+            [ovation.dao :as dao]))
 
 
 (facts "About links"

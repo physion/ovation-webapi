@@ -1,4 +1,4 @@
-(ns ovation-rest.interop
+(ns ovation.interop
   (:import (java.util Collection List Set Map HashMap)
            (com.google.common.collect Multimap))
   (:require [clojure.walk :refer [stringify-keys]]))
