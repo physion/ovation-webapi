@@ -1,9 +1,9 @@
-(ns ovation-rest.test.dao
+(ns ovation.test.dao
   (:use midje.sweet)
   (:import (java.util UUID))
-  (:require [ovation-rest.dao :as dao]
-            [ovation-rest.util :as util]
-            [ovation-rest.annotations :as annotations]))
+  (:require [ovation.dao :as dao]
+            [ovation.util :as util]
+            [ovation.annotations :as annotations]))
 
 (facts "About annotation maps"
   (fact "replaces root User URI keys with user names in annotations map"

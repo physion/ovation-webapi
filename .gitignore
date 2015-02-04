@@ -21,7 +21,7 @@ ovation_api_webservice.iml
 
 *.orig
 
-ovation_rest.iml
+ovation.iml
 
 examples/.ipynb_checkpoints/webapi-analysis-records-checkpoint.ipynb
 

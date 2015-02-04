@@ -1,6 +1,6 @@
-(ns ovation-rest.test.context
+(ns ovation.test.context
   (:use midje.sweet)
-  (:require [ovation-rest.context :as context]))
+  (:require [ovation.context :as context]))
 
 
 (facts "about context creation"
@@ -9,7 +9,7 @@
                (context/make-context api-key) => ...ctx...
                (provided
                  (context/make-server "https://dev.ovation.io" api-key) => ...dsc...
-                 (#'ovation-rest.context/get-context-from-dsc ...dsc...) => ...ctx...)))
+                 (#'ovation.context/get-context-from-dsc ...dsc...) => ...ctx...)))
 
        (with-state-changes [(after :facts (System/clearProperty "OVATION_IO_HOST_URI"))]
                            (fact "creates context with OVATION_IO_HOST_URI"
@@ -20,12 +20,12 @@
                                      (context/make-context api-key)) => ...ctx...
                                    (provided
                                      (context/make-server host api-key) => ...dsc...
-                                     (#'ovation-rest.context/get-context-from-dsc ...dsc...) => ...ctx...)))))
+                                     (#'ovation.context/get-context-from-dsc ...dsc...) => ...ctx...)))))
 
 (facts "about context caching"
        (prerequisite
          (context/make-server "https://dev.ovation.io" ...apikey...) => ...dsc...
-         (#'ovation-rest.context/get-context-from-dsc ...dsc...) => ...ctx...)
+         (#'ovation.context/get-context-from-dsc ...dsc...) => ...ctx...)
 
        (fact "should cache a single data context"
              (context/cached-context ...apikey...) => ...ctx...

@@ -1,8 +1,8 @@
-(ns ovation-rest.test.paths
+(ns ovation.test.paths
   (:use midje.sweet)
   (:import (us.physion.ovation.domain DtoBuilder URIs)
            (java.util UUID))
-  (:require [ovation-rest.paths :as paths]))
+  (:require [ovation.paths :as paths]))
 
 (facts "about paths"
        (facts "about path splitting"

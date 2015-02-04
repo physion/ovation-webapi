@@ -1,5 +1,5 @@
-(ns ovation-rest.annotations
-  (:require [ovation-rest.version :refer [version-path]]))
+(ns ovation.annotations
+  (:require [ovation.version :refer [version-path]]))
 
 (defn add-annotation-links
   "Add links for annotation types to entity .links"

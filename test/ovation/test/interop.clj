@@ -1,8 +1,8 @@
-(ns ovation-rest.test.interop
+(ns ovation.test.interop
   (:import (com.google.common.collect HashMultimap)
            (java.util HashMap HashSet LinkedList))
   (:use midje.sweet)
-  (:require [ovation-rest.interop :refer [clojurify javafy]]))
+  (:require [ovation.interop :refer [clojurify javafy]]))
 
 (facts "About Java --> Clojure interop"
        (facts "about collections"

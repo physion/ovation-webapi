@@ -1,4 +1,4 @@
-(ns ovation-rest.paths)
+(ns ovation.paths)
 
 (def separator "/")
 (def separator-pattern (re-pattern separator))

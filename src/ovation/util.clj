@@ -1,13 +1,13 @@
-(ns ovation-rest.util
+(ns ovation.util
   (:import (java.net URI)
            (us.physion.ovation.domain URIs))
-  (:require [ovation-rest.context :as context]
-            [ovation-rest.interop :as interop]
-            [ovation-rest.paths :as paths]
+  (:require [ovation.context :as context]
+            [ovation.interop :as interop]
+            [ovation.paths :as paths]
             [clojure.string :refer [join]]
             [clojurewerkz.urly.core :as urly]
             [pathetic.core :refer [url-normalize up-dir]]
-            [ovation-rest.version :refer [version-path]]))
+            [ovation.version :refer [version-path]]))
 
 (defn ctx [api-key]
   (context/cached-context api-key))

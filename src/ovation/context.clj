@@ -1,4 +1,4 @@
-(ns ovation-rest.context
+(ns ovation.context
   (:import (java.net URI)
            (us.physion.ovation.exceptions OvationException))
   (:require [clojure.core.memoize :as memo]

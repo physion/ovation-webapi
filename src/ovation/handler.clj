@@ -1,4 +1,4 @@
-(ns ovation-rest.handler
+(ns ovation.handler
   (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
   (:require [clojure.string :refer [join]]
             [ring.util.http-response :refer [created ok accepted]]
@@ -8,12 +8,12 @@
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
             [pathetic.core :refer [url-normalize]]
-            [ovation-rest.paths :as paths]
-            [ovation-rest.entity :as entity]
-            [ovation-rest.links :as links]
-            [ovation-rest.util :as util]
-            [ovation-rest.schema :refer :all]
-            [ovation-rest.dao :as dao]
+            [ovation.paths :as paths]
+            [ovation.entity :as entity]
+            [ovation.links :as links]
+            [ovation.util :as util]
+            [ovation.schema :refer :all]
+            [ovation.dao :as dao]
             ))
 
 

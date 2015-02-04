@@ -1,8 +1,8 @@
-(ns ovation-rest.test.annotations
+(ns ovation.test.annotations
   (:import (java.util UUID)
            (us.physion.ovation.domain URIs))
   (:use midje.sweet)
-  (:require [ovation-rest.annotations :as a]))
+  (:require [ovation.annotations :as a]))
 
 
 (facts "About annotation links"
