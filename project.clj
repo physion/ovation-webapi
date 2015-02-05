@@ -35,7 +35,7 @@
   ;; For New Relic, we need to bundle newrelic.yml and newrelic.jar
   :war-resources-path "war_resources"
 
-  :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 8 Java 8"
+  :aws {:beanstalk {:stack-name   "64bit Amazon Linux 2014.09 v1.1.01 running Tomcat 8 Java 8"
                     :environments [{:name  "webapi-development"
                                     :env   {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
