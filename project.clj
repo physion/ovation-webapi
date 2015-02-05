@@ -36,10 +36,10 @@
   :war-resources-path "war_resources"
 
   :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
-                    :environments [{:name  "development"
+                    :environments [{:name  "webapi-development"
                                     :env   {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
-                                   {:name  "production"
+                                   {:name  "webapi-production"
                                     :env   {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
 
   :profiles {
