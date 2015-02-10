@@ -14,6 +14,7 @@
             [ovation.util :as util]
             [ovation.schema :refer :all]
             [ovation.dao :as dao]
+            [clojure.tools.logging :as logging]
             ))
 
 (defn init
@@ -73,6 +74,7 @@
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
 
+              (logging/info "Getting top-level" resource)
               (ok (entity/index-resource api-key resource)))))))
 
     (swaggered "entities"
