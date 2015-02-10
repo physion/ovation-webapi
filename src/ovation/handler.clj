@@ -16,6 +16,10 @@
             [ovation.dao :as dao]
             ))
 
+(defn init
+  "Servlet init"
+  []
+  (ovation.logging/setup!))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
