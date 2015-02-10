@@ -14,6 +14,7 @@
             [ovation.util :as util]
             [ovation.schema :refer :all]
             [ovation.dao :as dao]
+            [ovation.logging]
             [clojure.tools.logging :as logging]
             ))
 
