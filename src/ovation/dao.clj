@@ -5,15 +5,16 @@
             [ovation.annotations :as annotations]
             [ovation.util :refer [parse-uuid ctx]]
             [ovation.version :refer [version-path]]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
-(defn get-entity
+(defn-traced get-entity
   "Gets a single entity by ID (uuid string)"
   [api-key id]
   (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
 
-(defn remove-private-links
+(defn-traced remove-private-links
   "Removes private links (e.g. _collaboration_roots) from the dto.links"
   [dto]
   (if-let [links (:links dto)]
@@ -22,28 +23,28 @@
       (assoc-in dto [:links] cleaned))
     dto))
 
-(defn add-self-link
+(defn-traced add-self-link
   [link dto]
   (assoc-in dto [:links :self] link))
 
-(defn get-entity-annotations
+(defn-traced get-entity-annotations
   "Gets the :annotations map for the entity with ID (uuid string)"
   [api-key id]
   (.getAnnotations (get-entity api-key id)))
 
-(defn entity-to-dto
+(defn-traced entity-to-dto
   " Clojure wrapper for entity.toMap()"
   [entity]
   (interop/clojurify (.toMap entity)))
 
-(defn entity-single-link
+(defn-traced entity-single-link
   "Return a single link from an id and relationship name"
   [id rel]
   (if (= (name rel) "self")
     (clojure.string/join ["/api" version-path "/entities/" id])
     (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
 
-(defn links-to-rel-path
+(defn-traced links-to-rel-path
   "Augment an entity dto with the links.self reference"
   [dto]
   (let [add_self (merge-with conj dto {:links {:self ""}})
@@ -56,7 +57,7 @@
   [user]
   (.getUsername user))
 
-(defn username-from-user-uri
+(defn-traced username-from-user-uri
   "Gets the username for a user's URI"
   [api-key user-uri]
   (->> user-uri
@@ -69,23 +70,23 @@
   (clojure.set/rename-keys type-annotations
     (into {} (for [[k v] type-annotations] [k (username-from-user-uri api-key k)]))))
 
-(defn replace-uri-keys-with-usernames
+(defn-traced replace-uri-keys-with-usernames
   "Replaces user URI keys in the annotations map (i.e. {:tags => {:uri {...}}}) with user names"
   [api-key annotations]
   (into {} (for [[annotation-type type-annotations] annotations] [annotation-type (replace-root-uri-keys-with-usernames api-key type-annotations)])))
 
-(defn replace-annotation-keys
+(defn-traced replace-annotation-keys
   "Replaces user URI keys in the :annotations map (i.e. {:tags => {:uri {...}}}) with user names"
   [api-key dto]
   (assoc-in dto [:annotations] (replace-uri-keys-with-usernames api-key (:annotations dto))))
 
 
-(defn dissoc-annotations
+(defn-traced dissoc-annotations
   "Removes :annotations from the DTO"
   [dto]
   (dissoc dto :annotations))
 
-(defn convert-entity-to-map
+(defn-traced convert-entity-to-map
   "Converts an entity to a map suitable for response (e.g. adds additional links=>self)"
   [api-key entity]
   (->> entity
@@ -95,7 +96,7 @@
     (annotations/add-annotation-links)                      ;; NB must come after links-to-rel-path
     (dissoc-annotations)))
 
-(defn into-seq
+(defn-traced into-seq
   "Converts a seq of entities into an array of Maps"
   [api-key entity_seq]
   (doall (map (partial convert-entity-to-map api-key) entity_seq))) ;;TODO do we need the doall?
