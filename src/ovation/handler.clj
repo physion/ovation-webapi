@@ -14,8 +14,14 @@
             [ovation.util :as util]
             [ovation.schema :refer :all]
             [ovation.dao :as dao]
+            [ovation.logging]
+            [clojure.tools.logging :as logging]
             ))
 
+(defn init
+  "Servlet init"
+  []
+  (ovation.logging/setup!))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -69,6 +75,7 @@
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
 
+              (logging/info "Getting top-level" resource)
               (ok (entity/index-resource api-key resource)))))))
 
     (swaggered "entities"

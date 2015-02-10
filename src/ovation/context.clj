@@ -2,12 +2,13 @@
   (:import (java.net URI)
            (us.physion.ovation.exceptions OvationException))
   (:require [clojure.core.memoize :as memo]
-            [slingshot.slingshot :refer [try+ throw+]]))
+            [slingshot.slingshot :refer [try+ throw+]]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 
 
-(defn make-server
+(defn-traced make-server
   "Make an us.physion.ovation.api.web.Server instance"
   [api-endpoint api-key]
   (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
@@ -17,7 +18,7 @@
   [dsc]
   (.getContext dsc))
 
-(defn make-context
+(defn-traced make-context
   "Make an Ovation DataContext for the given API key"
   [api-key]
 
@@ -34,15 +35,15 @@
                                                                DEFAULT_LRU_THRESHOLD)))
 
 
-(defn begin-transaction
+(defn-traced begin-transaction
   [ctx]
   (.beginTransaction ctx))
 
-(defn commit-transaction
+(defn-traced commit-transaction
   [ctx]
   (.commitTransaction ctx))
 
-(defn abort-transaction
+(defn-traced abort-transaction
   [ctx]
   (.abortTransaction ctx))
 
