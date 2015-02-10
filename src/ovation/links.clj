@@ -1,5 +1,4 @@
 (ns ovation.links
-  (:import (us.physion.ovation.domain URIs))
   (:require [ovation.util :refer [create-uri]]
             [ovation.dao :refer [into-seq get-entity]]
             [ring.util.http-response :as r]))

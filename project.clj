@@ -13,8 +13,6 @@
                  [ring-cors "0.1.4"]
                  [http-kit "2.1.18"]
                  [org.clojure/core.memoize "0.5.6"]
-                 [us.physion/ovation-api "3.0.1"]
-                 [us.physion/ovation-logging "3.0.1"]
                  [metosin/ring-http-response "0.5.0"]
                  [metosin/ring-swagger "0.13.0"]
                  [metosin/ring-swagger-ui "2.0.17"]
@@ -22,7 +20,11 @@
                  [com.newrelic.agent.java/newrelic-agent "3.11.0"]
                  [com.google.guava/guava "13.0.1"]
                  [clojurewerkz/urly "1.0.0"]
-                 [pathetic "0.5.1"]]
+                 [pathetic "0.5.1"]
+
+
+                 [us.physion/ovation-api "3.0.2"]
+                 [us.physion/ovation-logging "3.0.2"]]
 
   :plugins [[lein-clojars "0.9.1"]
             [lein-ring "0.8.10"]
