@@ -31,9 +31,9 @@
                            [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
                                                               javax.jms/jms
                                                               com.sun.jmdk/jmxtools
-                                                              com.sun.jmx/jmxri]]
+                                                              com.sun.jmx/jmxri]]]
 
-                           :plugins] [[lein-clojars "0.9.1"]
+            :plugins [[lein-clojars "0.9.1"]
                       [lein-ring "0.8.10"]
                       [s3-wagon-private "1.1.2"]
                       [lein-midje "3.1.3"]
