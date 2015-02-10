@@ -24,7 +24,16 @@
 
 
                  [us.physion/ovation-api "3.0.2"]
-                 [us.physion/ovation-logging "3.0.2"]]
+                 [us.physion/ovation-logging "3.0.2"]
+
+                 [org.clojure/tools.logging "0.3.1"]
+                 [clj-logging-config "1.9.12"]
+                 [org.slf4j/slf4j-api "1.7.7"]
+                 [org.slf4j/slf4j-log4j12 "1.7.7"]
+                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
+                                                    javax.jms/jms
+                                                    com.sun.jmdk/jmxtools
+                                                    com.sun.jmx/jmxri]]]
 
   :plugins [[lein-clojars "0.9.1"]
             [lein-ring "0.8.10"]
