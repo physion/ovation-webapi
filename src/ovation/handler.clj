@@ -8,7 +8,6 @@
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
             [pathetic.core :refer [url-normalize]]
-            [ovation.paths :as paths]
             [ovation.entity :as entity]
             [ovation.links :as links]
             [ovation.util :as util]
@@ -18,10 +17,7 @@
             [clojure.tools.logging :as logging]
             ))
 
-(defn init
-  "Servlet init"
-  []
-  (ovation.logging/setup!))
+(ovation.logging/setup!)
 
 (defmacro annotation
   "Creates an annotation type endpoint"
