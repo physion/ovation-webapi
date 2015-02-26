@@ -94,7 +94,7 @@
               (PUT* "/" request
                 :return [Entity]
                 :query-params [api-key :- s/Str]
-                :body [dto Entity]
+                :body [dto EntityUpdate]
                 :summary "Updates and returns updated entity with :id"
                 (ok (entity/update-entity-attributes api-key id (:attributes dto))))
               (DELETE* "/" request

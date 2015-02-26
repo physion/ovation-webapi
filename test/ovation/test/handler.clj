@@ -48,7 +48,6 @@
                    dto {:type       "Project"
                         :attributes {"attr1" 1
                                      "attr2" "value"}
-                        :links      {}
                         :_id        id
                         :_rev       "rev"}]
 

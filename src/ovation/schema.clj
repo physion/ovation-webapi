@@ -64,6 +64,8 @@
                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
                      (s/optional-key :annotations) s/Any})
 
+(s/defschema EntityUpdate (dissoc Entity :named_links :links))
+
 (s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links :named_links)
                          (s/optional-key :links) {s/Keyword [NewEntityLink]}
                          (s/optional-key :named_links) {s/Keyword {s/Keyword [NewEntityLink]}}))
