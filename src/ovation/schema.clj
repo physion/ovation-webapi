@@ -55,16 +55,19 @@
 (s/defschema NewEntityLink {:target_id                    s/Str
                             (s/optional-key :inverse_rel) s/Str})
 
-(s/defschema Entity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
-                     :_rev                         s/Str
-                     :_id                          s/Uuid
-                     :links                        {s/Keyword s/Str}
-                     :attributes                   {s/Keyword s/Any}
-                     (s/optional-key :api_version) s/Int
-                     (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
-                     (s/optional-key :annotations) s/Any})
+(s/defschema BaseEntity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
+                         :_rev                         s/Str
+                         :_id                          s/Uuid
+                         :attributes                   {s/Keyword s/Any}
+                         (s/optional-key :api_version) s/Int})
 
-(s/defschema EntityUpdate (dissoc Entity :named_links :links))
+
+(s/defschema Entity (assoc BaseEntity
+                      :links                        {s/Keyword s/Str}
+                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
+                      (s/optional-key :annotations) s/Any))
+
+(s/defschema EntityUpdate BaseEntity)
 
 (s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links :named_links)
                          (s/optional-key :links) {s/Keyword [NewEntityLink]}
