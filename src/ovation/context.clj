@@ -39,15 +39,14 @@
 
 (def DEFAULT_LRU_THRESHOLD 5)
 (def LRU_THRESHOLD "LRU_THRESHOLD_PROPERTY")
-(defn clear-context-cache!
-  "Clears the context cahce"
-  []
-  (memo/memo-clear! cached-context))
 
 (def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
                                                                (Integer/parseInt threshold)
                                                                DEFAULT_LRU_THRESHOLD)))
-
+(defn clear-context-cache!
+  "Clears the context cahce"
+  []
+  (memo/memo-clear! cached-context))
 
 (defn-traced begin-transaction
   [ctx]
