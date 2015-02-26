@@ -23,7 +23,8 @@
                            [pathetic "0.5.1"]
 
 
-                           [us.physion/ovation-api "3.0.2"]
+                           [us.physion/ovation-api "3.0.6"]
+
                            [org.clojure/tools.logging "0.3.1"]
                            [clj-logging-config "1.9.12"]
                            [org.slf4j/slf4j-api "1.7.7"]
