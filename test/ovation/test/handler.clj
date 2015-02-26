@@ -1,5 +1,6 @@
 (ns ovation.test.handler
-  (:import (java.util UUID))
+  (:import (java.util UUID)
+           (us.physion.ovation.exceptions AuthenticationException))
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [ovation.handler :as handler]
@@ -7,7 +8,21 @@
             [ovation.util :as util]
             [ovation.entity :as entity]
             [clojure.walk :as walk]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [ovation.context :as ctx]
+            [slingshot.slingshot :refer [try+]]
+            ))
+
+(facts "About authorization"
+       (fact "invalid API key returns 401"
+             (let [apikey "12345"
+                   get (-> (mock/request :get "/api/v1/entities/123")
+                           (mock/query-string {"api-key" apikey})
+                           (mock/content-type "application/json"))]
+               (:status (handler/app get)) => 401
+               (provided
+                 (#'ovation.context/make-server-helper anything anything) =throws=> (AuthenticationException. "Crap")))))
+
 
 (facts "About doc route"
        (fact "HEAD / => 302"

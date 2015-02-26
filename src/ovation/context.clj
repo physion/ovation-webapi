@@ -1,17 +1,26 @@
 (ns ovation.context
   (:import (java.net URI)
-           (us.physion.ovation.exceptions OvationException))
+           (us.physion.ovation.exceptions OvationException AuthenticationException))
   (:require [clojure.core.memoize :as memo]
             [slingshot.slingshot :refer [try+ throw+]]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [com.climate.newrelic.trace :refer [defn-traced]]
+            [ring.util.http-response :refer [unauthorized! forbidden!]]
+            [clojure.tools.logging :as logging]
+            ))
 
 
 
+(defn- make-server-helper
+  [api-endpoint api-key]
+  (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
 
 (defn-traced make-server
   "Make an us.physion.ovation.api.web.Server instance"
   [api-endpoint api-key]
-  (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
+  (try+
+    (make-server-helper api-endpoint api-key)
+    (catch AuthenticationException _
+      (unauthorized! "Authentication failed. Check your API key."))))
 
 (defn- get-context-from-dsc
   "Gets a new DataContext from a DataStoreCoordinator"
@@ -30,6 +39,11 @@
 
 (def DEFAULT_LRU_THRESHOLD 5)
 (def LRU_THRESHOLD "LRU_THRESHOLD_PROPERTY")
+(defn clear-context-cache!
+  "Clears the context cahce"
+  []
+  (memo/memo-clear! cached-context))
+
 (def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
                                                                (Integer/parseInt threshold)
                                                                DEFAULT_LRU_THRESHOLD)))
