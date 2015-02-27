@@ -27,7 +27,6 @@
       (dao/get-entity ...api... ...id...) => ...entity...
       (links/add-link ...entity... ...rel... ...target... :inverse nil) => true))
 
-
   (fact "DELETE /links/:rel/:target deletes a link"
     (links/delete-link ...api... ...id... ...rel... ...target...) => {:success true}
     (provided

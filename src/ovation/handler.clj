@@ -118,6 +118,13 @@
                     :summary "Returns all entities associated with entity by the given relation"
                     (ok (links/get-link api-key id rel)))
 
+                  (POST* "/" []
+                         :return Success
+                         :body [link NewEntityLink]
+                         :query-params [api-key :- s/Str]
+                         :summary "Creates a new link"
+                         (created (links/create-link api-key id (assoc link :rel rel))))
+
                   (DELETE* "/:target" [target]
                     :return Success
                     :query-params [api-key :- s/Str]

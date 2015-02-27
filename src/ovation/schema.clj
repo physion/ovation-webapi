@@ -1,12 +1,14 @@
 (ns ovation.schema
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)
-           (us.physion.ovation.values Relation))
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]))
 
 ;;; --- Schema Definitions --- ;;;
 
 (s/defschema Success {:success s/Bool})
+
+
+;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                    s/Str
                      :_rev                   s/Str
@@ -40,12 +42,9 @@
 (s/defschema TimelineEventAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TIMELINE_EVENTS
                                                            :annotation      TimelineEventRecord}))
 
-(s/defschema NewAnnotation (describe (s/either TagRecord PropertyRecord NoteRecord TimelineEventRecord) "A new annotation record"))
-(s/defschema Annotation (describe (s/either TagAnnotation PropertyAnnotation NoteAnnotation TimelineEventAnnotation) "An annotation"))
-(s/defschema AnnotationCollection {s/Str                    ;; User URI
-                                    [Annotation]})
-(s/defschema AnnotationsMap {s/Str                          ;; Annotation Type
-                              AnnotationCollection})
+
+
+;; -- LINKS -- ;;
 (s/defschema Link {:target_id                    s/Uuid
                    :rel                          s/Str
                    (s/optional-key :inverse_rel) s/Str})
@@ -54,6 +53,9 @@
 
 (s/defschema NewEntityLink {:target_id                    s/Str
                             (s/optional-key :inverse_rel) s/Str})
+
+
+;; -- ENTITIES -- ;;
 
 (s/defschema BaseEntity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
                          :_rev                         s/Str
@@ -65,7 +67,7 @@
 (s/defschema Entity (assoc BaseEntity
                       :links                        {s/Keyword s/Str}
                       (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
-                      (s/optional-key :annotations) s/Any))
+                      (s/optional-key :annotations) {s/Keyword s/Str}))
 
 (s/defschema EntityUpdate BaseEntity)
 

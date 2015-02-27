@@ -11,17 +11,18 @@
             [ovation.links :as links]
             [ovation.context :as ctx]
             [slingshot.slingshot :refer [try+]]
-            ))
+            [ovation.context :as context]))
 
 (facts "About authorization"
-       (fact "invalid API key returns 401"
-             (let [apikey "12345"
-                   get (-> (mock/request :get "/api/v1/entities/123")
-                           (mock/query-string {"api-key" apikey})
-                           (mock/content-type "application/json"))]
-               (:status (handler/app get)) => 401
-               (provided
-                 (#'ovation.context/make-server-helper anything anything) =throws=> (AuthenticationException. "Crap")))))
+       (against-background [(before :facts (context/clear-context-cache!))]
+                           (fact "invalid API key returns 401"
+                                 (let [apikey "12345"
+                                       get (-> (mock/request :get "/api/v1/entities/123")
+                                               (mock/query-string {"api-key" apikey})
+                                               (mock/content-type "application/json"))]
+                                   (:status (handler/app get)) => 401
+                                   (provided
+                                     (#'ovation.context/make-server-helper anything anything) =throws=> (AuthenticationException. "Crap"))))))
 
 
 (facts "About doc route"
@@ -37,9 +38,10 @@
                (:status response) => 200)))
 
 (facts "About invalid routes"
-       (fact "returns 404 for invalid path"
+       (fact "invalid path =>  404"
              (let [response (handler/app (mock/request :get "/invalid/path"))]
                response => nil?)))
+
 
 (facts "About entities"
        (fact "POST /entities inserts an entity (201)"
@@ -95,8 +97,28 @@
                                          (mock/content-type "application/json")
                                          (mock/body body)))) => 201
                (provided
-                 (links/create-link apikey project_id {:target_id target_uuid
-                                                       :rel "patients"
+                 (links/create-link apikey project_id {:target_id   target_uuid
+                                                       :rel         "patients"
                                                        :inverse_rel "projects"}) => {:success true})))
+
+       (fact "POST /entities/:id/links/:rel creates new a link (201)"
+             (let [target_uuid (UUID/randomUUID)
+                   entity_id (str (UUID/randomUUID))
+                   inverse_rel "myrel-inverse"
+                   link {:target_id   (str target_uuid)
+                         :inverse_rel inverse_rel}
+                   rel "myrel"
+                   apikey "12345"
+                   post (-> (mock/request :post (str "/api/v1/entities/" entity_id "/links/" rel))
+                            (mock/query-string {"api-key" apikey})
+                            (mock/content-type "application/json")
+                            (mock/body (json/write-str (walk/stringify-keys link))))]
+
+               (:status (handler/app post)) => 201
+
+               (provided
+                 (links/create-link apikey entity_id {:target_id   (str target_uuid)
+                                                            :rel         rel
+                                                            :inverse_rel inverse_rel}) => {:success true})))
        )
 
