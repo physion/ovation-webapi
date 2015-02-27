@@ -118,7 +118,29 @@
 
                (provided
                  (links/create-link apikey entity_id {:target_id   (str target_uuid)
+                                                      :rel         rel
+                                                      :inverse_rel inverse_rel}) => {:success true})))
+
+       (fact "POST /entities/:id/named_links/:rel/:named creates new a link (201)"
+             (let [target_uuid (str (UUID/randomUUID))
+                   entity_id (str (UUID/randomUUID))
+                   inverse_rel "myrel-inverse"
+                   name "myrelname"
+                   link {:target_id   target_uuid
+                         :inverse_rel inverse_rel}
+                   rel "myrel"
+                   apikey "12345"
+                   post (-> (mock/request :post (str "/api/v1/entities/" entity_id "/named_links/" rel "/" name))
+                            (mock/query-string {"api-key" apikey})
+                            (mock/content-type "application/json")
+                            (mock/body (json/write-str (walk/stringify-keys link))))]
+
+               (:status (handler/app post)) => 201
+
+               (provided
+                 (links/create-named-link apikey entity_id {:target_id   target_uuid
                                                             :rel         rel
-                                                            :inverse_rel inverse_rel}) => {:success true})))
+                                                            :inverse_rel inverse_rel
+                                                            :name        name}) => {:success true})))
        )
 
