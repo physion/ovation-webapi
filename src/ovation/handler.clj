@@ -1,7 +1,7 @@
 (ns ovation.handler
   (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
   (:require [clojure.string :refer [join]]
-            [ring.util.http-response :refer [created ok accepted]]
+            [ring.util.http-response :refer [created ok accepted no-content]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.swagger.schema :refer [field describe]]
             [ring.swagger.json-schema-dirty]

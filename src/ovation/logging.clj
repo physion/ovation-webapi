@@ -1,12 +1,24 @@
 (ns ovation.logging
   (:require [clj-logging-config.log4j :as log-config]
-            [ovation.config :refer [LOGGING_HOST]]))
+            [ovation.config :refer [LOGGING_HOST]])
+  (:import (org.apache.log4j.net SyslogAppender)
+           (org.apache.log4j PatternLayout SimpleLayout ConsoleAppender)))
+
+(defn configure-console-logger!
+  []
+  (log-config/set-logger!
+    :level :debug
+    :out (ConsoleAppender. (SimpleLayout.))))
 
 (defn setup! []
-  (if-let [log-host LOGGING_HOST]
+  (if-let [host LOGGING_HOST]
     (log-config/set-logger!
       :level :debug
-      :out (org.apache.log4j.net.SyslogAppender.
-             (org.apache.log4j.PatternLayout. "%p: (%F:%L) %x %m %n")
-             log-host
-             org.apache.log4j.net.SyslogAppender/LOG_LOCAL7))))
+      :out (doto (SyslogAppender.)
+             (.setSyslogHost host)
+             (.setFacility "LOCAL7")
+             (.setFacilityPrinting false)
+             (.setName "ovation")
+             (.setLayout (PatternLayout. "%p: (%F:%L) %x %m %n"))))
+
+    (configure-console-logger!)))
