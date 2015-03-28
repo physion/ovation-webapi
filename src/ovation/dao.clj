@@ -3,8 +3,7 @@
             [ovation.annotations :as annotations]
             [ovation.util :refer [parse-uuid ctx]]
             [ovation.version :refer [version-path]]
-            [ovation.util :as util]
-            [com.climate.newrelic.trace :refer [defn]]))
+            [ovation.util :as util]))
 
 (defn get-entity
   "Gets a single entity by ID (uuid string)"

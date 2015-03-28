@@ -12,6 +12,7 @@
                            [ring-cors "0.1.4"]
 
                            [http-kit "2.1.18"]
+                           [org.clojure/data.codec "0.1.0"]
 
                            [org.clojure/core.memoize "0.5.6"]
 
@@ -60,6 +61,7 @@
                                                         [ring-mock "0.1.5"]
                                                         [midje "1.6.3"]
                                                         [org.clojure/data.json "0.2.5"]
+                                                        [http-kit.fake "0.2.1"]
                                                         [ring-serve "0.1.2"]]}
                        :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                                         :secret-key ~(System/getenv "AWS_SECRET_KEY")}

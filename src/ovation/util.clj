@@ -1,13 +1,12 @@
 (ns ovation.util
   (:import (java.net URI)
-           (us.physion.ovation.domain URIs))
+           (us.physion.ovation.domain URIs)
+           (java.util UUID))
   (:require [ovation.context :as context]
-            [ovation.interop :as interop]
-            [ovation.paths :as paths]
             [clojure.string :refer [join]]
-            [clojurewerkz.urly.core :as urly]
-            [pathetic.core :refer [url-normalize up-dir]]
-            [ovation.version :refer [version-path]]))
+            [ovation.version :refer [version-path]]
+            [clojure.walk :as walk]
+            [clojure.data.json :as json]))
 
 (defn ctx [api-key]
   (context/cached-context api-key))
@@ -16,16 +15,8 @@
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
     (let [buffer (java.nio.ByteBuffer/wrap
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
-    (java.util.UUID/fromString s)))
-
-
-(defn get-body-from-request [request]
-  (slurp (:body request)))
-
-
-(defn- split-query [u]
-  (clojure.string/split u #"\?" 2))
+      (UUID. (.getLong buffer) (.getLong buffer)))
+    (UUID/fromString s)))
 
 
 (defn get-entity-id
@@ -51,4 +42,15 @@
   [request]
   (let [params (:query-params request)]
     (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
+
+(defn to-json
+  "Converts a keywordized map to json string"
+  [m]
+  (json/write-str (walk/stringify-keys m)))
+
+(defn from-json
+  "Converts a json string to keywordized map"
+  [s]
+
+  (walk/keywordize-keys (json/read-str s)))
 

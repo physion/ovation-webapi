@@ -8,8 +8,7 @@
             [ovation.links :as links]
             [ovation.interop :as interop]
             [ovation.annotations :as annotations]
-            [ovation.dao :as dao]
-            [com.climate.newrelic.trace :refer [defn]]))
+            [ovation.dao :as dao]))
 
 
 (defn create-multimap [m]
