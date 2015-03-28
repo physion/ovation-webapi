@@ -1,8 +1,5 @@
 (ns ovation.entity
-  (:import (us.physion.ovation.domain URIs)
-           (us.physion.ovation.domain OvationEntity$AnnotationKeys)
-           (us.physion.ovation.exceptions OvationException)
-           (us.physion.ovation.util MultimapUtils))
+  (:import (us.physion.ovation.util MultimapUtils))
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation.dao :refer [get-entity entity-to-dto into-seq]]
             [ovation.util :refer [ctx create-uri parse-uuid]]
@@ -12,18 +9,18 @@
             [ovation.interop :as interop]
             [ovation.annotations :as annotations]
             [ovation.dao :as dao]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [com.climate.newrelic.trace :refer [defn]]))
 
 
 (defn create-multimap [m]
   (MultimapUtils/createMultimap m))
 
-(defn-traced insert-entity
+(defn insert-entity
   "Inserts dto as an entity into the given DataContext"
   [context dto]
   (-> context (.insertEntity dto)))
 
-(defn-traced create-entity
+(defn create-entity
   "Creates a new Entity from a DTO map"
   [api-key new-dto]
 
@@ -48,12 +45,12 @@
 
           (into-seq api-key (conj () entity)))))))
 
-(defn-traced add-self-link
+(defn add-self-link
   [entity-id annotation]
   (let [annotation-id (:_id annotation)]
     (dao/add-self-link (str (dao/entity-single-link entity-id "self") "/annotations/" annotation-id) annotation)))
 
-(defn-traced process-annotations
+(defn process-annotations
   [id annotations]
 
   (map (fn [annotation] (->> annotation
@@ -62,12 +59,12 @@
                           (add-self-link id)))
     (annotations/union-annotations-map annotations)))
 
-(defn-traced get-specific-annotations
+(defn get-specific-annotations
   "Returns specific annotations associated with entity(id)"
   [api-key id annotation-key]
   (process-annotations id (.get (dao/get-entity-annotations api-key id) annotation-key)))
 
-(defn-traced get-annotations
+(defn get-annotations
   "Returns all annotations associated with entity(id)"
   [api-key id]
   (process-annotations id (dao/get-entity-annotations api-key id)))
@@ -78,41 +75,41 @@
     (.update entity update)
     entity))
 
-(defn-traced update-entity-attributes
+(defn update-entity-attributes
   [api-key id attributes]
   (let [entity (get-entity api-key id)
         dto (entity-to-dto entity)
         updated (update-entity entity (assoc-in dto [:attributes] attributes))]
     (into-seq api-key (conj () updated))))
 
-(defn-traced delete-annotation [api-key entity-id annotation-type annotation-id]
+(defn delete-annotation [api-key entity-id annotation-type annotation-id]
   "Deletes an annotation with :annotation-id for entity with id :entity-id"
   (let [entity (get-entity api-key entity-id)
         success (.removeAnnotation entity annotation-type annotation-id)]
     {:success true}))
 
-(defn-traced add-annotation [api-key id annotation-type record]
+(defn add-annotation [api-key id annotation-type record]
   "Adds an annotation to an entity"
   (let [entity (get-entity api-key id)]
     (.addAnnotation entity annotation-type record)
     {:success true}))
 
-(defn-traced delete-entity [api-key id]
+(defn delete-entity [api-key id]
   (let [entity (-> (ctx api-key) (. getObjectWithUuid (parse-uuid id)))
         trash_resp (-> (ctx api-key) (. trash entity) (.get))]
 
     {:success (not (empty? trash_resp))}))
 
-(defn-traced get-projects [ctx]
+(defn get-projects [ctx]
   (.getProjects ctx))
 
-(defn-traced get-sources [ctx]
+(defn get-sources [ctx]
   (.getTopLevelSources ctx))
 
-(defn-traced get-protocols [ctx]
+(defn get-protocols [ctx]
   (.getProtocols ctx))
 
-(defn-traced index-resource
+(defn index-resource
   [api-key resource]
   (let [resources (case resource
                     "projects" (get-projects (ctx api-key))
@@ -123,9 +120,9 @@
 (defn- get-view-results [ctx uri]
   (.getObjectsWithURI ctx uri))
 
-(defn-traced escape-quotes [full-url]
+(defn escape-quotes [full-url]
   (clojure.string/replace full-url "\"" "%22"))
 
-(defn-traced get-view
+(defn get-view
   [api-key full-url]
   (into-seq api-key (get-view-results (ctx api-key) (escape-quotes full-url))))

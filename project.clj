@@ -8,12 +8,12 @@
             :dependencies [[org.clojure/clojure "1.6.0"]
                            [org.clojure/core.incubator "0.1.3"]
 
-                           [http-kit "2.1.18"]
-                           [org.clojure/core.memoize "0.5.6"]
-                           [ring/ring-json "0.3.1"]
+                           [metosin/compojure-api "0.18.0"]
                            [ring-cors "0.1.4"]
 
-                           [metosin/compojure-api "0.18.0"]
+                           [http-kit "2.1.18"]
+
+                           [org.clojure/core.memoize "0.5.6"]
 
                            [com.newrelic.agent.java/newrelic-agent "3.11.0"]
                            [com.google.guava/guava "13.0.1"]
@@ -21,7 +21,7 @@
                            [pathetic "0.5.1"]
 
 
-                           [us.physion/ovation-api "3.0.6"]
+                           [us.physion/ovation-api "3.0.7"]
 
                            [org.clojure/tools.logging "0.3.1"]
                            [clj-logging-config "1.9.12"]
