@@ -19,7 +19,7 @@
   [auth resource]
 
   (couch/transform (map :doc (cl/with-db (couch/db auth)
-                               (cl/get-view couch/design-doc EntityDao$Views/ENTITIES_BY_TYPE {:key resource :reduce false :include_docs true})))))
+                               (cl/get-view couch/design-doc us.physion.ovation.data.EntityDao$Views/ENTITIES_BY_TYPE {:key resource :reduce false :include_docs true})))))
 
 
 (defn get-entities

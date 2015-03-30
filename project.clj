@@ -10,6 +10,7 @@
 
                            ;; Compojure API and middleware
                            [metosin/compojure-api "0.19.0"]
+                           [metosin/ring-swagger-ui "2.1.8-M1"]
                            [ring-cors "0.1.4"]
 
                            ;; HTTP and CouchDB
