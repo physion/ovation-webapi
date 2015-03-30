@@ -5,7 +5,8 @@
             [clojure.walk :as walk]
             [clojure.data.json :as json]
             [clojure.data.codec.base64 :as b64]
-            [ovation.util :as util]))
+            [ovation.util :as util])
+  (:import (clojure.lang ExceptionInfo)))
 
 
 (defn string-to-base64-string [original]
@@ -65,7 +66,7 @@
                                  server "https://some.ovation.io"]
                              (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:status 401}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
 
-                                             (auth/check-auth (auth/get-auth server apikey)) => (throws clojure.lang.ExceptionInfo)))
+                                             (auth/check-auth (auth/get-auth server apikey)) => (throws ExceptionInfo)))
                            )
 
                      (fact "auth-map +throws 401"
@@ -73,7 +74,7 @@
                                  server "https://some.ovation.io"]
                              (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:status 401}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
 
-                                             (auth/auth-info (auth/get-auth server apikey)) => (throws clojure.lang.ExceptionInfo))))
+                                             (auth/auth-info (auth/get-auth server apikey)) => (throws ExceptionInfo))))
 
                      )
               )

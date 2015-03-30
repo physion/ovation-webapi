@@ -11,7 +11,8 @@
             [ovation.links :as links]
             [ovation.context :as ctx]
             [slingshot.slingshot :refer [try+]]
-            [ovation.context :as context]))
+            [ovation.context :as context]
+            [ovation.auth :as auth]))
 
 (facts "About authorization"
        (against-background [(before :facts (context/clear-context-cache!))]
@@ -19,10 +20,12 @@
                                  (let [apikey "12345"
                                        get (-> (mock/request :get "/api/v1/entities/123")
                                                (mock/query-string {"api-key" apikey})
-                                               (mock/content-type "application/json"))]
+                                               (mock/content-type "application/json"))
+                                       auth-response (promise)
+                                       _ (deliver auth-response {:status 401})]
                                    (:status (handler/app get)) => 401
                                    (provided
-                                     (#'ovation.context/make-server-helper anything anything) =throws=> (AuthenticationException. "Crap"))))))
+                                     (auth/get-auth anything apikey) => auth-response)))))
 
 
 (facts "About doc route"

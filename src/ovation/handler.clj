@@ -73,7 +73,6 @@
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
 
-              (logging/info "Getting top-level" resource)
               (let [auth (auth/authorize config/AUTH_SERVER api-key)
                     types {"projects" "Project"
                            "sources" "Source"
@@ -85,7 +84,7 @@
         (context "/v1" []
           (context "/entities" []
             (POST* "/" request
-              :return [Entity]
+              :return {:entities [Entity]}
               :query-params [api-key :- s/Str]
               :body [new-dto NewEntity]
               :summary "Creates and returns an entity"
@@ -93,11 +92,11 @@
 
             (context "/:id" [id]
               (GET* "/" request
-                :return {:entities [Entity]}
+                :return {:entity Entity}
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
                 (let [auth (auth/authorize config/AUTH_SERVER api-key)]
-                  (ok (entity/get-entities auth [id]))))
+                  (ok {:entities (entity/get-entities auth [id])})))
 
               (PUT* "/" request
                 :return [Entity]
