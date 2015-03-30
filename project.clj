@@ -8,22 +8,28 @@
             :dependencies [[org.clojure/clojure "1.6.0"]
                            [org.clojure/core.incubator "0.1.3"]
 
-                           [metosin/compojure-api "0.18.0"]
+                           ;; Compojure API and middleware
+                           [metosin/compojure-api "0.19.0"]
                            [ring-cors "0.1.4"]
 
+                           ;; HTTP and CouchDB
                            [http-kit "2.1.18"]
                            [org.clojure/data.codec "0.1.0"]
-
+                           [com.ashafa/clutch "0.4.0"]
                            [org.clojure/core.memoize "0.5.6"]
 
+                           ;; New Relic agent (JAR)
                            [com.newrelic.agent.java/newrelic-agent "3.11.0"]
-                           [com.google.guava/guava "13.0.1"]
-                           [clojurewerkz/urly "1.0.0"]
-                           [pathetic "0.5.1"]
 
-
+                           ;; Ovation API
                            [us.physion/ovation-api "3.0.7"]
 
+                           ;; Deprecated
+                           ;[com.google.guava/guava "13.0.1"]
+                           ;[clojurewerkz/urly "1.0.0"]
+                           ;[pathetic "0.5.1"]
+
+                           ;; Logging
                            [org.clojure/tools.logging "0.3.1"]
                            [clj-logging-config "1.9.12"]
                            [org.slf4j/slf4j-api "1.7.7"]
@@ -32,7 +38,7 @@
                                                               javax.jms/jms
                                                               com.sun.jmdk/jmxtools
                                                               com.sun.jmx/jmxri]]
-                           [com.climate/clj-newrelic "0.2.1"]]
+                           ]
 
             :plugins [[lein-clojars "0.9.1"]
                       [lein-ring "0.8.10"]
@@ -73,5 +79,5 @@
                                                                                           :passphrase :env/AWS_SECRET_KEY}]]
                                          :local-repo   ".repository"}}
 
-            :aliases {"start-server" ["with-profile" "ovation-web-api" "ring" "server"]})
+            :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
 

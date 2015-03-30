@@ -3,7 +3,13 @@
             [ovation.annotations :as annotations]
             [ovation.util :refer [parse-uuid ctx]]
             [ovation.version :refer [version-path]]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [cemerick.url :as url]))
+
+;;TODO (defn db-for-apikey) => url for clutch (with-db)
+; (def db (assoc (cemerick.url/url "https://XXX.cloudant.com/" "databasename")
+;:username "username"
+;:password "password"))
 
 (defn get-entity
   "Gets a single entity by ID (uuid string)"
@@ -11,7 +17,7 @@
   (-> (ctx api-key) (.getObjectWithUuid (parse-uuid id))))
 
 
-(defn remove-private-links
+(defn remove-private-links                                  ;;keep
   "Removes private links (e.g. _collaboration_roots) from the dto.links"
   [dto]
   (if-let [links (:links dto)]
@@ -34,14 +40,14 @@
   [entity]
   (interop/clojurify (.toMap entity)))
 
-(defn entity-single-link
+(defn entity-single-link                                    ;;keep
   "Return a single link from an id and relationship name"
   [id rel]
   (if (= (name rel) "self")
     (clojure.string/join ["/api" version-path "/entities/" id])
     (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
 
-(defn links-to-rel-path
+(defn links-to-rel-path                                     ;;keep
   "Augment an entity dto with the links.self reference"
   [dto]
   (let [add_self (merge-with conj dto {:links {:self ""}})

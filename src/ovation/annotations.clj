@@ -1,8 +1,7 @@
 (ns ovation.annotations
-  (:require [ovation.version :refer [version-path]]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+  (:require [ovation.version :refer [version-path]]))
 
-(defn add-annotation-links
+(defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
   [e]
   (let [prefix (clojure.string/join ["/api" version-path "/entities/" (:_id e) "/annotations/"])
@@ -12,7 +11,7 @@
         notes {:notes (clojure.string/join [prefix "notes"])}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
-(defn-traced union-annotations-map
+(defn union-annotations-map
   "Collects all annotation documents in a top-level annotations or annotations type map"
   [annotations]
   (flatten (map (fn [v]

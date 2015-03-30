@@ -1,5 +1,6 @@
 (ns ovation.entity
-  (:import (us.physion.ovation.util MultimapUtils))
+  (:import (us.physion.ovation.util MultimapUtils)
+           (us.physion.ovation.data EntityDao$Views))
   (:require [clojure.walk :refer [stringify-keys]]
             [ovation.dao :refer [get-entity entity-to-dto into-seq]]
             [ovation.util :refer [ctx create-uri parse-uuid]]
@@ -8,8 +9,24 @@
             [ovation.links :as links]
             [ovation.interop :as interop]
             [ovation.annotations :as annotations]
-            [ovation.dao :as dao]))
+            [ovation.dao :as dao]
+            [com.ashafa.clutch :as cl]
+            [ovation.couch :as couch]))
 
+
+(defn of-type
+  "Gets all entities of the given type"
+  [auth resource]
+
+  (couch/transform (map :doc (cl/with-db (couch/db auth)
+                               (cl/get-view couch/design-doc EntityDao$Views/ENTITIES_BY_TYPE {:key resource :reduce false :include_docs true})))))
+
+
+(defn get-entities
+  "Gets entities by ID"
+  [auth entity-ids]
+
+  nil)
 
 (defn create-multimap [m]
   (MultimapUtils/createMultimap m))

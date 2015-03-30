@@ -5,9 +5,26 @@
             [ovation.interop :refer [clojurify]]
             [ovation.entity :as entity]
             [ovation.context :as context]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [com.ashafa.clutch :as cl]
+            [ovation.couch :as couch])
+  (:import (us.physion.ovation.data EntityDao$Views)))
 
 
+
+(facts "About entities"
+  (fact "of-type gets all entities by document :type"
+    (let [resource "type"
+          dburl "https://dburl"
+          dbuser "db-user"
+          dbpass "db-pass"]
+      (entity/of-type ...auth... ...resource...) => [...entity1... ...entity2...]
+      (provided
+        ...auth... =contains=> {:cloudant_key dbuser :cloudant_password dbpass :cloudant_db_url dburl}
+        (cl/get-view couch/design-doc EntityDao$Views/ENTITIES_BY_TYPE {:key ...resource... :reduce false :include_docs true}) => [{:doc ...doc1...} {:doc ...doc2...}]
+        (couch/transform [...doc1... ...doc2...]) => [...entity1... ...entity2...]
+        ))
+    ))
 
 (facts "About entities"
   (fact "inserts a new entity without links"
@@ -63,10 +80,10 @@
                                            :links      {:self "/entity/uri/"}}
 
       (#'ovation.entity/update-entity ...entity... {:_id        "123"
-                                                         :_rev       "rev1"
-                                                         :attributes {:attr1 1
-                                                                      :attr2 "value"}
-                                                         :links      {:self "/entity/uri/"}}) => ...entity...
+                                                    :_rev       "rev1"
+                                                    :attributes {:attr1 1
+                                                                 :attr2 "value"}
+                                                    :links      {:self "/entity/uri/"}}) => ...entity...
       (dao/into-seq ...api... '(...entity...)) => ...result...)))
 
 (facts "About top-level handlers"

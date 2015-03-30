@@ -6,6 +6,7 @@
 
 
 (defn get-auth
+  "Async get user info for ovation.io API key"
   [authserver apikey]
   (let [url (clojure.string/join "/" [authserver "api" "v1" "users"])
         opts {:basic-auth [apikey apikey]}]
@@ -13,7 +14,7 @@
     (http/get url opts)))
 
 (defn check-auth
-  "Slinghsots authorization failure if not status OK"
+  "Slinghsots authorization failure if not status OK."
   [auth]
 
   (when (not (hp/ok? auth))

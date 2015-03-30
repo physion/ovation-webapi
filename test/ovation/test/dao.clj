@@ -3,7 +3,8 @@
   (:import (java.util UUID))
   (:require [ovation.dao :as dao]
             [ovation.util :as util]
-            [ovation.annotations :as annotations]))
+            [ovation.annotations :as annotations]
+            [cemerick.url :as url]))
 
 (facts "About annotation maps"
   (fact "replaces root User URI keys with user names in annotations map"
