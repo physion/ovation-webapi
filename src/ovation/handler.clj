@@ -96,7 +96,8 @@
                 :query-params [api-key :- s/Str]
                 :summary "Returns entity with :id"
                 (let [auth (auth/authorize config/AUTH_SERVER api-key)]
-                  (ok {:entities (entity/get-entities auth [id])})))
+                  (ok {:entity (or (first (entity/get-entities auth [id]))
+                                 '())})))
 
               (PUT* "/" request
                 :return [Entity]

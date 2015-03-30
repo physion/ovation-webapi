@@ -9,57 +9,104 @@
             [ovation.links :as links]
             [ovation.interop :as interop]
             [ovation.annotations :as annotations]
+            [ovation.version :as ver]
             [ovation.dao :as dao]
             [com.ashafa.clutch :as cl]
             [ovation.couch :as couch]))
 
 
+
+(defn filter-trashed
+  "Removes entity documents with a non-nil trash_info from seq"
+  [entities include_trashed]
+  (filter #(or include_trashed (nil? (:trash_info %))) entities))
+
 (defn of-type
   "Gets all entities of the given type"
-  [auth resource]
+  [auth resource & {:keys [include_trashed] :or {include_trashed false}}]
 
-  (couch/transform (map :doc (cl/with-db (couch/db auth)
-                               (cl/get-view couch/design-doc us.physion.ovation.data.EntityDao$Views/ENTITIES_BY_TYPE {:key resource :reduce false :include_docs true})))))
+  (-> (map :doc (cl/with-db (couch/db auth)
+                  (cl/get-view couch/design-doc us.physion.ovation.data.EntityDao$Views/ENTITIES_BY_TYPE {:key resource :reduce false :include_docs true})))
+    (couch/transform)
+    (filter-trashed include_trashed)))
 
 
 (defn get-entities
   "Gets entities by ID"
-  [auth entity-ids]
+  [auth entity-ids & {:keys [include_trashed] :or {include_trashed false}}]
 
-  nil)
+  (-> (map :doc (cl/with-db (couch/db auth)
+                  (cl/all-documents {:include_docs true} {:keys entity-ids})))
+    (couch/transform)
+    (filter-trashed include_trashed)))
 
 (defn create-multimap [m]
   (MultimapUtils/createMultimap m))
 
+(defn -ensure-id
+  "Makes sure there's an _id for entity"
+  [doc]
+  (if (nil? (:_id doc))
+    (assoc doc :_id (java.util.UUID/randomUUID))
+    doc))
+
+(defn -ensure-api-version
+  "Insert API version"
+  [doc]
+  (assoc doc :api_version ver/schema-version))
+
+(defn -add-owner
+  "Ensures that the owner relation is built.
+
+  Returns {:doc doc :additional_docs []}"
+
+  [doc auth]
+
+  ;;TODO we need to return the extra document somehow
+  doc)
+
+
+
 (defn insert-entity
   "Inserts dto as an entity into the given DataContext"
-  [context dto]
-  (-> context (.insertEntity dto)))
+  [auth raw_dto]
+
+  ;; TODO
+  ;; ensure _id
+  ;; ensure owner
+  ;; ensure links
+  ;; collaboration_roots
+  (let [dto (-> raw_dto
+              (-ensure-id)
+              (-ensure-api-version)
+              (-add-owner auth))]
+
+    (cl/with-db (couch/db auth)
+      (cl/bulk-update '(dto)))))
 
 (defn create-entity
   "Creates a new Entity from a DTO map"
-  [api-key new-dto]
+  [auth api-key new-dto]
 
   (let [links (:links new-dto)
         named-links (:named_links new-dto)
         dto (stringify-keys (dissoc new-dto :links :named_links))]
-    (let [c (ctx api-key)]
-      (transaction c
-        (let [entity (insert-entity c dto)]
-          ;; For all links, add the link
-          (when links
-            (doseq [[rel rel-links] links]
-              (doseq [link rel-links]
-                (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
 
-          ;; For all named links, add the named link
-          (when named-links
-            (doseq [[rel names] named-links]
-              (doseq [[named rel-links] names]
-                (doseq [link rel-links]
-                  (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
+    (let [entity (insert-entity auth dto)]
+      ;; For all links, add the link
+      (when links
+        (doseq [[rel rel-links] links]
+          (doseq [link rel-links]
+            (links/add-link entity (name rel) (create-uri (:target_id link)) :inverse (:inverse_rel link)))))
 
-          (into-seq api-key (conj () entity)))))))
+      ;; For all named links, add the named link
+      (when named-links
+        (doseq [[rel names] named-links]
+          (doseq [[named rel-links] names]
+            (doseq [link rel-links]
+              (links/add-named-link entity (name rel) (name named) (create-uri (:target_id link)) :inverse (:inverse_rel link))))))
+
+      (conj () entity))))
 
 (defn add-self-link
   [entity-id annotation]
