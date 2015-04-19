@@ -12,7 +12,8 @@
             [ovation.version :as ver]
             [ovation.dao :as dao]
             [com.ashafa.clutch :as cl]
-            [ovation.couch :as couch]))
+            [ovation.couch :as couch]
+            [clojure.core.async :as async :refer [chan promise-chan <!! >!! timeout alt!!]]))
 
 
 
@@ -40,14 +41,17 @@
     (couch/transform)
     (filter-trashed include_trashed)))
 
-(defn create-multimap [m]
-  (MultimapUtils/createMultimap m))
+
+(defn make-uuid
+  "Wraps java.util.UUID/randomUUID for test mocking."
+  []
+  (java.util.UUID/randomUUID))
 
 (defn -ensure-id
   "Makes sure there's an _id for entity"
   [doc]
   (if (nil? (:_id doc))
-    (assoc doc :_id (java.util.UUID/randomUUID))
+    (assoc doc :_id (make-uuid))
     doc))
 
 (defn -ensure-api-version
@@ -56,33 +60,46 @@
   (assoc doc :api_version ver/schema-version))
 
 (defn -add-owner
-  "Ensures that the owner relation is built.
+  "Adds owner link document."
 
-  Returns {:doc doc :additional_docs []}"
+  [auth doc]
 
-  [doc auth]
-
-  ;;TODO we need to return the extra document somehow
+  ;;TODO white owner link document to channel
   doc)
 
+(defn add-collaboration-roots
+  [doc roots]
+  (assoc-in doc [:links :_collaboration_roots] roots))
 
+(defn collaboration-roots
+  [auth doc]
 
-(defn insert-entity
+  ;;TODO
+  nil)
+
+(defn insert-entity                                         ;; TODO make this insert-entities
   "Inserts dto as an entity into the given DataContext"
   [auth raw_dto]
 
+  ;; 1. Collect in-memory links
+  ;; 2. Start collaboration roots, one per entity (including in-memory links)
+  ;; 3. transform pipeline
   ;; TODO
-  ;; ensure _id
   ;; ensure owner
-  ;; ensure links
-  ;; collaboration_roots
-  (let [dto (-> raw_dto
+  ;; link documents from dto
+  ;; collaboration_roots (**added to all dtos, including links**)
+
+  (let [links (:links raw_dto)
+        named_links (:named_links raw_dto)
+        dto (->> (dissoc raw_dto :links :named_links)
               (-ensure-id)
               (-ensure-api-version)
-              (-add-owner auth))]
+              (-add-collaboration-roots auth))
+        owner-link (links/make-link-doc doc (:user_id auth) :owner) ;;TODO :user_id?, inverse?
+        collab-roots (collaboration-roots auth dto)]
 
     (cl/with-db (couch/db auth)
-      (cl/bulk-update '(dto)))))
+      (cl/bulk-update (map #(add-collaboration-roots % collab-roots) [dto owner-link])))))
 
 (defn create-entity
   "Creates a new Entity from a DTO map"
@@ -162,30 +179,3 @@
         trash_resp (-> (ctx api-key) (. trash entity) (.get))]
 
     {:success (not (empty? trash_resp))}))
-
-(defn get-projects [ctx]
-  (.getProjects ctx))
-
-(defn get-sources [ctx]
-  (.getTopLevelSources ctx))
-
-(defn get-protocols [ctx]
-  (.getProtocols ctx))
-
-(defn index-resource
-  [api-key resource]
-  (let [resources (case resource
-                    "projects" (get-projects (ctx api-key))
-                    "sources" (get-sources (ctx api-key))
-                    "protocols" (get-protocols (ctx api-key)))]
-    (into-seq api-key resources)))
-
-(defn- get-view-results [ctx uri]
-  (.getObjectsWithURI ctx uri))
-
-(defn escape-quotes [full-url]
-  (clojure.string/replace full-url "\"" "%22"))
-
-(defn get-view
-  [api-key full-url]
-  (into-seq api-key (get-view-results (ctx api-key) (escape-quotes full-url))))

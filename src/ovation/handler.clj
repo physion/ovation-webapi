@@ -68,7 +68,7 @@
         (context "/v1" []                                   ;; TODO pull this from o.util/version-string
           (context "/:resource" [resource]
             (GET* "/" request
-              :return {s/Keyword [Entity]}
+              :return  [Entity]                                     ;; for v2 {s/Keyword [Entity]}
               :query-params [api-key :- String]
               :path-params [resource :- (s/enum "projects" "sources" "protocols")]
               :summary "Get Projects, Protocols and Top-level Sources"
@@ -77,7 +77,7 @@
                     types {"projects" "Project"
                            "sources" "Source"
                            "protocols" "Protocol"}]
-                (ok {(keyword resource) (entity/of-type auth (types resource))})))))))
+                (ok (entity/of-type auth (types resource))))))))) ;for v2 {(keyword resource) ...}
 
     (swaggered "entities"
       (context "/api" []
@@ -184,17 +184,17 @@
                 (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
                 (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation)))))))
 
-    (swaggered "views"
-      (context "/api" []
-        (context "/v1" []
-          (context "/views" []
-            (GET* "/*" request
-              :return [Entity]
-              :query-params [api-key :- s/Str]
-              :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
-              (let [host (util/host-from-request request)]
-                (ok (entity/get-view api-key
-                      (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
+    ;(swaggered "views"
+    ;  (context "/api" []
+    ;    (context "/v1" []
+    ;      (context "/views" []
+    ;        (GET* "/*" request
+    ;          :return [Entity]
+    ;          :query-params [api-key :- s/Str]
+    ;          :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
+    ;          (let [host (util/host-from-request request)]
+    ;            (ok (entity/get-view api-key
+    ;                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
     )
 )
 

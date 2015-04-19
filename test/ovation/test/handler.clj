@@ -1,6 +1,5 @@
 (ns ovation.test.handler
-  (:import (java.util UUID)
-           (us.physion.ovation.exceptions AuthenticationException))
+  (:import (java.util UUID))
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
             [ovation.handler :as handler]

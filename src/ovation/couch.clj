@@ -10,16 +10,17 @@
   "Database URL from authorization info"
   [auth]
   (-> (url/url (:cloudant_db_url auth))
-      (assoc :username (:cloudant_key auth)
-             :password (:cloudant_password auth))))
+    (assoc :username (:cloudant_key auth)
+           :password (:cloudant_password auth))))
 
 
 (defn transform
   "Transform couchdb documents. This needs a better name!"
   [docs]
   (map (fn [doc] (->> doc
-                      (dao/remove-private-links)
-                      (dao/links-to-rel-path)
-                      (annotations/add-annotation-links) ;; NB must come after links-to-rel-path
-                      ))
-       docs))
+                   (dao/remove-private-links)
+                   (dao/links-to-rel-path)
+                   (annotations/add-annotation-links)       ;; NB must come after links-to-rel-path
+                   ;;TODO add-self-link
+                   ))
+    docs))

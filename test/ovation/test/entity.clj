@@ -62,14 +62,19 @@
 
 (facts "About entity creation"
   (fact "`-ensure-id` adds random UUID _id"
-    (entity/-ensure-id {}) => #(or (isa? (class (:_id %)) java.util.UUID)
-                               (java.util.UUID/fromString (:_id %))))
+    (let [id java.util.UUID/randomUUID]
+
+      (entity/-ensure-id {}) => {:_id id}
+      (provided
+        (entity/make-uuid) => id)))
 
   (fact "`-ensure-api-version` adds API version"
     (entity/-ensure-api-version {}) => {:api_version ver/schema-version})
 
   (fact "`-ensure-owner` adds 'owner' relation"
     true=>false)
+
+  (fact "`-add-owner` adds " )
 
   (fact "`create-entity` inserts a new entity without links"
     (let [dburl "https://dburl"
@@ -114,24 +119,24 @@
       (context/commit-transaction ...ctx...) => true
       (dao/into-seq ...api... '(...entity...)) => ...result...)))
 
-(facts "About views handlers"
-  (fact "gets view results"
-    (entity/get-view ...api... ...url...) => ...result...
-    (provided
-      (util/ctx ...api...) => ...ctx...
-      (#'ovation.entity/escape-quotes ...url...) => ...url...
-      (#'ovation.entity/get-view-results ...ctx... ...url...) => ...entities...
-      (dao/into-seq ...api... ...entities...) => ...result...))
-  (fact "get-view url-escapes \" in view query"
-    (entity/get-view ...api... "https://myserver.com/views/_foo?keys=\"123\"") => ...result...
-    (provided
-      (util/ctx ...api...) => ...ctx...
-      (entity/escape-quotes "https://myserver.com/views/_foo?keys=\"123\"") => ...url...
-      (#'ovation.entity/get-view-results ...ctx... ...url...) => ...entities...
-      (dao/into-seq ...api... ...entities...) => ...result...))
-  (fact "escape-quotes url-escapes \" in url"
-    (entity/escape-quotes "https://myserver.com/views/_foo?keys=\"123\"") =>
-    "https://myserver.com/views/_foo?keys=%22123%22"))
+;(facts "About views handlers"
+;  (fact "gets view results"
+;    (entity/get-view ...api... ...url...) => ...result...
+;    (provided
+;      (util/ctx ...api...) => ...ctx...
+;      (#'ovation.entity/escape-quotes ...url...) => ...url...
+;      (#'ovation.entity/get-view-results ...ctx... ...url...) => ...entities...
+;      (dao/into-seq ...api... ...entities...) => ...result...))
+;  (fact "get-view url-escapes \" in view query"
+;    (entity/get-view ...api... "https://myserver.com/views/_foo?keys=\"123\"") => ...result...
+;    (provided
+;      (util/ctx ...api...) => ...ctx...
+;      (entity/escape-quotes "https://myserver.com/views/_foo?keys=\"123\"") => ...url...
+;      (#'ovation.entity/get-view-results ...ctx... ...url...) => ...entities...
+;      (dao/into-seq ...api... ...entities...) => ...result...))
+;  (fact "escape-quotes url-escapes \" in url"
+;    (entity/escape-quotes "https://myserver.com/views/_foo?keys=\"123\"") =>
+;    "https://myserver.com/views/_foo?keys=%22123%22"))
 
 
 (facts "About entity annotations"

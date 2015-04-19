@@ -1,8 +1,7 @@
 (ns ovation.test.couch
   (:use midje.sweet)
   (:require [cemerick.url :as url]
-            [ovation.couch :as couch]
-            [com.ashafa.clutch :as cl]))
+            [ovation.couch :as couch]))
 
 (facts "About database"
        (fact "`db` constructs database URL"
@@ -16,3 +15,7 @@
                  ...auth... =contains=> {:cloudant_key      username
                                          :cloudant_password password
                                          :cloudant_db_url   dburl}))))
+
+(facts "About async calls"
+  (fact "returns result on channel"
+    true => false))
