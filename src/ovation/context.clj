@@ -3,7 +3,6 @@
            (us.physion.ovation.exceptions OvationException AuthenticationException))
   (:require [clojure.core.memoize :as memo]
             [slingshot.slingshot :refer [try+ throw+]]
-            [com.climate.newrelic.trace :refer [defn-traced]]
             [ring.util.http-response :refer [unauthorized! forbidden!]]
             [clojure.tools.logging :as logging]
             ))
@@ -14,7 +13,7 @@
   [api-endpoint api-key]
   (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
 
-(defn-traced make-server
+(defn make-server
   "Make an us.physion.ovation.api.web.Server instance"
   [api-endpoint api-key]
   (try+
@@ -27,12 +26,12 @@
   [dsc]
   (.getContext dsc))
 
-(defn-traced make-context
+(defn make-context
   "Make an Ovation DataContext for the given API key"
   [api-key]
 
-  (let [api-endpoint (if (System/getProperty "OVATION_IO_HOST_URI")
-                       (System/getProperty "OVATION_IO_HOST_URI")
+  (let [api-endpoint (if-let [host (or (System/getProperty "OVATION_IO_HOST_URI") (System/getenv "OVATION_IO_HOST_URI"))]
+                       host
                        "https://dev.ovation.io")]
 
     (get-context-from-dsc (make-server api-endpoint api-key))))
@@ -48,15 +47,15 @@
   []
   (memo/memo-clear! cached-context))
 
-(defn-traced begin-transaction
+(defn begin-transaction
   [ctx]
   (.beginTransaction ctx))
 
-(defn-traced commit-transaction
+(defn commit-transaction
   [ctx]
   (.commitTransaction ctx))
 
-(defn-traced abort-transaction
+(defn abort-transaction
   [ctx]
   (.abortTransaction ctx))
 
