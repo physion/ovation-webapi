@@ -10,7 +10,6 @@
 
                            [metosin/compojure-api "0.18.0"]
                            [metosin/ring-swagger-ui "2.0.17"]
-                           ;[metosin/ring-swagger "0.13.0"]
                            ;[metosin/ring-swagger-ui "2.1.0-M2-2"]
                            [ring-cors "0.1.4"]
 
@@ -45,7 +44,7 @@
             :ring {:handler ovation.handler/app}
 
             ;; For New Relic, we need to bundle newrelic.yml and newrelic.jar
-            :war-resources-path "war_resources"
+            :war-resources-path "war-resources"
 
             :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                               :environments [{:name "webapi-development"
