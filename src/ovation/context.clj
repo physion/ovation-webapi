@@ -5,9 +5,10 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [ring.util.http-response :refer [unauthorized! forbidden!]]
             [clojure.tools.logging :as logging]
+            [ovation.logging]
             ))
 
-
+(ovation.logging/setup!)
 
 (defn- make-server-helper
   [api-endpoint api-key]
@@ -30,11 +31,12 @@
   "Make an Ovation DataContext for the given API key"
   [api-key]
 
+  (logging/info "Making top-level context")
   (let [api-endpoint (if-let [host (or (System/getProperty "OVATION_IO_HOST_URI") (System/getenv "OVATION_IO_HOST_URI"))]
                        host
                        "https://dev.ovation.io")]
 
-    (logging/info "Authenticating with " api-endpoint)
+    (logging/info "Authenticating with" api-endpoint)
     (get-context-from-dsc (make-server api-endpoint api-key))))
 
 (def DEFAULT_LRU_THRESHOLD 5)

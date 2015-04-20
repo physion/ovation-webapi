@@ -2,10 +2,7 @@
   (:import (java.net URI)
            (us.physion.ovation.domain URIs))
   (:require [ovation.context :as context]
-            [ovation.interop :as interop]
-            [ovation.paths :as paths]
             [clojure.string :refer [join]]
-            [clojurewerkz.urly.core :as urly]
             [pathetic.core :refer [url-normalize up-dir]]
             [ovation.version :refer [version-path]]))
 
