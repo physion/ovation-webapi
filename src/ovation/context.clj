@@ -19,7 +19,8 @@
   [api-endpoint api-key]
   (try+
     (make-server-helper api-endpoint api-key)
-    (catch AuthenticationException _
+    (catch AuthenticationException ex
+      (logging/error ex "Authentication Exception")
       (unauthorized! "Authentication failed. Check your API key."))))
 
 (defn- get-context-from-dsc
