@@ -33,9 +33,10 @@
              (let [response (handler/app (mock/request :get "/"))]
                (:status response) => 302
                (-> response (:headers) (get "Location")) => "/index.html"))
-       (fact "HEAD /index.html returns 200"
-             (let [response (handler/app (mock/request :head "/index.html"))]
-               (:status response) => 200)))
+       ;(fact "HEAD /index.html returns 200"
+       ;      (let [response (handler/app (mock/request :head "/index.html"))]
+       ;        (:status response) => 200))
+  )
 
 (facts "About invalid routes"
        (fact "invalid path =>  404"
