@@ -17,14 +17,6 @@
     (java.util.UUID/fromString s)))
 
 
-(defn get-body-from-request [request]
-  (slurp (:body request)))
-
-
-(defn- split-query [u]
-  (clojure.string/split u #"\?" 2))
-
-
 (defn get-entity-id
   "The entity ID for a given URI"
   [uri]
