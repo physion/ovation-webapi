@@ -55,12 +55,13 @@
 
   :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                     :environments [{:name "webapi-development"
-                                    :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
-                                           "LOGGING_HOST"        "logging-host"}}
+                                    :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
                                    {:name "webapi-production"
-                                    :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                           "LOGGING_HOST"        "logging-host"}}]}}
+                                    :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
+
+                                   {:name "webapi-clinical"
+                                    :env  {"OVATION_IO_HOST_URI" "https://clinical.ovation.io"}}]}}
 
   :profiles {
              :ovation-web-api {:ring         {:handler ovation.handler/app}
