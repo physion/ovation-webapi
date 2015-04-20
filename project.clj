@@ -8,7 +8,7 @@
             :dependencies [[org.clojure/clojure "1.6.0"]
                            [org.clojure/core.incubator "0.1.3"]
 
-                           [metosin/compojure-api "0.18.0"]
+                           [metosin/compojure-api "0.16.2"]
                            [ring-cors "0.1.4"]
 
                            [http-kit "2.1.18"]
