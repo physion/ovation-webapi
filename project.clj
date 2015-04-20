@@ -9,6 +9,9 @@
                            [org.clojure/core.incubator "0.1.3"]
 
                            [metosin/compojure-api "0.18.0"]
+                           [metosin/ring-swagger-ui "2.0.17"]
+                           ;[metosin/ring-swagger "0.13.0"]
+                           ;[metosin/ring-swagger-ui "2.1.0-M2-2"]
                            [ring-cors "0.1.4"]
 
                            [http-kit "2.1.18"]
