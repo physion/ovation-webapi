@@ -34,6 +34,7 @@
                        host
                        "https://dev.ovation.io")]
 
+    (logging/info "Authenticating with " host)
     (get-context-from-dsc (make-server api-endpoint api-key))))
 
 (def DEFAULT_LRU_THRESHOLD 5)
