@@ -36,7 +36,6 @@
                        "https://dev.ovation.io")]
 
     (logging/debug "Authenticating with" api-endpoint)
-    (print api-endpoint)
     (get-context-from-dsc (make-server api-endpoint api-key))))
 
 (def DEFAULT_LRU_THRESHOLD 5)
