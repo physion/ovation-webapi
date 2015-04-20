@@ -14,7 +14,7 @@
 (defn- make-server-helper
   [api-endpoint api-key]
   (let [api-uri (URI. api-endpoint)]
-    (loggin/info "Auth URI" api-uri (str api-uri) "; api-key" api-key)
+    ;(logging/info "Auth URI" api-uri (str api-uri) "; api-key" api-key)
     (Server/make api-uri api-key)))
 
 (defn make-server
