@@ -36,15 +36,20 @@
                        host
                        "https://dev.ovation.io")]
 
-    (logging/debug "Authenticating with" api-endpoint)
+    (logging/info "Authenticating with" api-endpoint)
     (get-context-from-dsc (make-server api-endpoint api-key))))
 
 (def DEFAULT_LRU_THRESHOLD 5)
 (def LRU_THRESHOLD "LRU_THRESHOLD_PROPERTY")
 
-(def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
-                                                               (Integer/parseInt threshold)
-                                                               DEFAULT_LRU_THRESHOLD)))
+;(def cached-context (memo/lru make-context {} :lru/threshold (if-let [threshold (System/getProperty LRU_THRESHOLD)]
+;                                                               (Integer/parseInt threshold)
+;                                                               DEFAULT_LRU_THRESHOLD)))
+
+(defn cached-context
+  [api-key]
+  (make-context api-key))
+
 (defn clear-context-cache!
   "Clears the context cahce"
   []

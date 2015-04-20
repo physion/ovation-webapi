@@ -20,6 +20,6 @@
                (.setFacility "LOCAL7")
                (.setFacilityPrinting false)
                (.setName logging-name)
-               (.setLayout (PatternLayout. (str "%p: " logging-name " %x %m %n"))))))
+               (.setLayout (PatternLayout. (str "%p: " logging-name " (%F:%L) %x %m %n"))))))
 
     (configure-console-logger!)))
