@@ -1,6 +1,7 @@
 (ns ovation.context
   (:import (java.net URI)
-           (us.physion.ovation.exceptions OvationException AuthenticationException))
+           (us.physion.ovation.exceptions OvationException AuthenticationException)
+           (us.physion.ovation.api.server Server))
   (:require [clojure.core.memoize :as memo]
             [slingshot.slingshot :refer [try+ throw+]]
             [ring.util.http-response :refer [unauthorized! forbidden!]]
@@ -12,7 +13,9 @@
 
 (defn- make-server-helper
   [api-endpoint api-key]
-  (us.physion.ovation.api.server.Server/make (URI. api-endpoint) api-key))
+  (let [api-uri (URI. api-endpoint)]
+    (loggin/info "Auth URI" api-uri (str api-uri) "; api-key" api-key)
+    (Server/make api-uri api-key)))
 
 (defn make-server
   "Make an us.physion.ovation.api.web.Server instance"
