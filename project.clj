@@ -1,30 +1,25 @@
-(defproject ovation-webapi "0.1.0-SNAPSHOT"
+(defproject ovation-webapi "1.0.0-SNAPSHOT"
             :description "Ovation REST API"
             :url "http://ovation.io"
 
             :repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]
                            ["s3-ovation-release-repository" {:url "s3p://maven.ovation.io/release"}]]
 
-            :dependencies [[org.clojure/clojure "1.6.0"]
-                           ;[org.clojure/core.incubator "0.1.3"]
+            :dependencies [[org.clojure/clojure "1.7.0-beta1"]
                            [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                            ;; Compojure API and middleware
-                           [metosin/compojure-api "0.19.0"]
-                           [metosin/ring-swagger-ui "2.1.8-M1"]
-                           [ring-cors "0.1.4"]
+                           [metosin/compojure-api "0.19.3"]
+                           [metosin/ring-swagger-ui "2.1.1-M2"]
+                           [ring-cors "0.1.7"]
 
                            ;; HTTP and CouchDB
-                           [http-kit "2.1.18"]
+                           [http-kit "2.1.16"]
                            [org.clojure/data.codec "0.1.0"]
                            [com.ashafa/clutch "0.4.0"]
-                           [org.clojure/core.memoize "0.5.6"]
 
                            ;; New Relic agent (JAR)
                            [com.newrelic.agent.java/newrelic-agent "3.11.0"]
-
-                           ;; Ovation API
-                           [us.physion/ovation-api "3.0.7"]
 
                            ;; Logging
                            [org.clojure/tools.logging "0.3.1"]
