@@ -2,14 +2,16 @@
   (:import (java.net URI)
            (us.physion.ovation.domain URIs)
            (java.util UUID))
-  (:require [ovation.context :as context]
-            [clojure.string :refer [join]]
+  (:require [clojure.string :refer [join]]
             [ovation.version :refer [version-path]]
             [clojure.walk :as walk]
             [clojure.data.json :as json]))
 
-(defn ctx [api-key]
-  (context/cached-context api-key))
+
+(defn make-uuid
+  "Wraps java.util.UUID/randomUUID for test mocking."
+  []
+  (java.util.UUID/randomUUID))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
@@ -31,17 +33,6 @@
     id
     (URIs/create id)))
 
-
-(defn host-from-request [request]
-   (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
-         host (get (get request :headers) "host")]
-     (clojure.string/join "" [scheme host "/"])))
-
-
-(defn ovation-query
-  [request]
-  (let [params (:query-params request)]
-    (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
 
 (defn to-json
   "Converts a keywordized map to json string"

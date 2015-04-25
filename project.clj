@@ -9,7 +9,7 @@
                            [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                            ;; Compojure API and middleware
-                           [metosin/compojure-api "0.19.3"]
+                           [metosin/compojure-api "0.20.0"] ;; "0.19.3"
                            [metosin/ring-swagger-ui "2.1.1-M2"]
                            [ring-cors "0.1.7"]
 
@@ -20,6 +20,9 @@
 
                            ;; New Relic agent (JAR)
                            [com.newrelic.agent.java/newrelic-agent "3.11.0"]
+
+                           ;; Ovation API
+                           [us.physion/ovation-api "3.0.7"]
 
                            ;; Logging
                            [org.clojure/tools.logging "0.3.1"]
@@ -45,19 +48,17 @@
 
             :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                               :environments [{:name "webapi-development"
-                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"
-                                                     "LOGGING_HOST"        "logging-host"}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
                                              {:name "webapi-production"
-                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"
-                                                     "LOGGING_HOST"        "logging-host"}}]}}
+                                              :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}]}}
 
             :profiles {
                        :ovation-web-api {:ring         {:handler ovation.handler/app}
                                          :reload-paths ["src"]}
                        :dev             {:dependencies [[javax.servlet/servlet-api "2.5"]
                                                         [ring-mock "0.1.5"]
-                                                        [midje "1.6.3"]
+                                                        [midje "1.7.0-beta1"]
                                                         [org.clojure/data.json "0.2.5"]
                                                         [http-kit.fake "0.2.1"]
                                                         [ring-serve "0.1.2"]]}

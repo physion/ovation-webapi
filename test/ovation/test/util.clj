@@ -2,8 +2,7 @@
   (:import (java.util UUID)
            (us.physion.ovation.domain URIs))
   (:use midje.sweet)
-  (:require [ovation.util :as util]
-            [ovation.dao :as dao]))
+  (:require [ovation.util :as util]))
 
 (facts "about UUID parsing"
        (fact "parses UUID string with dashes"
@@ -23,11 +22,3 @@
   (fact "passes through URI"
     (let [uri (util/create-uri (UUID/randomUUID))]
       (util/create-uri uri) => uri)))
-
-(facts "about Users"
-  (fact "gets username for URI"
-    (dao/username-from-user-uri ...api... ...uri...) => ...user...
-    (provided
-      (util/get-entity-id ...uri...) => ...id...
-      (dao/get-entity ...api... ...id...) => ...entity...
-      (#'ovation.dao/get-username ...entity...) => ...user...)))
