@@ -30,12 +30,15 @@
       (transform/from-couch)
       (filter-trashed include-trashed))))
 
+(defn collaboration-roots
+  [id parent]
+  (ifn?))
 (defn create-entity
   "POSTs a new entity with the given parent and owner"
-  [auth parent owner type attributes]
+  [auth type attributes & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
+    (couch/bulk-docs db (transform/to-couch [{:type type :attributes attributes}]))
     ;; get parent ->> :links :_collaboration_roots
     ;; {:type type :attributes attributes} -> to-couch
     ;; + owner link
-    ;; bulk-docs
     ))

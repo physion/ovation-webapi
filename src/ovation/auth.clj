@@ -36,3 +36,8 @@
   "Gets the Cloudant API key and database URL for an Ovation API key."
   [authserver apikey]
   (auth-info (get-auth authserver apikey)))
+
+(defn authorized-user-id
+  "The UUID of the authorized user"
+  [auth]
+  (:uuid auth))

@@ -17,8 +17,8 @@
       (core/filter-trashed [{:name ...good...}
                             {:name       ...trashed...
                              :trash_info ...info...}] true) => (seq [{:name ...good...}
-                                                                      {:name       ...trashed...
-                                                                       :trash_info ...info...}]))))
+                                                                     {:name       ...trashed...
+                                                                      :trash_info ...info...}]))))
 
 
 (facts "About `of-type`"
@@ -40,8 +40,24 @@
         (transform/from-couch ...docs...) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...))))
 
-(facts "About create-entity"
-  (facts "with parent"
-    (future-fact "it puts document")
-    (future-fact "it puts owner link")
-    (future-fact "it adds collaboration roots from parent")))
+
+
+  (facts "About create-entity"
+    (let [type ...type...
+          attributes {:label ...label...}]
+
+      (fact "it puts document"
+        (core/create-entity ...auth... type attributes) => ...result...
+        (provided
+          (couch/db ...auth...) => ...db...
+          (transform/to-couch [{:type type :attributes attributes}]) => [...doc...]
+          (couch/bulk-docs ...db... [...doc...]) => ...result... ))
+
+      (fact "it adds owner to document"
+        )
+
+      (facts "with parent"
+        (future-fact "it adds collaboration roots from parent"))
+
+      (facts "with nil parent"
+        (future-fact "it adds self as collaboration root"))))

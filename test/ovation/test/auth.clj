@@ -79,3 +79,9 @@
     )
 
   )
+
+(facts "About authorized user"
+  (fact "`authorized-user-id` returns user UUID"
+    (auth/authorized-user-id ...auth...) => ...id...
+    (provided
+      ...auth... =contains=> {:uuid ...id...})))
