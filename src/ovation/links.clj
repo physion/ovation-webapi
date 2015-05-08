@@ -1,7 +1,11 @@
-;(ns ovation.links
-;  (:require [ovation.util :refer [create-uri]]
-;            [ovation.dao :refer [into-seq get-entity]]
-;            [ring.util.http-response :as r]))
+(ns ovation.links
+  (:require [ovation.util :refer [create-uri]]
+            [ring.util.http-response :as r]))
+
+(defn url-for
+  "Generates a URL for the given ID"
+  [id]
+  nil)
 ;
 ;
 ;(defn get-entities [entity rel]

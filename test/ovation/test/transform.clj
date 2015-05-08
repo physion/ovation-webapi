@@ -22,3 +22,13 @@
   (fact "`add-self-link` adds a self link to a DTO"
     (t/add-self-link ...link... {:links {:foo ...foo...}}) => {:links {:foo  ...foo...
                                                                        :self ...link...}}))
+
+(facts "About doc-to-couch"
+  (fact "adds collaboration roots"
+    (let [doc {:type ..type.. :attributes {:label ..label..}}]
+      (t/doc-to-couch ..owner.. ..roots.. doc) =contains=> (assoc-in doc [:links :_collaboration_roots] ..roots..)))
+
+  (fact "adds owner element"
+    (let [doc {:type ..type.. :attributes {:label ..label..}}]
+      (t/add-owner doc ..owner..) => (assoc doc :owner ..owner..))))
+

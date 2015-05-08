@@ -9,7 +9,7 @@
                            [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                            ;; Compojure API and middleware
-                           [metosin/compojure-api "0.20.0"] ;; "0.19.3"
+                           [metosin/compojure-api "0.20.1"] ;; "0.19.3"
                            [metosin/ring-swagger-ui "2.1.1-M2"]
                            [ring-cors "0.1.7"]
 
@@ -36,9 +36,7 @@
                            ]
 
             :plugins [[lein-clojars "0.9.1"]
-                      [lein-ring "0.8.10"]
                       [s3-wagon-private "1.1.2"]
-                      [lein-midje "3.1.3"]
                       [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
             :ring {:handler ovation.handler/app}
@@ -60,8 +58,10 @@
                                                         [ring-mock "0.1.5"]
                                                         [midje "1.7.0-beta1"]
                                                         [org.clojure/data.json "0.2.5"]
-                                                        [http-kit.fake "0.2.1"]
-                                                        [ring-serve "0.1.2"]]}
+                                                        [http-kit.fake "0.2.1"]]
+                                         :plugins [[lein-midje "3.1.3"]
+                                                   [ring-serve "0.1.2"]
+                                                   [lein-ring "0.8.10"]]}
                        :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                                         :secret-key ~(System/getenv "AWS_SECRET_KEY")}
                                          :repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"

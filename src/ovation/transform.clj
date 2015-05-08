@@ -64,18 +64,15 @@
     (assoc doc :_id (util/make-uuid))
     doc))
 
-(defn ensure-api-version
+(defn add-api-version
   "Insert API version"
   [doc]
   (assoc doc :api_version ver/schema-version))
 
-(defn -add-owner
+(defn add-owner
   "Adds owner link document."
-
-  [auth doc]
-
-  ;;TODO write owner link to document
-  doc)
+  [doc owner-id]
+  (assoc doc :owner owner-id))
 
 
 (defn add-collaboration-roots
@@ -83,13 +80,14 @@
   (assoc-in doc [:links :_collaboration_roots] roots))
 
 (defn doc-to-couch
-  [doc]
+  [owner-id collaboration-roots doc]
   (-> doc
     ensure-id
-    ensure-api-version
-    (add-collaboration-roots [])))                       ;;TODO
+    add-api-version
+    (add-owner owner-id)
+    (add-collaboration-roots collaboration-roots)))         ;TODO remove/transform links?
 
 (defn to-couch
   "Transform documents for CouchDB"
-  [docs]
-  (map doc-to-couch docs))
+  [owner-id docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
+  (map (partial doc-to-couch owner-id collaboration_roots) docs))

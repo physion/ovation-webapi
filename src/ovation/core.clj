@@ -1,6 +1,8 @@
 (ns ovation.core
   (:require [ovation.couch :as couch]
-            [ovation.transform :as transform])
+            [ovation.transform :as transform]
+            [ovation.auth :as auth]
+            [ovation.links :as links])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 (defn filter-trashed
@@ -30,15 +32,22 @@
       (transform/from-couch)
       (filter-trashed include-trashed))))
 
-(defn collaboration-roots
-  [id parent]
-  (ifn?))
+
+(defn parent-collaboration-roots
+  [auth parent]
+  (if (nil? parent)
+    nil
+    (let [doc (first (get-entities auth [parent]))]
+      (-> doc
+        :links
+        :_collaboration_roots))))
+
 (defn create-entity
   "POSTs a new entity with the given parent and owner"
-  [auth type attributes & {:keys [parent] :or {parent nil}}]
+  [auth entities & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
-    (couch/bulk-docs db (transform/to-couch [{:type type :attributes attributes}]))
-    ;; get parent ->> :links :_collaboration_roots
-    ;; {:type type :attributes attributes} -> to-couch
-    ;; + owner link
+    (couch/bulk-docs db
+      (transform/to-couch (auth/authorized-user-id auth)
+        entities
+        :collaboration_roots (parent-collaboration-roots auth parent)))
     ))

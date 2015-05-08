@@ -57,7 +57,7 @@
 
 ;; -- ENTITIES -- ;;
 
-(s/defschema BaseEntity {:type                         s/Str    ;(s/enum :Project :Protocol :User :Source)
+(s/defschema BaseEntity {:type                         s/Str ;(s/enum :Project :Protocol :User :Source)
                          :_rev                         s/Str
                          :_id                          s/Uuid
                          :attributes                   {s/Keyword s/Any}
@@ -65,15 +65,12 @@
 
 
 (s/defschema Entity (assoc BaseEntity
-                      :links                        {s/Keyword s/Str}
-                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}
-                      (s/optional-key :annotations) {s/Keyword s/Str}))
+                      :links {s/Keyword s/Str}
+                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))
 
-(s/defschema EntityUpdate BaseEntity)
+(s/defschema NewEntity {:type       s/Str
+                        :attributes {s/Keyword s/Any}})
 
-(s/defschema NewEntity (assoc (dissoc Entity :_id :_rev :links :named_links)
-                         (s/optional-key :links) {s/Keyword [NewEntityLink]}
-                         (s/optional-key :named_links) {s/Keyword {s/Keyword [NewEntityLink]}}))
-
+(s/defschema EntityUpdate (assoc NewEntity :_id :_rev))
 
 
