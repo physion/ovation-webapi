@@ -97,7 +97,7 @@
               (let [auth (auth/authorize config/AUTH_SERVER api-key)
                     entity (first (core/get-entities auth [id]))]
                 (if (nil? entity)
-                  (not-found)
+                  (not-found {})
                   (ok {:entity entity}))))
 
             ;(PUT* "/" request
