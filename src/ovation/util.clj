@@ -45,3 +45,8 @@
 
   (walk/keywordize-keys (json/read-str s)))
 
+
+(defn join-path
+  [comps]
+  (clojure.string/join "/" comps))
+

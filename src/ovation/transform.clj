@@ -1,5 +1,5 @@
 (ns ovation.transform
-  (:require [ovation.version :refer [version-path]]
+  (:require [ovation.version :refer [version version-path]]
             [ovation.version :as ver]
             [ovation.util :as util]))
 
@@ -7,14 +7,14 @@
 (defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
   [e]
-  (let [prefix (clojure.string/join ["/api" version-path "/entities/" (:_id e) "/annotations/"])
-        properties {:properties (clojure.string/join [prefix "properties"])}
-        tags {:tags (clojure.string/join [prefix "tags"])}
-        timeline-events {:timeline-events (clojure.string/join [prefix "timeline-events"])}
-        notes {:notes (clojure.string/join [prefix "notes"])}]
+  (let [prefix (util/join-path ["/api" version "entities" (:_id e) "annotations"])
+        properties {:properties (clojure.string/join [prefix "/properties"])}
+        tags {:tags (clojure.string/join [prefix "/tags"])}
+        timeline-events {:timeline-events (clojure.string/join [prefix "/timeline-events"])}
+        notes {:notes (clojure.string/join [prefix "/notes"])}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
-(defn remove-private-links                                  ;;keep
+(defn remove-private-links
   "Removes private links (e.g. _collaboration_roots) from the dto.links"
   [dto]
   (if-let [links (:links dto)]
@@ -23,33 +23,47 @@
       (assoc-in dto [:links] cleaned))
     dto))
 
-(defn add-self-link
-  [link dto]
-  (assoc-in dto [:links :self] link))
-
-(defn entity-single-link                                    ;;keep
+(defn link-rel-path                                    ;;keep
   "Return a single link from an id and relationship name"
   [id rel]
-  (if (= (name rel) "self")
-    (clojure.string/join ["/api" version-path "/entities/" id])
-    (clojure.string/join ["/api" version-path "/entities/" id "/links/" (name rel)])))
+  (condp = (name rel)
+        "self" (util/join-path ["/api" version "entities" id])
+        (util/join-path ["/api" version "entities" id "links" (name rel)])))
 
+(defn named-link-rel-path
+  [rel id name]
+  (str (util/join-path ["/api" version "entities" id "links" (clojure.core/name rel)]) "?name=" (clojure.core/name name)))
+
+(defn make-rel-links
+  [id links link-path-fn]
+  (into {} (map (fn [x] (let [rel (first x)]
+                          [rel (link-path-fn id rel)])) links)))
 
 (defn links-to-rel-path                                     ;;keep
   "Augment an entity dto with the links.self reference"
   [dto]
-  (let [add_self (merge-with conj dto {:links {:self ""}})
-        new_links_map (into {} (map (fn [x] [(first x) (entity-single-link (:_id dto) (first x))]) (:links add_self)))]
-    (assoc-in add_self [:links] new_links_map)))
+  (let [links (make-rel-links (:_id dto) (:links dto) link-rel-path)
+        named-links (into {} (map (fn [x]
+                                    (let [rel (first x)
+                                          m (second x)]
+                                      [rel (make-rel-links (:_id dto) m (partial named-link-rel-path rel))]))) (:named_links dto))
+        ]
+    (-> dto
+      (assoc-in [:links] links)
+      (assoc-in [:named_links] named-links))))
+
+(defn add-self-link
+  "Adds self link to dto"
+  [dto]
+  (assoc-in dto [:links :self] (link-rel-path (:_id dto) :self)))
 
 (defn couch-to-doc
   [doc]
   (->> doc
     (remove-private-links)
     (links-to-rel-path)
-    (add-annotation-links)       ;; NB must come after links-to-rel-path
-    ;;TODO add-self-link
-    ))
+    (add-annotation-links)                                  ;; NB must come after links-to-rel-path
+    (add-self-link)))
 
 (defn from-couch
   "Transform couchdb documents."

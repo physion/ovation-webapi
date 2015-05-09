@@ -1,6 +1,8 @@
 (ns ovation.test.transform
   (:use midje.sweet)
-  (:require [ovation.transform :as t]))
+  (:require [ovation.transform :as t]
+            [ovation.version :refer [version]]
+            [ovation.util :as util]))
 
 
 (facts "About annotation links"
@@ -19,9 +21,30 @@
                              :links {"_collaboration_links" #{...hidden...}
                                      :link1                 ...link1...}}) => {:_id   ...id...
                                                                                :links {:link1 ...link1...}})
-  (fact "`add-self-link` adds a self link to a DTO"
-    (t/add-self-link ...link... {:links {:foo ...foo...}}) => {:links {:foo  ...foo...
-                                                                       :self ...link...}}))
+
+  (fact "`links-to-rel-path` updates links to API relative path"
+    (let [couch {:_id   ..id..
+                 :links {:link1 "ovation://blahblah"
+                         :link2 "ovation://blablah/blah"}}]
+      (t/links-to-rel-path couch) => {:_id   ..id..
+                                      :named_links {}
+                                      :links {:link1 (util/join-path ["/api" version "entities" ..id.. "links" "link1"])
+                                              :link2 (util/join-path ["/api" version "entities" ..id.. "links" "link2"])}}))
+  (fact "`add-self-link` adds self link"
+    (let [couch {:_id   ..id..
+                 :links {}}]
+      (t/add-self-link couch) => {:_id   ..id..
+                                  :links {:self (util/join-path ["/api" version "entities" ..id..])}}))
+
+  (fact "`links-to-rel-path` updates named links to relative path"
+    (let [couch {:_id         ..id..
+                 :named_links {:link1 {:name1 "ovation://blahblah"
+                                       :name2 "ovation://blablah/blah"}}}
+          ]
+      (t/links-to-rel-path couch) => {:_id         ..id..
+                                      :links {}
+                                      :named_links {:link1 {:name1 (str (util/join-path ["/api" version "entities" ..id.. "links" "link1"]) "?name=name1")
+                                                            :name2 (str (util/join-path ["/api" version "entities" ..id.. "links" "link1"]) "?name=name2")}}})))
 
 (facts "About doc-to-couch"
   (fact "adds collaboration roots"
