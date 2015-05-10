@@ -68,7 +68,7 @@
         (context* "/:resource" [resource]
           (GET* "/" request
             :return [Entity]                                ;; for v2 {s/Keyword [Entity]}
-            :query-params [api-key :- String]
+            :header-params [Authorization api-key :- String]
             :path-params [resource :- (s/enum "projects" "sources" "protocols")]
             :summary "Get Projects, Protocols and Top-level Sources"
 

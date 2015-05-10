@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.core :as core]
             [ovation.couch :as couch]
-            [ovation.transform :as transform]
+            [ovation.transform.read :as tr]
+            [ovation.transform.write :as tw]
             [ovation.auth :as auth]
             [ovation.links :as links]
             [ovation.util :as util])
@@ -30,7 +31,7 @@
     (provided
       (couch/db ...auth...) => ...db...
       (couch/get-view ...db... EntityDao$Views/ENTITIES_BY_TYPE {:key ...type... :reduce false :include_docs true}) => [{:doc ...docs...}]
-      (transform/from-couch [...docs...]) => ...entities...
+      (tr/from-couch [...docs...]) => ...entities...
       (core/filter-trashed ...entities... false) => ...result...)))
 
 (facts "About get-entities"
@@ -40,7 +41,7 @@
       (provided
         (couch/db ...auth...) => ...db...
         (couch/all-docs ...db... [...id...]) => ...docs...
-        (transform/from-couch ...docs...) => ...entities...
+        (tr/from-couch ...docs...) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...))))
 
 
@@ -52,7 +53,7 @@
                     :attributes attributes}]
 
     (against-background [(couch/db ...auth...) => ...db...
-                         (transform/to-couch ...owner-id... [{:type       type
+                         (tw/to-couch ...owner-id... [{:type       type
                                                               :attributes attributes}]
                            :collaboration_roots nil) => [...doc...]
                          (auth/authorized-user-id ...auth...) => ...owner-id...
@@ -67,7 +68,7 @@
           (core/create-entity ...auth... [new-entity] :parent ...parent...) => ...result...
           (provided
             (core/parent-collaboration-roots ...auth... ...parent...) => ...collaboration_roots...
-            (transform/to-couch ...owner-id... [{:type       type
+            (tw/to-couch ...owner-id... [{:type       type
                                                  :attributes attributes}]
               :collaboration_roots ...collaboration_roots...) => [...doc...])))
 

@@ -15,7 +15,7 @@
   (fact "invalid API key returns 401"
     (let [apikey "12345"
           get (-> (mock/request :get "/api/v1/entities/123")
-                (mock/query-string {"api-key" apikey})
+                (mock/header "Authorization" (str "Token token=" apikey))
                 (mock/content-type "application/json"))
           auth-response (promise)
           _ (deliver auth-response {:status 401})]
