@@ -39,8 +39,8 @@
   (into {} (map (fn [x] (let [rel (first x)]
                           [rel (link-path-fn id rel)])) links)))
 
-(defn links-to-rel-path                                     ;;keep
-  "Augment an entity dto with the links.self reference"
+(defn links-to-rel-path
+  "Make :links and :named_links into web API relative paths"
   [dto]
   (let [links (make-rel-links (:_id dto) (:links dto) link-rel-path)
         named-links (into {} (map (fn [x]
