@@ -59,11 +59,13 @@
 
 (defn couch-to-doc
   [doc]
-  (->> doc
-    (remove-private-links)
-    (links-to-rel-path)
-    (add-annotation-links)                                  ;; NB must come after links-to-rel-path
-    (add-self-link)))
+  (let [collaboration-roots (get-in doc :links :_collaboration_roots)]
+    (-> doc
+      (remove-private-links)
+      (links-to-rel-path)
+      (add-annotation-links)                                ;; NB must come after links-to-rel-path
+      (add-self-link)
+      (assoc-in [:links :_collaboration_roots] collaboration-roots))))
 
 
 (defn from-couch
