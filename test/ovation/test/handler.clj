@@ -53,6 +53,19 @@
         (let [response (handler/app (mock-req (mock/request :get "/invalid/path") apikey))]
           response => nil?)))))
 
+(facts "About named resource types"
+  (let [apikey "..apikey.."
+        auth-response (promise)
+        auth-info {:user "..user.."}
+        _ (deliver auth-response {:status 200 :body (util/to-json auth-info)})]
+
+    (against-background [(auth/get-auth anything apikey) => auth-response]
+      (facts "/projects"
+        (future-fact "GET / gets all projects")
+        (future-fact "GET / returns only projects")
+        (future-fact "GET /:id gets a single project")
+        (future-fact "POST /:id inserts entities with Project parent")))))
+
 (facts "About /entities"
   (let [apikey "..apikey.."
         auth-response (promise)
@@ -61,11 +74,14 @@
     (against-background [(auth/get-auth anything apikey) => auth-response]
 
       (facts "update"
-        (future-fact "Updates single entity by ID")
-        (future-fact "Fails if entity and path :id do not match"))
+        (future-fact "updates single entity by ID")
+        (future-fact "fails if entity and path :id do not match"))
 
       (facts "delete"
-        (future-fact "Deletes entity"))
+        (future-fact "DELETE /:id deletes entity"))
+
+      (facts "create"
+        (future-fact "POST /:id inserts entities with parent"))
 
       (facts "read"
         (let [id (str (UUID/randomUUID))

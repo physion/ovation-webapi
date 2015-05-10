@@ -9,3 +9,8 @@
                   (if (instance? java.util.Map v)
                     (union-annotations-map (seq v))
                     (seq v))) (vals annotations))))
+
+
+(defn get-annotations
+  [auth id]
+  {})

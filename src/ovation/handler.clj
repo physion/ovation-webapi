@@ -22,13 +22,11 @@
   `(context* ~(str "/" annotation-type) []
      (GET* "/" []
        ;:return [~annotation-schema]
-       :query-params [api-key# :- String]
        :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
        (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))
 
      (POST* "/" []
        :return Success
-       :query-params [api-key# :- String]
        :body [new-annotation# ~record-schema]
        :summary ~(str "Adds a new " annotation-type " annotation to entity :id")
        (ok (entity/add-annotation api-key# ~id ~annotation-key new-annotation#)))
@@ -36,7 +34,6 @@
      (context* "/:annotation-id" [annotation-id#]
        (DELETE* "/" []
          :return Success
-         :query-params [api-key# :- String]
          :summary ~(str "Removes a " annotation-type " annotation from entity :id")
          (ok (entity/delete-annotation api-key# ~id ~annotation-key annotation-id#))))))
 
@@ -86,9 +83,9 @@
     (context* "/api" []
       :tags ["entities"]
       (context* "/v1" []
-
         (context* "/projects" []
-          (GET* "/" request ;; TODO test
+          :tags ["projects"]
+          (GET* "/" request
             :return {:projects [Entity]}
             :summary "Get Projects"
 
@@ -96,11 +93,12 @@
               (ok (core/of-type auth "Project"))))
 
           (context* "/:id" [id]
-            (POST* "/" request ;; TODO test
+            (POST* "/" request
               :return {:entities [Entity]}
               :body [entities NewEntity]
               :summary "Creates and returns an entity"
-              (created (core/create-entity (:auth/api-key request) entities :parent id)))))
+              (let [auth (:auth/api-key request)]
+                (created (core/create-entity auth entities :parent id))))))
 
         (context* "/entities" []
 
@@ -114,13 +112,20 @@
                   (not-found {})
                   (ok {:entity entity}))))
 
+            (POST* "/" request
+              :return {:entities [Entity]}
+              :body [entities NewEntity]
+              :summary "Creates and returns an entity"
+              (let [auth (:auth/api-key request)]
+                (created (core/create-entity auth entities :parent id)))))
+
             (PUT* "/" request
               :return {:entity Entity}
               :body [update EntityUpdate]
               :summary "Updates and returns updated entity with :id"
               (ok (core/update-entity (:auth/api-key request) [update])))
 
-            ;(DELETE* "/" request ;;TODO test
+            ;(DELETE* "/" request
             ;  :return Success
             ;  :summary "Deletes entity with :id"
             ;  (accepted (core/delete-entity (:auth/api-key request) [id])))
@@ -181,24 +186,24 @@
             ;      (ok (links/delete-named-link api-key id rel named target)))))
             ))))
 
-    ;(context* "/api" []
-    ;  :tags ["annotations"]
-    ;  (context* "/v1" []
-    ;    (context* "/entities" []
-    ;      (context* "/:id" [id]
-    ;        (context* "/annotations" []
-    ;
-    ;          (GET* "/" []
-    ;            ;:return AnnotationsMap
-    ;            :query-params [api-key :- String]
-    ;            :summary "Returns all annotations associated with entity"
-    ;            (ok (entity/get-annotations api-key id)))
-    ;
-    ;
-    ;          (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-    ;          (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
-    ;          (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
-    ;          (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))))))
+    (context* "/api" []
+      :tags ["annotations"]
+      (context* "/v1" []
+        (context* "/entities" []
+          (context* "/:id" [id]
+            (context* "/annotations" []
+
+              (GET* "/" request
+                ;:return AnnotationsMap
+                :summary "Returns all annotations associated with entity"
+                (let [auth (:auth/api-key request)]
+                  (ok (annotations/get-annotations auth id))))
+
+
+              (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
+              (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
+              (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
+              (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))))))
 
     ;(swaggered "views"
     ;  (context* "/api" []
