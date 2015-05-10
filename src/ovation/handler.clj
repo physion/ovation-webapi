@@ -62,7 +62,7 @@
               :description    "Ovation Web API"
               :contact        {:name  "Ovation"
                                :email "support@ovation.io"
-                               :url "https://support.ovation.io"}
+                               :url   "https://support.ovation.io"}
               :termsOfService "https://ovation.io/terms_of_service"}}
       )
 
@@ -86,12 +86,23 @@
     (context* "/api" []
       :tags ["entities"]
       (context* "/v1" []
+
+        (context* "/projects" []
+          (GET* "/" request ;; TODO test
+            :return {:projects [Entity]}
+            :summary "Get Projects"
+
+            (let [auth (:auth/api-key request)]
+              (ok (core/of-type auth "Project"))))
+
+          (context* "/:id" [id]
+            (POST* "/" request ;; TODO test
+              :return {:entities [Entity]}
+              :body [entities NewEntity]
+              :summary "Creates and returns an entity"
+              (created (core/create-entity (:auth/api-key request) entities :parent id)))))
+
         (context* "/entities" []
-          (POST* "/" request
-            :return {:entities [Entity]}
-            :body [entities NewEntity]
-            :summary "Creates and returns an entity"
-            (created (core/create-entity (:auth/api-key request) entities)))
 
           (context* "/:id" [id]
             (GET* "/" request
@@ -103,17 +114,17 @@
                   (not-found {})
                   (ok {:entity entity}))))
 
-            ;(PUT* "/" request
-            ;  :return [Entity]
-            ;  :query-params [api-key :- s/Str]
-            ;  :body [dto EntityUpdate]
-            ;  :summary "Updates and returns updated entity with :id"
-            ;  (ok (entity/update-entity-attributes api-key id (:attributes dto))))
-            ;(DELETE* "/" request
+            (PUT* "/" request
+              :return {:entity Entity}
+              :body [update EntityUpdate]
+              :summary "Updates and returns updated entity with :id"
+              (ok (core/update-entity (:auth/api-key request) [update])))
+
+            ;(DELETE* "/" request ;;TODO test
             ;  :return Success
-            ;  :query-params [api-key :- s/Str]
             ;  :summary "Deletes entity with :id"
-            ;  (accepted (entity/delete-entity api-key id)))
+            ;  (accepted (core/delete-entity (:auth/api-key request) [id])))
+
             ;
             ;(context* "/links" []
             ;  (POST* "/" []
@@ -201,5 +212,5 @@
     ;            (ok (entity/get-view api-key
     ;                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
     )
-)
+  )
 

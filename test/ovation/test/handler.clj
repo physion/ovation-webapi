@@ -59,6 +59,14 @@
         auth-info {:user "..user.."}
         _ (deliver auth-response {:status 200 :body (util/to-json auth-info)})]
     (against-background [(auth/get-auth anything apikey) => auth-response]
+
+      (facts "update"
+        (future-fact "Updates single entity by ID")
+        (future-fact "Fails if entity and path :id do not match"))
+
+      (facts "delete"
+        (future-fact "Deletes entity"))
+
       (facts "read"
         (let [id (str (UUID/randomUUID))
               get (mock-req (mock/request :get (str "/api/v1/entities/" id)) apikey)
