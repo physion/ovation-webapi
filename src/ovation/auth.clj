@@ -8,7 +8,7 @@
 (defn get-auth
   "Async get user info for ovation.io API key"
   [authserver apikey]
-  (let [url (clojure.string/join "/" [authserver "api" "v1" "users"])
+  (let [url (util/join-path [authserver "api" "v1" "users"])
         opts {:basic-auth [apikey apikey]}]
 
     (http/get url opts)))

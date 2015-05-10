@@ -10,7 +10,8 @@
             [ovation.logging]
             [ovation.config :as config]
             [ovation.auth :as auth]
-            [ovation.core :as core]))
+            [ovation.core :as core]
+            [ovation.middleware.token-auth :refer [wrap-token-auth]]))
 
 (ovation.logging/setup!)
 
@@ -45,9 +46,13 @@
 (defapi app
 
   (middlewares [(wrap-cors
-                  :access-control-allow-origin #".+"        ; FIXME - accept only what we want here
+                  :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
-                  :access-control-allow-headers ["Content-Type" "Accept"])]
+                  :access-control-allow-headers ["Content-Type" "Accept"])
+
+                (wrap-token-auth
+                  :authserver config/AUTH_SERVER)
+                ]
 
     (swagger-ui)
     (swagger-docs
@@ -62,21 +67,21 @@
       )
 
 
-    (context* "/api" []
-      :tags ["projects, sources, protocols"]
-      (context* "/v1" []                                    ;; TODO pull this from o.util/version-string
-        (context* "/:resource" [resource]
-          (GET* "/" request
-            :return [Entity]                                ;; for v2 {s/Keyword [Entity]}
-            :header-params [Authorization api-key :- String]
-            :path-params [resource :- (s/enum "projects" "sources" "protocols")]
-            :summary "Get Projects, Protocols and Top-level Sources"
-
-            (let [auth (auth/authorize config/AUTH_SERVER api-key)
-                  types {"projects"  "Project"
-                         "sources"   "Source"
-                         "protocols" "Protocol"}]
-              (ok (core/of-type auth (types resource)))))))) ;for v2 {(keyword resource) ...}
+    ;(context* "/api" []
+    ;  :tags ["projects, sources, protocols"]
+    ;  (context* "/v1" []                                    ;; TODO pull this from o.util/version-string
+    ;    (context* "/:resource" [resource]
+    ;      (GET* "/" request
+    ;        :return [Entity]                                ;; for v2 {s/Keyword [Entity]}
+    ;        :header-params [Authorization api-key :- String]
+    ;        :path-params [resource :- (s/enum "projects" "sources" "protocols")]
+    ;        :summary "Get Projects, Protocols and Top-level Sources"
+    ;
+    ;        (let [auth (auth/authorize config/AUTH_SERVER api-key)
+    ;              types {"projects"  "Project"
+    ;                     "sources"   "Source"
+    ;                     "protocols" "Protocol"}]
+    ;          (ok (core/of-type auth (types resource)))))))) ;for v2 {(keyword resource) ...}
 
     (context* "/api" []
       :tags ["entities"]
@@ -84,17 +89,15 @@
         (context* "/entities" []
           (POST* "/" request
             :return {:entities [Entity]}
-            :query-params [api-key :- s/Str]
             :body [entities NewEntity]
             :summary "Creates and returns an entity"
-            (created (core/create-entity api-key entities)))
+            (created (core/create-entity (:auth/api-key request) entities)))
 
           (context* "/:id" [id]
             (GET* "/" request
               :return {:entity Entity}
-              :query-params [api-key :- s/Str]
               :summary "Returns entity with :id"
-              (let [auth (auth/authorize config/AUTH_SERVER api-key)
+              (let [auth (:auth/auth-info request)
                     entity (first (core/get-entities auth [id]))]
                 (if (nil? entity)
                   (not-found {})

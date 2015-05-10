@@ -50,7 +50,7 @@
 
 
 (defn create-entity
-  "POSTs a new entity with the given parent and owner"
+  "POSTs entity(s) with the given parent and owner"
   [auth entities & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
     (couch/bulk-docs db
@@ -58,3 +58,9 @@
         entities
         :collaboration_roots (parent-collaboration-roots auth parent)))
     ))
+
+(defn update-entity
+  [auth entities]
+  ;;TODO
+  nil
+  )
