@@ -78,7 +78,17 @@
         ids (map (fn [e] (:_id e)) entities)
         docs (get-entities auth ids)
         updated-docs (map (update-attributes entities) docs)]
-    (doall (map (auth/can? (auth/authorized-user-id auth) ::update) updated-docs))
+    (doall (map (auth/can? (auth/authorized-user-id auth) :auth/update) updated-docs))
     (couch/bulk-docs db updated-docs)))
 
-;; TODO delete-entity
+(defn trash-entity
+  [doc]
+  (assoc doc :trash_info {}))
+
+(defn delete-entity
+  [auth ids]
+  (let [db (couch/db auth)
+        docs (get-entities auth ids)
+        trashed (map trash-entity docs)]
+    (doall (map (auth/can? (auth/authorized-user-id auth) :auth/delete) trashed))
+    (couch/bulk-docs db trashed)))

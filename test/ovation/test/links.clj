@@ -14,7 +14,8 @@
 
   (facts "`delete-link`"
     (future-fact "removes link")
-    (future-fact "updates entity _collaboration_roots")))
+    (future-fact "updates entity _collaboration_roots")
+    (future-fact "fails if not can? :delete")))
 
 ;(facts "About links"
 ;  (fact "GET /links/:rel returns links from entity"
