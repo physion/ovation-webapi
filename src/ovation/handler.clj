@@ -4,12 +4,10 @@
             [clojure.string :refer [join]]
             [ring.util.http-response :refer [created ok accepted no-content not-found]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [schema.core :as s]
-            [ovation.links :as links]
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.config :as config]
-            [ovation.auth :as auth]
+            [ovation.annotations :as annotations]
             [ovation.core :as core]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]))
 
@@ -61,6 +59,9 @@
                                :email "support@ovation.io"
                                :url   "https://support.ovation.io"}
               :termsOfService "https://ovation.io/terms_of_service"}}
+      :tags [{:name "entities" :description "Generic entity operations"}
+             {:name "projects" :description "Projects"}
+             {:name "annotations" :description "Per-user annotations"}]
       )
 
 
@@ -96,12 +97,12 @@
             (POST* "/" request
               :return {:entities [Entity]}
               :body [entities NewEntity]
-              :summary "Creates and returns an entity"
+              :summary "Creates and returns an entity belonging to this project"
               (let [auth (:auth/api-key request)]
                 (created (core/create-entity auth entities :parent id))))))
 
         (context* "/entities" []
-
+          :tags ["entities"]
           (context* "/:id" [id]
             (GET* "/" request
               :return {:entity Entity}
@@ -115,107 +116,102 @@
             (POST* "/" request
               :return {:entities [Entity]}
               :body [entities NewEntity]
-              :summary "Creates and returns an entity"
+              :summary "Creates and returns a new entity with the identified entity as collaboration root"
               (let [auth (:auth/api-key request)]
-                (created (core/create-entity auth entities :parent id)))))
+                (created (core/create-entity auth entities :parent id))))
 
-            (PUT* "/" request
-              :return {:entity Entity}
-              :body [update EntityUpdate]
-              :summary "Updates and returns updated entity with :id"
-              (ok (core/update-entity (:auth/api-key request) [update])))
-
-            ;(DELETE* "/" request
-            ;  :return Success
-            ;  :summary "Deletes entity with :id"
-            ;  (accepted (core/delete-entity (:auth/api-key request) [id])))
-
+            ;(context* "/annotations" []
+            ;  :tags ["annotations"]
+            ;  (GET* "/" request
+            ;    ;:return AnnotationsMap
+            ;    :summary "Returns all annotations associated with entity"
+            ;    (let [auth (:auth/api-key request)]
+            ;      (ok (annotations/get-annotations auth id))))
             ;
-            ;(context* "/links" []
-            ;  (POST* "/" []
-            ;    :return [Success]
-            ;    :body [link Link]
-            ;    :query-params [api-key :- s/Str]
-            ;    :summary "Creates a new link to from this entity"
-            ;    (created (links/create-link api-key id link)))
             ;
-            ;  (context* "/:rel" [rel]
-            ;    (GET* "/" []
-            ;      :return [Entity]
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Returns all entities associated with entity by the given relation"
-            ;      (ok (links/get-link api-key id rel)))
-            ;
-            ;    (POST* "/" []
-            ;      :return Success
-            ;      :body [link NewEntityLink]
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Creates a new link"
-            ;      (created (links/create-link api-key id (assoc link :rel rel))))
-            ;
-            ;    (DELETE* "/:target" [target]
-            ;      :return Success
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Deletes a link to the given target (uuid)"
-            ;      (ok (links/delete-link api-key id rel target)))))
-            ;
-            ;(context* "/named_links" []
-            ;  (POST* "/" request
-            ;    :return [Entity]
-            ;    :body [link NamedLink]
-            ;    :query-params [api-key :- s/Str]
-            ;    :summary "Creates a new named link to id :target with no inverse rel"
-            ;    (created (links/create-named-link api-key id link)))
-            ;
-            ;  (context* "/:rel/:named" [rel named]
-            ;    (GET* "/" request
-            ;      :return [Entity]
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Returns all entities associated with entity by the given relation and name"
-            ;      (ok (links/get-named-link api-key id rel named)))
-            ;    (POST* "/" request
-            ;      :return Success
-            ;      :body [link NewEntityLink]
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Creates a new named link"
-            ;      (created (links/create-named-link api-key id (assoc link :name named :rel rel))))
-            ;    (DELETE* "/:target" [target]
-            ;      :return Success
-            ;      :query-params [api-key :- s/Str]
-            ;      :summary "Deletes a named link to the given target (uuid)"
-            ;      (ok (links/delete-named-link api-key id rel named target)))))
-            ))))
+            ;  (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
+            ;  (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
+            ;  (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
+            ;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
+            )
 
-    (context* "/api" []
-      :tags ["annotations"]
-      (context* "/v1" []
-        (context* "/entities" []
-          (context* "/:id" [id]
-            (context* "/annotations" []
+          (PUT* "/" request
+            :return {:entity Entity}
+            :body [update EntityUpdate]
+            :summary "Updates and returns entity with :id"
+            (ok (core/update-entity (:auth/api-key request) [update])))
 
-              (GET* "/" request
-                ;:return AnnotationsMap
-                :summary "Returns all annotations associated with entity"
-                (let [auth (:auth/api-key request)]
-                  (ok (annotations/get-annotations auth id))))
+          ;(DELETE* "/" request
+          ;  :return Success
+          ;  :summary "Deletes entity with :id"
+          ;  (accepted (core/delete-entity (:auth/api-key request) [id])))
 
+          ;
+          ;(context* "/links" []
+          ;  (POST* "/" []
+          ;    :return [Success]
+          ;    :body [link Link]
+          ;    :query-params [api-key :- s/Str]
+          ;    :summary "Creates a new link to from this entity"
+          ;    (created (links/create-link api-key id link)))
+          ;
+          ;  (context* "/:rel" [rel]
+          ;    (GET* "/" []
+          ;      :return [Entity]
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Returns all entities associated with entity by the given relation"
+          ;      (ok (links/get-link api-key id rel)))
+          ;
+          ;    (POST* "/" []
+          ;      :return Success
+          ;      :body [link NewEntityLink]
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Creates a new link"
+          ;      (created (links/create-link api-key id (assoc link :rel rel))))
+          ;
+          ;    (DELETE* "/:target" [target]
+          ;      :return Success
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Deletes a link to the given target (uuid)"
+          ;      (ok (links/delete-link api-key id rel target)))))
+          ;
+          ;(context* "/named_links" []
+          ;  (POST* "/" request
+          ;    :return [Entity]
+          ;    :body [link NamedLink]
+          ;    :query-params [api-key :- s/Str]
+          ;    :summary "Creates a new named link to id :target with no inverse rel"
+          ;    (created (links/create-named-link api-key id link)))
+          ;
+          ;  (context* "/:rel/:named" [rel named]
+          ;    (GET* "/" request
+          ;      :return [Entity]
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Returns all entities associated with entity by the given relation and name"
+          ;      (ok (links/get-named-link api-key id rel named)))
+          ;    (POST* "/" request
+          ;      :return Success
+          ;      :body [link NewEntityLink]
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Creates a new named link"
+          ;      (created (links/create-named-link api-key id (assoc link :name named :rel rel))))
+          ;    (DELETE* "/:target" [target]
+          ;      :return Success
+          ;      :query-params [api-key :- s/Str]
+          ;      :summary "Deletes a named link to the given target (uuid)"
+          ;      (ok (links/delete-named-link api-key id rel named target)))))
+          ))))
 
-              (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-              (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
-              (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
-              (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))))))
-
-    ;(swaggered "views"
-    ;  (context* "/api" []
-    ;    (context* "/v1" []
-    ;      (context* "/views" []
-    ;        (GET* "/*" request
-    ;          :return [Entity]
-    ;          :query-params [api-key :- s/Str]
-    ;          :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
-    ;          (let [host (util/host-from-request request)]
-    ;            (ok (entity/get-view api-key
-    ;                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
-    )
+  ;(swaggered "views"
+  ;  (context* "/api" []
+  ;    (context* "/v1" []
+  ;      (context* "/views" []
+  ;        (GET* "/*" request
+  ;          :return [Entity]
+  ;          :query-params [api-key :- s/Str]
+  ;          :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
+  ;          (let [host (util/host-from-request request)]
+  ;            (ok (entity/get-view api-key
+  ;                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
   )
 

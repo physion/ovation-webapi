@@ -1,9 +1,21 @@
-;(ns ovation.test.links
-;  (:use midje.sweet)
-;  (:require [ovation.links :as links]
-;            [ovation.dao :as dao]))
-;
-;
+(ns ovation.test.links
+  (:use midje.sweet)
+  (:require [ovation.links :as links]))
+
+(facts "About links"
+  (facts "`get-link-targets`"
+    (future-fact "gets entity rel targets")
+    (future-fact "filters by label"))
+
+  (facts "`add-link`"
+    (future-fact "creates link document")
+    (future-fact "updates entity :links")
+    (future-fact "updates entity _collaboration_roots"))
+
+  (facts "`delete-link`"
+    (future-fact "removes link")
+    (future-fact "updates entity _collaboration_roots")))
+
 ;(facts "About links"
 ;  (fact "GET /links/:rel returns links from entity"
 ;    (links/get-link ...apikey... ...entity... ...rel...) => ...links...
@@ -32,8 +44,8 @@
 ;    (provided
 ;      (dao/get-entity ...api... ...id...) => ...entity...
 ;      (links/remove-link ...entity... ...rel... ...target...) => true)))
-;
-;
+
+
 ;(facts "About named_links"
 ;  (fact "GET /named_links/:rel/:name returns named links from entity"
 ;    (links/get-named-link ...api... ...id... ...rel... ...named...) => ...entities...
@@ -56,4 +68,4 @@
 ;    (provided
 ;      (dao/get-entity ...api... ...id...) => ...entity...
 ;      (links/remove-named-link ...entity... ...rel... ...named... ...target...) => true)))
-;
+

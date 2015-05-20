@@ -1,16 +1,20 @@
 (ns ovation.links
-  (:require [ovation.util :refer [create-uri]]
-            [ring.util.http-response :as r]))
+  (:require [ovation.util :refer [create-uri]]))
 
-(defn url-for
-  "Generates a URL for the given ID"
-  [id]
-  nil)
-;
-;
-;(defn get-entities [entity rel]
-;  (.getEntities entity rel))
-;
+
+
+
+(defn get-link-targets
+  [db id rel & {:keys [label] :or {label nil}}]
+
+  )
+
+(defn add-link
+  [db id rel target-id])
+
+(defn delete-link
+  [db id rel target-id])
+
 ;(defn get-link
 ;  "Returns all entities from entity(id)->rel and returns them"
 ;  [api-key id rel]

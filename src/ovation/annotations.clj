@@ -11,6 +11,17 @@
                     (seq v))) (vals annotations))))
 
 
+;; READ
 (defn get-annotations
   [auth id]
   {})
+
+
+;; WRITE
+(defn create-annotations
+  [auth id annotations]
+  nil)
+
+(defn delete-annotations
+  [auth id annotation-ids]
+  nil)

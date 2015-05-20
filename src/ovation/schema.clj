@@ -17,9 +17,9 @@
                      (s/optional-key :links) s/Any})
 
 (s/defschema AnnotationTypes (s/enum OvationEntity$AnnotationKeys/TAGS
-                               OvationEntity$AnnotationKeys/PROPERTIES
-                               OvationEntity$AnnotationKeys/NOTES
-                               OvationEntity$AnnotationKeys/TIMELINE_EVENTS))
+                                     OvationEntity$AnnotationKeys/PROPERTIES
+                                     OvationEntity$AnnotationKeys/NOTES
+                                     OvationEntity$AnnotationKeys/TIMELINE_EVENTS))
 
 (s/defschema TagRecord {:tag s/Str})
 (s/defschema TagAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TAGS
@@ -57,20 +57,20 @@
 
 ;; -- ENTITIES -- ;;
 
-(s/defschema BaseEntity {:type                         s/Str ;(s/enum :Project :Protocol :User :Source)
-                         :_rev                         s/Str
-                         :_id                          s/Uuid
-                         :attributes                   {s/Keyword s/Any}
-                         (s/optional-key :api_version) s/Int})
+(s/defschema NewEntity {:type       s/Str
+                        :attributes {s/Keyword s/Any}})
+
+(s/defschema BaseEntity (assoc NewEntity :_rev s/Str
+                                         :_id s/Uuid
+                                         (s/optional-key :api_version)) s/Int)
 
 
 (s/defschema Entity (assoc BaseEntity
                       :links {s/Keyword s/Str}
                       (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))
 
-(s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}})
 
-(s/defschema EntityUpdate (assoc NewEntity :_id :_rev))
+
+(s/defschema EntityUpdate BaseEntity)
 
 
