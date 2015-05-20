@@ -2,7 +2,8 @@
   (:require [org.httpkit.client :as http]
             [ovation.util :as util]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw!]]))
+            [ring.util.http-response :refer [throw!]]
+            [slingshot.slingshot :refer [throw+]]))
 
 
 (defn get-auth
@@ -41,3 +42,8 @@
   "The UUID of the authorized user"
   [auth]
   (:uuid auth))
+
+(defn can?
+  [auth-user-id op]
+  (fn [doc] (if-not (= auth-user-id (:owner doc))
+              (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))))

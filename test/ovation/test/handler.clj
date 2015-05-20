@@ -75,10 +75,12 @@
 
       (facts "update"
         (future-fact "updates single entity by ID")
-        (future-fact "fails if entity and path :id do not match"))
+        (future-fact "fails if entity and path :id do not match")
+        (future-fact "fails if not can? :update"))
 
       (facts "delete"
-        (future-fact "DELETE /:id deletes entity"))
+        (future-fact "DELETE /:id deletes entity")
+        (future-fact "fails if not can? :delete"))
 
       (facts "create"
         (future-fact "POST /:id inserts entities with parent"))

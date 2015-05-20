@@ -3,7 +3,8 @@
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
-            [ovation.links :as links])
+            [ovation.links :as links]
+            [slingshot.slingshot :refer [throw+]])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 
@@ -62,9 +63,13 @@
 
 (defn- update-attributes
   [updates]
-  (let [updated-attributes (into {} (map (fn [update] [(:_id update) (:attributes update)]) updates))]
+  (let [updated-attributes (into {} (map (fn [update] [(:_id update) {:attributes (:attributes update)
+                                                                      :rev (:_rev update)}]) updates))]
     (fn [doc]
-      (assoc doc :attributes (updated-attributes (:_id doc))))))
+      (let [update (updated-attributes (:_id doc))]
+        (assoc doc :attributes (:attributes update)
+                   :_rev (:rev update))))))
+
 
 (defn update-entity
   "Updates entities{EntityUpdate}"
@@ -73,6 +78,7 @@
         ids (map (fn [e] (:_id e)) entities)
         docs (get-entities auth ids)
         updated-docs (map (update-attributes entities) docs)]
+    (doall (map (auth/can? (auth/authorized-user-id auth) ::update) updated-docs))
     (couch/bulk-docs db updated-docs)))
 
 ;; TODO delete-entity

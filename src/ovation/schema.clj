@@ -62,7 +62,7 @@
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
-                                         (s/optional-key :api_version)) s/Int)
+                                         (s/optional-key :api_version) s/Int))
 
 
 (s/defschema Entity (assoc BaseEntity

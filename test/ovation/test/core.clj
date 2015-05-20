@@ -85,7 +85,7 @@
                     id (util/make-uuid)
                     rev "1"
                     rev2 "2"
-                    entity (assoc new-entity :_id id :_rev rev)
+                    entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
                     update (-> entity
                                (assoc-in [:attributes :label] ..label2..)
                                (assoc-in [:attributes :foo] ..foo..))
@@ -99,11 +99,31 @@
                                      ]
 
                                     (fact "it updates attributes"
-                                          (core/update-entity ..auth.. [update]) => [updated-entity]))))
+                                          (core/update-entity ..auth.. [update]) => [updated-entity])
+                                    (fact "it fails if authenticated user doesn't have write permission"
+                                          (core/update-entity ..auth.. [update]) => (throws Exception)
+                                          (provided
+                                            (auth/authorized-user-id ..auth..) => ..other-id..)))))
 
 
        (facts "`delete-entity`"
-              )
+              (let [type "some-type"
+                    attributes {:label ..label1..}
+                    new-entity {:type type
+                                :attributes attributes}
+                    id (util/make-uuid)
+                    rev "1"
+                    entity (assoc new-entity :_id id :_rev rev)]
+                (against-background [(couch/db ..auth..) => ..db..
+                                     (auth/authorized-user-id ..auth..) => ..owner-id..
+                                     (couch/bulk-docs ..db.. [..doc..]) => [entity]
+                                     (core/get-entities ..auth.. [id]) => [entity]
+                                     (couch/bulk-docs ..db.. [update]) => [updated-entity]
+                                     ]
+
+                                    (future-fact "it trashes entity")
+                                    (future-fact "it fails if entity already trashed")
+                                    (future-fact "it fails if authenticated user doesn't have write permission"))))
 
        (facts "`parent-collaboration-roots`"
               (fact "it allows nil parent"
