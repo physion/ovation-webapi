@@ -5,8 +5,10 @@
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
-            [ovation.links :as links]
-            [ovation.util :as util])
+            [ovation.util :as util]
+            [slingshot.slingshot :refer [throw+]]
+            [clj-time.core :as t]
+            [clj-time.format :as tf])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 
@@ -115,14 +117,17 @@
           id (util/make-uuid)
           rev "1"
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
-          update (assoc entity :trash_info {})]
+          update (assoc entity :trash_info {:trashing_user ..owner-id...
+                                            :trashing_date ..date..
+                                            :trash_root id})]
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authorized-user-id ..auth..) => ..owner-id..
                            (core/get-entities ..auth.. [id]) => [entity]
                            (couch/bulk-docs ..db.. [update]) => ..deleted..
+                           (util/iso-now) => ..date..
                            ]
 
-        (future-fact "it trashes entity"
+        (fact "it trashes entity"
           (core/delete-entity ..auth.. [id]) => ..deleted..)
 
         (fact "it fails if entity already trashed"
@@ -134,10 +139,18 @@
           (core/delete-entity ..auth.. [id]) => (throws Exception)
           (provided
             (auth/authorized-user-id ..auth..) => ..other-id..
-            (auth/can? ..other-id.. :auth/delete) => false)))))
+            (auth/can? ..other-id.. :auth/delete) => (fn [doc] (throw+ {:boom doc})))))))
 
   (facts "`trash-entity` helper"
-    (future-fact "adds required info"))
+    (fact "adds required info"
+      (let [doc {:_id ..id..}
+            info {:trashing_user ..user..
+                  :trashing_date ..date..
+                  :trash_root    ..id..}]
+        (:trash_info (core/trash-entity ..user.. doc)) => info
+        (provided
+          (t/now) => ..dt..
+          (tf/unparse (tf/formatters :date) ..dt..) => ..date..))))
 
   (facts "`parent-collaboration-roots`"
     (fact "it allows nil parent"

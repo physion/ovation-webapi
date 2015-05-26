@@ -5,7 +5,9 @@
   (:require [clojure.string :refer [join]]
             [ovation.version :refer [version-path]]
             [clojure.walk :as walk]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clj-time.core :as t]
+            [clj-time.format :as tf]))
 
 
 (defn make-uuid
@@ -49,4 +51,9 @@
 (defn join-path
   [comps]
   (clojure.string/join "/" comps))
+
+(defn iso-now
+  "Gets the ISO date time string for (t/now)"
+  []
+  (tf/unparse (tf/formatters :date) (t/now)))
 

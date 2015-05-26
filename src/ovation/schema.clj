@@ -17,9 +17,9 @@
                      (s/optional-key :links) s/Any})
 
 (s/defschema AnnotationTypes (s/enum OvationEntity$AnnotationKeys/TAGS
-                                     OvationEntity$AnnotationKeys/PROPERTIES
-                                     OvationEntity$AnnotationKeys/NOTES
-                                     OvationEntity$AnnotationKeys/TIMELINE_EVENTS))
+                               OvationEntity$AnnotationKeys/PROPERTIES
+                               OvationEntity$AnnotationKeys/NOTES
+                               OvationEntity$AnnotationKeys/TIMELINE_EVENTS))
 
 (s/defschema TagRecord {:tag s/Str})
 (s/defschema TagAnnotation (conj AnnotationBase {:annotation_type OvationEntity$AnnotationKeys/TAGS
@@ -72,5 +72,11 @@
 
 
 (s/defschema EntityUpdate BaseEntity)
+
+;; -- TRASH INFO -- ;;
+(s/defschema TrashInfo {(keyword us.physion.ovation.domain.TrashInfo/TRASHING_USER) s/Str ;; URI
+                        (keyword us.physion.ovation.domain.TrashInfo/TRASHING_DATE) s/Str ;; ISO DateTime
+                        (keyword us.physion.ovation.domain.TrashInfo/TRASH_ROOT)    s/Str ;; URI
+                        })
 
 

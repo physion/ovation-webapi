@@ -33,6 +33,9 @@
                                                               javax.jms/jms
                                                               com.sun.jmdk/jmxtools
                                                               com.sun.jmx/jmxri]]
+
+                           ;; Other
+                           [clj-time "0.9.0"]
                            ]
 
             :plugins [[lein-clojars "0.9.1"]

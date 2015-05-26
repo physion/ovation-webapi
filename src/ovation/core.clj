@@ -4,8 +4,10 @@
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
             [ovation.links :as links]
-            [slingshot.slingshot :refer [throw+]])
-  (:import (us.physion.ovation.data EntityDao$Views)))
+            [slingshot.slingshot :refer [throw+ try+]]
+            [ovation.util :as util])
+  (:import (us.physion.ovation.data EntityDao$Views)
+           (us.physion.ovation.domain TrashInfo)))
 
 
 ;; QUERY
@@ -82,13 +84,19 @@
     (couch/bulk-docs db updated-docs)))
 
 (defn trash-entity
-  [doc]
-  (assoc doc :trash_info {}))
+  [user-id doc]
+  (let [info {(keyword TrashInfo/TRASHING_USER) user-id
+              (keyword TrashInfo/TRASHING_DATE) (util/iso-now)
+              (keyword TrashInfo/TRASH_ROOT)    (:_id doc)}]
+    (if-not (nil? (:trash_info doc))
+      (throw+ {:type ::illegal-operation :message "Entity is already trashed"}))
+    (assoc doc :trash_info info)))
 
 (defn delete-entity
   [auth ids]
   (let [db (couch/db auth)
         docs (get-entities auth ids)
-        trashed (map trash-entity docs)]
-    (doall (map (auth/can? (auth/authorized-user-id auth) :auth/delete) trashed))
+        user-id (auth/authorized-user-id auth)
+        trashed (map #(trash-entity user-id %) docs)]
+    (doall (map (auth/can? user-id :auth/delete) trashed))
     (couch/bulk-docs db trashed)))
