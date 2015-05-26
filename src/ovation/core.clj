@@ -3,7 +3,6 @@
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
-            [ovation.links :as links]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util])
   (:import (us.physion.ovation.data EntityDao$Views)

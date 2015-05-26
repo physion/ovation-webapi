@@ -2,7 +2,8 @@
   (:require [ovation.util :refer [create-uri]]
             [ovation.couch :as couch]
             [ovation.util :as util]
-            [ovation.auth :as auth])
+            [ovation.auth :as auth]
+            [ovation.core :as core])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 
@@ -40,12 +41,19 @@
     (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)])
     (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)])))
 
+(defn- collaboration-roots
+  [doc]
+  (get-in doc [:links :_collaboration_roots] []))
+
 (defn- update-collaboration-roots-for-target
-  [doc target-id]
-  doc)
+  [auth doc target-id]
+  (let [current (collaboration-roots doc)
+        target (first (core/get-entities auth [target-id]))
+        added (collaboration-roots target)]
+    (assoc-in doc [:links :_collaboration_roots] (concat current added))))
 
 (defn add-link
-  [doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+  [auth doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
                                                             name nil]}]
 
   (auth/check! id :auth/update doc)
@@ -61,7 +69,7 @@
         linked-doc (if name
                      (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
                      (assoc-in doc [:links (keyword rel)] path))
-        updated-src (update-collaboration-roots-for-target linked-doc target-id)]
+        updated-src (update-collaboration-roots-for-target auth linked-doc target-id)]
     [link updated-src]))
 
 (defn delete-link
