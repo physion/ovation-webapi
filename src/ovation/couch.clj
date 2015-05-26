@@ -13,6 +13,8 @@
            :password (:cloudant_password auth))))
 
 (defn get-view
+  "Gets the output of a view, passing opts to clutch/get-view.
+  Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [db view opts]
   (cl/with-db db
     (cl/get-view design-doc view opts)))

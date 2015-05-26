@@ -1,5 +1,5 @@
 (ns ovation.schema
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys TrashInfo))
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]))
 
@@ -54,6 +54,17 @@
 (s/defschema NewEntityLink {:target_id                    s/Str
                             (s/optional-key :inverse_rel) s/Str})
 
+;; From us.physion.ovation.values.Relation#toMap
+(s/defschema LinkDoc {:_id s/Str
+                      (s/optional-key :_rev) s/Str
+                      :user_id s/Uuid
+                      :source_id s/Uuid
+                      :target_id s/Uuid
+                      :rel s/Str
+                      (s/optional-key :name) s/Str
+                      (s/optional-key :inverse_rel) s/Str
+                      })
+
 
 ;; -- ENTITIES -- ;;
 
@@ -74,9 +85,9 @@
 (s/defschema EntityUpdate BaseEntity)
 
 ;; -- TRASH INFO -- ;;
-(s/defschema TrashInfo {(keyword us.physion.ovation.domain.TrashInfo/TRASHING_USER) s/Str ;; URI
-                        (keyword us.physion.ovation.domain.TrashInfo/TRASHING_DATE) s/Str ;; ISO DateTime
-                        (keyword us.physion.ovation.domain.TrashInfo/TRASH_ROOT)    s/Str ;; URI
+(s/defschema TrashInfo {(keyword TrashInfo/TRASHING_USER) s/Str ;; URI
+                        (keyword TrashInfo/TRASHING_DATE) s/Str ;; ISO DateTime
+                        (keyword TrashInfo/TRASH_ROOT)    s/Str ;; URI
                         })
 
 

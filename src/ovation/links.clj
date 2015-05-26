@@ -14,18 +14,28 @@
 
 (defn get-link-targets
   "Gets the document targets for id--rel->"
-  [db id rel & {:keys [label] :or {label nil}}]
-  (let [opts {:startkey [id rel nil] :endkey [id rel {}]
+  [db id rel & {:keys [label name] :or {label nil name nil}}]
+  (let [opts {:key (if name [id rel name] [id rel])
               :reduce false :include_docs true}
         docs (map :doc (couch/get-view db EntityDao$Views/LINKS opts))]
     (if label
       (filter (eq-doc-label label) docs)
       docs)))
 
+(defn- link-id
+  [source-id rel target-id]
+  (format "%s--%s-->%s" source-id rel target-id))
+
+(defn- named-link-id
+  [source-id rel name target-id]
+  (format "%s--%s>%s-->%s" source-id rel name target-id))
+
+
 
 ;; COMMAND
 (defn add-link
-  [db id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}])
+  [db doc id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}]
+  {:_id (link-id id rel target-id)})
 
 (defn delete-link
   [db id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}])
