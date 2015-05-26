@@ -1,16 +1,30 @@
 (ns ovation.test.links
   (:use midje.sweet)
-  (:require [ovation.links :as links]))
+  (:require [ovation.links :as links]
+            [ovation.couch :as couch])
+  (:import (us.physion.ovation.data EntityDao$Views)))
 
 (facts "About links"
   (facts "`get-link-targets`"
-    (future-fact "gets entity rel targets")
-    (future-fact "filters by label"))
+    (let [doc1 {:attributes {:label ..label1..}}
+          doc2 {:attributes {:label ..label2..}}
+          doc3 {:attributes {}}]
+      (against-background [(couch/get-view ..db.. EntityDao$Views/LINKS {:startkey     [..id.. ..rel.. nil]
+                                                                         :endkey       [..id.. ..rel.. {}]
+                                                                         :reduce       false
+                                                                         :include_docs true}) => [{:doc doc1} {:doc doc2} {:doc doc3}]]
+
+        (fact "gets entity rel targets"
+          (links/get-link-targets ..db.. ..id.. ..rel..) => [doc1 doc2 doc3])
+
+        (fact "filters by label"
+          (links/get-link-targets ..db.. ..id.. ..rel.. :label ..label1..) => [doc1]))))
 
   (facts "`add-link`"
     (future-fact "creates link document")
     (future-fact "updates entity :links")
-    (future-fact "updates entity _collaboration_roots"))
+    (future-fact "updates entity _collaboration_roots")
+    (future-fact "fails if not can? :update"))
 
   (facts "`delete-link`"
     (future-fact "removes link")

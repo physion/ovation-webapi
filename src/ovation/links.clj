@@ -1,19 +1,34 @@
 (ns ovation.links
-  (:require [ovation.util :refer [create-uri]]))
+  (:require [ovation.util :refer [create-uri]]
+            [ovation.couch :as couch])
+  (:import (us.physion.ovation.data EntityDao$Views)))
 
 
 
+;; QUERY
+(defn- eq-doc-label
+  [label]
+  (fn [doc] (if-let [doc-label (get-in doc [:attributes :label])]
+              (= label doc-label)
+              false)))
 
 (defn get-link-targets
+  "Gets the document targets for id--rel->"
   [db id rel & {:keys [label] :or {label nil}}]
+  (let [opts {:startkey [id rel nil] :endkey [id rel {}]
+              :reduce false :include_docs true}
+        docs (map :doc (couch/get-view db EntityDao$Views/LINKS opts))]
+    (if label
+      (filter (eq-doc-label label) docs)
+      docs)))
 
-  )
 
+;; COMMAND
 (defn add-link
-  [db id rel target-id])
+  [db id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}])
 
 (defn delete-link
-  [db id rel target-id])
+  [db id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}])
 
 ;(defn get-link
 ;  "Returns all entities from entity(id)->rel and returns them"
