@@ -45,16 +45,39 @@
   [doc]
   (get-in doc [:links :_collaboration_roots] []))
 
+(defn- add-roots
+  [doc roots]
+  (let [current (collaboration-roots doc)]
+    (assoc-in doc [:links :_collaboration_roots] (concat current roots))))
+
 (defn- update-collaboration-roots-for-target
-  [auth doc target-id]
-  (let [current (collaboration-roots doc)
-        target (first (core/get-entities auth [target-id]))
-        added (collaboration-roots target)]
-    (assoc-in doc [:links :_collaboration_roots] (concat current added))))
+  [source target]
+  (let [source-roots (collaboration-roots source)
+        source-type (clojure.string/lower-case (:type source))
+        target-roots (collaboration-roots target)
+        target-type (clojure.string/lower-case (:type target))]
+    (cond
+      (= source-type "project") [(add-roots target source-roots) source]
+      (= target-type "project") [(add-roots source target-roots)]
+
+
+    (= source-type "folder") [(add-roots target source-roots) source]
+    (= target-type "folder") [(add-roots source target-roots)]
+
+    (= source-type "experiment") [(add-roots target source-roots) source]
+    (= target-type "experiment") [(add-roots source target-roots)]
+
+    (= target-type "source") [(add-roots target source-roots) source]
+
+    (= target-type "protocol") [(add-roots target source-roots)]
+
+    :else
+    [source]
+    )) )
 
 (defn add-link
   [auth doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
-                                                            name nil]}]
+                                                              name nil]}]
 
   (auth/check! id :auth/update doc)
   (let [doc-id (:_id doc)
@@ -69,8 +92,8 @@
         linked-doc (if name
                      (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
                      (assoc-in doc [:links (keyword rel)] path))
-        updated-src (update-collaboration-roots-for-target auth linked-doc target-id)]
-    [link updated-src]))
+        updated-docs (update-collaboration-roots-for-target linked-doc (first (core/get-entities auth [target-id])))]
+    (conj updated-docs link)))
 
 (defn delete-link
   [doc id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}]
