@@ -1,6 +1,8 @@
 (ns ovation.links
   (:require [ovation.util :refer [create-uri]]
-            [ovation.couch :as couch])
+            [ovation.couch :as couch]
+            [ovation.util :as util]
+            [ovation.auth :as auth])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 
@@ -15,106 +17,53 @@
 (defn get-link-targets
   "Gets the document targets for id--rel->"
   [db id rel & {:keys [label name] :or {label nil name nil}}]
-  (let [opts {:key (if name [id rel name] [id rel])
+  (let [opts {:key    (if name [id rel name] [id rel])
               :reduce false :include_docs true}
         docs (map :doc (couch/get-view db EntityDao$Views/LINKS opts))]
     (if label
       (filter (eq-doc-label label) docs)
       docs)))
 
-(defn- link-id
-  [source-id rel target-id]
-  (format "%s--%s-->%s" source-id rel target-id))
-
-(defn- named-link-id
-  [source-id rel name target-id]
-  (format "%s--%s>%s-->%s" source-id rel name target-id))
 
 
 
 ;; COMMAND
+(defn- link-id
+  [source-id rel target-id & {:keys [name] :or [name nil]}]
+  (if name
+    (format "%s--%s>%s-->%s" source-id rel name target-id)
+    (format "%s--%s-->%s" source-id rel target-id)))
+
+(defn- link-path
+  [source-id rel name]
+  (if name
+    (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)])
+    (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)])))
+
+(defn- update-collaboration-roots-for-target
+  [doc target-id]
+  doc)
+
 (defn add-link
-  [db doc id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}]
-  {:_id (link-id id rel target-id)})
+  [doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+                                                            name nil]}]
+
+  (auth/check! id :auth/update doc)
+  (let [doc-id (:_id doc)
+        base {:_id       (link-id doc-id rel target-id :name name)
+              :target_id target-id
+              :source_id doc-id
+              :rel       rel
+              :user_id   id}
+        named (if name (assoc base :name name) base)
+        link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)
+        path (link-path doc-id rel name)
+        linked-doc (if name
+                     (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
+                     (assoc-in doc [:links (keyword rel)] path))
+        updated-src (update-collaboration-roots-for-target linked-doc target-id)]
+    [link updated-src]))
 
 (defn delete-link
-  [db id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}])
-
-;(defn get-link
-;  "Returns all entities from entity(id)->rel and returns them"
-;  [api-key id rel]
-;  (into-seq api-key (into () (get-entities (get-entity api-key id) rel))))
-;
-;(defn add-link
-;  "Adds a link (:rel) to entity with the given target and inverse"
-;  [entity rel target & {:keys [inverse] :or {inverse nil}}]
-;
-;  (.addLink entity rel (create-uri target) inverse)
-;  true)
-;
-;(defn remove-link
-;  "Remoes a link (:rel) from an entity"
-;  [entity rel target]
-;  (.removeLink entity rel (create-uri target))
-;  true)
-;
-;(defn create-link [api-key id link]
-;  "Creates a new link from entity(id) -> entity(target)"
-;  (let [entity (get-entity api-key id)
-;        target (:target_id link)
-;        inverse (:inverse_rel link)
-;        rel (:rel link)]
-;    (if (add-link entity rel target :inverse inverse)
-;      {:success true}
-;      (r/internal-server-error! "Unable to create link"))))
-;
-;(defn delete-link [api-key id rel target]
-;  "Deletes a named link on entity(id)"
-;  (let [entity (get-entity api-key id)]
-;    (if (remove-link entity rel target)
-;      {:success true}
-;      (r/internal-server-error! {:success false}))))
-;
-;
-;(defn get-named-entities
-;  "Calls entity.getNamedEntities"
-;  [entity rel name]
-;  (.getNamedEntities entity rel name))
-;
-;(defn add-named-link
-;  "Adds a named link via entity.addNamedLink"
-;  [entity rel named target & {:keys [inverse] :or {inverse nil}}]
-;  (.addNamedLink entity rel named (create-uri target) inverse)
-;  true)
-;
-;(defn remove-named-link
-;  "Removes a named link via entity.removeNamedLink"
-;  [entity rel named target]
-;  (.removeNamedLink entity rel named (create-uri target))
-;  true)
-;
-;(defn get-named-link
-;  "Returns all entities from entity(id)->link"
-;  [api-key id rel named]
-;
-;  (into-seq api-key (into () (get-named-entities (get-entity api-key id) rel named))))
-;
-;(defn create-named-link
-;  "Creates a new link from entity(id) -> entity(target)"
-;  [api-key id link]
-;  (let [entity (get-entity api-key id)
-;        target (:target_id link)
-;        inverse (:inverse_rel link)
-;        rel (:rel link)
-;        named (:name link)]
-;    (if (add-named-link entity rel named target :inverse inverse)
-;      [entity]
-;      (r/internal-server-error! "Unable to create link")))
-;  )
-;
-;(defn delete-named-link [api-key id rel named target]
-;  "Deletes a named link on entity(id)"
-;  (let [entity (get-entity api-key id)]
-;    (if (remove-named-link entity rel named target)
-;      {:success true}
-;      (r/internal-server-error! {:success false}))))
+  [doc id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}]
+  (auth/check! id :auth/update doc))

@@ -29,9 +29,9 @@
 
   (let [response @auth]
     (-> response
-        (check-auth)
-        (:body)
-        (util/from-json))))
+      (check-auth)
+      (:body)
+      (util/from-json))))
 
 (defn authorize
   "Gets the Cloudant API key and database URL for an Ovation API key."
@@ -44,6 +44,12 @@
   (:uuid auth))
 
 (defn can?
-  [auth-user-id op]
-  (fn [doc] (if-not (= auth-user-id (:owner doc))
-              (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))))
+  [auth-user-id op doc]
+  (or (nil? (:owner doc)) (= auth-user-id (:owner doc))))
+
+(defn check!
+  ([auth-user-id op]
+   (fn [doc] (when-not (can? auth-user-id op doc)
+               (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))))
+  ([auth-user-id op doc]
+   ((check! auth-user-id op) doc)))

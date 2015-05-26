@@ -106,7 +106,7 @@
           (core/update-entity ..auth.. [update]) => (throws Exception)
           (provided
             (auth/authorized-user-id ..auth..) => ..other-id..
-            (auth/can? ..other-id.. :auth/update) => false)))))
+            (auth/can? ..other-id.. :auth/update anything) => false)))))
 
 
   (facts "`delete-entity`"
@@ -139,7 +139,7 @@
           (core/delete-entity ..auth.. [id]) => (throws Exception)
           (provided
             (auth/authorized-user-id ..auth..) => ..other-id..
-            (auth/can? ..other-id.. :auth/delete) => (fn [doc] (throw+ {:boom doc})))))))
+            (auth/can? ..other-id.. :auth/delete anything) => false)))))
 
   (facts "`trash-entity` helper"
     (fact "adds required info"
