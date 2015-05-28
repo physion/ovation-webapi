@@ -23,7 +23,7 @@
   (fact "it returns CouchDB view result"
     (couch/get-view "db" ...view... ...opts...) => ...result...
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => ...result... )))
+      (cl/get-view couch/design-doc ...view... ...opts...) => ...result...)))
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"
@@ -37,4 +37,14 @@
     (couch/bulk-docs "dburl" ...docs...) => ...result...
     (provided
       (cl/bulk-update ...docs...) => ...result...)))
+
+(facts "About `delete-docs`"
+  (fact "it POSTs bulk-update"
+    (let [doc1 {:_id  "doc1"
+                :_rev "rev1"}
+          doc2 {:_id  "doc2"
+                :_rev "rev2"}]
+      (couch/delete-docs "dburl" [doc1 doc2]) => ..result..
+      (provided
+        (couch/bulk-docs anything [(assoc doc1 :_deleted true) (assoc doc2 :_deleted true)]) => ..result..))))
 

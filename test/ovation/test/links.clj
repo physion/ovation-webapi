@@ -154,6 +154,26 @@
         )))
 
   (facts "`delete-link`"
-    (future-fact "removes link")
-    (future-fact "fails if not can? :delete")
-    (future-fact "updates entity _collaboration_roots")))
+
+    (let [doc {:_id   (str (UUID/randomUUID))
+               :type  "MyEntity" `:attrbutes {}
+               :links {:_collaboration_roots []}}
+          target-id (str (UUID/randomUUID))]
+
+      (against-background [(couch/db ..auth..) => ..db..]
+
+        (fact "removes link"
+          (let [source-id (:_id doc)
+                link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
+            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
+            (provided
+              (couch/all-docs ..db.. [link-id]) => [..link..]
+              (couch/delete-docs ..db.. [..link..]) => ..docs..)))
+
+        (fact "fails if not can? :update source"
+          (links/delete-link ..auth.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
+          (provided
+            (auth/can? ..id.. :auth/update ..doc..) => false))
+
+
+        (future-fact "updates entity _collaboration_roots")))))

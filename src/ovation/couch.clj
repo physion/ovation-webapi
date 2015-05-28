@@ -41,3 +41,8 @@
   (let [changes-agent (cl/change-agent db opts)]
     (add-watch changes-agent :update (fn [key ref old new] (>!! c new)))
     (cl/start-changes changes-agent)))
+
+(defn delete-docs
+  "Deletes documents from the database"
+  [db docs]
+  (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))

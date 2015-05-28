@@ -96,5 +96,10 @@
     (conj updated-docs link)))
 
 (defn delete-link
-  [doc id rel target-id & {:keys [inverse-rel] :or [inverse-rel nil]}]
-  (auth/check! id :auth/update doc))
+  [auth doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+                                                         name nil]}]
+  (auth/check! id :auth/update doc)
+  (let [link-id (link-id (:_id doc) rel target-id :name name)
+        db (couch/db auth)
+        links (couch/all-docs db [link-id])]
+    (couch/delete-docs db links)))
