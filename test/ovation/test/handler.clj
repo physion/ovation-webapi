@@ -7,7 +7,9 @@
             [ovation.auth :as auth]
             [ovation.core :as core]
             [clojure.walk :as walk]
-            [ovation.util :as util])
+            [ovation.util :as util]
+            [ovation.version :as ver]
+            [schema.core :as s])
   (:import (java.util UUID)))
 
 (defn mock-req
@@ -66,6 +68,14 @@
         (future-fact "GET /:id gets a single project")
         (future-fact "POST /:id inserts entities with Project parent")))))
 
+
+(defn return-json
+  [request]
+  (let [response (handler/app request)
+        reader (clojure.java.io/reader (:body response))
+        result (json/read reader)]
+    (walk/keywordize-keys result)))
+
 (facts "About /entities"
   (let [apikey "..apikey.."
         auth-response (promise)
@@ -83,7 +93,25 @@
         (future-fact "fails if not can? :delete"))
 
       (facts "create"
-        (future-fact "POST /:id inserts entities with parent"))
+
+        (let [parent-id (str (UUID/randomUUID))
+              new-entity {:type "MyEntity" :attributes {:foo "bar"}}
+              new-entities [new-entity]
+              entity [(assoc new-entity :_id (str (UUID/randomUUID))
+                                        :_rev "1")]]
+
+          (against-background [(core/create-entity apikey new-entities :parent parent-id) => [entity]]
+            (fact "POST /:id inserts entities with parent"
+              (let [post (mock-req (-> (mock/request :post (str "/api/" ver/version "/entities/" parent-id))
+                                     (mock/content-type "application/json")
+                                     (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey)]
+                (:status (handler/app post)) => 201))
+            (fact "POST /:id inserts entity with parent"
+              (let [post (mock-req (-> (mock/request :post (str "/api/" ver/version "/entities/" parent-id))
+                                     (mock/content-type "application/json")
+                                     (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey)]
+                (return-json post) => {:entities [entity]})))
+          ))
 
       (facts "read"
         (let [id (str (UUID/randomUUID))
@@ -98,7 +126,7 @@
             (fact "GET /entities/:id returns status 200"
               (:status (handler/app get)) => 200)
             (fact "GET /entities/:id returns doc"
-              (walk/keywordize-keys (json/read (clojure.java.io/reader (:body (handler/app get))))) => {:entity doc})))))))
+              (return-json get) => {:entity doc})))))))
 ;
 ;
 ;(facts "About entities"
@@ -201,4 +229,3 @@
 ;                                                            :inverse_rel inverse_rel
 ;                                                            :name        name}) => {:success true})))
 ;       )
-;

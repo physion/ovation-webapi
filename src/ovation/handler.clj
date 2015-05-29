@@ -40,16 +40,19 @@
 ;;; --- Routes --- ;;;
 (defapi app
 
-  (middlewares [(wrap-cors
+  (middlewares [
+                (wrap-cors
                   :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
                   :access-control-allow-headers ["Content-Type" "Accept"])
 
                 (wrap-token-auth
-                  :authserver config/AUTH_SERVER)
+                  :authserver config/AUTH_SERVER
+                  :skip-uris #{"/"})
                 ]
 
-    (swagger-ui)
+    (swagger-ui
+      )
     (swagger-docs
       {:info {
               :version        "1.0.0"
@@ -61,46 +64,13 @@
               :termsOfService "https://ovation.io/terms_of_service"}}
       :tags [{:name "entities" :description "Generic entity operations"}
              {:name "projects" :description "Projects"}
-             {:name "annotations" :description "Per-user annotations"}]
-      )
+             {:name "annotations" :description "Per-user annotations"}
+             {:name "links" :description "Relationships between entities"}])
 
-
-    ;(context* "/api" []
-    ;  :tags ["projects, sources, protocols"]
-    ;  (context* "/v1" []                                    ;; TODO pull this from o.util/version-string
-    ;    (context* "/:resource" [resource]
-    ;      (GET* "/" request
-    ;        :return [Entity]                                ;; for v2 {s/Keyword [Entity]}
-    ;        :header-params [Authorization api-key :- String]
-    ;        :path-params [resource :- (s/enum "projects" "sources" "protocols")]
-    ;        :summary "Get Projects, Protocols and Top-level Sources"
-    ;
-    ;        (let [auth (auth/authorize config/AUTH_SERVER api-key)
-    ;              types {"projects"  "Project"
-    ;                     "sources"   "Source"
-    ;                     "protocols" "Protocol"}]
-    ;          (ok (core/of-type auth (types resource)))))))) ;for v2 {(keyword resource) ...}
 
     (context* "/api" []
       :tags ["entities"]
       (context* "/v1" []
-        (context* "/projects" []
-          :tags ["projects"]
-          (GET* "/" request
-            :return {:projects [Entity]}
-            :summary "Get Projects"
-
-            (let [auth (:auth/api-key request)]
-              (ok (core/of-type auth "Project"))))
-
-          (context* "/:id" [id]
-            (POST* "/" request
-              :return {:entities [Entity]}
-              :body [entities NewEntity]
-              :summary "Creates and returns an entity belonging to this project"
-              (let [auth (:auth/api-key request)]
-                (created (core/create-entity auth entities :parent id))))))
-
         (context* "/entities" []
           :tags ["entities"]
           (context* "/:id" [id]
@@ -115,10 +85,10 @@
 
             (POST* "/" request
               :return {:entities [Entity]}
-              :body [entities NewEntity]
+              :body [entities [NewEntity]]
               :summary "Creates and returns a new entity with the identified entity as collaboration root"
               (let [auth (:auth/api-key request)]
-                (created (core/create-entity auth entities :parent id))))
+                (created {:entities (core/create-entity auth entities :parent id)})))
 
             ;(context* "/annotations" []
             ;  :tags ["annotations"]
@@ -200,18 +170,5 @@
           ;      :query-params [api-key :- s/Str]
           ;      :summary "Deletes a named link to the given target (uuid)"
           ;      (ok (links/delete-named-link api-key id rel named target)))))
-          ))))
-
-  ;(swaggered "views"
-  ;  (context* "/api" []
-  ;    (context* "/v1" []
-  ;      (context* "/views" []
-  ;        (GET* "/*" request
-  ;          :return [Entity]
-  ;          :query-params [api-key :- s/Str]
-  ;          :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
-  ;          (let [host (util/host-from-request request)]
-  ;            (ok (entity/get-view api-key
-  ;                  (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
-  )
+          )))))
 

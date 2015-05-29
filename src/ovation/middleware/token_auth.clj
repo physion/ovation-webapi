@@ -34,8 +34,9 @@
   "Wrap the response with a REST token authentication. If the token is invalid, throws! auth response
   from authserver.
   Additionally, the WWW-Authenticate: header is set in accordance with token auth drafts."
-  [handler & {:keys [custom-response authserver]}]
+  [handler & {:keys [custom-response authserver skip-uris]}]
   (fn [request]
+    ;(when-not (and skip-uris (skip-uris (:uri request))))
     (let [token-req (token-auth-request request authserver)]
       (if (:auth/auth-info token-req)
         (handler token-req)
