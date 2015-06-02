@@ -12,6 +12,14 @@
             [schema.core :as s])
   (:import (java.util UUID)))
 
+(defn sling-throwable
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context
+                                     exception-map
+                                     (str "throw+: " map)
+                                     nil
+                                     (slingshot.support/stack-trace))))
+
 (defn mock-req
   [req apikey]
   (-> req
@@ -108,7 +116,7 @@
               update (assoc entity :attributes new-attributes)
               updated-entity (assoc update :_rev "2" :links {} :_id (str id))
               request (fn [entity-id] (mock-req (-> (mock/request :put (util/join-path ["" "api" ver/version "entities" (str entity-id)]))
-                                         (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
+                                                  (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
 
           (against-background [(core/update-entity auth-info [update]) => [updated-entity]]
             (future-fact "succeeds with status 200"
@@ -120,9 +128,13 @@
             (fact "fails if entity and path :id do not match"
               (let [other-id (str (UUID/randomUUID))
                     response (app (request other-id))]
-                (:status response) => 404))
+                (:status response) => 404)))
 
-              (future-fact "fails if not can? :update")))
+          (fact "fails if not can? :update"
+            (:status (app (request id))) => 401
+            (provided
+              (core/update-entity auth-info [update]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+          )
         )
 
       (facts "create"
@@ -130,21 +142,24 @@
               new-entity {:type "MyEntity" :attributes {:foo "bar"}}
               new-entities [new-entity]
               entity [(assoc new-entity :_id (str (UUID/randomUUID))
-                                        :_rev "1")]]
+                                        :_rev "1")]
+              request (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" parent-id]))
+                                         (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey))]
 
           (against-background [(core/create-entity auth-info new-entities :parent parent-id) => [entity]]
-            (fact "POST /:id inserts entities with parent"
-              (let [post (mock-req (-> (mock/request :post (str "/api/" ver/version "/entities/" parent-id))
-                                     (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey)]
+            (fact "POST /:id returns status 201"
+              (let [post (request)]
                 (:status (app post)) => 201))
             (fact "POST /:id inserts entity with parent"
-              (let [post (mock-req (-> (mock/request :post (str "/api/" ver/version "/entities/" parent-id))
-                                     (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey)]
+              (let [post (request)]
                 (body-json post) => {:entities [entity]})))
-          ))
 
+          (fact "returns 201 if not can? :create"
+            (:status (app (request))) => 401
+            (provided
+              (core/create-entity auth-info new-entities :parent parent-id) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+          ))
 
       (facts "delete"
         (future-fact "DELETE /:id deletes entity")
-        (future-fact "fails if not can? :delete"))
-      )))
+        (future-fact "fails if not can? :delete")))))

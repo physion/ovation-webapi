@@ -1,14 +1,16 @@
 (ns ovation.handler
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)
+           (clojure.lang ExceptionInfo))
   (:require [compojure.api.sweet :refer :all]
             [clojure.string :refer [join]]
-            [ring.util.http-response :refer [created ok accepted no-content not-found]]
+            [ring.util.http-response :refer [created ok accepted no-content not-found throw! unauthorized]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.config :as config]
             [ovation.annotations :as annotations]
             [ovation.core :as core]
+            [slingshot.slingshot :refer [try+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]))
 
 (ovation.logging/setup!)
@@ -88,7 +90,12 @@
               :body [entities [NewEntity]]
               :summary "Creates and returns a new entity with the identified entity as collaboration root"
               (let [auth (:auth/auth-info request)]
-                (created {:entities (core/create-entity auth entities :parent id)})))
+                (try+
+                  (created {:entities (core/create-entity auth entities :parent id)})
+
+                  (catch [:type :ovation.auth/unauthorized] err
+                    (unauthorized {}))
+                  )))
 
             (PUT* "/" request
               :return {:entities [Entity]}
@@ -97,9 +104,13 @@
               (let [entity-id (str (:_id update))]
                 (if-not (= id (str entity-id))
                   (not-found {:error (str "Entity " entity-id " not found")})
-                  (let [auth (:auth/auth-info request)
-                        entities (core/update-entity auth [update])]
-                    (ok {:entities entities})))))
+                  (try+
+                    (let [auth (:auth/auth-info request)
+                          entities (core/update-entity auth [update])]
+                      (ok {:entities entities}))
+
+                      (catch [:type :ovation.auth/unauthorized] err
+                        (unauthorized {}))))))
 
             (DELETE* "/" request
               :return Success
