@@ -69,11 +69,11 @@
 
 
     (context* "/api" []
-      :tags ["entities"]
       (context* "/v1" []
         (context* "/entities" []
           :tags ["entities"]
           (context* "/:id" [id]
+
             (GET* "/" request
               :return {:entity Entity}
               :summary "Returns entity with :id"
@@ -87,8 +87,25 @@
               :return {:entities [Entity]}
               :body [entities [NewEntity]]
               :summary "Creates and returns a new entity with the identified entity as collaboration root"
-              (let [auth (:auth/api-key request)]
+              (let [auth (:auth/auth-info request)]
                 (created {:entities (core/create-entity auth entities :parent id)})))
+
+            (PUT* "/" request
+              :return {:entities [Entity]}
+              :body [update EntityUpdate]
+              :summary "Updates and returns entity with :id"
+              (let [entity-id (str (:_id update))]
+                (if-not (= id (str entity-id))
+                  (not-found {:error (str "Entity " entity-id " not found")})
+                  (let [auth (:auth/auth-info request)
+                        entities (core/update-entity auth [update])]
+                    (ok {:entities entities})))))
+
+            (DELETE* "/" request
+              :return Success
+              :summary "Deletes (trashes) entity with :id"
+              (let [auth (:auth/auth-info request)]
+                (accepted "")))
 
             ;(context* "/annotations" []
             ;  :tags ["annotations"]
@@ -105,11 +122,7 @@
             ;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
             )
 
-          (PUT* "/" request
-            :return {:entity Entity}
-            :body [update EntityUpdate]
-            :summary "Updates and returns entity with :id"
-            (ok (core/update-entity (:auth/api-key request) [update])))
+
 
           ;(DELETE* "/" request
           ;  :return Success
