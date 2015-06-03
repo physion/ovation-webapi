@@ -77,6 +77,7 @@
           (context* "/:id" [id]
 
             (GET* "/" request
+              :name :get-entity
               :return {:entity Entity}
               :summary "Returns entity with :id"
               (let [auth (:auth/auth-info request)
@@ -86,6 +87,7 @@
                   (ok {:entity entity}))))
 
             (POST* "/" request
+              :name :create-entity
               :return {:entities [Entity]}
               :body [entities [NewEntity]]
               :summary "Creates and returns a new entity with the identified entity as collaboration root"
@@ -98,6 +100,7 @@
                   )))
 
             (PUT* "/" request
+              :name :update-entity
               :return {:entities [Entity]}
               :body [update EntityUpdate]
               :summary "Updates and returns entity with :id"
@@ -113,10 +116,14 @@
                         (unauthorized {}))))))
 
             (DELETE* "/" request
-              :return Success
+              :name :delete-entity
+              :return {:entities [TrashedEntity]}
               :summary "Deletes (trashes) entity with :id"
-              (let [auth (:auth/auth-info request)]
-                (accepted "")))
+              (try+
+                (let [auth (:auth/auth-info request)]
+                  (accepted {:entities (core/delete-entity auth [id])}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {}))))
 
             ;(context* "/annotations" []
             ;  :tags ["annotations"]

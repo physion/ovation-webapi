@@ -161,5 +161,25 @@
           ))
 
       (facts "delete"
-        (future-fact "DELETE /:id deletes entity")
-        (future-fact "fails if not can? :delete")))))
+        (let [id (UUID/randomUUID)
+              attributes {:foo "bar"}
+              entity {:type       "MyEntity"
+                      :_id        id
+                      :_rev       "1"
+                      :attributes attributes}
+              deleted-entity (assoc entity :transh_info {} :_id (str id))
+              request (fn [entity-id] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ver/version "entities" (str entity-id)]))) apikey))]
+
+          (against-background [(core/delete-entity auth-info [(str id)]) => [deleted-entity]]
+            (future-fact "succeeds with status 202"
+              (let [response (app (request id))]
+                (:status response) => 202))
+            (fact "DELETE /:id trashes entity"
+              (let [request (request id)]
+                (body-json request)) => {:entities [deleted-entity]}))
+
+          (fact "fails if not can? :delete"
+            (:status (app (request id))) => 401
+            (provided
+              (core/delete-entity auth-info [(str id)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+          )))))
