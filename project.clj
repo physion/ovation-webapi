@@ -62,9 +62,9 @@
                                                         [ring-mock "0.1.5"]
                                                         [midje "1.7.0-beta1"]
                                                         [org.clojure/data.json "0.2.5"]
-                                                        [http-kit.fake "0.2.1"]]
+                                                        [http-kit.fake "0.2.1"]
+                                                        [ring-serve "0.1.2"]]
                                          :plugins [[lein-midje "3.1.3"]
-                                                   [ring-serve "0.1.2"]
                                                    [lein-ring "0.8.10"]]}
                        :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                                         :secret-key ~(System/getenv "AWS_SECRET_KEY")}

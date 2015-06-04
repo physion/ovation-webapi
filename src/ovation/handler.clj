@@ -52,11 +52,10 @@
 
                 (wrap-token-auth
                   :authserver config/AUTH_SERVER
-                  :skip-uris #{"/"})
+                  :required-auth-url-prefix #{"/api"})
                 ]
 
-    (swagger-ui
-      )
+    (swagger-ui)
     (swagger-docs
       {:info {
               :version        "1.0.0"
