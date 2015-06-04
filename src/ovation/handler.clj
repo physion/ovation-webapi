@@ -151,7 +151,22 @@
 
                     (created {:entities (core/update-entity auth updates)}))
                   (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {:error (:message err)})))))
+                    (unauthorized {:error (:message err)}))))
+
+              (context "/:target" [target]
+                (DELETE* "/" request
+                  :name :delete-links
+                  :return {:links [LinkDoc]}
+                  :summary "Remove links"
+                  (try+
+                    (let [auth (:auth/auth-info request)
+                          user-id (auth/authorized-user-id auth)
+                          source (first (core/get-entities auth [id]))
+                          update (links/delete-link auth source user-id rel target)]
+
+                      (accepted {:links update}))
+                    (catch [:type :ovation.auth/unauthorized] err
+                      (unauthorized {:error (:message err)}))))))
 
             ;(context* "/annotations" []
             ;  :tags ["annotations"]

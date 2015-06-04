@@ -202,7 +202,7 @@
                 :_id        id
                 :_rev       "1"
                 :attributes attributes
-                :links {}}]
+                :links      {}}]
     (against-background [(auth/authorize anything apikey) => auth-info]
       (facts "GET /entities/:id/links/:rel"
         (let [request (fn [id] (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id "links" rel])) apikey))]
@@ -228,5 +228,30 @@
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)
             (fact "returns link documents"
-              (body-json (request id)) => {:entities [entity target1 target2]}))))
+              (body-json (request id)) => {:entities [entity target1 target2]})
+            (fact "=> 401 if not can? update source"
+              (:status (app (request id))) => 401
+              (provided
+                (links/add-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
+
+      (facts "DELETE /entities/:id/links/:rel"
+        (let [targetid (UUID/randomUUID)
+              link {:target_id targetid
+                    :rel       rel
+                    :_id       (UUID/randomUUID)
+                    :source_id (UUID/randomUUID)}
+              request (fn [id] (mock-req (mock/request :delete (util/join-path ["" "api" ver/version "entities" id "links" rel targetid])) apikey))]
+
+          (against-background [(core/get-entities auth-info [id]) => [entity]
+                               (links/delete-link auth-info entity auth-user-id rel (str targetid)) => [link]]
+            (fact "succeeds with 202"
+              (:status (app (request id))) => 202)
+            (fact "deletes link documents"
+              (body-json (request id)) => {:links [(assoc link :_id (str (:_id link))
+                                                               :source_id (str (:source_id link))
+                                                               :target_id (str (:target_id link)))]})
+            (fact "=> 401 if not can? update source"
+              (:status (app (request id))) => 401
+              (provided
+                (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
       )))
