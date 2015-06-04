@@ -17,8 +17,9 @@
 
 (defn get-link-targets
   "Gets the document targets for id--rel->"
-  [db id rel & {:keys [label name] :or {label nil name nil}}]
-  (let [opts {:key    (if name [id rel name] [id rel])
+  [auth id rel & {:keys [label name] :or {label nil name nil}}]
+  (let [db (couch/db auth)
+        opts {:key    (if name [id rel name] [id rel])
               :reduce false :include_docs true}
         docs (map :doc (couch/get-view db EntityDao$Views/LINKS opts))]
     (if label
@@ -76,16 +77,16 @@
     )) )
 
 (defn add-link
-  [auth doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+  [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
                                                               name nil]}]
 
-  (auth/check! id :auth/update doc)
+  (auth/check! user-id :auth/update doc)
   (let [doc-id (:_id doc)
         base {:_id       (link-id doc-id rel target-id :name name)
               :target_id target-id
               :source_id doc-id
               :rel       rel
-              :user_id   id}
+              :user_id   user-id}
         named (if name (assoc base :name name) base)
         link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)
         path (link-path doc-id rel name)
@@ -96,9 +97,9 @@
     (conj updated-docs link)))
 
 (defn delete-link
-  [auth doc id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+  [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
                                                          name nil]}]
-  (auth/check! id :auth/update doc)
+  (auth/check! user-id :auth/update doc)
   (let [link-id (link-id (:_id doc) rel target-id :name name)
         db (couch/db auth)
         links (couch/all-docs db [link-id])]

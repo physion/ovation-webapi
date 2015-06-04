@@ -11,7 +11,9 @@
             [ovation.annotations :as annotations]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+]]
-            [ovation.middleware.token-auth :refer [wrap-token-auth]]))
+            [ovation.middleware.token-auth :refer [wrap-token-auth]]
+            [ovation.links :as links]
+            [ovation.auth :as auth]))
 
 (ovation.logging/setup!)
 
@@ -106,7 +108,7 @@
               :summary "Updates and returns entity with :id"
               (let [entity-id (str (:_id update))]
                 (if-not (= id (str entity-id))
-                  (not-found {:error (str "Entity " entity-id " not found")})
+                  (not-found {:error (str "Entity " entity-id " ID mismatch")})
                   (try+
                     (let [auth (:auth/auth-info request)
                           entities (core/update-entity auth [update])]
@@ -125,6 +127,32 @@
                 (catch [:type :ovation.auth/unauthorized] err
                   (unauthorized {}))))
 
+            (context* "/links/:rel" [rel]
+              :tags ["links"]
+              (GET* "/" request
+                :name :get-links
+                :return {:rel [Entity]}
+                :summary "Gets the targets of relationship :rel from the identified entity"
+                (let [auth (:auth/auth-info request)]
+                  (ok {:rel (links/get-link-targets auth id rel)})))
+
+              (POST* "/" request
+                :name :create-links
+                :return {:entities [Entity]}
+                :body [links [NewEntityLink]]
+                :summary "Adds a link"
+                (try+
+                  (let [auth (:auth/auth-info request)
+                        user-id (auth/authorized-user-id auth)
+                        sources (core/get-entities auth [id])
+                        updates (flatten (for [src sources  ;; TODO is is pretty inefficient — can we make add-link take collections?
+                                               link links]
+                                           (links/add-link auth src user-id rel (:target_id link))))]
+
+                    (created {:entities (core/update-entity auth updates)}))
+                  (catch [:type :ovation.auth/unauthorized] err
+                    (unauthorized {:error (:message err)})))))
+
             ;(context* "/annotations" []
             ;  :tags ["annotations"]
             ;  (GET* "/" request
@@ -139,13 +167,6 @@
             ;  (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
             ;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
             )
-
-
-
-          ;(DELETE* "/" request
-          ;  :return Success
-          ;  :summary "Deletes entity with :id"
-          ;  (accepted (core/delete-entity (:auth/api-key request) [id])))
 
           ;
           ;(context* "/links" []

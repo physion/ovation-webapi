@@ -19,16 +19,17 @@
                            (couch/get-view ..db.. EntityDao$Views/LINKS {:key          [..id.. ..rel.. ..name..]
                                                                          :reduce       false
                                                                          :include_docs true}) => [{:doc doc1}]
-                           (auth/can? anything :auth/update anything) => true]
+                           (auth/can? anything :auth/update anything) => true
+                           (couch/db ..auth..) => ..db..]
 
         (fact "gets entity rel targets"
-          (links/get-link-targets ..db.. ..id.. ..rel..) => [doc1 doc2 doc3])
+          (links/get-link-targets ..auth.. ..id.. ..rel..) => [doc1 doc2 doc3])
 
         (fact "gets named entity rel targets"
-          (links/get-link-targets ..db.. ..id.. ..rel.. :name ..name..) => [doc1])
+          (links/get-link-targets ..auth.. ..id.. ..rel.. :name ..name..) => [doc1])
 
         (fact "filters by label"
-          (links/get-link-targets ..db.. ..id.. ..rel.. :label ..label1..) => [doc1]))))
+          (links/get-link-targets ..auth.. ..id.. ..rel.. :label ..label1..) => [doc1]))))
 
 
   (facts "`add-link`"

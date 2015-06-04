@@ -9,7 +9,8 @@
             [clojure.walk :as walk]
             [ovation.util :as util]
             [ovation.version :as ver]
-            [schema.core :as s])
+            [schema.core :as s]
+            [ovation.links :as links])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -54,6 +55,10 @@
           (:status response) => 200))))
   )
 
+;(facts "About Swagger API"
+;  (fact "is valid"
+;    (compojure.api.swagger/validate app) => nil))
+
 (facts "About invalid routes"
   (let [apikey "..apikey.."
         auth-response (promise)
@@ -92,7 +97,7 @@
 
       (facts "read"
         (let [id (str (UUID/randomUUID))
-              get (mock-req (mock/request :get (str "/api/v1/entities/" id)) apikey)
+              get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id])) apikey)
               doc {:_id        id
                    :_rev       "123"
                    :type       "Entity"
@@ -119,7 +124,7 @@
                                                   (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
 
           (against-background [(core/update-entity auth-info [update]) => [updated-entity]]
-            (future-fact "succeeds with status 200"
+            (fact "succeeds with status 200"
               (let [response (app (request id))]
                 (:status response) => 200))
             (fact "updates single entity by ID"
@@ -171,7 +176,7 @@
               request (fn [entity-id] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ver/version "entities" (str entity-id)]))) apikey))]
 
           (against-background [(core/delete-entity auth-info [(str id)]) => [deleted-entity]]
-            (future-fact "succeeds with status 202"
+            (fact "succeeds with status 202"
               (let [response (app (request id))]
                 (:status response) => 202))
             (fact "DELETE /:id trashes entity"
@@ -183,3 +188,45 @@
             (provided
               (core/delete-entity auth-info [(str id)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
           )))))
+
+
+(facts "About links"
+  (let [apikey "--apikey--"
+        auth-user-id (str (UUID/randomUUID))
+        auth-info {:user "..user.."
+                   :uuid auth-user-id}
+        id (str (UUID/randomUUID))
+        rel "--myrel--"
+        attributes {:foo "bar"}
+        entity {:type       "MyEntity"
+                :_id        id
+                :_rev       "1"
+                :attributes attributes
+                :links {}}]
+    (against-background [(auth/authorize anything apikey) => auth-info]
+      (facts "GET /entities/:id/links/:rel"
+        (let [request (fn [id] (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id "links" rel])) apikey))]
+          (against-background [(links/get-link-targets auth-info id rel) => [entity]]
+            (fact "succeeds with 200"
+              (let [response (app (request id))]
+                (:status response) => 200))
+            (fact "returns link targets"
+              (body-json (request id)) => {:rel [entity]}))))
+      (facts "POST /entities/:id/links/:rel"
+        (let [targetid1 (str (UUID/randomUUID))
+              targetid2 (str (UUID/randomUUID))
+              target1 (assoc entity :_id targetid1)
+              target2 (assoc entity :_id targetid2)
+              links [{:target_id targetid1} {:target_id targetid2}]
+              request (fn [id] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" id "links" rel]))
+                                           (mock/body (json/write-str (walk/stringify-keys links)))) apikey))]
+
+          (against-background [(core/get-entities auth-info [id]) => [entity]
+                               (core/update-entity auth-info anything) => [entity target1 target2]
+                               (links/add-link auth-info entity auth-user-id rel targetid1) => [entity target1]
+                               (links/add-link auth-info entity auth-user-id rel targetid2) => [entity target2]]
+            (fact "succeeds with 201"
+              (:status (app (request id))) => 201)
+            (fact "returns link documents"
+              (body-json (request id)) => {:entities [entity target1 target2]}))))
+      )))
