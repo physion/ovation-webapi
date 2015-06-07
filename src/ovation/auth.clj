@@ -3,7 +3,8 @@
             [ovation.util :as util]
             [ring.util.http-predicates :as hp]
             [ring.util.http-response :refer [throw!]]
-            [slingshot.slingshot :refer [throw+]]))
+            [slingshot.slingshot :refer [throw+]]
+            [clojure.tools.logging :as logging]))
 
 
 (defn get-auth
@@ -19,8 +20,10 @@
   [auth]
 
   (when (not (hp/ok? auth))
+    (logging/info "Authentication failed")
     (throw! auth))
 
+  (logging/info "Authentication succeeded")
   auth)
 
 (defn auth-info

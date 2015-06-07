@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Swagger UI</title>
+    <title>Ovation API Documentation</title>
     <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32"/>
     <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16"/>
     <link href='css/typography.css' media='screen' rel='stylesheet' type='text/css'/>
@@ -52,9 +52,9 @@
             function addApiKeyAuthorization() {
                 var key = encodeURIComponent($('#input_apiKey')[0].value);
                 if (key && key.trim() != "") {
-                    var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("Authorization", "Token=" + key, "header");
+                    var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("Authorization", "Token token=" + key, "header");
                     window.swaggerUi.api.clientAuthorizations.add("token_auth", apiKeyAuth);
-                    log("added Token Authorization key " + key);
+                    log("added token authorization key " + key);
                 }
             }
 
@@ -86,7 +86,7 @@
             <form id='api_selector'>
                 <div class='input'><input placeholder="http://example.com/api" id="input_baseUrl" name="baseUrl"
                                           type="text"/></div>
-                <div class='input'><input placeholder="api_key" id="input_apiKey" name="apiKey" type="text"/></div>
+                <div class='input'><input placeholder="API token" id="input_apiKey" name="apiKey" type="text"/></div>
                 <div class='input'><a id="explore" href="#">Explore</a></div>
             </form>
         </div>

@@ -82,10 +82,10 @@
               :return {:entity Entity}
               :summary "Returns entity with :id"
               (let [auth (:auth/auth-info request)
-                    entity (first (core/get-entities auth [id]))]
-                (if (nil? entity)
-                  (not-found {})
-                  (ok {:entity entity}))))
+                    entities (core/get-entities auth [id])]
+                (if-let [entity (first entities)]
+                  (ok {:entity entity})
+                  (not-found {}))))
 
             (POST* "/" request
               :name :create-entity
