@@ -150,7 +150,7 @@
         (:trash_info (core/trash-entity ..user.. doc)) => info
         (provided
           (t/now) => ..dt..
-          (tf/unparse (tf/formatters :date) ..dt..) => ..date..))))
+          (tf/unparse (tf/formatters :date-hour-minute-second-ms) ..dt..) => ..date..))))
 
   (facts "`parent-collaboration-roots`"
     (fact "it allows nil parent"

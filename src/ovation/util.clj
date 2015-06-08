@@ -55,5 +55,5 @@
 (defn iso-now
   "Gets the ISO date time string for (t/now)"
   []
-  (tf/unparse (tf/formatters :date) (t/now)))
+  (tf/unparse (tf/formatters :date-hour-minute-second-ms) (t/now)))
 
