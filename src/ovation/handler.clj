@@ -14,7 +14,7 @@
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
             [ovation.auth :as auth]
-            [ring.middleware.conditional :refer  [if-url-starts-with]]
+            [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]))
 
 (ovation.logging/setup!)
@@ -52,6 +52,7 @@
                   :access-control-allow-methods [:get :put :post :delete :options]
                   :access-control-allow-headers ["Content-Type" "Accept"])
 
+                ;; Require authorization (via header token auth) for all paths starting with /api
                 (wrap-token-auth
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
@@ -98,8 +99,7 @@
                   (created {:entities (core/create-entity auth entities :parent id)})
 
                   (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {}))
-                  )))
+                    (unauthorized {})))))
 
             (PUT* "/" request
               :name :update-entity
@@ -114,8 +114,8 @@
                           entities (core/update-entity auth [update])]
                       (ok {:entities entities}))
 
-                      (catch [:type :ovation.auth/unauthorized] err
-                        (unauthorized {}))))))
+                    (catch [:type :ovation.auth/unauthorized] err
+                      (unauthorized {}))))))
 
             (DELETE* "/" request
               :name :delete-entity

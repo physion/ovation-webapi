@@ -81,16 +81,17 @@
                               (s/optional-key :_collaboration_roots) [s/Str]}
                       (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))
 
-(s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) {s/Keyword s/Str}))
-
-
 
 (s/defschema EntityUpdate BaseEntity)
 
 ;; -- TRASH INFO -- ;;
+
 (s/defschema TrashInfoMap {(keyword TrashInfo/TRASHING_USER) s/Str ;; URI
                            (keyword TrashInfo/TRASHING_DATE) s/Str ;; ISO DateTime
                            (keyword TrashInfo/TRASH_ROOT)    s/Str ;; URI
                            })
+
+(s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
+
 
 
