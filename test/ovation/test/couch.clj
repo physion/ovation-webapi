@@ -36,7 +36,8 @@
   (fact "it POSTs bulk-update"
     (couch/bulk-docs "dburl" ...docs...) => ...result...
     (provided
-      (cl/bulk-update ...docs...) => ...result...)))
+      (cl/bulk-update ...docs...) => ...revs...
+      (couch/merge-updates ...docs... ...revs...) => ...result...)))
 
 (facts "About `delete-docs`"
   (fact "it POSTs bulk-update"
@@ -47,4 +48,10 @@
       (couch/delete-docs "dburl" [doc1 doc2]) => ..result..
       (provided
         (couch/bulk-docs anything [(assoc doc1 :_deleted true) (assoc doc2 :_deleted true)]) => ..result..))))
+
+(facts "About merge-updates"
+  (fact "updates _rev"
+    (let [docs [{:_id ..id1.. :_rev ..rev1..} {:_id ..id2.. :_rev ..rev2..}]
+          updates [{:_id ..id1.. :_rev ..rev3..}]]
+      (couch/merge-updates docs updates) => [{:_id ..id1.. :_rev ..rev3..} {:_id ..id2.. :_rev ..rev2..}])))
 

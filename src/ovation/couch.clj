@@ -1,7 +1,8 @@
 (ns ovation.couch
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
-            [clojure.core.async :refer [>!!]]))
+            [clojure.core.async :refer [>!!]]
+            [clojure.tools.logging :as logging]))
 
 (def design-doc "dao")                                      ;; Design doc defined by Java API
 
@@ -25,11 +26,18 @@
   (cl/with-db db
     (map :doc (cl/all-documents {:reduce false :include_docs true} {:keys ids}))))
 
+(defn merge-updates
+  [docs updates]
+  (let [update-map (into {} (map (fn [doc] [(:_id doc) (:_rev doc)]) updates))]
+    (map #(if-let [rev (update-map (:_id %))]
+           (assoc % :_rev rev)
+           %) docs)))
+
 (defn bulk-docs
   "Creates or updates documents"
   [db docs]
   (cl/with-db db
-    (cl/bulk-update docs)))
+    (merge-updates docs (cl/bulk-update docs))))
 
 (defn changes
   "Writes changes to channel c.

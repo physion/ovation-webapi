@@ -4,7 +4,8 @@
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
-            [ovation.util :as util])
+            [ovation.util :as util]
+            [clojure.tools.logging :as logging])
   (:import (us.physion.ovation.data EntityDao$Views)
            (us.physion.ovation.domain TrashInfo)))
 
@@ -81,6 +82,7 @@
         docs (get-entities auth ids)
         updated-docs (map (update-attributes entities) docs)
         auth-checked-docs (vec (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))]
+    (logging/info "Updating entities" auth-checked-docs)
     (couch/bulk-docs db auth-checked-docs)))
 
 (defn trash-entity
