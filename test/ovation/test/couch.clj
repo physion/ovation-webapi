@@ -21,15 +21,15 @@
 
 (facts "About `get-view`"
   (fact "it returns CouchDB view result"
-    (couch/get-view "db" ...view... ...opts...) => ...result...
+    (couch/get-view "db" ...view... ...opts...) => [...result...]
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => ...result...)))
+      (cl/get-view couch/design-doc ...view... ...opts...) => [{:doc ...result...}])))
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"
-    (couch/all-docs "dburl" ...ids...) => ...docs...
+    (couch/all-docs "dburl" ...ids...) => [...doc...]
     (provided
-      (cl/all-documents {:reduce false :include_docs true} {:keys ...ids...}) => ...docs...)))
+      (cl/all-documents {:reduce false :include_docs true} {:keys ...ids...}) => [{:doc ...doc...}])))
 
 
 (facts "About `bulk-docs`"

@@ -47,7 +47,7 @@
                                     (let [rel (first x)
                                           m (second x)]
                                       [rel (make-rel-links (:_id dto) m (partial named-link-rel-path rel))]))) (:named_links dto))
-        ]
+        ](str (:_id update))
     (-> dto
       (assoc-in [:links] links)
       (assoc-in [:named_links] named-links))))

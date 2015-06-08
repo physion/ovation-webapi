@@ -65,10 +65,10 @@
 
 (defn- update-attributes
   [updates]
-  (let [updated-attributes (into {} (map (fn [update] [(:_id update) {:attributes (:attributes update)
-                                                                      :rev        (:_rev update)}]) updates))]
+  (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes (:attributes update)
+                                                                            :rev        (:_rev update)}]) updates))]
     (fn [doc]
-      (let [update (updated-attributes (:_id doc))]
+      (let [update (updated-attributes (str (:_id doc)))]
         (assoc doc :attributes (:attributes update)
                    :_rev (:rev update))))))
 
@@ -79,9 +79,9 @@
   (let [db (couch/db auth)
         ids (map (fn [e] (:_id e)) entities)
         docs (get-entities auth ids)
-        updated-docs (map (update-attributes entities) docs)]
-    (doall (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))
-    (couch/bulk-docs db updated-docs)))
+        updated-docs (map (update-attributes entities) docs)
+        auth-checked-docs (vec (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))]
+    (couch/bulk-docs db auth-checked-docs)))
 
 (defn trash-entity
   [user-id doc]
@@ -97,6 +97,6 @@
   (let [db (couch/db auth)
         docs (get-entities auth ids)
         user-id (auth/authorized-user-id auth)
-        trashed (map #(trash-entity user-id %) docs)]
-    (doall (map (auth/check! user-id :auth/delete) trashed))
-    (couch/bulk-docs db trashed)))
+        trashed (map #(trash-entity user-id %) docs)
+        auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
+    (couch/bulk-docs db auth-checked-docs)))

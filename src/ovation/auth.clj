@@ -52,7 +52,9 @@
 
 (defn check!
   ([auth-user-id op]
-   (fn [doc] (when-not (can? auth-user-id op doc)
-               (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))))
+   (fn [doc]
+     (when-not (can? auth-user-id op doc)
+               (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
+     doc))
   ([auth-user-id op doc]
    ((check! auth-user-id op) doc)))
