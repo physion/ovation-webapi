@@ -59,10 +59,9 @@
 
 (defn couch-to-doc
   [doc]
-  (prn doc)
   (if (:error doc)
     (not-found! doc)
-    (let [collaboration-roots (get-in doc :links :_collaboration_roots)]
+    (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
       (-> doc
         (remove-private-links)
         (links-to-rel-path)

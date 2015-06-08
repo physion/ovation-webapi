@@ -17,13 +17,13 @@
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [db view opts]
   (cl/with-db db
-    (cl/get-view design-doc view opts)))
+    (map :doc (cl/get-view design-doc view opts))))
 
 (defn all-docs
   "Gets all documents with given document IDs"
   [db ids]
   (cl/with-db db
-    (cl/all-documents {:reduce false :include_docs true} {:keys ids})))
+    (map :doc (cl/all-documents {:reduce false :include_docs true} {:keys ids}))))
 
 (defn bulk-docs
   "Creates or updates documents"

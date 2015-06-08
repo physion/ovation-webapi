@@ -34,7 +34,6 @@
   [auth ids & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)
         docs (couch/all-docs db ids)]
-    (prn docs)
     (-> docs
       (tr/from-couch)
       (filter-trashed include-trashed))))

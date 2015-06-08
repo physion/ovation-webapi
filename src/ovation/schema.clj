@@ -77,7 +77,8 @@
 
 
 (s/defschema Entity (assoc BaseEntity
-                      :links {s/Keyword s/Str}
+                      :links {s/Keyword                              s/Str
+                              (s/optional-key :_collaboration_roots) [s/Str]}
                       (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) {s/Keyword s/Str}))
