@@ -33,6 +33,8 @@
                                                     javax.jms/jms
                                                     com.sun.jmdk/jmxtools
                                                     com.sun.jmx/jmxri]]
+                 [ring.middleware.logger "0.5.0"]
+                 [ring.middleware.conditional "0.1.0"]
 
                  ;; Other
                  [clj-time "0.9.0"]

@@ -1,6 +1,6 @@
 (ns ovation.transform.read
   (:require [ovation.version :refer [version version-path]]
-            [ovation.version :as ver]
+            [ring.util.http-response :refer [not-found!]]
             [ovation.util :as util]))
 
 
@@ -59,13 +59,16 @@
 
 (defn couch-to-doc
   [doc]
-  (let [collaboration-roots (get-in doc :links :_collaboration_roots)]
-    (-> doc
-      (remove-private-links)
-      (links-to-rel-path)
-      (add-annotation-links)                                ;; NB must come after links-to-rel-path
-      (add-self-link)
-      (assoc-in [:links :_collaboration_roots] collaboration-roots))))
+  (prn doc)
+  (if (:error doc)
+    (not-found! doc)
+    (let [collaboration-roots (get-in doc :links :_collaboration_roots)]
+      (-> doc
+        (remove-private-links)
+        (links-to-rel-path)
+        (add-annotation-links)                              ;; NB must come after links-to-rel-path
+        (add-self-link)
+        (assoc-in [:links :_collaboration_roots] collaboration-roots)))))
 
 
 (defn from-couch

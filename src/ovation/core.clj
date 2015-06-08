@@ -24,18 +24,20 @@
                   (couch/db auth)
                   EntityDao$Views/ENTITIES_BY_TYPE
                   {:key resource :reduce false :include_docs true}))
-      (tr/from-couch)
-      (filter-trashed include-trashed)))
+    (tr/from-couch)
+    (filter-trashed include-trashed)))
 
 
 
 (defn get-entities
   "Gets entities by ID"
   [auth ids & {:keys [include-trashed] :or {include-trashed false}}]
-  (let [db (couch/db auth)]
-    (-> (couch/all-docs db ids)
-        (tr/from-couch)
-        (filter-trashed include-trashed))))
+  (let [db (couch/db auth)
+        docs (couch/all-docs db ids)]
+    (prn docs)
+    (-> docs
+      (tr/from-couch)
+      (filter-trashed include-trashed))))
 
 
 
@@ -47,8 +49,8 @@
     []
     (if-let [doc (first (get-entities auth [parent]))]
       (-> doc
-          :links
-          :_collaboration_roots)
+        :links
+        :_collaboration_roots)
       [])))
 
 
@@ -57,15 +59,15 @@
   [auth entities & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
     (couch/bulk-docs db
-                     (tw/to-couch (auth/authorized-user-id auth)
-                                  entities
-                                  :collaboration_roots (parent-collaboration-roots auth parent)))
+      (tw/to-couch (auth/authorized-user-id auth)
+        entities
+        :collaboration_roots (parent-collaboration-roots auth parent)))
     ))
 
 (defn- update-attributes
   [updates]
   (let [updated-attributes (into {} (map (fn [update] [(:_id update) {:attributes (:attributes update)
-                                                                      :rev (:_rev update)}]) updates))]
+                                                                      :rev        (:_rev update)}]) updates))]
     (fn [doc]
       (let [update (updated-attributes (:_id doc))]
         (assoc doc :attributes (:attributes update)

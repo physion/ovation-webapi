@@ -13,7 +13,9 @@
             [slingshot.slingshot :refer [try+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ring.middleware.conditional :refer  [if-url-starts-with]]
+            [ring.middleware.logger :refer [wrap-with-logger]]))
 
 (ovation.logging/setup!)
 
@@ -81,10 +83,9 @@
               :name :get-entity
               :return {:entity Entity}
               :summary "Returns entity with :id"
-              (let [auth (:auth/auth-info request)
-                    entities (core/get-entities auth [id])]
-                (if-let [entity (first entities)]
-                  (ok {:entity entity})
+              (let [auth (:auth/auth-info request)]
+                (if-let [entities (core/get-entities auth [id])]
+                  (ok {:entity (first entities)})
                   (not-found {}))))
 
             (POST* "/" request
