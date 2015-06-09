@@ -10,7 +10,8 @@
             [ovation.util :as util]
             [ovation.version :as ver]
             [schema.core :as s]
-            [ovation.links :as links])
+            [ovation.links :as links]
+            [clojure.string :refer [lower-case capitalize]])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -216,7 +217,7 @@
               (:status (app (request id))) => 201)
             (fact "returns link documents"
               (body-json (request id)) => {:entities [entity target1 target2]
-                                           :links []})
+                                           :links    []})
             (fact "=> 401 if not can? update source"
               (:status (app (request id))) => 401
               (provided
@@ -244,15 +245,77 @@
                 (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
       )))
 
-(facts "About named resource types"
-  (let [apikey "..apikey.."
-        auth-response (promise)
-        auth-info {:user "..user.."}
-        _ (deliver auth-response {:status 200 :body (util/to-json auth-info)})]
+(defmacro entity-resource-tests
+  "Facts about a resource type"
+  [entity-type plural-type]
+  (let [type (capitalize entity-type)
+        type-path (lower-case plural-type)]
+    `(let [apikey# "--apikey--"
+           auth-info# {:user "..user.."}]
 
-    (against-background [(auth/get-auth anything apikey) => auth-response]
-      (facts "/projects"
-        (future-fact "GET / gets all projects")
-        (future-fact "GET / returns only projects")
-        (future-fact "GET /:id gets a single project")
-        (future-fact "POST /:id inserts entities with Project parent")))))
+       (against-background [(auth/authorize anything apikey#) => auth-info#]
+         (facts ~(util/join-path ["" type-path])
+           (let [id# (str (UUID/randomUUID))
+                 project# {:_id        id#
+                           :_rev       "123"
+                           :type       ~type
+                           :attributes {}
+                           :links      {}}]
+             (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ver/version ~type-path])) apikey#)]
+               (against-background [(core/of-type auth-info# ~type) => [project#]]
+                 (fact ~(str "GET / gets all" type-path)
+                   (body-json get-req#) => {~(keyword type-path) [project#]})))
+
+             (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ver/version ~type-path id#])) apikey#)]
+               (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                 (fact ~(str "GET /:id gets a single " (lower-case type))
+                   (body-json get-req#) => {~(keyword (lower-case type)) project#})
+                 (let [source# {:_id        id#
+                                :_rev       "123"
+                                :type       "OtherType"
+                                :attributes {}
+                                :links      {}}]
+                   (fact ~(str "GET /:id returns 404 if not a " (lower-case type))
+                     (:status (app get-req#)) => 404
+                     (provided
+                       (core/get-entities auth-info# [id#]) => [source#]))))))
+
+           (future-fact "POST / creates a new top-level project")
+           (future-fact "POST /:id inserts entities with Project parent"))))))
+
+
+(facts "About named resource types"
+  (entity-resource-tests "Project" "projects"))
+
+;(let [apikey "--apikey--"
+;      auth-info {:user "..user.."}]
+;
+;  (against-background [(auth/authorize anything apikey) => auth-info]
+;    (facts "/projects"
+;      (let [id (str (UUID/randomUUID))
+;            project {:_id        id
+;                     :_rev       "123"
+;                     :type       "Project"
+;                     :attributes {}
+;                     :links      {}}]
+;        (let [get-req (mock-req (mock/request :get (util/join-path ["" "api" ver/version "projects"])) apikey)]
+;          (against-background [(core/of-type auth-info "Project") => [project]]
+;            (fact "GET / gets all projects"
+;              (body-json get-req) => {:projects [project]})))
+;
+;        (let [get-req (mock-req (mock/request :get (util/join-path ["" "api" ver/version "projects" id])) apikey)]
+;          (against-background [(core/get-entities auth-info [id]) => [project]]
+;            (fact "GET /:id gets a single project"
+;              (body-json get-req) => {:project project})
+;            (let [source {:_id        id
+;                          :_rev       "123"
+;                          :type       "Source"
+;                          :attributes {}
+;                          :links      {}}]
+;              (fact "GET /:id returns 404 if not a project"
+;                (:status (app get-req)) => 404
+;                (provided
+;                  (core/get-entities auth-info [id]) => [source]))))))
+;
+;      (future-fact "POST / creates a new top-level project")
+;      (future-fact "POST /:id inserts entities with Project parent"))))

@@ -204,6 +204,18 @@
             :name :all-projects
             :return {:projects [Entity]}
             :summary "Gets all top-level projects"
-            (let [auth (:auth/auth-info request)]
-              (ok {:projects (core/of-type auth "Project")}))))))))
+            (let [auth (:auth/auth-info request)
+                  projects (core/of-type auth "Project")]
+              (ok {:projects projects})))
+
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :get-project
+              :return {:project Entity}
+              :summary "Returns Project with :id"
+              (let [auth (:auth/auth-info request)]
+                (if-let [entities (core/get-entities auth [id])]
+                  (if-let [projects (seq (filter #(= "Project" (:type %)) entities))]
+                    (ok {:project (first projects)})
+                    (not-found {})))))))))))
 
