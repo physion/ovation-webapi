@@ -18,7 +18,10 @@
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [db view opts]
   (cl/with-db db
-    (map :doc (cl/get-view design-doc view opts))))
+    (let [result (cl/get-view design-doc view opts)]
+      (if (:include_docs opts)
+        (map :doc result)
+        result))))
 
 (defn all-docs
   "Gets all documents with given document IDs"

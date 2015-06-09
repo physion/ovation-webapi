@@ -138,25 +138,27 @@
 
               (POST* "/" request
                 :name :create-links
-                :return {:entities [Entity]}
+                :return {:entities [Entity]
+                         :links    [LinkInfo]}
                 :body [links [NewEntityLink]]
                 :summary "Adds a link"
                 (try+
                   (let [auth (:auth/auth-info request)
                         user-id (auth/authorized-user-id auth)
                         sources (core/get-entities auth [id])
-                        updates (flatten (for [src sources  ;; TODO is is pretty inefficient — can we make add-link take collections?
+                        updates (flatten (for [src sources  ;; TODO this is pretty inefficient — can we make add-link take collections?
                                                link links]
                                            (links/add-link auth src user-id rel (:target_id link))))]
 
-                    (created {:entities (core/update-entity auth updates)}))
+                    (created {:entities (core/update-entity auth updates)
+                              :links    (filter :rel updates)}))
                   (catch [:type :ovation.auth/unauthorized] err
                     (unauthorized {:error (:message err)}))))
 
               (context "/:target" [target]
                 (DELETE* "/" request
                   :name :delete-links
-                  :return {:links [LinkDoc]}
+                  :return {:links [LinkInfo]}
                   :summary "Remove links"
                   (try+
                     (let [auth (:auth/auth-info request)
@@ -181,61 +183,27 @@
             ;  (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
             ;  (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
             ;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
-            )
+            ))
 
-          ;
-          ;(context* "/links" []
-          ;  (POST* "/" []
-          ;    :return [Success]
-          ;    :body [link Link]
-          ;    :query-params [api-key :- s/Str]
-          ;    :summary "Creates a new link to from this entity"
-          ;    (created (links/create-link api-key id link)))
-          ;
-          ;  (context* "/:rel" [rel]
-          ;    (GET* "/" []
-          ;      :return [Entity]
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Returns all entities associated with entity by the given relation"
-          ;      (ok (links/get-link api-key id rel)))
-          ;
-          ;    (POST* "/" []
-          ;      :return Success
-          ;      :body [link NewEntityLink]
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Creates a new link"
-          ;      (created (links/create-link api-key id (assoc link :rel rel))))
-          ;
-          ;    (DELETE* "/:target" [target]
-          ;      :return Success
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Deletes a link to the given target (uuid)"
-          ;      (ok (links/delete-link api-key id rel target)))))
-          ;
-          ;(context* "/named_links" []
-          ;  (POST* "/" request
-          ;    :return [Entity]
-          ;    :body [link NamedLink]
-          ;    :query-params [api-key :- s/Str]
-          ;    :summary "Creates a new named link to id :target with no inverse rel"
-          ;    (created (links/create-named-link api-key id link)))
-          ;
-          ;  (context* "/:rel/:named" [rel named]
-          ;    (GET* "/" request
-          ;      :return [Entity]
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Returns all entities associated with entity by the given relation and name"
-          ;      (ok (links/get-named-link api-key id rel named)))
-          ;    (POST* "/" request
-          ;      :return Success
-          ;      :body [link NewEntityLink]
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Creates a new named link"
-          ;      (created (links/create-named-link api-key id (assoc link :name named :rel rel))))
-          ;    (DELETE* "/:target" [target]
-          ;      :return Success
-          ;      :query-params [api-key :- s/Str]
-          ;      :summary "Deletes a named link to the given target (uuid)"
-          ;      (ok (links/delete-named-link api-key id rel named target)))))
-          )))))
+        (context* "/projects" []
+          :tags ["projects"]
+          (POST*  "/" request
+            :name :create-project
+            :return {:projects [Entity]}
+            :body [entities [NewEntity]]
+            :summary "Creates a new top-level project"
+            (let [auth (:auth/auth-info request)]
+              (try+
+                ;;TODO check for :type == type(s)
+                (created {:entities (core/create-entity auth entities)})
+
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {})))))
+
+          (GET* "/" request
+            :name :all-projects
+            :return {:projects [Entity]}
+            :summary "Gets all top-level projects"
+            (let [auth (:auth/auth-info request)]
+              (ok {:projects (core/of-type auth "Project")}))))))))
 

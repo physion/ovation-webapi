@@ -228,7 +228,8 @@
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)
             (fact "returns link documents"
-              (body-json (request id)) => {:entities [entity target1 target2]})
+              (body-json (request id)) => {:entities [entity target1 target2]
+                                           :links []})
             (fact "=> 401 if not can? update source"
               (:status (app (request id))) => 401
               (provided

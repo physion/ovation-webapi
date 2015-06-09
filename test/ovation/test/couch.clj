@@ -20,10 +20,21 @@
 
 
 (facts "About `get-view`"
-  (fact "it returns CouchDB view result"
+  (fact "it returns CouchDB view result docs when include_docs=true"
     (couch/get-view "db" ...view... ...opts...) => [...result...]
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => [{:doc ...result...}])))
+      (cl/get-view couch/design-doc ...view... ...opts...) => [{:doc ...result...}]
+      ...opts... =contains=> {:include_docs true}))
+  (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
+    (couch/get-view "db" ...view... ...opts...) => [...result...]
+    (provided
+      (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
+      ...opts... =contains=> {}))
+  (fact "it returns CouchDB view result directly when include_docs=false"
+    (couch/get-view "db" ...view... ...opts...) => [...result...]
+    (provided
+      (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
+      ...opts... =contains=> {:include_docs false})))
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"

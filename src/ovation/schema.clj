@@ -55,15 +55,15 @@
                             (s/optional-key :inverse_rel) s/Str})
 
 ;; From us.physion.ovation.values.Relation#toMap
-(s/defschema LinkDoc {:_id                          s/Str
-                      (s/optional-key :_rev)        s/Str
-                      :user_id                      s/Uuid
-                      :source_id                    s/Uuid
-                      :target_id                    s/Uuid
-                      :rel                          s/Str
-                      (s/optional-key :name)        s/Str
-                      (s/optional-key :inverse_rel) s/Str
-                      })
+(s/defschema LinkInfo {:_id                          s/Str
+                       (s/optional-key :_rev)        s/Str
+                       :user_id                      s/Uuid
+                       :source_id                    s/Uuid
+                       :target_id                    s/Uuid
+                       :rel                          s/Str
+                       (s/optional-key :name)        s/Str
+                       (s/optional-key :inverse_rel) s/Str
+                       })
 
 
 ;; -- ENTITIES -- ;;
