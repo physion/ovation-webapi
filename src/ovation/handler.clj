@@ -3,7 +3,7 @@
            (clojure.lang ExceptionInfo))
   (:require [compojure.api.sweet :refer :all]
             [clojure.string :refer [join]]
-            [ring.util.http-response :refer [created ok accepted no-content not-found throw! unauthorized]]
+            [ring.util.http-response :refer [created ok accepted no-content not-found throw! unauthorized bad-request]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
@@ -193,12 +193,14 @@
             :body [entities [NewEntity]]
             :summary "Creates a new top-level project"
             (let [auth (:auth/auth-info request)]
-              (try+
-                ;;TODO check for :type == type(s)
-                (created {:entities (core/create-entity auth entities)})
+              (if (every? #(= "Project" (:type %)) entities)
+                (try+
+                  (created {:projects (core/create-entity auth entities)})
 
-                (catch [:type :ovation.auth/unauthorized] err
-                  (unauthorized {})))))
+                  (catch [:type :ovation.auth/unauthorized] err
+                    (unauthorized {:error err})))
+
+                (bad-request "Entities must be of \"type\" Project"))))
 
           (GET* "/" request
             :name :all-projects
@@ -217,5 +219,17 @@
                 (if-let [entities (core/get-entities auth [id])]
                   (if-let [projects (seq (filter #(= "Project" (:type %)) entities))]
                     (ok {:project (first projects)})
-                    (not-found {})))))))))))
+                    (not-found {})))))
+
+            (POST* "/" request
+              :name :create-project-entity
+              :return {:entities [Entity]}
+              :body [entities [NewEntity]]
+              :summary "Creates and returns a new entity with the identified Project as collaboration root"
+              (let [auth (:auth/auth-info request)]
+                (try+
+                  (created {:entities (core/create-entity auth entities :parent id)})
+
+                  (catch [:type :ovation.auth/unauthorized] err
+                    (unauthorized {})))))))))))
 

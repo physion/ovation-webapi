@@ -147,7 +147,7 @@
               (let [post (request)]
                 (body-json post) => {:entities [entity]})))
 
-          (fact "returns 201 if not can? :create"
+          (fact "returns 401 if not can? :create"
             (:status (app (request))) => 401
             (provided
               (core/create-entity auth-info new-entities :parent parent-id) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
@@ -246,47 +246,102 @@
       )))
 
 (defmacro entity-resource-tests
-  "Facts about a resource type"
-  [entity-type plural-type]
-  (let [type (capitalize entity-type)
-        type-path (lower-case plural-type)]
+  "Facts about a resource type (e.g. \"Project\")"
+  [entity-type]
+  (let [type-name (capitalize entity-type)
+        type-path (lower-case (str type-name "s"))]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
        (against-background [(auth/authorize anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
-           (let [id# (str (UUID/randomUUID))
-                 project# {:_id        id#
-                           :_rev       "123"
-                           :type       ~type
-                           :attributes {}
-                           :links      {}}]
-             (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ver/version ~type-path])) apikey#)]
-               (against-background [(core/of-type auth-info# ~type) => [project#]]
-                 (fact ~(str "GET / gets all" type-path)
-                   (body-json get-req#) => {~(keyword type-path) [project#]})))
+           (facts "read"
+             (let [id# (str (UUID/randomUUID))
+                   project# {:_id        id#
+                             :_rev       "123"
+                             :type       ~type-name
+                             :attributes {}
+                             :links      {}}]
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
+                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                   (fact ~(str "GET / gets all" type-path)
+                     (body-json get-req#) => {~(keyword type-path) [project#]})))
 
-             (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ver/version ~type-path id#])) apikey#)]
-               (against-background [(core/get-entities auth-info# [id#]) => [project#]]
-                 (fact ~(str "GET /:id gets a single " (lower-case type))
-                   (body-json get-req#) => {~(keyword (lower-case type)) project#})
-                 (let [source# {:_id        id#
-                                :_rev       "123"
-                                :type       "OtherType"
-                                :attributes {}
-                                :links      {}}]
-                   (fact ~(str "GET /:id returns 404 if not a " (lower-case type))
-                     (:status (app get-req#)) => 404
-                     (provided
-                       (core/get-entities auth-info# [id#]) => [source#]))))))
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
+                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                   (fact ~(str "GET /:id gets a single " (lower-case type-name))
+                     (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
+                   (let [source# {:_id        id#
+                                  :_rev       "123"
+                                  :type       "OtherType"
+                                  :attributes {}
+                                  :links      {}}]
+                     (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
+                       (:status (app get-req#)) => 404
+                       (provided
+                         (core/get-entities auth-info# [id#]) => [source#])))))))
+           (facts "create"
+             (let [parent-id# ~(str (UUID/randomUUID))
+                   new-entity# {:type "MyEntity" :attributes {:foo "bar"}}
+                   new-entities# [new-entity#]
+                   entity# [(assoc new-entity# :_id ~(str (UUID/randomUUID))
+                                               :_rev "1")]
+                   request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path parent-id#]))
+                                               (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-           (future-fact "POST / creates a new top-level project")
-           (future-fact "POST /:id inserts entities with Project parent"))))))
+               (against-background [(core/create-entity auth-info# new-entities# :parent parent-id#) => [entity#]]
+                 (fact "POST /:id returns status 201"
+                   (let [post# (request#)]
+                     (:status (app post#)) => 201))
+                 (fact ~(str "POST /:id inserts entity with " type-name " parent")
+                   (let [post# (request#)]
+                     (body-json post#) => {:entities [entity#]})))
+
+               (fact "POST /:id returns 401 if not can? :create"
+                 (:status (app (request#))) => 401
+                 (provided
+                   (core/create-entity auth-info# new-entities# :parent parent-id#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+               )
+
+             ;; For top-level entities
+             (when (#{"Project" "Source" "Protocol"} ~(capitalize type-name))
+               (let [new-entity# {:type ~type-name :attributes {:foo "bar"}}
+                     new-entities# [new-entity#]
+                     entity# [(assoc new-entity# :_id ~(str (UUID/randomUUID))
+                                                 :_rev "1")]
+                     request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
+                                                 (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
+
+                 (against-background [(core/create-entity auth-info# new-entities#) => [entity#]]
+                   (fact "POST / returns status 201"
+                     (let [post# (request#)]
+                       (:status (app post#)) => 201))
+                   (fact ~(str "POST / inserts new top-level " type-name)
+                     (let [post# (request#)]
+                       (body-json post#) => {~(keyword type-path) [entity#]}))
+                   )
+
+                 (let [bad-entities# [{:type "Other" :attributes {:foo "bar"}}]
+                       bad-request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
+                                                       (mock/body (json/write-str (walk/stringify-keys bad-entities#)))) apikey#))]
+                   (fact "POST / returns 400 if type does not match"
+                     (:status (app (bad-request#))) => 400))
+
+                 (fact "POST / returns 401 if not can? :create"
+                   (:status (app (request#))) => 401
+                   (provided
+                     (core/create-entity auth-info# new-entities#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                 )))
+
+           (facts "update")
+           (facts "delete"))))))
 
 
 (facts "About named resource types"
-  (entity-resource-tests "Project" "projects"))
+  (entity-resource-tests "Project"))
 
+
+; OLD hard-coded facts *About /Projects*
 ;(let [apikey "--apikey--"
 ;      auth-info {:user "..user.."}]
 ;
