@@ -20,13 +20,12 @@
 (defn of-type
   "Gets all entities of the given type"
   [auth resource & {:keys [include-trashed] :or {include-trashed false}}]
-
-  (-> (map :doc (couch/get-view
-                  (couch/db auth)
-                  EntityDao$Views/ENTITIES_BY_TYPE
-                  {:key resource :reduce false :include_docs true}))
-    (tr/from-couch)
-    (filter-trashed include-trashed)))
+  (let [db (couch/db auth)]
+    (-> (couch/get-view db EntityDao$Views/ENTITIES_BY_TYPE {:key resource
+                                                             :reduce false
+                                                             :include_docs true})
+      (tr/from-couch)
+      (filter-trashed include-trashed))))
 
 
 

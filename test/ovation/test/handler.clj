@@ -27,6 +27,13 @@
     (mock/header "Authorization" (str "Token token=" apikey))
     (mock/content-type "application/json")))
 
+(defn body-json
+  [request]
+  (let [response (app request)
+        reader (clojure.java.io/reader (:body response))
+        result (json/read reader)]
+    (walk/keywordize-keys result)))
+
 (facts "About authorization"
   (fact "invalid API key returns 401"
     (let [apikey "12345"
@@ -55,9 +62,9 @@
           (:status response) => 200))))
   )
 
-;(facts "About Swagger API"
-;  (fact "is valid"
-;    (compojure.api.swagger/validate app) => nil))
+(facts "About Swagger API"
+  (fact "is valid"
+    (compojure.api.swagger/validate app) =not=> nil))
 
 (facts "About invalid routes"
   (let [apikey "..apikey.."
@@ -68,26 +75,6 @@
         (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
           response => nil?)))))
 
-(facts "About named resource types"
-  (let [apikey "..apikey.."
-        auth-response (promise)
-        auth-info {:user "..user.."}
-        _ (deliver auth-response {:status 200 :body (util/to-json auth-info)})]
-
-    (against-background [(auth/get-auth anything apikey) => auth-response]
-      (facts "/projects"
-        (future-fact "GET / gets all projects")
-        (future-fact "GET / returns only projects")
-        (future-fact "GET /:id gets a single project")
-        (future-fact "POST /:id inserts entities with Project parent")))))
-
-
-(defn body-json
-  [request]
-  (let [response (app request)
-        reader (clojure.java.io/reader (:body response))
-        result (json/read reader)]
-    (walk/keywordize-keys result)))
 
 
 (facts "About /entities"
@@ -256,3 +243,16 @@
               (provided
                 (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
       )))
+
+(facts "About named resource types"
+  (let [apikey "..apikey.."
+        auth-response (promise)
+        auth-info {:user "..user.."}
+        _ (deliver auth-response {:status 200 :body (util/to-json auth-info)})]
+
+    (against-background [(auth/get-auth anything apikey) => auth-response]
+      (facts "/projects"
+        (future-fact "GET / gets all projects")
+        (future-fact "GET / returns only projects")
+        (future-fact "GET /:id gets a single project")
+        (future-fact "POST /:id inserts entities with Project parent")))))
