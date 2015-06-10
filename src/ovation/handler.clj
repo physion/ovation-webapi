@@ -15,7 +15,8 @@
             [ovation.links :as links]
             [ovation.auth :as auth]
             [ring.middleware.conditional :refer [if-url-starts-with]]
-            [ring.middleware.logger :refer [wrap-with-logger]]))
+            [ring.middleware.logger :refer [wrap-with-logger]]
+            [clojure.string :refer [lower-case capitalize]]))
 
 (ovation.logging/setup!)
 
@@ -41,6 +42,87 @@
          :summary ~(str "Removes a " annotation-type " annotation from entity :id")
          (ok (entity/delete-annotation api-key# ~id ~annotation-key annotation-id#))))))
 
+
+(defmacro resource
+  "Route context for a resource endpoint (e.g. \"Project\")"
+  [entity-type]
+  (let [type-name (capitalize entity-type)
+        type-path (lower-case (str type-name "s"))
+        type-kw (keyword type-path)
+        single-type-kw (keyword (lower-case type-name))]
+    `(context* ~(str "/" type-path) []
+       :tags [~type-path]
+       (POST* "/" request#
+         :name ~(keyword (str "create-" (lower-case type-name)))
+         :return {~type-kw [Entity]}
+         :body [entities# [NewEntity]]
+         :summary ~(str "Creates a new top-level " type-name)
+         (let [auth# (:auth/auth-info request#)]
+           (if (every? #(= "Project" (:type %)) entities#)
+             (try+
+               (created {~type-kw (core/create-entity auth# entities#)})
+
+               (catch [:type :ovation.auth/unauthorized] err#
+                 (unauthorized {})))
+
+             (bad-request (str "Entities must be of \"type\" " ~type-name)))))
+
+       (GET* "/" request#
+         :name ~(keyword (str "all-" (lower-case type-name)))
+         :return {~type-kw [Entity]}
+         :summary (str "Gets all top-level " ~type-path)
+         (let [auth# (:auth/auth-info request#)
+               entities# (core/of-type auth# ~type-name)]
+           (ok {~type-kw entities#})))
+
+       (context* "/:id" [id#]
+         (GET* "/" request#
+           :name ~(keyword "get-" (lower-case type-name))
+           :return {~single-type-kw Entity}
+           :summary ~(str "Returns " type-name " with :id")
+           (let [auth# (:auth/auth-info request#)]
+             (if-let [entities# (core/get-entities auth# [id#])]
+               (if-let [projects# (seq (filter #(= ~type-name (:type %)) entities#))]
+                 (ok {~single-type-kw (first projects#)})
+                 (not-found {})))))
+
+         (POST* "/" request#
+           :name ~(keyword (str "create-" (lower-case type-name) "-entity"))
+           :return {:entities [Entity]}
+           :body [entities# [NewEntity]]
+           :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
+           (let [auth# (:auth/auth-info request#)]
+             (try+
+               (created {:entities (core/create-entity auth# entities# :parent id#)})
+
+               (catch [:type :ovation.auth/unauthorized] err#
+                 (unauthorized {})))))
+
+         (PUT* "/" request#
+           :name ~(keyword (str "update-" (lower-case type-name)))
+           :return {~type-kw [Entity]}
+           :body [update# EntityUpdate]
+           :summary ~(str "Updates and returns " type-name " with :id")
+           (let [entity-id# (str (:_id update#))]
+             (if-not (= id# (str entity-id#))
+               (not-found {:error (str ~type-name " " entity-id# " ID mismatch")})
+               (try+
+                 (let [auth# (:auth/auth-info request#)
+                       entities# (core/update-entity auth# [update#])]
+                   (ok {~type-kw entities#}))
+
+                 (catch [:type :ovation.auth/unauthorized] err#
+                   (unauthorized {}))))))
+
+         (DELETE* "/" request#
+           :name ~(keyword (str "delete-" (lower-case type-name)))
+           :return {:entities [TrashedEntity]}
+           :summary ~(str "Deletes (trashes) " type-name " with :id")
+           (try+
+             (let [auth# (:auth/auth-info request#)]
+               (accepted {:entities (core/delete-entity auth# [id#])}))
+             (catch [:type :ovation.auth/unauthorized] err#
+               (unauthorized {}))))))))
 
 
 ;;; --- Routes --- ;;;
@@ -185,77 +267,79 @@
             ;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
             ))
 
-        (context* "/projects" []
-          :tags ["projects"]
-          (POST*  "/" request
-            :name :create-project
-            :return {:projects [Entity]}
-            :body [entities [NewEntity]]
-            :summary "Creates a new top-level project"
-            (let [auth (:auth/auth-info request)]
-              (if (every? #(= "Project" (:type %)) entities)
-                (try+
-                  (created {:projects (core/create-entity auth entities)})
-
-                  (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {})))
-
-                (bad-request "Entities must be of \"type\" Project"))))
-
-          (GET* "/" request
-            :name :all-projects
-            :return {:projects [Entity]}
-            :summary "Gets all top-level projects"
-            (let [auth (:auth/auth-info request)
-                  projects (core/of-type auth "Project")]
-              (ok {:projects projects})))
-
-          (context* "/:id" [id]
-            (GET* "/" request
-              :name :get-project
-              :return {:project Entity}
-              :summary "Returns Project with :id"
-              (let [auth (:auth/auth-info request)]
-                (if-let [entities (core/get-entities auth [id])]
-                  (if-let [projects (seq (filter #(= "Project" (:type %)) entities))]
-                    (ok {:project (first projects)})
-                    (not-found {})))))
-
-            (POST* "/" request
-              :name :create-project-entity
-              :return {:entities [Entity]}
-              :body [entities [NewEntity]]
-              :summary "Creates and returns a new entity with the identified Project as collaboration root"
-              (let [auth (:auth/auth-info request)]
-                (try+
-                  (created {:entities (core/create-entity auth entities :parent id)})
-
-                  (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {})))))
-
-            (PUT* "/" request
-              :name :update-project
-              :return {:projects [Entity]}
-              :body [update EntityUpdate]
-              :summary "Updates and returns Project with :id"
-              (let [entity-id (str (:_id update))]
-                (if-not (= id (str entity-id))
-                  (not-found {:error (str "Project " entity-id " ID mismatch")})
-                  (try+
-                    (let [auth (:auth/auth-info request)
-                          entities (core/update-entity auth [update])]
-                      (ok {:projects entities}))
-
-                    (catch [:type :ovation.auth/unauthorized] err
-                      (unauthorized {}))))))
-
-            (DELETE* "/" request
-              :name :delete-project
-              :return {:entities [TrashedEntity]}
-              :summary "Deletes (trashes) Project with :id"
-              (try+
-                (let [auth (:auth/auth-info request)]
-                  (accepted {:entities (core/delete-entity auth [id])}))
-                (catch [:type :ovation.auth/unauthorized] err
-                  (unauthorized {}))))))))))
+        (resource "Project")
+        ;(context* "/projects" []
+        ;  :tags ["projects"]
+        ;  (POST*  "/" request
+        ;    :name :create-project
+        ;    :return {:projects [Entity]}
+        ;    :body [entities [NewEntity]]
+        ;    :summary "Creates a new top-level project"
+        ;    (let [auth (:auth/auth-info request)]
+        ;      (if (every? #(= "Project" (:type %)) entities)
+        ;        (try+
+        ;          (created {:projects (core/create-entity auth entities)})
+        ;
+        ;          (catch [:type :ovation.auth/unauthorized] err
+        ;            (unauthorized {})))
+        ;
+        ;        (bad-request "Entities must be of \"type\" Project"))))
+        ;
+        ;  (GET* "/" request
+        ;    :name :all-projects
+        ;    :return {:projects [Entity]}
+        ;    :summary "Gets all top-level projects"
+        ;    (let [auth (:auth/auth-info request)
+        ;          projects (core/of-type auth "Project")]
+        ;      (ok {:projects projects})))
+        ;
+        ;  (context* "/:id" [id]
+        ;    (GET* "/" request
+        ;      :name :get-project
+        ;      :return {:project Entity}
+        ;      :summary "Returns Project with :id"
+        ;      (let [auth (:auth/auth-info request)]
+        ;        (if-let [entities (core/get-entities auth [id])]
+        ;          (if-let [projects (seq (filter #(= "Project" (:type %)) entities))]
+        ;            (ok {:project (first projects)})
+        ;            (not-found {})))))
+        ;
+        ;    (POST* "/" request
+        ;      :name :create-project-entity
+        ;      :return {:entities [Entity]}
+        ;      :body [entities [NewEntity]]
+        ;      :summary "Creates and returns a new entity with the identified Project as collaboration root"
+        ;      (let [auth (:auth/auth-info request)]
+        ;        (try+
+        ;          (created {:entities (core/create-entity auth entities :parent id)})
+        ;
+        ;          (catch [:type :ovation.auth/unauthorized] err
+        ;            (unauthorized {})))))
+        ;
+        ;    (PUT* "/" request
+        ;      :name :update-project
+        ;      :return {:projects [Entity]}
+        ;      :body [update EntityUpdate]
+        ;      :summary "Updates and returns Project with :id"
+        ;      (let [entity-id (str (:_id update))]
+        ;        (if-not (= id (str entity-id))
+        ;          (not-found {:error (str "Project " entity-id " ID mismatch")})
+        ;          (try+
+        ;            (let [auth (:auth/auth-info request)
+        ;                  entities (core/update-entity auth [update])]
+        ;              (ok {:projects entities}))
+        ;
+        ;            (catch [:type :ovation.auth/unauthorized] err
+        ;              (unauthorized {}))))))
+        ;
+        ;    (DELETE* "/" request
+        ;      :name :delete-project
+        ;      :return {:entities [TrashedEntity]}
+        ;      :summary "Deletes (trashes) Project with :id"
+        ;      (try+
+        ;        (let [auth (:auth/auth-info request)]
+        ;          (accepted {:entities (core/delete-entity auth [id])}))
+        ;        (catch [:type :ovation.auth/unauthorized] err
+        ;          (unauthorized {}))))))
+        ))))
 
