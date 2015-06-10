@@ -198,7 +198,7 @@
                   (created {:projects (core/create-entity auth entities)})
 
                   (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {:error err})))
+                    (unauthorized {})))
 
                 (bad-request "Entities must be of \"type\" Project"))))
 
@@ -231,5 +231,31 @@
                   (created {:entities (core/create-entity auth entities :parent id)})
 
                   (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {})))))))))))
+                    (unauthorized {})))))
+
+            (PUT* "/" request
+              :name :update-project
+              :return {:projects [Entity]}
+              :body [update EntityUpdate]
+              :summary "Updates and returns Project with :id"
+              (let [entity-id (str (:_id update))]
+                (if-not (= id (str entity-id))
+                  (not-found {:error (str "Project " entity-id " ID mismatch")})
+                  (try+
+                    (let [auth (:auth/auth-info request)
+                          entities (core/update-entity auth [update])]
+                      (ok {:projects entities}))
+
+                    (catch [:type :ovation.auth/unauthorized] err
+                      (unauthorized {}))))))
+
+            (DELETE* "/" request
+              :name :delete-project
+              :return {:entities [TrashedEntity]}
+              :summary "Deletes (trashes) Project with :id"
+              (try+
+                (let [auth (:auth/auth-info request)]
+                  (accepted {:entities (core/delete-entity auth [id])}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {}))))))))))
 

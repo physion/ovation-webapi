@@ -333,8 +333,60 @@
                      (core/create-entity auth-info# new-entities#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                  )))
 
-           (facts "update")
-           (facts "delete"))))))
+           (facts "update"
+             (let [id# (UUID/randomUUID)
+                   attributes# {:foo "bar"}
+                   entity# {:type       ~type-name
+                           :_id        id#
+                           :_rev       "1"
+                           :attributes attributes#}
+                   new-attributes# {:bar "baz"}
+                   update# (assoc entity# :attributes new-attributes#)
+                   updated-entity# (assoc update# :_rev "2" :links {} :_id (str id#))
+                   request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
+                                                       (mock/body (json/write-str (walk/stringify-keys (assoc update# :_id (str id#)))))) apikey#))]
+
+               (against-background [(core/update-entity auth-info# [update#]) => [updated-entity#]]
+                 (fact "succeeds with status 200"
+                   (let [response# (app (request# id#))]
+                     (:status response#) => 200))
+                 (fact "updates single entity by ID"
+                   (let [request# (request# id#)]
+                     (body-json request#)) => {~(keyword type-path) [updated-entity#]})
+                 (fact "fails if entity and path :id do not match"
+                   (let [other-id# (str (UUID/randomUUID))
+                         response# (app (request# other-id#))]
+                     (:status response#) => 404)))
+
+               (fact "fails if not can? :update"
+                 (:status (app (request# id#))) => 401
+                 (provided
+                   (core/update-entity auth-info# [update#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+               )
+             )
+
+           (facts "delete"
+             (let [id# (UUID/randomUUID)
+                   attributes# {:foo "bar"}
+                   entity# {:type       "MyEntity"
+                           :_id        id#
+                           :_rev       "1"
+                           :attributes attributes#}
+                   deleted-entity# (assoc entity# :transh_info {} :_id (str id#))
+                   request# (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
+
+               (against-background [(core/delete-entity auth-info# [(str id#)]) => [deleted-entity#]]
+                 (fact "succeeds with status 202"
+                   (let [response# (app (request# id#))]
+                     (:status response#) => 202))
+                 (fact "DELETE /:id trashes entity"
+                   (let [delete-request# (request# id#)]
+                     (body-json delete-request#)) => {:entities [deleted-entity#]}))
+
+               (fact "fails if not can? :delete"
+                 (:status (app (request# id#))) => 401
+                 (provided
+                   (core/delete-entity auth-info# [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (facts "About named resource types"
