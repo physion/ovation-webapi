@@ -305,7 +305,7 @@
 
              ;; For top-level entities
              (when (#{"Project" "Source" "Protocol"} ~(capitalize type-name))
-               (let [new-entity# {:type ~type-name :attributes {:foo "bar"}}
+               (let [new-entity# {:type ~(capitalize type-name) :attributes {:foo "bar"}}
                      new-entities# [new-entity#]
                      entity# [(assoc new-entity# :_id ~(str (UUID/randomUUID))
                                                  :_rev "1")]
@@ -390,39 +390,5 @@
 
 
 (facts "About named resource types"
-  (entity-resource-tests "Project"))
-
-
-; OLD hard-coded facts *About /Projects*
-;(let [apikey "--apikey--"
-;      auth-info {:user "..user.."}]
-;
-;  (against-background [(auth/authorize anything apikey) => auth-info]
-;    (facts "/projects"
-;      (let [id (str (UUID/randomUUID))
-;            project {:_id        id
-;                     :_rev       "123"
-;                     :type       "Project"
-;                     :attributes {}
-;                     :links      {}}]
-;        (let [get-req (mock-req (mock/request :get (util/join-path ["" "api" ver/version "projects"])) apikey)]
-;          (against-background [(core/of-type auth-info "Project") => [project]]
-;            (fact "GET / gets all projects"
-;              (body-json get-req) => {:projects [project]})))
-;
-;        (let [get-req (mock-req (mock/request :get (util/join-path ["" "api" ver/version "projects" id])) apikey)]
-;          (against-background [(core/get-entities auth-info [id]) => [project]]
-;            (fact "GET /:id gets a single project"
-;              (body-json get-req) => {:project project})
-;            (let [source {:_id        id
-;                          :_rev       "123"
-;                          :type       "Source"
-;                          :attributes {}
-;                          :links      {}}]
-;              (fact "GET /:id returns 404 if not a project"
-;                (:status (app get-req)) => 404
-;                (provided
-;                  (core/get-entities auth-info [id]) => [source]))))))
-;
-;      (future-fact "POST / creates a new top-level project")
-;      (future-fact "POST /:id inserts entities with Project parent"))))
+  (entity-resource-tests "Project")
+  (entity-resource-tests "Source"))

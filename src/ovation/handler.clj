@@ -44,6 +44,7 @@
 
 
 (defmacro get-resources
+  "Get all resources of type (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (lower-case (str type-name "s"))
@@ -57,6 +58,7 @@
          (ok {~type-kw entities#})))))
 
 (defmacro post-resources
+  "POST to resources of type (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (lower-case (str type-name "s"))
@@ -67,7 +69,7 @@
        :body [entities# [NewEntity]]
        :summary ~(str "Creates a new top-level " type-name)
        (let [auth# (:auth/auth-info request#)]
-         (if (every? #(= "Project" (:type %)) entities#)
+         (if (every? #(= ~type-name (:type %)) entities#)
            (try+
              (created {~type-kw (core/create-entity auth# entities#)})
 
@@ -277,7 +279,17 @@
             (get-resource "Project" id)
             (post-resource "Project" id)
             (put-resource "Project" id)
-            (delete-resource "Project" id)))))))
+            (delete-resource "Project" id)))
+
+        (context* "/sources" []
+          :tags ["sources"]
+          (get-resources "Source")
+          (post-resources "Source")
+          (context* "/:id" [id]
+            (get-resource "Source" id)
+            (post-resource "Source" id)
+            (put-resource "Source" id)
+            (delete-resource "Source" id)))))))
 
 
 ;(context* "/annotations" []
