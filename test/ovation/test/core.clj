@@ -56,6 +56,11 @@
           new-entity {:type       type
                       :attributes attributes}]
 
+      (fact "it throws unauthorized exception if any :type is User"
+        (core/create-entity ..auth.. [(assoc new-entity :type "User")]) => (throws Exception)
+        (provided
+          (couch/db ...auth...) => ...db...))
+
       (against-background [(couch/db ...auth...) => ...db...
                            (tw/to-couch ...owner-id... [{:type       type
                                                          :attributes attributes}]

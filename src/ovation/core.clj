@@ -59,6 +59,10 @@
   "POSTs entity(s) with the given parent and owner"
   [auth entities & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
+
+    (when (some #{USER-ENTITY} (map :type entities))
+      (throw+ {:type ::auth/unauthorized :message "Not authorized to create a User"}))
+
     (couch/bulk-docs db
       (tw/to-couch (auth/authorized-user-id auth)
         entities

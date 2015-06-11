@@ -289,7 +289,13 @@
             (get-resource "Source" id)
             (post-resource "Source" id)
             (put-resource "Source" id)
-            (delete-resource "Source" id)))))))
+            (delete-resource "Source" id)))
+
+        (context* "/users" []
+          :tags ["users"]
+          (get-resources "User")
+          (context* "/:id" [id]
+            (get-resource "Source" id)))))))
 
 
 ;(context* "/annotations" []
