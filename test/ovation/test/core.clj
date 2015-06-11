@@ -92,21 +92,24 @@
                    (assoc-in [:attributes :label] ..label2..)
                    (assoc-in [:attributes :foo] ..foo..))
           updated-entity (assoc entity :_rev rev2)]
-      (against-background [(couch/db ..auth..) => ..db..
-                           (tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
-                           (auth/authorized-user-id ..auth..) => ..owner-id..
-                           (couch/bulk-docs ..db.. [..doc..]) => [entity]
-                           (core/get-entities ..auth.. [id]) => [entity]
-                           (couch/bulk-docs ..db.. [update]) => [updated-entity]
-                           ]
+      (against-background [(couch/db ..auth..) => ..db..]
+        (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
+                             (auth/authorized-user-id ..auth..) => ..owner-id..
+                             (couch/bulk-docs ..db.. [..doc..]) => [entity]
+                             (core/get-entities ..auth.. [id]) => [entity]
+                             (couch/bulk-docs ..db.. [update]) => [updated-entity]]
+          (fact "it updates attributes"
+            (core/update-entity ..auth.. [update]) => [updated-entity])
+          (fact "it fails if authenticated user doesn't have write permission"
+            (core/update-entity ..auth.. [update]) => (throws Exception)
+            (provided
+              (auth/authorized-user-id ..auth..) => ..other-id..
+              (auth/can? ..other-id.. :auth/update anything) => false)))
 
-        (fact "it updates attributes"
-          (core/update-entity ..auth.. [update]) => [updated-entity])
-        (fact "it fails if authenticated user doesn't have write permission"
-          (core/update-entity ..auth.. [update]) => (throws Exception)
+        (fact "it throws unauthorized if entity is a User"
+          (core/update-entity ..auth.. [entity]) => (throws Exception)
           (provided
-            (auth/authorized-user-id ..auth..) => ..other-id..
-            (auth/can? ..other-id.. :auth/update anything) => false)))))
+            (core/get-entities ..auth.. [id]) => [(assoc entity :type "User")])))))
 
 
   (facts "`delete-entity`"
@@ -121,25 +124,29 @@
                                             :trashing_date ..date..
                                             :trash_root id})]
       (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authorized-user-id ..auth..) => ..owner-id..
-                           (core/get-entities ..auth.. [id]) => [entity]
-                           (couch/bulk-docs ..db.. [update]) => ..deleted..
-                           (util/iso-now) => ..date..
-                           ]
+                           (auth/authorized-user-id ..auth..) => ..owner-id..]
 
-        (fact "it trashes entity"
-          (core/delete-entity ..auth.. [id]) => ..deleted..)
+        (against-background [(core/get-entities ..auth.. [id]) => [entity]
+                             (couch/bulk-docs ..db.. [update]) => ..deleted..
+                             (util/iso-now) => ..date..]
+          (fact "it trashes entity"
+            (core/delete-entity ..auth.. [id]) => ..deleted..)
 
-        (fact "it fails if entity already trashed"
+          (fact "it fails if entity already trashed"
+            (core/delete-entity ..auth.. [id]) => (throws Exception)
+            (provided
+              (core/get-entities ..auth.. [id]) => [update]))
+
+          (fact "it fails if authenticated user doesn't have write permission"
+            (core/delete-entity ..auth.. [id]) => (throws Exception)
+            (provided
+              (auth/authorized-user-id ..auth..) => ..other-id..
+              (auth/can? ..other-id.. :auth/delete anything) => false)))
+
+        (fact "it throws unauthorized if entity is a User"
           (core/delete-entity ..auth.. [id]) => (throws Exception)
           (provided
-            (core/get-entities ..auth.. [id]) => [update]))
-
-        (fact "it fails if authenticated user doesn't have write permission"
-          (core/delete-entity ..auth.. [id]) => (throws Exception)
-          (provided
-            (auth/authorized-user-id ..auth..) => ..other-id..
-            (auth/can? ..other-id.. :auth/delete anything) => false)))))
+            (core/get-entities ..auth.. [id]) => [(assoc entity :type "User")])))))
 
   (facts "`trash-entity` helper"
     (fact "adds required info"

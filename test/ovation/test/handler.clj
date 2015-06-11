@@ -383,7 +383,7 @@
                    (let [delete-request# (request# id#)]
                      (body-json delete-request#)) => {:entities [deleted-entity#]}))
 
-               (fact "fails if not can? :delete"
+               (fact "returns 401 if not can? :delete"
                  (:status (app (request# id#))) => 401
                  (provided
                    (core/delete-entity auth-info# [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))

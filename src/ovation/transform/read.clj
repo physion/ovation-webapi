@@ -57,12 +57,21 @@
   [dto]
   (assoc-in dto [:links :self] (link-rel-path (:_id dto) :self)))
 
+(defn remove-user-attributes
+  "Removes :attributes from User entities"
+  [dto]
+  (if (= (:type dto) "User")
+    (let [m (get dto :attributes {})]
+      (assoc dto :attributes (select-keys m (for [[k v] m :when (= k :name)] k))))
+    dto))
+
 (defn couch-to-doc
   [doc]
   (if (:error doc)
     (not-found! doc)
     (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
       (-> doc
+        (remove-user-attributes)
         (remove-private-links)
         (links-to-rel-path)
         (add-annotation-links)                              ;; NB must come after links-to-rel-path

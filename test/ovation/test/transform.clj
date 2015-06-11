@@ -53,37 +53,30 @@
     (let [doc {:type ..type.. :attributes {:label ..label..}}]
       (tw/doc-to-couch ..owner.. ..roots.. doc) =contains=> (assoc-in doc [:links :_collaboration_roots] ..roots..))))
 
-;(facts "About `links-to-ov`"
-;  (fact "makes ovation:// links"
-;    (let [id (UUID/randomUUID)
-;          doc {:type       ..type..
-;               :_id        id
-;               :attributes {:label ..label..}
-;               :links      {:link1 ..link1..
-;                            :link2 ..link2..}}]
-;      (tw/links-to-ov doc) => {:_id        id
-;                               :type       ..type..
-;                               :attributes {:label ..label..}
-;                               :named_links {}
-;                               :links      {:link1 {:uri (str "ovation://views/links?key=[%22ovation://entities/" id "%22,%22link1%22]")}
-;                                            :link2 {:uri (str "ovation://views/links?key=[%22ovation://entities/" id "%22,%22link2%22]")}}}))
-;
-;  (fact "makes ovation:// named links"
-;    (let [id (UUID/randomUUID)
-;          doc {:type        ..type..
-;               :_id         id
-;               :attributes  {:label ..label..}
-;               :named_links {:link1 {:name1 ..link1..}
-;                             :link2 {:name2 ..link2..}}}]
-;      (tw/links-to-ov doc) => {:_id         id
-;                               :type        ..type..
-;                               :attributes  {:label ..label..}
-;                               :links       {}
-;                               :named_links {:link1 {:name1 {:uri (str "ovation://views/links?key=[%22ovation://entities/" id "%22,%22link1%22,%22name1%22]")}}
-;                                             :link2 {:name2 {:uri (str "ovation://views/links?key=[%22ovation://entities/" id "%22,%22link2%22,%22name2%22]")}}}})))
 
 (facts "About `add-owner`"
   (fact "`add-owner` adds owner element"
     (let [doc {:type ..type.. :attributes {:label ..label..}}]
       (tw/add-owner doc ..owner..) => (assoc doc :owner ..owner..))))
+
+(facts "About `remove-user-attributes`"
+  (fact "Removes User entity attributes"
+    (let [user {:type "User" :attributes {:password ..secret..}}]
+      (tr/remove-user-attributes user) => (assoc user :attributes {})))
+
+  (fact "Retains User :name attribute"
+    (let [user {:type "User" :attributes {:password ..secret.. :name ..name..}}]
+      (tr/remove-user-attributes user) => (assoc user :attributes {:name ..name..})))
+
+  (fact "Does not remove other entity attributes"
+    (let [doc {:type "MyEntity" :attributes {:label ..label..}}]
+      (tr/remove-user-attributes doc) => doc)))
+
+(facts "About `couch-to-doc`"
+  (fact "calls `remove-user-attributes`"
+    (let [doc {:type "Doc" :attributes {:foo "bar"}}]
+
+      (tr/couch-to-doc doc) => (contains doc)
+      (provided
+        (tr/remove-user-attributes doc) => doc))))
 

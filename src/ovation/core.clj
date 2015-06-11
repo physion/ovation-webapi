@@ -10,6 +10,8 @@
            (us.physion.ovation.domain TrashInfo)))
 
 
+(def USER-ENTITY "User")
+
 ;; QUERY
 (defn filter-trashed
   "Removes entity documents with a non-nil trash_info from seq"
@@ -78,11 +80,15 @@
   [auth entities]
   (let [db (couch/db auth)
         ids (map (fn [e] (:_id e)) entities)
-        docs (get-entities auth ids)
-        updated-docs (map (update-attributes entities) docs)
-        auth-checked-docs (vec (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))]
-    (logging/info "Updating entities" auth-checked-docs)
-    (couch/bulk-docs db auth-checked-docs)))
+        docs (get-entities auth ids)]
+
+    (when (some #{USER-ENTITY} (map :type docs))
+      (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
+
+    (let [updated-docs (map (update-attributes entities) docs)
+          auth-checked-docs (vec (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))]
+      (logging/info "Updating entities" auth-checked-docs)
+      (couch/bulk-docs db auth-checked-docs))))
 
 (defn trash-entity
   [user-id doc]
@@ -96,8 +102,12 @@
 (defn delete-entity
   [auth ids]
   (let [db (couch/db auth)
-        docs (get-entities auth ids)
-        user-id (auth/authorized-user-id auth)
-        trashed (map #(trash-entity user-id %) docs)
-        auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
-    (couch/bulk-docs db auth-checked-docs)))
+        docs (get-entities auth ids)]
+
+    (when (some #{USER-ENTITY} (map :type docs))
+      (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
+
+    (let [user-id (auth/authorized-user-id auth)
+          trashed (map #(trash-entity user-id %) docs)
+          auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
+      (couch/bulk-docs db auth-checked-docs))))
