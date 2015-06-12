@@ -46,9 +46,17 @@
   [auth]
   (:uuid auth))
 
+(defn- can-write?
+  [auth-user-id doc]
+  (or (nil? (:owner doc)) (= auth-user-id (:owner doc))))
+
 (defn can?
   [auth-user-id op doc]
-  (or (nil? (:owner doc)) (= auth-user-id (:owner doc))))
+  (case op
+    ::update (can-write? auth-user-id doc)
+    ::delete (can-write? auth-user-id doc)
+    ;;default
+    (not (nil? auth-user-id))))
 
 (defn check!
   ([auth-user-id op]
