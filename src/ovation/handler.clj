@@ -171,6 +171,8 @@
               :termsOfService "https://ovation.io/terms_of_service"}}
       :tags [{:name "entities" :description "Generic entity operations"}
              {:name "projects" :description "Projects"}
+             {:name "users" :description "Users"}
+             {:name "analyses" :description "Analysis Records"}
              {:name "annotations" :description "Per-user annotations"}
              {:name "links" :description "Relationships between entities"}])
 
@@ -245,11 +247,10 @@
                 :summary "Adds a link"
                 (try+
                   (let [auth (:auth/auth-info request)
-                        user-id (auth/authorized-user-id auth)
                         sources (core/get-entities auth [id])
                         updates (flatten (for [src sources  ;; TODO this is pretty inefficient — can we make add-link take collections?
                                                link links]
-                                           (links/add-link auth src user-id rel (:target_id link))))]
+                                           (links/add-link auth src rel (:target_id link))))]
 
                     (created {:entities (core/update-entity auth updates)
                               :links    (filter :rel updates)}))
@@ -263,7 +264,7 @@
                   :summary "Remove links"
                   (try+
                     (let [auth (:auth/auth-info request)
-                          user-id (auth/authorized-user-id auth)
+                          user-id (auth/authenticated-user-id auth)
                           source (first (core/get-entities auth [id]))
                           update (links/delete-link auth source user-id rel target)]
 
@@ -287,7 +288,7 @@
           (post-resources "Source")
           (context* "/:id" [id]
             (get-resource "Source" id)
-            (post-resource "Source" id)
+            (post-resource "Source" id)                     ;; TODO only allow Source children
             (put-resource "Source" id)
             (delete-resource "Source" id)))
 
@@ -295,7 +296,31 @@
           :tags ["users"]
           (get-resources "User")
           (context* "/:id" [id]
-            (get-resource "Source" id)))))))
+            (get-resource "User" id)))
+
+        (context* "/analysisrecords" []
+          :tags ["analyses"]
+          (get-resources "AnalysisRecord")
+          (POST* "/" request
+            :name :create-analysis
+            :return {:analysis-records [Entity]}
+            :body [analyses [NewAnalysisRecord]]
+            :summary "Creates and returns a new Analysis Record"
+            (let [auth (:auth/auth-info request)]
+              (try+
+                (let [analysis-records (map (fn [analysis]
+                                              {:type       "AnalysisRecord"
+                                               :attributes (if-let [params (:parameters analysis)]
+                                                             {:parameters params}
+                                                             {})}) analyses)]
+                  (created {:analysis-records (core/create-entity auth analysis-records)})) ;;TODO
+
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {})))))
+          (context* "/:id" [id]
+            (get-resource "AnalysisRecord" id)
+            (put-resource "AnalysisRecord" id)
+            (delete-resource "AnalysisRecord" id)))))))
 
 
 ;(context* "/annotations" []

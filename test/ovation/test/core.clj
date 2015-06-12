@@ -65,7 +65,7 @@
                            (tw/to-couch ...owner-id... [{:type       type
                                                          :attributes attributes}]
                              :collaboration_roots []) => [...doc...]
-                           (auth/authorized-user-id ...auth...) => ...owner-id...
+                           (auth/authenticated-user-id ...auth...) => ...owner-id...
                            (couch/bulk-docs ...db... [...doc...]) => ...result...]
 
         (fact "it sends doc to Couch"
@@ -99,7 +99,7 @@
           updated-entity (assoc entity :_rev rev2)]
       (against-background [(couch/db ..auth..) => ..db..]
         (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
-                             (auth/authorized-user-id ..auth..) => ..owner-id..
+                             (auth/authenticated-user-id ..auth..) => ..owner-id..
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..auth.. [id]) => [entity]
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]]
@@ -108,7 +108,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entity ..auth.. [update]) => (throws Exception)
             (provided
-              (auth/authorized-user-id ..auth..) => ..other-id..
+              (auth/authenticated-user-id ..auth..) => ..other-id..
               (auth/can? ..other-id.. :auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
@@ -129,7 +129,7 @@
                                             :trashing_date ..date..
                                             :trash_root id})]
       (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authorized-user-id ..auth..) => ..owner-id..]
+                           (auth/authenticated-user-id ..auth..) => ..owner-id..]
 
         (against-background [(core/get-entities ..auth.. [id]) => [entity]
                              (couch/bulk-docs ..db.. [update]) => ..deleted..
@@ -145,7 +145,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/delete-entity ..auth.. [id]) => (throws Exception)
             (provided
-              (auth/authorized-user-id ..auth..) => ..other-id..
+              (auth/authenticated-user-id ..auth..) => ..other-id..
               (auth/can? ..other-id.. :auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"

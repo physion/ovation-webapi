@@ -62,43 +62,44 @@
       (= target-type "project") [(add-roots source target-roots)]
 
 
-    (= source-type "folder") [(add-roots target source-roots) source]
-    (= target-type "folder") [(add-roots source target-roots)]
+      (= source-type "folder") [(add-roots target source-roots) source]
+      (= target-type "folder") [(add-roots source target-roots)]
 
-    (= source-type "experiment") [(add-roots target source-roots) source]
-    (= target-type "experiment") [(add-roots source target-roots)]
+      (= source-type "experiment") [(add-roots target source-roots) source]
+      (= target-type "experiment") [(add-roots source target-roots)]
 
-    (= target-type "source") [(add-roots target source-roots) source]
+      (= target-type "source") [(add-roots target source-roots) source]
 
-    (= target-type "protocol") [(add-roots target source-roots)]
+      (= target-type "protocol") [(add-roots target source-roots)]
 
-    :else
-    [source]
-    )) )
+      :else
+      [source]
+      )))
 
 (defn add-link
-  [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
-                                                              name nil]}]
+  [auth doc rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
+                                                           name nil]}]
 
-  (auth/check! user-id :auth/update doc)
-  (let [doc-id (:_id doc)
-        base {:_id       (link-id doc-id rel target-id :name name)
-              :target_id target-id
-              :source_id doc-id
-              :rel       rel
-              :user_id   user-id}
-        named (if name (assoc base :name name) base)
-        link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)
-        path (link-path doc-id rel name)
-        linked-doc (if name
-                     (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
-                     (assoc-in doc [:links (keyword rel)] path))
-        updated-docs (update-collaboration-roots-for-target linked-doc (first (core/get-entities auth [target-id])))]
-    (conj updated-docs link)))
+  (let [user-id (auth/authenticated-user-id auth)]
+    (auth/check! user-id :auth/update doc)
+    (let [doc-id (:_id doc)
+          base {:_id       (link-id doc-id rel target-id :name name)
+                :target_id target-id
+                :source_id doc-id
+                :rel       rel
+                :user_id   user-id}
+          named (if name (assoc base :name name) base)
+          link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)
+          path (link-path doc-id rel name)
+          linked-doc (if name
+                       (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
+                       (assoc-in doc [:links (keyword rel)] path))
+          updated-docs (update-collaboration-roots-for-target linked-doc (first (core/get-entities auth [target-id])))]
+      (conj updated-docs link))))
 
 (defn delete-link
   [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
-                                                         name nil]}]
+                                                                   name nil]}]
   (auth/check! user-id :auth/update doc)
   (let [link-id (link-id (:_id doc) rel target-id :name name)
         db (couch/db auth)

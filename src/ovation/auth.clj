@@ -41,7 +41,7 @@
   [authserver apikey]
   (auth-info (get-auth authserver apikey)))
 
-(defn authorized-user-id
+(defn authenticated-user-id
   "The UUID of the authorized user"
   [auth]
   (:uuid auth))

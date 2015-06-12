@@ -64,7 +64,7 @@
       (throw+ {:type ::auth/unauthorized :message "Not authorized to create a User"}))
 
     (couch/bulk-docs db
-      (tw/to-couch (auth/authorized-user-id auth)
+      (tw/to-couch (auth/authenticated-user-id auth)
         entities
         :collaboration_roots (parent-collaboration-roots auth parent)))
     ))
@@ -90,7 +90,7 @@
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
     (let [updated-docs (map (update-attributes entities) docs)
-          auth-checked-docs (vec (map (auth/check! (auth/authorized-user-id auth) :auth/update) updated-docs))]
+          auth-checked-docs (vec (map (auth/check! (auth/authenticated-user-id auth) :auth/update) updated-docs))]
       (logging/info "Updating entities" auth-checked-docs)
       (couch/bulk-docs db auth-checked-docs))))
 
@@ -111,7 +111,7 @@
     (when (some #{USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
 
-    (let [user-id (auth/authorized-user-id auth)
+    (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
       (couch/bulk-docs db auth-checked-docs))))

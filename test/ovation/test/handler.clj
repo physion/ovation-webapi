@@ -35,6 +35,11 @@
         result (json/read reader)]
     (walk/keywordize-keys result)))
 
+(defn json-post-body
+  [m]
+  (json/write-str (walk/stringify-keys m)))
+
+
 (facts "About authorization"
   (fact "invalid API key returns 401"
     (let [apikey "12345"
@@ -211,8 +216,8 @@
 
           (against-background [(core/get-entities auth-info [id]) => [entity]
                                (core/update-entity auth-info anything) => [entity target1 target2]
-                               (links/add-link auth-info entity auth-user-id rel targetid1) => [entity target1]
-                               (links/add-link auth-info entity auth-user-id rel targetid2) => [entity target2]]
+                               (links/add-link auth-info entity rel targetid1) => [entity target1]
+                               (links/add-link auth-info entity rel targetid2) => [entity target2]]
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)
             (fact "returns link documents"
@@ -221,7 +226,7 @@
             (fact "=> 401 if not can? update source"
               (:status (app (request id))) => 401
               (provided
-                (links/add-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
+                (links/add-link auth-info entity rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
 
       (facts "DELETE /entities/:id/links/:rel"
         (let [targetid (UUID/randomUUID)
@@ -337,14 +342,14 @@
              (let [id# (UUID/randomUUID)
                    attributes# {:foo "bar"}
                    entity# {:type       ~type-name
-                           :_id        id#
-                           :_rev       "1"
-                           :attributes attributes#}
+                            :_id        id#
+                            :_rev       "1"
+                            :attributes attributes#}
                    new-attributes# {:bar "baz"}
                    update# (assoc entity# :attributes new-attributes#)
                    updated-entity# (assoc update# :_rev "2" :links {} :_id (str id#))
                    request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
-                                                       (mock/body (json/write-str (walk/stringify-keys (assoc update# :_id (str id#)))))) apikey#))]
+                                                         (mock/body (json/write-str (walk/stringify-keys (assoc update# :_id (str id#)))))) apikey#))]
 
                (against-background [(core/update-entity auth-info# [update#]) => [updated-entity#]]
                  (fact "succeeds with status 200"
@@ -369,9 +374,9 @@
              (let [id# (UUID/randomUUID)
                    attributes# {:foo "bar"}
                    entity# {:type       "MyEntity"
-                           :_id        id#
-                           :_rev       "1"
-                           :attributes attributes#}
+                            :_id        id#
+                            :_rev       "1"
+                            :attributes attributes#}
                    deleted-entity# (assoc entity# :transh_info {} :_id (str id#))
                    request# (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
 
@@ -388,6 +393,44 @@
                  (provided
                    (core/delete-entity auth-info# [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
+
+
+(facts "About AnalysisRecords"
+  (facts "create"
+    (let [apikey "--apikey--"
+          auth-info {:user "..user.."}]
+      (against-background [(auth/authorize anything apikey) => auth-info]
+        (let [in1 {:type "Revision" :_id (str (util/make-uuid))}
+              in2 {:type "Revision" :_id (str (util/make-uuid))}
+              out1 {:type "Revision" :_id (str (util/make-uuid))}
+              out2 {:type "Revision" :_id (str (util/make-uuid))}
+              parameters {:foo "bar"}
+              new-record {:type       "AnalysisRecord"
+                          :_id        (str (util/make-uuid))
+                          :_rev       "1"
+                          :attributes {:parameters parameters}}]
+
+          (against-background [(core/get-entities auth-info (map :_id [in1 in2 out1 out2])) => [in1 in2 out1 out2]
+                               ]
+            (fact "POST /analysisrecords creates a new analysis record"
+              (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
+                                     (mock/body (json-post-body [{:inputs     (map :_id [in1 in2])
+                                                                  :outputs    (map :_id [out1 out2])
+                                                                  :parameters parameters}]))) apikey)
+                    response-body (body-json post)
+                    body (:analysis-records response-body)]
+
+                (get-in (first body) [:attributes :parameters])) => parameters
+              (provided
+                (core/create-entity auth-info [{:type "AnalysisRecord"
+                                                :attributes {:parameters parameters}}]) => [new-record]
+                (links/add-link auth-info new-record "inputs" "123") => ..link..
+                (core/update-entity auth-info ..link1..) => ..links..)))
+
+          (future-fact "POST /analysisrecords returns 400 if inputs missing")
+          (future-fact "POST /analysisrecords returns 400 if outputs missing")
+          (future-fact "POST /analysisrecords returns 400 if intpus are not Revisions")
+          (future-fact "POST /analysisrecords returns 400 if outputs are not Revisions"))))))
 
 (facts "About named resource types"
   (entity-resource-tests "Project")

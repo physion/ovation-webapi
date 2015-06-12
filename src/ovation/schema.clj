@@ -84,6 +84,11 @@
 
 (s/defschema EntityUpdate BaseEntity)
 
+(s/defschema NewAnalysisRecord
+  {:inputs [s/Uuid]
+   :outputs [s/Uuid]
+   (s/optional-key :parameters) {s/Keyword s/Any}})
+
 ;; -- TRASH INFO -- ;;
 
 (s/defschema TrashInfoMap {(keyword TrashInfo/TRASHING_USER) s/Str ;; URI

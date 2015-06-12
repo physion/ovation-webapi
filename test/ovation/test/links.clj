@@ -40,11 +40,12 @@
 
       (against-background [(couch/db ..auth..) => ..db..
                            (core/get-entities ..auth.. [target-id]) => [{:type  "not-a-root"
-                                                                         :links {:_collaboration_roots []}}]]
+                                                                         :links {:_collaboration_roots []}}]
+                           (auth/authenticated-user-id ..auth..) => ..id..]
 
 
         (fact "creates link document"
-          (links/add-link ..auth.. doc ..id.. ..rel.. target-id :inverse-rel ..inverse..) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+          (links/add-link ..auth.. doc ..rel.. target-id :inverse-rel ..inverse..) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                                         :user_id     ..id..
                                                                                                         :source_id   (:_id doc)
                                                                                                         :target_id   target-id
@@ -52,13 +53,13 @@
                                                                                                         :inverse_rel ..inverse..}))
 
         (fact "creates link document without inverse"
-          (links/add-link ..auth.. doc ..id.. ..rel.. target-id) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+          (links/add-link ..auth.. doc ..rel.. target-id) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                :user_id   ..id..
                                                                                :source_id (:_id doc)
                                                                                :target_id target-id
                                                                                :rel       ..rel..}))
         (fact "creates named link document"
-          (links/add-link ..auth.. doc ..id.. ..rel.. target-id :inverse-rel ..inverse.. :name ..name..) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
+          (links/add-link ..auth.. doc ..rel.. target-id :inverse-rel ..inverse.. :name ..name..) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                        :user_id     ..id..
                                                                                                                        :source_id   (:_id doc)
                                                                                                                        :target_id   target-id
@@ -69,19 +70,19 @@
         (fact "updates entity :links"
           (let [rel "some-rel"
                 link-path (util/join-path ["" "entities" (:_id doc) "links" rel])]
-            (links/add-link ..auth.. doc ..id.. rel target-id) => (contains (assoc-in doc [:links (keyword rel)] link-path))))
+            (links/add-link ..auth.. doc rel target-id) => (contains (assoc-in doc [:links (keyword rel)] link-path))))
 
         (fact "updates entity :named_links"
           (let [rel "some-rel"
                 relname "my-name"
                 link-path (util/join-path ["" "entities" (:_id doc) "named_links" rel relname])
-                result (links/add-link ..auth.. doc ..id.. rel target-id :name relname)
+                result (links/add-link ..auth.. doc rel target-id :name relname)
                 expected (assoc-in doc [:named_links (keyword rel) (keyword relname)] link-path)]
 
             result => (contains expected)))
 
         (fact "fails if not can? :update"
-          (links/add-link ..auth.. doc ..id.. ..rel.. target-id) => (throws Exception)
+          (links/add-link ..auth.. doc ..rel.. target-id) => (throws Exception)
           (provided
             (auth/can? ..id.. :auth/update anything) => false))
 
@@ -91,7 +92,7 @@
                 source {:type "Experiment" :links {:_collaboration_roots [..roots1..]}}
                 target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
                 expected (assoc-in target [:links :_collaboration_roots] [..roots2.. ..roots1..])]
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
 
@@ -100,7 +101,7 @@
                 source {:type "Project" :links {:_collaboration_roots [..roots1..]}}
                 target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
                 expected (assoc-in target [:links :_collaboration_roots] [..roots2.. ..roots1..])]
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
 
@@ -109,7 +110,7 @@
                 source {:type "Folder" :links {:_collaboration_roots [..roots1..]}}
                 target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
                 expected (assoc-in target [:links :_collaboration_roots] [..roots2.. ..roots1..])]
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
 
@@ -122,7 +123,7 @@
                            (assoc-in [:links :_collaboration_roots] [..roots1.. ..roots2..])
                            (assoc-in [:links (keyword rel)] link-path))]
             ;(prn expected)
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
 
@@ -135,7 +136,7 @@
                            (assoc-in [:links :_collaboration_roots] [..roots1.. ..roots2..])
                            (assoc-in [:links (keyword rel)] link-path))]
             ;(prn expected)
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
 
@@ -149,7 +150,7 @@
                            (assoc-in [:links :_collaboration_roots] [..roots1.. ..roots2..])
                            (assoc-in [:links (keyword rel)] link-path))]
             ;(prn expected)
-            (links/add-link ..auth.. source ..id.. rel target-id) => (contains expected)
+            (links/add-link ..auth.. source rel target-id) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id]) => [target])))
         )))
