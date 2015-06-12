@@ -216,8 +216,8 @@
 
           (against-background [(core/get-entities auth-info [id]) => [entity]
                                (core/update-entity auth-info anything) => [entity target1 target2]
-                               (links/add-link auth-info entity rel targetid1) => [entity target1]
-                               (links/add-link auth-info entity rel targetid2) => [entity target2]]
+                               (links/add-links auth-info entity rel [targetid1]) => [entity target1]
+                               (links/add-links auth-info entity rel [targetid2]) => [entity target2]]
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)
             (fact "returns link documents"
@@ -226,7 +226,7 @@
             (fact "=> 401 if not can? update source"
               (:status (app (request id))) => 401
               (provided
-                (links/add-link auth-info entity rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
+                (links/add-links auth-info entity rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
 
       (facts "DELETE /entities/:id/links/:rel"
         (let [targetid (UUID/randomUUID)
@@ -424,7 +424,7 @@
               (provided
                 (core/create-entity auth-info [{:type "AnalysisRecord"
                                                 :attributes {:parameters parameters}}]) => [new-record]
-                (links/add-link auth-info new-record "inputs" "123") => ..link..
+                (links/add-links auth-info new-record "inputs" ["123"]) => ..link..
                 (core/update-entity auth-info ..link1..) => ..links..)))
 
           (future-fact "POST /analysisrecords returns 400 if inputs missing")

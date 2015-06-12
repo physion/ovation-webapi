@@ -174,7 +174,8 @@
              {:name "users" :description "Users"}
              {:name "analyses" :description "Analysis Records"}
              {:name "annotations" :description "Per-user annotations"}
-             {:name "links" :description "Relationships between entities"}])
+             {:name "links" :description "Relationships between entities"}
+             {:name "provenance" :description "Provenance graph"}])
 
 
     (context* "/api" []
@@ -250,7 +251,7 @@
                         sources (core/get-entities auth [id])
                         updates (flatten (for [src sources  ;; TODO this is pretty inefficient — can we make add-link take collections?
                                                link links]
-                                           (links/add-link auth src rel (:target_id link))))]
+                                           (links/add-links auth src rel [(:target_id link)])))]
 
                     (created {:entities (core/update-entity auth updates)
                               :links    (filter :rel updates)}))
@@ -320,7 +321,16 @@
           (context* "/:id" [id]
             (get-resource "AnalysisRecord" id)
             (put-resource "AnalysisRecord" id)
-            (delete-resource "AnalysisRecord" id)))))))
+            (delete-resource "AnalysisRecord" id)))
+
+        (context* "/provenance" []
+          :tags ["provenance"]
+          (POST* "/" request
+            :name :get-provenance
+            ;:return {:provenance ProvGraph}
+            :summary "Returns the provenance graph expanding from the POSTed entity IDs"
+            (let [auth (:auth/auth-info request)]
+              nil)))))))
 
 
 ;(context* "/annotations" []
