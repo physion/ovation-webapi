@@ -205,7 +205,7 @@
               (let [response (app (request id))]
                 (:status response) => 200))
             (fact "returns link targets"
-              (body-json (request id)) => {:rel [entity]}))))
+              (body-json (request id)) => {(keyword rel) [entity]}))))
       (facts "POST /entities/:id/links/:rel"
         (let [targetid1 (str (UUID/randomUUID))
               targetid2 (str (UUID/randomUUID))
