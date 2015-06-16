@@ -43,7 +43,8 @@
 
   :plugins [[lein-clojars "0.9.1"]
             [s3-wagon-private "1.1.2"]
-            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
+            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]
+            [lein-awsuberwar "0.1.0"]]
 
   :ring {:handler ovation.handler/app}
 
