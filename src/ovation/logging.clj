@@ -8,6 +8,7 @@
 
 (defn configure-console-logger!
   []
+  (println "Configuring console logger")
   (log-config/set-logger!
     :level :debug
     :out (ConsoleAppender. (SimpleLayout.))))
@@ -17,6 +18,7 @@
     (let [logging-name (or LOGGING_NAME "ovation")]
       (try+
 
+        (println "Configuring Syslog logger")
         (let [papertrail (doto (SyslogAppender.)
                            (.setSyslogHost host)
                            (.setFacility "LOCAL7")

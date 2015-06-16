@@ -5,6 +5,7 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
+            [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.annotations :as annotations]
             [ovation.core :as core]
@@ -158,7 +159,11 @@
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
 
-                (wrap-with-logger)
+                (wrap-with-logger
+                  :info  (fn [x] (logging/info x))
+                  :debug (fn [x] (logging/debug x))
+                  :error (fn [x] (logging/error x))
+                  :warn  (fn [x] (logging/warn x)))
                 ]
 
     (swagger-ui)
