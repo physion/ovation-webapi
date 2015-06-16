@@ -136,6 +136,7 @@
                   linked-doc (if name
                                (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
                                (assoc-in doc [:links (keyword rel)] path))
+                  source-roots (get-in linked-doc [:links :_collaboration_roots] [])
                   targets (core/get-entities auth unique-targets)]
 
               (if (and strict
@@ -146,17 +147,20 @@
                 (let [target-types (map :type targets)]
                   (if (or (nil? required-target-types)
                         (every? (into #{} required-target-types) target-types))
-                    (let [links (map (fn [target-id]
-                                       (let [base {:_id       (link-id doc-id rel target-id :name name)
+                    (let [links (map (fn [target]
+                                       (let [target-id (:_id target)
+                                             target-roots (get-in target [:links :_collaboration_roots] [])
+                                             base {:_id       (link-id doc-id rel target-id :name name)
                                                    :type      util/RELATION_TYPE
                                                    :target_id target-id
                                                    :source_id doc-id
                                                    :rel       rel
-                                                   :user_id   authenticated-user-id}
+                                                   :user_id   authenticated-user-id
+                                                   :links     {:_collaboration_roots (concat source-roots target-roots)}}
                                              named (if name (assoc base :name name) base)
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))
-                                  unique-targets)
+                                  targets)
                           updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))
                           acc (merge updates-acc updated-docs)]
 

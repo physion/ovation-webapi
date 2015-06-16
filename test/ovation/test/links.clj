@@ -40,13 +40,14 @@
   (facts "`add-link`"
     (let [doc {:_id   (str (UUID/randomUUID))
                :type  "MyEntity" `:attrbutes {}
-               :links {:_collaboration_roots []}}
+               :links {:_collaboration_roots [..sourceroot..]}}
           target-id (str (UUID/randomUUID))
           target-id2 (str (UUID/randomUUID))]
 
       (against-background [(couch/db ..auth..) => ..db..
-                           (core/get-entities ..auth.. #{target-id}) => [{:type  "not-a-root"
-                                                                          :links {:_collaboration_roots []}}]
+                           (core/get-entities ..auth.. #{target-id}) => [{:_id   target-id
+                                                                          :type  "not-a-root"
+                                                                          :links {:_collaboration_roots [..targetroot..]}}]
                            (auth/authenticated-user-id ..auth..) => ..id..]
 
 
@@ -57,7 +58,8 @@
                                                                                                              :source_id   (:_id doc)
                                                                                                              :target_id   target-id
                                                                                                              :rel         ..rel..
-                                                                                                             :inverse_rel ..inverse..}))
+                                                                                                             :inverse_rel ..inverse..
+                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
         (fact "creates link document without inverse"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id])) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
@@ -65,7 +67,8 @@
                                                                                     :type      "Relation"
                                                                                     :source_id (:_id doc)
                                                                                     :target_id target-id
-                                                                                    :rel       ..rel..}))
+                                                                                    :rel       ..rel..
+                                                                                    :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
         (fact "creates named link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                             :user_id     ..id..
@@ -74,7 +77,8 @@
                                                                                                                             :target_id   target-id
                                                                                                                             :name        ..name..
                                                                                                                             :inverse_rel ..inverse..
-                                                                                                                            :rel         ..rel..}))
+                                                                                                                            :rel         ..rel..
+                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
 
         (fact "updates entity :links"
