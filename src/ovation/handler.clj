@@ -160,11 +160,11 @@
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
 
-                ;(wrap-with-logger
-                ;  :info  (fn [x] (logging/info x))
-                ;  :debug (fn [x] (logging/debug x))
-                ;  :error (fn [x] (logging/error x))
-                ;  :warn  (fn [x] (logging/warn x)))
+                (wrap-with-logger
+                  :info  (fn [x] (logging/info x))
+                  :debug (fn [x] (logging/debug x))
+                  :error (fn [x] (logging/error x))
+                  :warn  (fn [x] (logging/warn x)))
                 ]
 
     (swagger-ui)
