@@ -157,6 +157,8 @@
                 (wrap-token-auth
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
+
+                (wrap-with-logger)
                 ]
 
     (swagger-ui)
