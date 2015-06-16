@@ -216,7 +216,7 @@
                                            (mock/body (json/write-str (walk/stringify-keys links)))) apikey))]
 
           (against-background [(core/get-entities auth-info [id]) => [entity]
-                               (core/update-entity auth-info anything) => [entity target1 target2]
+                               (core/update-entity auth-info anything :direct true) => [entity target1 target2]
                                (links/add-links auth-info entity rel (map :target_id links)) => [entity target1 target2]]
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)

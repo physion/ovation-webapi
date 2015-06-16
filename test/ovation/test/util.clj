@@ -2,7 +2,8 @@
   (:import (java.util UUID)
            (us.physion.ovation.domain URIs))
   (:use midje.sweet)
-  (:require [ovation.util :as util]))
+  (:require [ovation.util :as util]
+            [ovation.version :refer [version]]))
 
 (facts "about UUID parsing"
        (fact "parses UUID string with dashes"
@@ -22,3 +23,11 @@
   (fact "passes through URI"
     (let [uri (util/create-uri (UUID/randomUUID))]
       (util/create-uri uri) => uri)))
+
+(facts "About prefixed-path"
+  (fact "adds prefix"
+    (util/prefixed-path "my/path") => (str "/api/" version "/my/path"))
+  (fact "adds prefix to absolute path"
+    (util/prefixed-path "/my/path") => (str "/api/" version "/my/path"))
+  (fact "skips already-prefixed path"
+    (util/prefixed-path (str "/api/" version "/my/path")) => (str "/api/" version "/my/path")))

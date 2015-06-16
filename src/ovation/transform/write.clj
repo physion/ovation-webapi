@@ -1,7 +1,8 @@
 (ns ovation.transform.write
   (:require [ovation.version :refer [version version-path]]
             [ovation.version :as ver]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [clojure.tools.logging :as logging]))
 
 (defn ensure-id
   "Makes sure there's an _id for entity"
@@ -23,42 +24,22 @@
 
 (defn add-collaboration-roots
   [doc roots]
-  (assoc-in doc [:links :_collaboration_roots] roots))
-
-;(defn link-ov
-;  [id rel]
-;  (format "ovation://views/links?key=[%%22ovation://entities/%s%%22,%%22%s%%22]" id (clojure.core/name rel)))
-;
-;(defn named-link-ov
-;  [rel id name]
-;  (format "ovation://views/links?key=[%%22ovation://entities/%s%%22,%%22%s%%22,%%22%s%%22]" id (clojure.core/name rel) (clojure.core/name name)))
-;
-;(defn make-ov-links
-;  [id links link-path-fn]
-;  (into {} (map (fn [x] (let [rel (first x)]
-;                          [rel {:uri (link-path-fn id rel)}])) links)))
-;
-;(defn links-to-ov
-;  [doc]
-;  (let [links (make-ov-links (:_id doc) (:links doc) link-ov)
-;        named-links (into {} (map (fn [x]
-;                                    (let [rel (first x)
-;                                          m (second x)]
-;                                      [rel (make-ov-links (:_id doc) m (partial named-link-ov rel))]))) (:named_links doc))
-;        ]
-;    (-> doc
-;      (assoc-in [:links] links)
-;      (assoc-in [:named_links] named-links))))
+  (if roots
+    (assoc-in doc [:links :_collaboration_roots] roots)
+    doc))
 
 (defn doc-to-couch
   [owner-id collaboration-roots doc]
-  (-> doc
-    ensure-id
-    add-api-version
-    (add-owner owner-id)
-    (add-collaboration-roots collaboration-roots)))
+  (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
+    (-> doc
+      ensure-id
+      add-api-version
+      (add-owner owner-id)
+      (add-collaboration-roots collaboration-roots))
+    doc))
 
 (defn to-couch
   "Transform documents for CouchDB"
   [owner-id docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
-  (map (partial doc-to-couch owner-id collaboration_roots) docs))
+  (logging/info "Transforming to couch" docs)
+  (map #(doc-to-couch owner-id collaboration_roots %) docs))

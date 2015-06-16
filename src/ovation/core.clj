@@ -12,6 +12,7 @@
 
 (def USER-ENTITY "User")
 
+
 ;; QUERY
 (defn filter-trashed
   "Removes entity documents with a non-nil trash_info from seq"
@@ -35,7 +36,7 @@
   "Gets entities by ID"
   [auth ids & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)
-        docs (couch/all-docs db ids)]
+        docs (filter :_id (couch/all-docs db ids))]
     (-> docs
       (tr/from-couch)
       (filter-trashed include-trashed))))
@@ -80,19 +81,22 @@
 
 
 (defn update-entity
-  "Updates entities{EntityUpdate}"
-  [auth entities]
-  (let [db (couch/db auth)
-        ids (map (fn [e] (:_id e)) entities)
-        docs (get-entities auth ids)]
+  "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
+  updates only entity attributes from lastest rev"
+  [auth entities & {:keys [direct] :or [direct false]}]
+  (let [db (couch/db auth)]
 
-    (when (some #{USER-ENTITY} (map :type docs))
+    (when (some #{USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-    (let [updated-docs (map (update-attributes entities) docs)
-          auth-checked-docs (vec (map (auth/check! (auth/authenticated-user-id auth) :auth/update) updated-docs))]
-      (logging/info "Updating entities" auth-checked-docs)
-      (couch/bulk-docs db auth-checked-docs))))
+    (let [bulk-docs (if direct
+                      entities
+                      (let [ids  (map :_id entities)
+                            docs (get-entities auth ids)
+                            updated-docs (map (update-attributes entities) docs)]
+                        (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
+          auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
+      (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)))))
 
 (defn trash-entity
   [user-id doc]

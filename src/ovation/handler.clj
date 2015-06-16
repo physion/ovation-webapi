@@ -17,7 +17,8 @@
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
             [clojure.string :refer [lower-case capitalize]]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [schema.core :as s]))
 
 (ovation.logging/setup!)
 
@@ -159,11 +160,11 @@
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
 
-                (wrap-with-logger
-                  :info  (fn [x] (logging/info x))
-                  :debug (fn [x] (logging/debug x))
-                  :error (fn [x] (logging/error x))
-                  :warn  (fn [x] (logging/warn x)))
+                ;(wrap-with-logger
+                ;  :info  (fn [x] (logging/info x))
+                ;  :debug (fn [x] (logging/debug x))
+                ;  :error (fn [x] (logging/error x))
+                ;  :warn  (fn [x] (logging/warn x)))
                 ]
 
     (swagger-ui)
@@ -242,24 +243,24 @@
               :tags ["links"]
               (GET* "/" request
                 :name :get-links
-                :return {:rel [Entity]}
+                :return {s/Keyword [Entity]}
                 :summary "Gets the targets of relationship :rel from the identified entity"
                 (let [auth (:auth/auth-info request)]
-                  (ok {:rel (links/get-link-targets auth id rel)})))
+                  (ok {(keyword rel) (links/get-link-targets auth id rel)})))
 
               (POST* "/" request
                 :name :create-links
                 :return {:entities [Entity]
                          :links    [LinkInfo]}
-                :body [links [NewEntityLink]]
+                :body [new-links [NewEntityLink]]
                 :summary "Adds a link"
                 (try+
                   (let [auth (:auth/auth-info request)
                         source (first (core/get-entities auth [id]))]
                     (if source
-                      (let [all-links (:all (links/add-links auth source rel (map :target_id links)))
-                            updates (core/update-entity auth all-links)]
-                        (created {:entities updates
+                      (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links)))
+                            updates (core/update-entity auth all-updates :direct true)]
+                        (created {:entities (filter :type updates)
                                   :links    (filter :rel updates)}))
                       (not-found {:error (str id " not found")})))
                   (catch [:type :ovation.auth/unauthorized] {:keys [message]}

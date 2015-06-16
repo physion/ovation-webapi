@@ -5,7 +5,8 @@
             [ovation.auth :as auth]
             [ovation.core :as core]
             [slingshot.slingshot :refer [throw+]]
-            [clojure.set :refer [union]])
+            [clojure.set :refer [union]]
+            [clojure.tools.logging :as logging])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 
@@ -21,9 +22,11 @@
   "Gets the document targets for id--rel->"
   [auth id rel & {:keys [label name] :or {label nil name nil}}]
   (let [db (couch/db auth)
-        opts {:key    (if name [id rel name] [id rel])
-              :reduce false :include_docs true}
-        docs (map :doc (couch/get-view db EntityDao$Views/LINKS opts))]
+        opts {:startkey      (if name [id rel name] [id rel])
+              :endkey        (if name [id rel name] [id rel])
+              :inclusive_end true
+              :reduce        false :include_docs true}
+        docs (couch/get-view db EntityDao$Views/LINKS opts)]
     (if label
       (filter (eq-doc-label label) docs)
       docs)))
@@ -41,8 +44,8 @@
 (defn- link-path
   [source-id rel name]
   (if name
-    (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)])
-    (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)])))
+    (util/prefixed-path (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)]))
+    (util/prefixed-path (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)]))))
 
 (defn- collaboration-roots
   [doc]
@@ -116,7 +119,6 @@
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
         unique-targets (into #{} target-ids)]
-
     (loop [docs (if (sequential? doc) doc [doc])
            updates-acc (util/into-id-map docs)
            links-acc '()]
@@ -146,6 +148,7 @@
                         (every? (into #{} required-target-types) target-types))
                     (let [links (map (fn [target-id]
                                        (let [base {:_id       (link-id doc-id rel target-id :name name)
+                                                   :type      util/RELATION_TYPE
                                                    :target_id target-id
                                                    :source_id doc-id
                                                    :rel       rel
@@ -154,9 +157,10 @@
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))
                                   unique-targets)
-                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))]
+                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))
+                          acc (merge updates-acc updated-docs)]
 
-                      (recur (rest docs) (merge updates-acc updated-docs) (concat links-acc links)))
+                      (recur (rest docs) acc (concat links-acc links)))
                     (throw+ {:type ::illegal-target-type :message "Target(s) not of required type(s)"})))))))))))
 
 (defn delete-link

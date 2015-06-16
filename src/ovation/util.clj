@@ -3,12 +3,14 @@
            (us.physion.ovation.domain URIs)
            (java.util UUID))
   (:require [clojure.string :refer [join]]
-            [ovation.version :refer [version-path]]
+            [ovation.version :refer [version]]
             [clojure.walk :as walk]
             [clojure.data.json :as json]
+            [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.format :as tf]))
 
+(def RELATION_TYPE "Relation")
 
 (defn make-uuid
   "Wraps java.util.UUID/randomUUID for test mocking."
@@ -55,6 +57,22 @@
 (defn join-path
   [comps]
   (clojure.string/join "/" comps))
+
+(defn remove-leading-slash
+  [path]
+  (if (.startsWith path "/")
+    (.substring path 1)
+    path))
+
+(defn prefixed-path
+  [p]
+  (let [path (-> p
+               (s/lower-case)
+               (s/trim))
+        prefix (join-path ["" "api" version])]
+    (if (.startsWith path prefix)
+      path
+      (join-path [prefix (remove-leading-slash path)]))))
 
 (defn iso-now
   "Gets the ISO date time string for (t/now)"

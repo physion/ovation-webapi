@@ -43,8 +43,8 @@
         (core/get-entities ...auth... [...id...]) => ...result...
         (provided
           (couch/db ...auth...) => ...db...
-          (couch/all-docs ...db... [...id...]) => ...docs...
-          (tr/from-couch ...docs...) => ...entities...
+          (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
+          (tr/from-couch [{:_id ..id1..} {:_id ..id2..}]) => ...entities...
           (core/filter-trashed ...entities... false) => ...result...)))))
 
 
@@ -99,6 +99,7 @@
           updated-entity (assoc entity :_rev rev2)]
       (against-background [(couch/db ..auth..) => ..db..]
         (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
+                             (tw/to-couch ..owner-id.. [update]) => [update]
                              (auth/authenticated-user-id ..auth..) => ..owner-id..
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..auth.. [id]) => [entity]
@@ -127,7 +128,7 @@
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
           update (assoc entity :trash_info {:trashing_user ..owner-id...
                                             :trashing_date ..date..
-                                            :trash_root id})]
+                                            :trash_root    id})]
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..owner-id..]
 

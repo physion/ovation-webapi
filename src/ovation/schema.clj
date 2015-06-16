@@ -77,6 +77,7 @@
 
 
 (s/defschema Entity (assoc BaseEntity
+                      (s/optional-key :owner) s/Uuid
                       :links {s/Keyword                              s/Str
                               (s/optional-key :_collaboration_roots) [s/Str]}
                       (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))

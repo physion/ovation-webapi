@@ -4,7 +4,8 @@
             [ovation.couch :as couch]
             [ovation.util :as util]
             [ovation.auth :as auth]
-            [ovation.core :as core])
+            [ovation.core :as core]
+            [ovation.version :as ver])
   (:import (us.physion.ovation.data EntityDao$Views)
            (java.util UUID)))
 
@@ -13,12 +14,16 @@
     (let [doc1 {:attributes {:label ..label1..}}
           doc2 {:attributes {:label ..label2..}}
           doc3 {:attributes {}}]
-      (against-background [(couch/get-view ..db.. EntityDao$Views/LINKS {:key          [..id.. ..rel..]
-                                                                         :reduce       false
-                                                                         :include_docs true}) => [{:doc doc1} {:doc doc2} {:doc doc3}]
-                           (couch/get-view ..db.. EntityDao$Views/LINKS {:key          [..id.. ..rel.. ..name..]
-                                                                         :reduce       false
-                                                                         :include_docs true}) => [{:doc doc1}]
+      (against-background [(couch/get-view ..db.. EntityDao$Views/LINKS {:startkey      [..id.. ..rel..]
+                                                                         :endkey        [..id.. ..rel..]
+                                                                         :inclusive_end true
+                                                                         :reduce        false
+                                                                         :include_docs  true}) => [doc1 doc2 doc3]
+                           (couch/get-view ..db.. EntityDao$Views/LINKS {:startkey      [..id.. ..rel.. ..name..]
+                                                                         :endkey        [..id.. ..rel.. ..name..]
+                                                                         :inclusive_end true
+                                                                         :reduce        false
+                                                                         :include_docs  true}) => [doc1]
                            (auth/can? anything :auth/update anything) => true
                            (couch/db ..auth..) => ..db..]
 
@@ -48,6 +53,7 @@
         (fact "creates link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] :inverse-rel ..inverse..)) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                                              :user_id     ..id..
+                                                                                                             :type        "Relation"
                                                                                                              :source_id   (:_id doc)
                                                                                                              :target_id   target-id
                                                                                                              :rel         ..rel..
@@ -56,12 +62,14 @@
         (fact "creates link document without inverse"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id])) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                     :user_id   ..id..
+                                                                                    :type      "Relation"
                                                                                     :source_id (:_id doc)
                                                                                     :target_id target-id
                                                                                     :rel       ..rel..}))
         (fact "creates named link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                             :user_id     ..id..
+                                                                                                                            :type        "Relation"
                                                                                                                             :source_id   (:_id doc)
                                                                                                                             :target_id   target-id
                                                                                                                             :name        ..name..
@@ -71,7 +79,7 @@
 
         (fact "updates entity :links"
           (let [rel "some-rel"
-                link-path (util/join-path ["" "entities" (:_id doc) "links" rel])]
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id doc) "links" rel])]
             (:updates (links/add-links ..auth.. doc rel [target-id])) => (contains (assoc-in doc [:links (keyword rel)] link-path))))
 
         (fact "updates multiple target _collaboration_roots for source:=Experiment"
@@ -92,7 +100,7 @@
                 target2 {:_id "target2" :type "Project" :links {:_collaboration_roots [..roots3..]}}
                 updated-source (-> source
                                  (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
-                                 (assoc-in [:links :some-rel] "/entities/src/links/some-rel"))]
+                                 (assoc-in [:links :some-rel] (str "/api/" ver/version "/entities/src/links/some-rel")))]
             (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains updated-source)
             (provided
               (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
@@ -101,7 +109,7 @@
         (fact "updates entity :named_links"
           (let [rel "some-rel"
                 relname "my-name"
-                link-path (util/join-path ["" "entities" (:_id doc) "named_links" rel relname])
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id doc) "named_links" rel relname])
                 result (links/add-links ..auth.. doc rel [target-id] :name relname)
                 expected (assoc-in doc [:named_links (keyword rel) (keyword relname)] link-path)]
 
@@ -144,7 +152,7 @@
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "Project" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "entities" (:_id source) "links" rel])
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
                 expected (-> source
                            (assoc-in [:links :_collaboration_roots] #{..roots1.. ..roots2..})
                            (assoc-in [:links (keyword rel)] link-path))]
@@ -156,7 +164,7 @@
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "Folder" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "entities" (:_id source) "links" rel])
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
                 expected (-> source
                            (assoc-in [:links :_collaboration_roots] #{..roots1.. ..roots2..})
                            (assoc-in [:links (keyword rel)] link-path))]
@@ -169,7 +177,7 @@
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "Experiment" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "entities" (:_id source) "links" rel])
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
                 expected (-> source
                            (assoc-in [:links :_collaboration_roots] #{..roots1.. ..roots2..})
                            (assoc-in [:links (keyword rel)] link-path))]

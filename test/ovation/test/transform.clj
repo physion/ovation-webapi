@@ -49,6 +49,14 @@
                                                              :name2 (str (util/join-path ["/api" version "entities" ..id.. "links" "link1"]) "?name=name2")}}})))
 
 (facts "About doc-to-couch"
+  (fact "skips docs without :type"
+    (let [other {:_id "bar" :rel "some-rel"}]
+      (tw/doc-to-couch ..owner.. ..roots.. other) => other))
+
+  (fact "skips docs of type Relation"
+    (let [other {:_id "bar" :rel "some-rel" :type "Relation"}]
+      (tw/doc-to-couch ..owner.. ..roots.. other) => other))
+
   (fact "adds collaboration roots"
     (let [doc {:type ..type.. :attributes {:label ..label..}}]
       (tw/doc-to-couch ..owner.. ..roots.. doc) =contains=> (assoc-in doc [:links :_collaboration_roots] ..roots..))))
