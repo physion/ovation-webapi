@@ -1,22 +1,22 @@
 (ns ovation.handler
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)
-           (clojure.lang ExceptionInfo))
   (:require [compojure.api.sweet :refer :all]
             [clojure.string :refer [join]]
-            [ring.util.http-response :refer [created ok accepted no-content not-found throw! unauthorized bad-request]]
+            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.config :as config]
             [ovation.annotations :as annotations]
             [ovation.core :as core]
-            [slingshot.slingshot :refer [try+]]
+            [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
             [ovation.auth :as auth]
+            [ovation.analyses :refer [create-analysis-record ANALYSIS_RECORD_TYPE]]
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
-            [clojure.string :refer [lower-case capitalize]]))
+            [clojure.string :refer [lower-case capitalize]]
+            [ovation.util :as util]))
 
 (ovation.logging/setup!)
 
@@ -203,7 +203,7 @@
                   (created {:entities (core/create-entity auth entities :parent id)})
 
                   (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {})))))
+                    (unauthorized {:error (:type err)})))))
 
             (PUT* "/" request
               :name :update-entity
@@ -219,7 +219,7 @@
                       (ok {:entities entities}))
 
                     (catch [:type :ovation.auth/unauthorized] err
-                      (unauthorized {}))))))
+                      (unauthorized {:error (:type err)}))))))
 
             (DELETE* "/" request
               :name :delete-entity
@@ -229,7 +229,7 @@
                 (let [auth (:auth/auth-info request)]
                   (accepted {:entities (core/delete-entity auth [id])}))
                 (catch [:type :ovation.auth/unauthorized] err
-                  (unauthorized {}))))
+                  (unauthorized {:error (:type err)}))))
 
             (context* "/links/:rel" [rel]
               :tags ["links"]
@@ -248,15 +248,17 @@
                 :summary "Adds a link"
                 (try+
                   (let [auth (:auth/auth-info request)
-                        sources (core/get-entities auth [id])
-                        updates (flatten (for [src sources  ;; TODO this is pretty inefficient — can we make add-link take collections?
-                                               link links]
-                                           (links/add-links auth src rel [(:target_id link)])))]
-
-                    (created {:entities (core/update-entity auth updates)
-                              :links    (filter :rel updates)}))
-                  (catch [:type :ovation.auth/unauthorized] err
-                    (unauthorized {:error (:message err)}))))
+                        source (first (core/get-entities auth [id]))]
+                    (if source
+                      (let [all-links (:all (links/add-links auth source rel (map :target_id links)))
+                            updates (core/update-entity auth all-links)]
+                        (created {:entities updates
+                                  :links    (filter :rel updates)}))
+                      (not-found {:error (str id " not found")})))
+                  (catch [:type :ovation.auth/unauthorized] {:keys [message]}
+                    (unauthorized {:error   message}))
+                  (catch [:type :ovation.links/target-not-found] {:keys [message]}
+                    (bad-request {:error   message}))))
 
               (context "/:target" [target]
                 (DELETE* "/" request
@@ -270,8 +272,8 @@
                           update (links/delete-link auth source user-id rel target)]
 
                       (accepted {:links update}))
-                    (catch [:type :ovation.auth/unauthorized] err
-                      (unauthorized {:error (:message err)}))))))))
+                    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
+                      (unauthorized {:error   message}))))))))
 
         (context* "/projects" []
           :tags ["projects"]
@@ -309,15 +311,13 @@
             :summary "Creates and returns a new Analysis Record"
             (let [auth (:auth/auth-info request)]
               (try+
-                (let [analysis-records (map (fn [analysis]
-                                              {:type       "AnalysisRecord"
-                                               :attributes (if-let [params (:parameters analysis)]
-                                                             {:parameters params}
-                                                             {})}) analyses)]
-                  (created {:analysis-records (core/create-entity auth analysis-records)})) ;;TODO
+                (let [records (doall (map #(create-analysis-record auth %) analyses))] ;;TODO could we create all the records at once?
+                  (created {:analysis-records (concat records)}))
 
-                (catch [:type :ovation.auth/unauthorized] err
-                  (unauthorized {})))))
+                (catch [:type ::links/target-not-found] {:keys [message]}
+                  (bad-request {:error message}))
+                (catch [:type ::links/illegal-target-type] {:keys [message]}
+                  (bad-request {:error message})))))
           (context* "/:id" [id]
             (get-resource "AnalysisRecord" id)
             (put-resource "AnalysisRecord" id)

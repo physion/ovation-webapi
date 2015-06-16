@@ -22,6 +22,10 @@
       (UUID. (.getLong buffer) (.getLong buffer)))
     (UUID/fromString s)))
 
+(defn into-id-map
+  "Converts a mappable collection of documents into a map {:_id => doc}"
+  [docs]
+  (into {} (map (fn [doc] [(:_id doc) doc]) docs)))
 
 (defn get-entity-id
   "The entity ID for a given URI"
@@ -56,4 +60,8 @@
   "Gets the ISO date time string for (t/now)"
   []
   (tf/unparse (tf/formatters :date-hour-minute-second-ms) (t/now)))
+
+(defn filter-type
+  [entity-type docs]
+  (filter #(= entity-type (:type %)) docs))
 

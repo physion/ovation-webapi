@@ -11,6 +11,7 @@
             [ovation.version :as ver]
             [schema.core :as s]
             [ovation.links :as links]
+            [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
             [clojure.string :refer [lower-case capitalize]])
   (:import (java.util UUID)))
 
@@ -216,8 +217,7 @@
 
           (against-background [(core/get-entities auth-info [id]) => [entity]
                                (core/update-entity auth-info anything) => [entity target1 target2]
-                               (links/add-links auth-info entity rel [targetid1]) => [entity target1]
-                               (links/add-links auth-info entity rel [targetid2]) => [entity target2]]
+                               (links/add-links auth-info entity rel (map :target_id links)) => [entity target1 target2]]
             (fact "succeeds with 201"
               (:status (app (request id))) => 201)
             (fact "returns link documents"
@@ -400,37 +400,71 @@
     (let [apikey "--apikey--"
           auth-info {:user "..user.."}]
       (against-background [(auth/authorize anything apikey) => auth-info]
-        (let [in1 {:type "Revision" :_id (str (util/make-uuid))}
-              in2 {:type "Revision" :_id (str (util/make-uuid))}
-              out1 {:type "Revision" :_id (str (util/make-uuid))}
-              out2 {:type "Revision" :_id (str (util/make-uuid))}
+        (let [id1 (util/make-uuid)
+              id2 (util/make-uuid)
+              id3 (util/make-uuid)
+              id4 (util/make-uuid)
+
+              in1 {:type "Revision" :_id (str id1)}
+              in2 {:type "Revision" :_id (str id2)}
+              out1 {:type "Revision" :_id (str id3)}
+              out2 {:type "Revision" :_id (str id4)}
               parameters {:foo "bar"}
               new-record {:type       "AnalysisRecord"
                           :_id        (str (util/make-uuid))
                           :_rev       "1"
                           :attributes {:parameters parameters}}]
 
-          (against-background [(core/get-entities auth-info (map :_id [in1 in2 out1 out2])) => [in1 in2 out1 out2]
-                               ]
+          (against-background [(core/get-entities auth-info (map :_id [in1 in2 out1 out2])) => [in1 in2 out1 out2]]
             (fact "POST /analysisrecords creates a new analysis record"
               (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
                                      (mock/body (json-post-body [{:inputs     (map :_id [in1 in2])
                                                                   :outputs    (map :_id [out1 out2])
-                                                                  :parameters parameters}]))) apikey)
-                    response-body (body-json post)
-                    body (:analysis-records response-body)]
+                                                                  :parameters parameters}]))) apikey)]
 
-                (get-in (first body) [:attributes :parameters])) => parameters
-              (provided
-                (core/create-entity auth-info [{:type "AnalysisRecord"
-                                                :attributes {:parameters parameters}}]) => [new-record]
-                (links/add-links auth-info new-record "inputs" ["123"]) => ..link..
-                (core/update-entity auth-info ..link1..) => ..links..)))
+                (:analysis-records (body-json post)) => [{:type "AnalysisRecord"}]
+                (provided
+                  (core/create-entity auth-info [{:type       "AnalysisRecord"
+                                                  :attributes {:parameters parameters}}]) => [new-record]
+                  (links/add-links auth-info [new-record] "inputs" [id1 id2] :strict true :required-target-types ["Revision"]) => {:updates ..inputupdates..
+                                                                                                                                   :links   ..inputlinks..
+                                                                                                                                   :all     ..inputs..}
+                  (core/update-entity auth-info ..inputs..) => ..updated-inputs..
+                  (util/filter-type ANALYSIS_RECORD_TYPE ..updated-inputs..) => ..inputrecords..
+                  (links/add-links auth-info ..inputrecords.. "outputs" [id3 id4] :strict true :required-target-types ["Revision"]) => {:updates ..outputupdates..
+                                                                                                                                        :links   ..outputlinks..
+                                                                                                                                        :all     ..outputs..}
+                  (core/update-entity auth-info ..outputs..) => ..updated-outputs..
+                  (util/filter-type ANALYSIS_RECORD_TYPE ..updated-outputs..) => {:type "AnalysisRecord"}))))
 
-          (future-fact "POST /analysisrecords returns 400 if inputs missing")
-          (future-fact "POST /analysisrecords returns 400 if outputs missing")
-          (future-fact "POST /analysisrecords returns 400 if intpus are not Revisions")
-          (future-fact "POST /analysisrecords returns 400 if outputs are not Revisions"))))))
+          (against-background [(core/get-entities auth-info #{id1 id2}) => [in1]
+                               (auth/check! anything :auth/update anything) => true]
+            (fact "POST /analysisrecords returns 400 if inputs/outputs missing"
+              (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
+                                     (mock/body (json-post-body [{:inputs     (map :_id [in1 in2])
+                                                                  :outputs    (map :_id [out1 out2])
+                                                                  :parameters parameters}]))) apikey)]
+                (:status (app post)) => 400
+                (provided
+                  (core/create-entity auth-info [{:type       "AnalysisRecord"
+                                                  :attributes {:parameters parameters}}]) => [{:type       "AnalysisRecord"
+                                                                                               :_id        (str (util/make-uuid))
+                                                                                               :_rev       "1"
+                                                                                               :attributes {:parameters parameters}}]))))
+
+
+          (against-background [(core/get-entities auth-info #{id1 id2}) => [(assoc in1 :type "MyEntity") in2]
+                               (core/get-entities auth-info #{out1 out2}) => [out2 out1]
+                               (auth/check! anything :auth/update anything) => true]
+            (fact "POST /analysisrecords returns 400 if inputs/outputs are not Revisions"
+              (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
+                                     (mock/body (json-post-body [{:inputs     (map :_id [in1 in2])
+                                                                  :outputs    (map :_id [out1 out2])
+                                                                  :parameters parameters}]))) apikey)]
+                (:status (app post)) => 400
+                (provided
+                  (core/create-entity auth-info [{:type       "AnalysisRecord"
+                                                  :attributes {:parameters parameters}}]) => [new-record])))))))))
 
 (facts "About named resource types"
   (entity-resource-tests "Project")

@@ -99,37 +99,65 @@
     (conj updated-targets updated-src)))
 
 
+
 (defn add-links
-  "Adds link(s) with the given relation name from doc to each specified target ID"
-  [auth doc rel target-ids & {:keys [inverse-rel name] :or [inverse-rel nil
-                                                            name nil]}]
+  "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
+  or a Sequential collection of source documents. For each source document, links to all targets are built.
+
+  Returns
+  ```{:updates <updated documents>
+   :links <new link documents
+   :all (concat :updates :links)}```
+   "
+  [auth doc rel target-ids & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
+                                                                                         name nil
+                                                                                         strict false
+                                                                                         required-target-types nil]}]
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
         unique-targets (into #{} target-ids)]
-    (auth/check! authenticated-user-id :auth/update doc)
-    (let [doc-id (:_id doc)
-          path (link-path doc-id rel name)
-          linked-doc (if name
-                       (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
-                       (assoc-in doc [:links (keyword rel)] path))
-          targets (core/get-entities auth unique-targets)]
 
-      ;(when-not (= (count targets) (count unique-targets))
-      ;  (throw+ {:type ::bad-input :message "Missing targets"}))
+    (loop [docs (if (sequential? doc) doc [doc])
+           updates-acc (util/into-id-map docs)
+           links-acc '()]
+      (let [doc (first docs)]
+        (if (empty? docs)
+          (let [updates (vals updates-acc)
+                links links-acc]
+            {:updates updates
+             :links   links
+             :all     (concat updates links)})
+          (do
+            (auth/check! authenticated-user-id :auth/update doc)
+            (let [doc-id (:_id doc)
+                  path (link-path doc-id rel name)
+                  linked-doc (if name
+                               (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
+                               (assoc-in doc [:links (keyword rel)] path))
+                  targets (core/get-entities auth unique-targets)]
 
-      (let [links (map (fn [target-id]
-                         (let [base {:_id       (link-id doc-id rel target-id :name name)
-                                     :target_id target-id
-                                     :source_id doc-id
-                                     :rel       rel
-                                     :user_id   authenticated-user-id}
-                               named (if name (assoc base :name name) base)
-                               link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
-                           link))
-                    unique-targets)
-            updated-docs (update-collaboration-roots linked-doc targets)]
+              (if (and strict
+                    (not (= (count targets) (count unique-targets))))
 
-        (concat updated-docs links)))))
+                (throw+ {:type ::target-not-found :message "Target(s) not found"})
+
+                (let [target-types (map :type targets)]
+                  (if (or (nil? required-target-types)
+                        (every? (into #{} required-target-types) target-types))
+                    (let [links (map (fn [target-id]
+                                       (let [base {:_id       (link-id doc-id rel target-id :name name)
+                                                   :target_id target-id
+                                                   :source_id doc-id
+                                                   :rel       rel
+                                                   :user_id   authenticated-user-id}
+                                             named (if name (assoc base :name name) base)
+                                             link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
+                                         link))
+                                  unique-targets)
+                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))]
+
+                      (recur (rest docs) (merge updates-acc updated-docs) (concat links-acc links)))
+                    (throw+ {:type ::illegal-target-type :message "Target(s) not of required type(s)"})))))))))))
 
 (defn delete-link
   [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
