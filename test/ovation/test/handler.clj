@@ -83,6 +83,16 @@
           response => nil?)))))
 
 
+(facts "About annotations"
+  (let [apikey "--apikey--"
+        auth-info {:user "..user.."}]
+    (against-background [(auth/authorize anything apikey) => auth-info]
+      (facts "GET /entities/:id/annotations/:type"
+        (future-fact "returns annotations by entity and user"))
+      (facts "POST /entities/:id/annotations/:type"
+        (future-fact "creates annotations"))
+      (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
+        (future-fact "deletes annotations")))))
 
 (facts "About /entities"
   (let [apikey "--apikey--"
@@ -182,7 +192,6 @@
             (provided
               (core/delete-entity auth-info [(str id)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
           )))))
-
 
 (facts "About links"
   (let [apikey "--apikey--"

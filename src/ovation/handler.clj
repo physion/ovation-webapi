@@ -39,14 +39,14 @@
        :body [new-annotations# [~record-schema]]
        :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
        (let [auth# (:auth/auth-info request#)]
-         (created {(keyword ~annotation-key) (annotations/create-annotations auth# [~id] new-annotations#)})))
+         (created {(keyword ~annotation-key) (annotations/create-annotations auth# [~id] ~annotation-key new-annotations#)})))
 
      (context* "/:annotation-id" [annotation-id#]
        (DELETE* "/" request#
          :return Success
          :summary ~(str "Removes a " annotation-description " annotation from entity :id")
          (let [auth# (:auth/auth-info request#)]
-           (accepted (annotations/delete-annotations auth# [~id] [annotation-id#])))))))
+           (accepted (annotations/delete-annotations auth# [annotation-id#])))))))
 
 
 (defmacro get-resources

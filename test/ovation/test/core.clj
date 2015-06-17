@@ -11,14 +11,6 @@
             [clj-time.format :as tf])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
-(defn sling-throwable
-  [exception-map]
-  (slingshot.support/get-throwable (slingshot.support/make-context
-                                     exception-map
-                                     (str "throw+: " map)
-                                     nil
-                                     (slingshot.support/stack-trace))))
-
 (facts "About values"
   (facts "write"
     (facts "`create-values`"
@@ -40,7 +32,7 @@
           (core/delete-values ..auth.. [{:type "Annotation"}]) => ..result..
           (provided
             (auth/check! ..user.. ::auth/delete) => identity
-            (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..result..)))))
+            (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..result..))))))
 
 
 (facts "About Query"
