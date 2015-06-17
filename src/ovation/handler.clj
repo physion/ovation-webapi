@@ -146,6 +146,7 @@
 
 
 
+
 ;;; --- Routes --- ;;;
 (defapi app
 
@@ -160,11 +161,12 @@
                   :authserver config/AUTH_SERVER
                   :required-auth-url-prefix #{"/api"})
 
-                (wrap-with-logger
-                  :info  (fn [x] (logging/info x))
-                  :debug (fn [x] (logging/debug x))
-                  :error (fn [x] (logging/error x))
-                  :warn  (fn [x] (logging/warn x)))
+
+                (wrap-with-logger                           ;;TODO can we make the middleware conditional rather than testing for each logging call?
+                  :info (fn [x] (when config/LOGGING_HOST (logging/info x)))
+                  :debug (fn [x] (when config/LOGGING_HOST (logging/debug x)))
+                  :error (fn [x] (when config/LOGGING_HOST (logging/error x)))
+                  :warn (fn [x] (when config/LOGGING_HOST (logging/warn x))))
                 ]
 
     (swagger-ui)
@@ -264,9 +266,9 @@
                                   :links    (filter :rel updates)}))
                       (not-found {:error (str id " not found")})))
                   (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                    (unauthorized {:error   message}))
+                    (unauthorized {:error message}))
                   (catch [:type :ovation.links/target-not-found] {:keys [message]}
-                    (bad-request {:error   message}))))
+                    (bad-request {:error message}))))
 
               (context "/:target" [target]
                 (DELETE* "/" request
@@ -281,7 +283,7 @@
 
                       (accepted {:links update}))
                     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                      (unauthorized {:error   message}))))))))
+                      (unauthorized {:error message}))))))))
 
         (context* "/projects" []
           :tags ["projects"]

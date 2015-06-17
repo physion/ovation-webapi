@@ -80,6 +80,9 @@
 
         (= target-type "protocol") [source (add-roots target source-roots)]
 
+        (and (= source-type "analysisrecord")
+          (= target-type "revision")) [(add-roots source target-roots) target]
+
         :else
         [source target]
         ))

@@ -97,6 +97,30 @@
             (provided
               (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
 
+        (fact "updates AnalysisRecord with input Revision _collaboration_roots"
+          (let [rel "inputs"
+                source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
+                target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
+                target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
+                expected (-> source
+                           (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
+                           (assoc-in [:links :inputs] "/api/v1/entities/analysis-record/links/inputs"))]
+            (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
+            (provided
+              (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
+
+        (fact "updates AnalysisRecord with output Revision _collaboration_roots"
+          (let [rel "outputs"
+                source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
+                target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
+                target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
+                expected (-> source
+                           (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
+                           (assoc-in [:links :outputs] "/api/v1/entities/analysis-record/links/outputs"))]
+            (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
+            (provided
+              (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
+
         (fact "updates source _collaboration_roots by aggregating multiple target collaboration roots"
           (let [rel "some-rel"
                 source {:_id "src" :type "Entity" :links {:_collaboration_roots [..roots1..]}}
