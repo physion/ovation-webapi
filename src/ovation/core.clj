@@ -11,6 +11,7 @@
 
 
 (def USER-ENTITY "User")
+(def ANNOTATION-TYPE "Annotation")
 
 
 ;; QUERY
@@ -70,6 +71,17 @@
         :collaboration_roots (parent-collaboration-roots auth parent)))
     ))
 
+(defn create-values
+  "POSTs value(s) direct to Couch"
+  [auth values]
+
+  (when-not (every? #{ANNOTATION-TYPE} (map :type values))
+    (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
+
+  (let [db (couch/db auth)
+        docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
+    (couch/bulk-docs db docs)))
+
 (defn- update-attributes
   [updates]
   (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes (:attributes update)
@@ -107,6 +119,7 @@
       (throw+ {:type ::illegal-operation :message "Entity is already trashed"}))
     (assoc doc :trash_info info)))
 
+
 (defn delete-entity
   [auth ids]
   (let [db (couch/db auth)
@@ -119,3 +132,15 @@
           trashed (map #(trash-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
       (couch/bulk-docs db auth-checked-docs))))
+
+
+(defn delete-values
+  "DELETEs value(s) direct to Couch"
+  [auth values]
+
+  (when-not (every? #{ANNOTATION-TYPE} (map :type values))
+    (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
+
+  (let [db (couch/db auth)
+        docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
+    (couch/delete-docs db docs)))

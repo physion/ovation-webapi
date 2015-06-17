@@ -47,7 +47,7 @@
     (util/prefixed-path (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)]))
     (util/prefixed-path (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)]))))
 
-(defn- collaboration-roots
+(defn collaboration-roots
   [doc]
   (get-in doc [:links :_collaboration_roots] []))
 

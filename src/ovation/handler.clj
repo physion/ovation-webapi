@@ -18,31 +18,35 @@
             [ring.middleware.logger :refer [wrap-with-logger]]
             [clojure.string :refer [lower-case capitalize]]
             [ovation.util :as util]
-            [schema.core :as s]))
+            [schema.core :as s])
+  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)))
 
 (ovation.logging/setup!)
 
 (defmacro annotation
   "Creates an annotation type endpoint"
-  [id annotation-type annotation-key record-schema annotation-schema]
+  [id annotation-description annotation-key record-schema annotation-schema]
 
-  `(context* ~(str "/" annotation-type) []
-     (GET* "/" []
-       ;:return [~annotation-schema]
-       :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
-       (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))
+  `(context* ~(str "/" annotation-key) []
+     (GET* "/" request#
+       :return [{s/Keyword [~annotation-schema]}]
+       :summary ~(str "Returns all " annotation-description " annotations associated with entity :id")
+       (let [auth# (:auth/auth-info request#)]
+         (ok {(keyword ~annotation-key) (annotations/get-annotations auth# ~id ~annotation-key)}))) ;;TODO ~annotation-type?
 
-     (POST* "/" []
-       :return Success
-       :body [new-annotation# ~record-schema]
-       :summary ~(str "Adds a new " annotation-type " annotation to entity :id")
-       (ok (entity/add-annotation api-key# ~id ~annotation-key new-annotation#)))
+     (POST* "/" request#
+       :return [{s/Keyword [~annotation-schema]}]
+       :body [new-annotations# [~record-schema]]
+       :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
+       (let [auth# (:auth/auth-info request#)]
+         (created {(keyword ~annotation-key) (annotations/create-annotations auth# [~id] new-annotations#)})))
 
      (context* "/:annotation-id" [annotation-id#]
-       (DELETE* "/" []
+       (DELETE* "/" request#
          :return Success
-         :summary ~(str "Removes a " annotation-type " annotation from entity :id")
-         (ok (entity/delete-annotation api-key# ~id ~annotation-key annotation-id#))))))
+         :summary ~(str "Removes a " annotation-description " annotation from entity :id")
+         (let [auth# (:auth/auth-info request#)]
+           (accepted (annotations/delete-annotations auth# [~id] [annotation-id#])))))))
 
 
 (defmacro get-resources
@@ -241,6 +245,14 @@
                 (catch [:type :ovation.auth/unauthorized] err
                   (unauthorized {:error (:type err)}))))
 
+            (context* "/annotations" []
+              :tags ["annotations"]
+
+              (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
+              (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
+              (annotation id "timeline events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
+              (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
+
             (context* "/links/:rel" [rel]
               :tags ["links"]
               (GET* "/" request
@@ -341,19 +353,4 @@
             :summary "Returns the provenance graph expanding from the POSTed entity IDs"
             (let [auth (:auth/auth-info request)]
               nil)))))))
-
-
-;(context* "/annotations" []
-;  :tags ["annotations"]
-;  (GET* "/" request
-;    ;:return AnnotationsMap
-;    :summary "Returns all annotations associated with entity"
-;    (let [auth (:auth/api-key request)]
-;      (ok (annotations/get-annotations auth id))))
-;
-;
-;  (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-;  (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
-;  (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
-;  (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
 

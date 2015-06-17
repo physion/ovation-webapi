@@ -85,3 +85,34 @@
     (auth/authenticated-user-id ...auth...) => ...id...
     (provided
       ...auth... =contains=> {:uuid ...id...})))
+
+(facts "About `can?`"
+  (facts :create
+    (fact "Annoations require :user match authenticated user"
+      (auth/can? ..user.. ::auth/create {:type "Annotation"
+                                         :user ..user..}) => true
+      (auth/can? ..user.. ::auth/create {:type "Annotation"
+                                         :user ..other..}) => false)
+
+    (fact "Entities require :owner match authenticated user"
+      (auth/can? ..user.. ::auth/create {:type "Entity"
+                                         :owner nil}) => true
+      (auth/can? ..user.. ::auth/create {:type "Entity"
+                                         :owner ..user..}) => true
+      (auth/can? ..user.. ::auth/create {:type "Entity"
+                                         :owner ..other..}) => false))
+  (facts :delete
+    (fact "Annoations require :user match authenticated user"
+      (auth/can? ..user.. ::auth/delete {:type "Annotation"
+                                         :user ..user..}) => true
+      (auth/can? ..user.. ::auth/delete {:type "Annotation"
+                                         :user ..other..}) => false)
+
+    (fact "Entities require :owner match authenticated user"
+      (auth/can? ..user.. ::auth/delete {:type "Entity"
+                                         :owner nil}) => true
+      (auth/can? ..user.. ::auth/delete {:type "Entity"
+                                         :owner ..user..}) => true
+      (auth/can? ..user.. ::auth/delete {:type "Entity"
+                                         :owner ..other..}) => false)))
+

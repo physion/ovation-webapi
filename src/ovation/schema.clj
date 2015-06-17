@@ -12,9 +12,10 @@
 
 (def AnnotationBase {:_id                    s/Str
                      :_rev                   s/Str
-                     :user                   s/Str
-                     :entity                 s/Str
-                     (s/optional-key :links) s/Any})
+                     :user                   s/Uuid
+                     :entity                 s/Uuid
+                     :type                   "Annotation"
+                     (s/optional-key :links) {s/Keyword s/Str}})
 
 (s/defschema AnnotationTypes (s/enum OvationEntity$AnnotationKeys/TAGS
                                OvationEntity$AnnotationKeys/PROPERTIES
@@ -86,8 +87,8 @@
 (s/defschema EntityUpdate BaseEntity)
 
 (s/defschema NewAnalysisRecord
-  {:inputs [s/Uuid]
-   :outputs [s/Uuid]
+  {:inputs                      [s/Uuid]
+   :outputs                     [s/Uuid]
    (s/optional-key :parameters) {s/Keyword s/Any}})
 
 ;; -- TRASH INFO -- ;;

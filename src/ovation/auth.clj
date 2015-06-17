@@ -48,11 +48,15 @@
 
 (defn- can-write?
   [auth-user-id doc]
-  (or (nil? (:owner doc)) (= auth-user-id (:owner doc))))
+  (case (:type doc)
+    "Annotation" (= auth-user-id (:user doc))
+    ;; default
+    (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))))
 
 (defn can?
   [auth-user-id op doc]
   (case op
+    ::create (can-write? auth-user-id doc)
     ::update (can-write? auth-user-id doc)
     ::delete (can-write? auth-user-id doc)
     ;;default

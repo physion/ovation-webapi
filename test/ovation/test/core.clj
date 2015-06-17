@@ -11,6 +11,37 @@
             [clj-time.format :as tf])
   (:import (us.physion.ovation.data EntityDao$Views)))
 
+(defn sling-throwable
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context
+                                     exception-map
+                                     (str "throw+: " map)
+                                     nil
+                                     (slingshot.support/stack-trace))))
+
+(facts "About values"
+  (facts "write"
+    (facts "`create-values`"
+      (against-background [(couch/db ..auth..) => ..db..
+                           (auth/authenticated-user-id ..auth..) => ..user..]
+        (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
+          (core/create-values ..auth.. [{:type "Project"}]) => (throws Throwable))
+        (fact "bulk-updates values"
+          (core/create-values ..auth.. [{:type "Annotation"}]) => ..result..
+          (provided
+            (auth/check! ..user.. ::auth/create) => identity
+            (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..result..))))
+    (facts "`delete-values`"
+      (against-background [(couch/db ..auth..) => ..db..
+                           (auth/authenticated-user-id ..auth..) => ..user..]
+        (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
+          (core/delete-values ..auth.. [{:type "Project"}]) => (throws Throwable))
+        (fact "calls delete-docs"
+          (core/delete-values ..auth.. [{:type "Annotation"}]) => ..result..
+          (provided
+            (auth/check! ..user.. ::auth/delete) => identity
+            (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..result..)))))
+
 
 (facts "About Query"
   (facts "`filter-trashed"
