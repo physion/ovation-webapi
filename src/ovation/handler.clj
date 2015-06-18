@@ -314,6 +314,16 @@
             (put-resource "Project" id)
             (delete-resource "Project" id)))
 
+        (context* "/experiments" []
+          :tags ["experiments"]
+          (get-resources "Experiment")
+          (post-resources "Experiment")
+          (context* "/:id" [id]
+            (get-resource "Experiment" id)
+            (post-resource "Experiment" id)
+            (put-resource "Experiment" id)
+            (delete-resource "Experiment" id)))
+
         (context* "/sources" []
           :tags ["sources"]
           (get-resources "Source")
@@ -323,6 +333,7 @@
             (post-resource "Source" id)                     ;; TODO only allow Source children
             (put-resource "Source" id)
             (delete-resource "Source" id)))
+
 
         (context* "/users" []
           :tags ["users"]
@@ -351,6 +362,7 @@
             (get-resource "AnalysisRecord" id)
             (put-resource "AnalysisRecord" id)
             (delete-resource "AnalysisRecord" id)))
+
 
         (context* "/provenance" []
           :tags ["provenance"]

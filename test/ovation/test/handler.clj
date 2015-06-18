@@ -549,6 +549,15 @@
                   (core/create-entity auth-info [{:type       "AnalysisRecord"
                                                   :attributes {:parameters parameters}}]) => [new-record])))))))))
 
-(facts "About named resource types"
-  (entity-resource-tests "Project")
+(facts "About Projects"
+  (entity-resource-tests "Project"))
+
+(facts "About Sources"
   (entity-resource-tests "Source"))
+
+;(facts "About Files"
+;  (entity-resource-tests "Revision")
+;  (entity-resource-tests "Resource"))
+
+(facts "About Experiments"
+  (entity-resource-tests "Experiment"))
