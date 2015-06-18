@@ -12,6 +12,14 @@
   (:import (us.physion.ovation.data EntityDao$Views)))
 
 (facts "About values"
+  (facts "read"
+    (facts "`get-values`"
+      (against-background [(couch/db ..auth..) => ..db..
+                           (auth/authenticated-user-id ..auth..) => ..user..]
+        (fact "gets values"
+          (core/get-values ..auth.. [..id..]) => [..doc..]
+          (provided
+            (couch/all-docs ..db.. [..id..]) => [..doc..])))))
   (facts "write"
     (facts "`create-values`"
       (against-background [(couch/db ..auth..) => ..db..
@@ -29,8 +37,9 @@
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
           (core/delete-values ..auth.. [{:type "Project"}]) => (throws Throwable))
         (fact "calls delete-docs"
-          (core/delete-values ..auth.. [{:type "Annotation"}]) => ..result..
+          (core/delete-values ..auth.. [..id..]) => ..result..
           (provided
+            (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..user.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..result..))))))
 

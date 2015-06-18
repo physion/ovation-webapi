@@ -42,7 +42,11 @@
       (tr/from-couch)
       (filter-trashed include-trashed))))
 
-
+(defn get-values
+  "Get values by ID"
+  [auth ids]
+  (let [db (couch/db auth)]
+    (couch/all-docs db ids)))
 
 ;; COMMAND
 
@@ -136,11 +140,12 @@
 
 (defn delete-values
   "DELETEs value(s) direct to Couch"
-  [auth values]
+  [auth ids]
 
-  (when-not (every? #{ANNOTATION-TYPE} (map :type values))
-    (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
+  (let [values (get-values auth ids)]
+    (when-not (every? #{ANNOTATION-TYPE} (map :type values))
+      (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
 
-  (let [db (couch/db auth)
-        docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
-    (couch/delete-docs db docs)))
+    (let [db (couch/db auth)
+          docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
+      (couch/delete-docs db docs))))

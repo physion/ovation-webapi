@@ -27,7 +27,7 @@
    (:status, :body, keys or :headers map must be supplied when overriding"
   [custom-response]
   (let [resp {:status 401 :body "unauthorized"}
-        headers {"WWW-Authenticate" "Token realm=\"Application\""}]
+        headers {"WWW-Authenticate" "Token realm=Application"}]
     (assoc (merge resp custom-response)
       :headers (merge (:headers resp) headers))))
 
