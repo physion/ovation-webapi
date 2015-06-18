@@ -1,6 +1,6 @@
 (ns ovation.handler
   (:require [compojure.api.sweet :refer :all]
-            [clojure.string :refer [join]]
+            [compojure.api.routes :refer [path-for*]]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
@@ -16,37 +16,46 @@
             [ovation.analyses :refer [create-analysis-record ANALYSIS_RECORD_TYPE]]
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
-            [clojure.string :refer [lower-case capitalize]]
-            [ovation.util :as util]
-            [schema.core :as s])
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys)))
+            [clojure.string :refer [lower-case capitalize join]]
+            [schema.core :as s]))
 
 (ovation.logging/setup!)
+
+(defn router
+  [request]
+  (fn [name]
+    (path-for* name request)))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
 
   `(context* ~(str "/" annotation-key) []
+     :tags [~annotation-key]
      (GET* "/" request#
-       :return [{s/Keyword [~annotation-schema]}]
+       :name ~(keyword (str "get-" (lower-case annotation-key)))
+       ;:return {s/Keyword [~annotation-schema]}
        :summary ~(str "Returns all " annotation-description " annotations associated with entity :id")
-       (let [auth# (:auth/auth-info request#)]
-         (ok {(keyword ~annotation-key) (annotations/get-annotations auth# ~id ~annotation-key)}))) ;;TODO ~annotation-type?
+       (let [auth# (:auth/auth-info request#)
+             annotations# (annotations/get-annotations auth# [~id] ~annotation-key)]
+         (ok {(keyword ~annotation-key) annotations#})))
 
      (POST* "/" request#
-       :return [{s/Keyword [~annotation-schema]}]
+       :name ~(keyword (str "create-" (lower-case annotation-key)))
+       :return {s/Keyword [~annotation-schema]}
        :body [new-annotations# [~record-schema]]
        :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
        (let [auth# (:auth/auth-info request#)]
          (created {(keyword ~annotation-key) (annotations/create-annotations auth# [~id] ~annotation-key new-annotations#)})))
 
-     (context* "/:annotation-id" [annotation-id#]
+     (context* "/:annotation-id" [aid#]
        (DELETE* "/" request#
-         :return Success
+         :name ~(keyword (str "delete-" (lower-case annotation-key)))
+         :return [s/Str]
          :summary ~(str "Removes a " annotation-description " annotation from entity :id")
-         (let [auth# (:auth/auth-info request#)]
-           (accepted (annotations/delete-annotations auth# [annotation-id#])))))))
+         (let [auth# (:auth/auth-info request#)
+               annotation-id# (-> request# :route-params :annotation-id)]
+           (accepted (map :_id (annotations/delete-annotations auth# [annotation-id#]))))))))
 
 
 (defmacro get-resources
@@ -180,8 +189,7 @@
               :title          "Ovation"
               :description    "Ovation Web API"
               :contact        {:name  "Ovation"
-                               :email "support@ovation.io"
-                               :url   "https://support.ovation.io"}
+                               :url   "https://ovation.io"}
               :termsOfService "https://ovation.io/terms_of_service"}}
       :tags [{:name "entities" :description "Generic entity operations"}
              {:name "projects" :description "Projects"}
@@ -247,11 +255,10 @@
 
             (context* "/annotations" []
               :tags ["annotations"]
-
-              (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-              (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
-              (annotation id "timeline events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
-              (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation))
+              (annotation id "keywords" "tags" TagRecord TagAnnotation)
+              (annotation id "properties" "properties" PropertyRecord PropertyAnnotation)
+              (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
+              (annotation id "notes" "notes" NoteRecord NoteAnnotation))
 
             (context* "/links/:rel" [rel]
               :tags ["links"]

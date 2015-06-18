@@ -12,7 +12,8 @@
             [schema.core :as s]
             [ovation.links :as links]
             [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
-            [clojure.string :refer [lower-case capitalize]])
+            [clojure.string :refer [lower-case capitalize]]
+            [ovation.annotations :as annotations])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -40,6 +41,35 @@
   [m]
   (json/write-str (walk/stringify-keys m)))
 
+(defn get*
+  [app path apikey]
+  (let [get (mock-req (mock/request :get path) apikey)
+        response (app get)
+        reader (clojure.java.io/reader (:body response))
+        body (json/read reader)]
+    {:status (:status response)
+     :body   (walk/keywordize-keys body)}))
+
+(defn delete*
+  [app path apikey]
+  (let [get (mock-req (mock/request :delete path) apikey)
+        response (app get)
+        reader (clojure.java.io/reader (:body response))
+        body (json/read reader)]
+    {:status (:status response)
+     :body   (walk/keywordize-keys body)}))
+
+
+(defn post*
+  [app path apikey body]
+  (let [post (mock-req (-> (mock/request :post path)
+                         (mock/body (json-post-body body))) apikey)
+        response (app post)
+        reader (clojure.java.io/reader (:body response))
+        body (json/read reader)]
+
+    {:status (:status response)
+     :body   (walk/keywordize-keys body)}))
 
 (facts "About authorization"
   (fact "invalid API key returns 401"
@@ -83,16 +113,60 @@
           response => nil?)))))
 
 
+
 (facts "About annotations"
   (let [apikey "--apikey--"
         auth-info {:user "..user.."}]
     (against-background [(auth/authorize anything apikey) => auth-info]
       (facts "GET /entities/:id/annotations/:type"
-        (future-fact "returns annotations by entity and user"))
+        (let [id (str (util/make-uuid))
+              tags [{:_id             (str (util/make-uuid))
+                     :_rev            "1"
+                     :entity          id
+                     :user            (str (util/make-uuid))
+                     :type            "Annotation"
+                     :annotation_type "tags"
+                     :annotation      {:tag "--tag--"}}]]
+          (against-background [(annotations/get-annotations auth-info [id] "tags") => tags]
+            (fact "returns annotations by entity and user"
+              (let [path (str "/api/v1/entities/" id "/annotations/tags")
+                    {:keys [status body]} (get* app path apikey)]
+                status => 200
+                body => {:tags tags})))))
+
       (facts "POST /entities/:id/annotations/:type"
-        (future-fact "creates annotations"))
+        (let [id (str (util/make-uuid))
+              post [{:tag "--tag--"}]
+              tags [{:_id             (str (util/make-uuid))
+                     :_rev            "1"
+                     :entity          id
+                     :user            (str (util/make-uuid))
+                     :type            "Annotation"
+                     :annotation_type "tags"
+                     :annotation      {:tag "--tag--"}}]]
+          (against-background [(annotations/create-annotations auth-info [id] "tags" post) => tags]
+            (fact "creates annotations"
+              (let [path (str "/api/v1/entities/" id "/annotations/tags")
+                    {:keys [status body]} (post* app path apikey post)]
+                status => 201
+                body => {:tags tags})))))
+
       (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
-        (future-fact "deletes annotations")))))
+        (let [id (str (util/make-uuid))
+              annotation-id (str (util/make-uuid))
+              tags [{:_id             annotation-id
+                     :_rev            "1"
+                     :entity          id
+                     :user            (str (util/make-uuid))
+                     :type            "Annotation"
+                     :annotation_type "tags"
+                     :annotation      {:tag "--tag--"}}]]
+          (against-background [(annotations/delete-annotations auth-info [annotation-id]) => tags]
+            (fact "deletes annotations"
+              (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
+                    {:keys [status body]} (delete* app path apikey)]
+                status => 202
+                body => [annotation-id]))))))))
 
 (facts "About /entities"
   (let [apikey "--apikey--"
