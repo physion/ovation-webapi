@@ -22,7 +22,11 @@
                  [com.newrelic.agent.java/newrelic-agent "3.11.0"]
 
                  ;; Ovation API
-                 [us.physion/ovation-api "3.0.7"]
+                 [us.physion/ovation-api "3.1.0"  :exclusions [com.google.guava/guava
+                                                               commons-logging
+                                                               commons-codec
+                                                               joda-time
+                                                               org.apache.httpcomponents/httpclient]]
 
                  ;; Logging
                  [org.clojure/tools.logging "0.3.1"]
