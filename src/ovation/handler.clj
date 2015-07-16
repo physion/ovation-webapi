@@ -16,6 +16,7 @@
             [ovation.analyses :refer [create-analysis-record ANALYSIS_RECORD_TYPE]]
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.middleware.raygun :refer [wrap-raygun-handler]]
             [clojure.string :refer [lower-case capitalize join]]
             [schema.core :as s]))
 
@@ -180,6 +181,8 @@
                   :debug (fn [x] (when config/LOGGING_HOST (logging/debug x)))
                   :error (fn [x] (when config/LOGGING_HOST (logging/error x)))
                   :warn (fn [x] (when config/LOGGING_HOST (logging/warn x))))
+
+                (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
                 ]
 
     (swagger-ui)

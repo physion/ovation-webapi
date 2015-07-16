@@ -5,7 +5,7 @@
   :repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]
                  ["s3-ovation-release-repository" {:url "s3p://maven.ovation.io/release"}]]
 
-  :dependencies [[org.clojure/clojure "1.7.0-beta1"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                  ;; Compojure API and middleware
@@ -43,6 +43,9 @@
                  ;; Other
                  [clj-time "0.9.0"]
                  [org.clojure/data.json "0.2.6"]
+
+                 ;; Raygun.io
+                 [thegreatape/ring-raygun "0.1.0"]
                  ]
 
   :plugins [[lein-clojars "0.9.1"]
