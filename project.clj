@@ -9,8 +9,8 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "0.21.0"]           ;; "0.19.3"
-                 [metosin/ring-swagger-ui "2.1.5-M2"]
+                 [metosin/compojure-api "0.22.1"]
+                 [metosin/ring-swagger-ui "2.1.0"]
                  [ring-cors "0.1.7"]
 
                  ;; HTTP and CouchDB
