@@ -332,10 +332,10 @@
               (provided
                 (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
       )))
-
-(defmacro entity-resource-tests
-  "Facts about a resource type (e.g. \"Project\")"
+(defmacro entity-resource-create-tests
+  "Facts about a resource creation (e.g. \"Project\")"
   [entity-type]
+
   (let [type-name (capitalize entity-type)
         type-path (lower-case (str type-name "s"))]
     `(let [apikey# "--apikey--"
@@ -419,7 +419,45 @@
                    (:status (app (request#))) => 401
                    (provided
                      (core/create-entity auth-info# new-entities#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-                 )))
+                 ))))))))
+
+
+(defmacro entity-resource-update-tests
+  "Facts about a resource update (e.g. \"Project\")"
+  [entity-type]
+  (let [type-name (capitalize entity-type)
+        type-path (lower-case (str type-name "s"))]
+    `(let [apikey# "--apikey--"
+           auth-info# {:user "..user.."}]
+
+       (against-background [(auth/authorize anything apikey#) => auth-info#]
+         (facts ~(util/join-path ["" type-path])
+           (facts "read"
+             (let [id# (str (UUID/randomUUID))
+                   project# {:_id        id#
+                             :_rev       "123"
+                             :type       ~type-name
+                             :attributes {}
+                             :links      {}}]
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
+                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                   (fact ~(str "GET / gets all" type-path)
+                     (body-json get-req#) => {~(keyword type-path) [project#]})))
+
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
+                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                   (fact ~(str "GET /:id gets a single " (lower-case type-name))
+                     (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
+                   (let [source# {:_id        id#
+                                  :_rev       "123"
+                                  :type       "OtherType"
+                                  :attributes {}
+                                  :links      {}}]
+                     (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
+                       (:status (app get-req#)) => 404
+                       (provided
+                         (core/get-entities auth-info# [id#]) => [source#])))))))
+
 
            (facts "update"
              (let [id# (UUID/randomUUID)
@@ -451,8 +489,44 @@
                  (provided
                    (core/update-entity auth-info# [update#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )
-             )
+             ))))))
 
+
+(defmacro entity-resource-deletion-tests
+  "Facts about a resource type (e.g. \"Project\")"
+  [entity-type]
+  (let [type-name (capitalize entity-type)
+        type-path (lower-case (str type-name "s"))]
+    `(let [apikey# "--apikey--"
+           auth-info# {:user "..user.."}]
+
+       (against-background [(auth/authorize anything apikey#) => auth-info#]
+         (facts ~(util/join-path ["" type-path])
+           (facts "read"
+             (let [id# (str (UUID/randomUUID))
+                   project# {:_id        id#
+                             :_rev       "123"
+                             :type       ~type-name
+                             :attributes {}
+                             :links      {}}]
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
+                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                   (fact ~(str "GET / gets all" type-path)
+                     (body-json get-req#) => {~(keyword type-path) [project#]})))
+
+               (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
+                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                   (fact ~(str "GET /:id gets a single " (lower-case type-name))
+                     (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
+                   (let [source# {:_id        id#
+                                  :_rev       "123"
+                                  :type       "OtherType"
+                                  :attributes {}
+                                  :links      {}}]
+                     (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
+                       (:status (app get-req#)) => 404
+                       (provided
+                         (core/get-entities auth-info# [id#]) => [source#])))))))
            (facts "delete"
              (let [id# (UUID/randomUUID)
                    attributes# {:foo "bar"}
@@ -475,6 +549,7 @@
                  (:status (app (request# id#))) => 401
                  (provided
                    (core/delete-entity auth-info# [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+
 
 
 
@@ -550,14 +625,17 @@
                                                   :attributes {:parameters parameters}}]) => [new-record])))))))))
 
 (facts "About Projects"
-  (entity-resource-tests "Project"))
+  (entity-resource-create-tests "Project")
+  (entity-resource-update-tests "Project")
+  (entity-resource-deletion-tests "Project"))
 
 (facts "About Sources"
-  (entity-resource-tests "Source"))
+  (entity-resource-create-tests "Source")
+  (entity-resource-update-tests "Source")
+  (entity-resource-deletion-tests "Source"))
 
-;(facts "About Files"
-;  (entity-resource-tests "Revision")
-;  (entity-resource-tests "Resource"))
+(facts "About Folders"
+  (entity-resource-create-tests "Folder")
+  (entity-resource-update-tests "Folder")
+  (entity-resource-deletion-tests "Folder"))
 
-(facts "About Experiments"
-  (entity-resource-tests "Experiment"))

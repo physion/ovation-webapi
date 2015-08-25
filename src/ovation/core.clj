@@ -5,13 +5,8 @@
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
-            [clojure.tools.logging :as logging])
-  (:import (us.physion.ovation.data EntityDao$Views)
-           (us.physion.ovation.domain TrashInfo)))
+            [ovation.constants :as k]))
 
-
-(def USER-ENTITY "User")
-(def ANNOTATION-TYPE "Annotation")
 
 
 ;; QUERY
@@ -25,11 +20,11 @@
   "Gets all entities of the given type"
   [auth resource & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
-    (-> (couch/get-view db EntityDao$Views/ENTITIES_BY_TYPE {:key resource
-                                                             :reduce false
-                                                             :include_docs true})
-      (tr/from-couch)
-      (filter-trashed include-trashed))))
+    (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
+                                                  :reduce       false
+                                                  :include_docs true})
+        (tr/from-couch)
+        (filter-trashed include-trashed))))
 
 
 
@@ -102,7 +97,7 @@
   [auth entities & {:keys [direct] :or [direct false]}]
   (let [db (couch/db auth)]
 
-    (when (some #{USER-ENTITY} (map :type entities))
+    (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
     (let [bulk-docs (if direct
@@ -116,9 +111,9 @@
 
 (defn trash-entity
   [user-id doc]
-  (let [info {(keyword TrashInfo/TRASHING_USER) user-id
-              (keyword TrashInfo/TRASHING_DATE) (util/iso-now)
-              (keyword TrashInfo/TRASH_ROOT)    (:_id doc)}]
+  (let [info {(keyword k/TRASHING-USER) user-id
+              (keyword k/TRASHING-DATE) (util/iso-now)
+              (keyword k/TRASH-ROOT)    (:_id doc)}]
     (if-not (nil? (:trash_info doc))
       (throw+ {:type ::illegal-operation :message "Entity is already trashed"}))
     (assoc doc :trash_info info)))
@@ -129,7 +124,7 @@
   (let [db (couch/db auth)
         docs (get-entities auth ids)]
 
-    (when (some #{USER-ENTITY} (map :type docs))
+    (when (some #{k/USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
 
     (let [user-id (auth/authenticated-user-id auth)
@@ -143,7 +138,7 @@
   [auth ids]
 
   (let [values (get-values auth ids)]
-    (when-not (every? #{ANNOTATION-TYPE} (map :type values))
+    (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
 
     (let [db (couch/db auth)

@@ -6,8 +6,7 @@
             [ovation.core :as core]
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [union]]
-            [clojure.tools.logging :as logging])
-  (:import (us.physion.ovation.data EntityDao$Views)))
+            [ovation.constants :as k]))
 
 
 
@@ -26,7 +25,7 @@
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}
-        docs (couch/get-view db EntityDao$Views/LINKS opts)]
+        docs (couch/get-view db k/LINKS-VIEW opts)]
     (if label
       (filter (eq-doc-label label) docs)
       docs)))
