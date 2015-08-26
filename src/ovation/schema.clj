@@ -93,9 +93,9 @@
 
 ;; -- TRASH INFO -- ;;
 
-(s/defschema TrashInfoMap {(keyword k/TRASHING_USER) s/Str  ;; URI
-                           (keyword k/TRASHING_DATE) s/Str  ;; ISO DateTime
-                           (keyword k/TRASH_ROOT)    s/Str  ;; URI
+(s/defschema TrashInfoMap {(keyword k/TRASHING-USER) s/Str  ;; URI
+                           (keyword k/TRASHING-DATE) s/Str  ;; ISO DateTime
+                           (keyword k/TRASH-ROOT)    s/Str  ;; URI
                            })
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))

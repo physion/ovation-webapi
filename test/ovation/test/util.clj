@@ -1,6 +1,6 @@
 (ns ovation.test.util
   (:import (java.util UUID)
-           (us.physion.ovation.domain URIs))
+           (java.net URI))
   (:use midje.sweet)
   (:require [ovation.util :as util]
             [ovation.version :refer [version]]))
@@ -16,10 +16,10 @@
 (facts "about URI creation"
   (fact "creates URI from UUID string"
     (let [id (str (UUID/randomUUID))]
-      (util/create-uri id) => (URIs/create id)))
+      (util/create-uri id) => (URI. (format "%s://%s/%s"  "ovation"  "entities"  id))))
   (fact "creates URI from UUID"
     (let [id (UUID/randomUUID)]
-      (util/create-uri id) => (URIs/create id)))
+      (util/create-uri id) => (URI. (format "%s://%s/%s"  "ovation"  "entities"  id))))
   (fact "passes through URI"
     (let [uri (util/create-uri (UUID/randomUUID))]
       (util/create-uri uri) => uri)))

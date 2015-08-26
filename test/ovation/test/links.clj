@@ -5,21 +5,21 @@
             [ovation.util :as util]
             [ovation.auth :as auth]
             [ovation.core :as core]
-            [ovation.version :as ver])
-  (:import (us.physion.ovation.data EntityDao$Views)
-           (java.util UUID)))
+            [ovation.version :as ver]
+            [ovation.constants :as k])
+  (:import (java.util UUID)))
 
 (facts "About links"
   (facts "`get-link-targets`"
     (let [doc1 {:attributes {:label ..label1..}}
           doc2 {:attributes {:label ..label2..}}
           doc3 {:attributes {}}]
-      (against-background [(couch/get-view ..db.. EntityDao$Views/LINKS {:startkey      [..id.. ..rel..]
+      (against-background [(couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
                                                                          :endkey        [..id.. ..rel..]
                                                                          :inclusive_end true
                                                                          :reduce        false
                                                                          :include_docs  true}) => [doc1 doc2 doc3]
-                           (couch/get-view ..db.. EntityDao$Views/LINKS {:startkey      [..id.. ..rel.. ..name..]
+                           (couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
                                                                          :endkey        [..id.. ..rel.. ..name..]
                                                                          :inclusive_end true
                                                                          :reduce        false

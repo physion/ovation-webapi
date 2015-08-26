@@ -3,10 +3,9 @@
             [ovation.couch :as couch]
             [ovation.auth :as auth]
             [ovation.core :as core]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [ovation.constants :as k]))
 
-
-(def ANNOTATIONS_VIEW "annotation_docs")
 
 ;; READ
 (defn get-annotations
@@ -15,7 +14,7 @@
         opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}
-        annotations (couch/get-view db ANNOTATIONS_VIEW opts)
+        annotations (couch/get-view db k/ANNOTATIONS-VIEW opts)
         annotations-by-entity (group-by #(keyword (:entity %)) annotations)
         grouped-annotations (map (fn [[entity annotations]]
                                    [entity (group-by #(keyword (:user %)) annotations)]) annotations-by-entity)]
@@ -32,7 +31,7 @@
      :entity          entity-id
      :annotation_type t
      :annotation      record
-     :type            core/ANNOTATION-TYPE
+     :type            k/ANNOTATION-TYPE
      :links           {:_collaboration_roots (links/collaboration-roots entity)}}))
 
 (defn create-annotations

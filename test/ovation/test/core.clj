@@ -8,8 +8,8 @@
             [ovation.util :as util]
             [slingshot.slingshot :refer [throw+]]
             [clj-time.core :as t]
-            [clj-time.format :as tf])
-  (:import (us.physion.ovation.data EntityDao$Views)))
+            [clj-time.format :as tf]
+            [ovation.constants :as k]))
 
 (facts "About values"
   (facts "read"
@@ -65,7 +65,7 @@
       (core/of-type ...auth... ...type...) => ...result...
       (provided
         (couch/db ...auth...) => ...db...
-        (couch/get-view ...db... EntityDao$Views/ENTITIES_BY_TYPE {:key ...type... :reduce false :include_docs true}) => [...docs...]
+        (couch/get-view ...db... k/ENTITIES-BY-TYPE-VIEW {:key ...type... :reduce false :include_docs true}) => [...docs...]
         (tr/from-couch [...docs...]) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...)))
 

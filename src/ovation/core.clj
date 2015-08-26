@@ -61,7 +61,7 @@
   [auth entities & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
 
-    (when (some #{USER-ENTITY} (map :type entities))
+    (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to create a User"}))
 
     (couch/bulk-docs db
@@ -74,7 +74,7 @@
   "POSTs value(s) direct to Couch"
   [auth values]
 
-  (when-not (every? #{ANNOTATION-TYPE} (map :type values))
+  (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
 
   (let [db (couch/db auth)

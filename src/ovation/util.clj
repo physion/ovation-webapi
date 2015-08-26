@@ -1,6 +1,5 @@
 (ns ovation.util
   (:import (java.net URI)
-           (us.physion.ovation.domain URIs)
            (java.util UUID))
   (:require [clojure.string :refer [join]]
             [ovation.version :refer [version]]
@@ -39,7 +38,7 @@
   "Creates an ovation URI from string id"
   (if (instance? URI id)
     id
-    (URIs/create id)))
+    (URI. (format "ovation://entities/%" id))))
 
 
 (defn to-json
