@@ -38,7 +38,7 @@
   "Creates an ovation URI from string id"
   (if (instance? URI id)
     id
-    (URI. (format "ovation://entities/%" id))))
+    (URI. (format "ovation://entities/%s" id))))
 
 
 (defn to-json
