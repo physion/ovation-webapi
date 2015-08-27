@@ -1,31 +1,12 @@
 (ns ovation.route-helpers
   (:require [compojure.api.sweet :refer :all]
-            [compojure.api.routes :refer [path-for*]]
             [ovation.annotations :as annotations]
             [schema.core :as s]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
-            [ovation.schema :refer :all]
-            [ovation.util :as util]))
-
-(defn router
-  [request]
-  (fn [name]
-    (path-for* name request)))
-
-(defn relationship-route [rt doc name]
-  (let [type (:type doc)]
-    (rt (keyword (format "%s-relationships-%s" type name)))))
-
-(defn targets-route [rt doc name]
-  (let [type (:type doc)]
-    (rt (keyword (format "%s-%s" type name)))))
-
-(defn self-route [rt doc]
-  (let [type (:type doc)]
-    (rt (keyword type))))
+            [ovation.schema :refer :all]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"

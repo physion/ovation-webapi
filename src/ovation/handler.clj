@@ -5,7 +5,8 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
-            [ovation.route-helpers :refer [router annotation get-resources post-resources get-resource post-resource put-resource delete-resource]]
+            [ovation.routes :refer [router]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -56,8 +57,8 @@
               :version        "2.0.0"
               :title          "Ovation"
               :description    "Ovation Web API"
-              :contact        {:name  "Ovation"
-                               :url   "https://ovation.io"}
+              :contact        {:name "Ovation"
+                               :url  "https://ovation.io"}
               :termsOfService "https://ovation.io/terms_of_service"}}
       :tags [{:name "entities" :description "Generic entity operations"}
              {:name "projects" :description "Projects"}
@@ -87,7 +88,7 @@
                   (ok {:entity (first entities)})
                   (not-found {}))))
 
-                    ;; TODO Remove POST in favor of entity-specific (with schema validation)
+            ;; TODO Remove POST in favor of entity-specific (with schema validation)
             (POST* "/" request
               :name :create-entity
               :return {:entities [Entity]}
@@ -100,7 +101,7 @@
                   (catch [:type :ovation.auth/unauthorized] err
                     (unauthorized {:error (:type err)})))))
 
-                    ;; TODO Remove PUT in favor of entity-specific (with schema validation)
+            ;; TODO Remove PUT in favor of entity-specific (with schema validation)
             (PUT* "/" request
               :name :update-entity
               :return {:entities [Entity]}
@@ -190,46 +191,46 @@
             (context* "/links/:rel" [rel]
               :tags ["links"]
               (GET* "/" request
-                    :name :get-project-links
-                    :return {s/Keyword [Entity]}
-                    :summary "Gets the targets of relationship :rel from the identified entity"
-                    (let [auth (:auth/auth-info request)]
-                      (ok {(keyword rel) (links/get-link-targets auth id rel)})))
+                :name :get-project-links
+                :return {s/Keyword [Entity]}
+                :summary "Gets the targets of relationship :rel from the identified entity"
+                (let [auth (:auth/auth-info request)]
+                  (ok {(keyword rel) (links/get-link-targets auth id rel)})))
 
               (POST* "/" request
-                     :name :create-project-links
-                     :return {:entities [Entity]
-                              :links    [LinkInfo]}
-                     :body [new-links [NewEntityLink]]
-                     :summary "Adds a link"
-                     (try+
-                       (let [auth (:auth/auth-info request)
-                             source (first (core/get-entities auth [id]))]
-                         (if source
-                           (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links)))
-                                 updates (core/update-entity auth all-updates :direct true)]
-                             (created {:entities (filter :type updates)
-                                       :links    (filter :rel updates)}))
-                           (not-found {:error (str id " not found")})))
-                       (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                         (unauthorized {:error message}))
-                       (catch [:type :ovation.links/target-not-found] {:keys [message]}
-                         (bad-request {:error message}))))
+                :name :create-project-links
+                :return {:entities [Entity]
+                         :links    [LinkInfo]}
+                :body [new-links [NewEntityLink]]
+                :summary "Adds a link"
+                (try+
+                  (let [auth (:auth/auth-info request)
+                        source (first (core/get-entities auth [id]))]
+                    (if source
+                      (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links)))
+                            updates (core/update-entity auth all-updates :direct true)]
+                        (created {:entities (filter :type updates)
+                                  :links    (filter :rel updates)}))
+                      (not-found {:error (str id " not found")})))
+                  (catch [:type :ovation.auth/unauthorized] {:keys [message]}
+                    (unauthorized {:error message}))
+                  (catch [:type :ovation.links/target-not-found] {:keys [message]}
+                    (bad-request {:error message}))))
 
               (context "/:target" [target]
-                       (DELETE* "/" request
-                                        :name :delete-project-links
-                                        :return {:links [LinkInfo]}
-                                        :summary "Remove links"
-                                        (try+
-                                          (let [auth (:auth/auth-info request)
-                                                user-id (auth/authenticated-user-id auth)
-                                                source (first (core/get-entities auth [id]))
-                                                update (links/delete-link auth source user-id rel target)]
+                (DELETE* "/" request
+                  :name :delete-project-links
+                  :return {:links [LinkInfo]}
+                  :summary "Remove links"
+                  (try+
+                    (let [auth (:auth/auth-info request)
+                          user-id (auth/authenticated-user-id auth)
+                          source (first (core/get-entities auth [id]))
+                          update (links/delete-link auth source user-id rel target)]
 
-                                            (accepted {:links update}))
-                                          (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                                            (unauthorized {:error message}))))))))
+                      (accepted {:links update}))
+                    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
+                      (unauthorized {:error message}))))))))
 
 
         (context* "/sources" []
@@ -238,20 +239,20 @@
           (post-resources "Source")
           (context* "/:id" [id]
             (get-resource "Source" id)
-                    (post-resource "Source" id)                     ;; TODO only allow Source children; pass list of Schema, or base if empty
+            (post-resource "Source" id)                     ;; TODO only allow Source children; pass list of Schema, or base if empty
             (put-resource "Source" id)
             (delete-resource "Source" id)))
 
 
-                (context* "/folders" []
-                          :tags ["folders"]
-                          (get-resources "Folder")
-                          (post-resources "Folder")
-                          (context* "/:id" [id]
-                                    (get-resource "Folder" id)
-                                    (post-resource "Folder" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
-                                    (put-resource "Folder" id)
-                                    (delete-resource "Folder" id)))
+        (context* "/folders" []
+          :tags ["folders"]
+          (get-resources "Folder")
+          (post-resources "Folder")
+          (context* "/:id" [id]
+            (get-resource "Folder" id)
+            (post-resource "Folder" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
+            (put-resource "Folder" id)
+            (delete-resource "Folder" id)))
 
 
 

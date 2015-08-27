@@ -3,8 +3,7 @@
   (:require [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.version :refer [version]]
-            [ovation.util :as util])
-  (:import (java.util UUID)))
+            [ovation.util :as util]))
 
 
 (facts "About annotation links"

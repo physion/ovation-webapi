@@ -1,7 +1,6 @@
 (ns ovation.test.router
   (:use midje.sweet)
-  (:require [ovation.route-helpers :as r]
-            [ovation.util :as util]))
+  (:require [ovation.routes :as r]))
 
 (facts "About routes"
   (fact "`relationship-route`"
