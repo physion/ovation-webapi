@@ -24,4 +24,4 @@ Or from a REPL:
 
 [Eclipse Public License](https://www.eclipse.org/legal/epl-v10.html)
 
-Copyright © 2014 Physion LLC
+Copyright © 2014-2015 Physion LLC
