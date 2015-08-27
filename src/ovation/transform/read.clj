@@ -1,7 +1,8 @@
 (ns ovation.transform.read
   (:require [ovation.version :refer [version version-path]]
             [ring.util.http-response :refer [not-found!]]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [ovation.route-helpers :as r]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -25,7 +26,7 @@
 
 (defn link-rel-path                                         ;;keep
   "Return a single link from an id and relationship name"
-  [id rel]
+  [id rel & {:keys [type router]}]
   (condp = (name rel)
     "self" (util/join-path ["/api" version "entities" id])
     (util/join-path ["/api" version "entities" id "links" (name rel)])))
@@ -54,8 +55,8 @@
 
 (defn add-self-link
   "Adds self link to dto"
-  [dto]
-  (assoc-in dto [:links :self] (link-rel-path (:_id dto) :self)))
+  [dto router]
+  (assoc-in dto [:links :self] (r/self-route router dto)))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"
@@ -66,22 +67,23 @@
     dto))
 
 (defn couch-to-doc
-  [doc]
-  (if (:error doc)
-    (not-found! doc)
-    (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
-      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
-        (-> doc
-          (remove-user-attributes)
-          (remove-private-links)
-          (links-to-rel-path)
-          (add-annotation-links)                            ;; NB must come after links-to-rel-path
-          (add-self-link)
-          (assoc-in [:links :_collaboration_roots] collaboration-roots)))
-      doc)))
+  [router]
+  (fn [doc]
+    (if (:error doc)
+      (not-found! doc)
+      (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
+        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
+          (-> doc
+              (remove-user-attributes)
+              (remove-private-links)
+              (links-to-rel-path)
+              (add-annotation-links)                        ;; NB must come after links-to-rel-path
+              (add-self-link router)
+              (assoc-in [:links :_collaboration_roots] collaboration-roots)))
+        doc))))
 
 
 (defn from-couch
   "Transform couchdb documents."
-  [docs]
-  (map couch-to-doc docs))
+  [docs router]
+  (map (couch-to-doc router) docs))

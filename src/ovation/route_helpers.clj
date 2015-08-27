@@ -7,12 +7,25 @@
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
-            [ovation.schema :refer :all]))
+            [ovation.schema :refer :all]
+            [ovation.util :as util]))
 
 (defn router
   [request]
   (fn [name]
     (path-for* name request)))
+
+(defn relationship-route [rt doc name]
+  (let [type (:type doc)]
+    (rt (keyword (format "%s-relationships-%s" type name)))))
+
+(defn targets-route [rt doc name]
+  (let [type (:type doc)]
+    (rt (keyword (format "%s-%s" type name)))))
+
+(defn self-route [rt doc]
+  (let [type (:type doc)]
+    (rt (keyword type))))
 
 (defmacro annotation
   "Creates an annotation type endpoint"

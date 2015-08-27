@@ -35,8 +35,10 @@
   (fact "`add-self-link` adds self link"
     (let [couch {:_id   ..id..
                  :links {}}]
-      (tr/add-self-link couch) => {:_id   ..id..
-                                   :links {:self (util/join-path ["/api" version "entities" ..id..])}}))
+      (tr/add-self-link couch ..router..) => {:_id   ..id..
+                                   :links {:self (util/join-path ["/api" version "entities" ..id..])}}
+      (provided
+        (..router..) => nil)))
 
   (fact "`links-to-rel-path` updates named links to relative path"
     (let [couch {:_id         ..id..
@@ -84,7 +86,7 @@
   (fact "calls `remove-user-attributes`"
     (let [doc {:type "Doc" :attributes {:foo "bar"}}]
 
-      (tr/couch-to-doc doc) => (contains doc)
+      ((tr/couch-to-doc nil) doc) => (contains doc)
       (provided
         (tr/remove-user-attributes doc) => doc))))
 
