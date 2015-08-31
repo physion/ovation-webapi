@@ -104,7 +104,8 @@
     (conj updated-targets updated-src)))
 
 
-
+;; We don't need to update any entity documents — collaboration roots are only projects, and links don't automatically make an entity go with an other project.
+;; We don't need to modify (or store at all) links except _collboration_roots
 (defn add-links
   "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
   or a Sequential collection of source documents. For each source document, links to all targets are built.
@@ -114,14 +115,14 @@
    :links <new link documents
    :all (concat :updates :links)}```
    "
-  [auth doc rel target-ids & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
+  [auth sources rel target-ids & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
                                                                                          name nil
                                                                                          strict false
                                                                                          required-target-types nil]}]
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
         unique-targets (into #{} target-ids)]
-    (loop [docs (if (sequential? doc) doc [doc])
+    (loop [docs (if (sequential? sources) sources [sources])
            updates-acc (util/into-id-map docs)
            links-acc '()]
       (let [doc (first docs)]
@@ -163,7 +164,7 @@
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))
                                   targets)
-                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))
+                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets)) ;; TODO don't need this
                           acc (merge updates-acc updated-docs)]
 
                       (recur (rest docs) acc (concat links-acc links)))

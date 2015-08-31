@@ -5,8 +5,9 @@
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
-            [clojure.string :refer [lower-case capitalize join]]
-            [ovation.schema :refer :all]))
+            [clojure.string :refer [lower-case capitalize upper-case join]]
+            [ovation.schema :refer :all]
+            [ovation.links :as links]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -138,3 +139,50 @@
            (accepted {:entities (core/delete-entity auth# [~id])}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
+
+
+(defmacro rel-related
+  [entity-type id rel]
+  (let [type-name (capitalize entity-type)
+        rel-name (lower-case rel)]
+    `(GET* "/" request#
+       :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
+       :return {s/Keyword [Entity]}
+       :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
+       (let [auth# (:auth/auth-info request#)]
+         (ok {(keyword ~rel-name) (links/get-link-targets auth# ~id ~rel-name)})))))
+
+(defmacro relationships
+  [entity-type id rel]
+  (let [type-name (capitalize entity-type)]
+    `(context* "/relationships" []
+       (GET* "/" request#
+         :name ~(keyword (str "get-" (lower-case type-name) "-links"))
+         :return {:links [LinkInfo]}
+         :summary ~(str "Get relationships for :rel from " type-name " :id")
+         (ok {:links []}))
+
+       (POST* "/" request#
+         :name ~(keyword (str "create-" (lower-case type-name) "-links"))
+         :return {:links [LinkInfo]}
+         :body [new-links# [NewLink]]
+         :summary ~(str "Add relationship links for :rel from " type-name " :id")
+         (try+
+           (let [auth# (:auth/auth-info request#)
+                 source# (first (core/get-entities auth# [~id]))]
+             (if source#
+               (let [all-updates# (:all (links/add-links auth# source# ~rel (map :target_id new-links#)))
+                     updates# (core/update-entity auth# all-updates# :direct true)]
+                 (created {:entities (filter :type updates#)
+                           :links    (filter :rel updates#)}))
+               (not-found {:error (str ~id " not found")})))
+           (catch [:type :ovation.auth/unauthorized] {:keys [message#]}
+             (unauthorized {:error message#}))
+           (catch [:type :ovation.links/target-not-found] {:keys [message#]}
+             (bad-request {:error message#}))))
+       (DELETE* "/" request#
+         :name ~(keyword (str "delete-" (lower-case type-name) "-links"))
+         ;; Return Accepted, or {:errors} on error
+         :summary ~(str "Remove relationships for :rel from " type-name " :id")
+         (accepted)
+         ))))

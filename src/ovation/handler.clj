@@ -6,14 +6,13 @@
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
-            [ovation.auth :as auth]
             [ovation.analyses :refer [create-analysis-record ANALYSIS_RECORD_TYPE]]
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
@@ -133,51 +132,7 @@
               (annotation id "keywords" "tags" TagRecord TagAnnotation)
               (annotation id "properties" "properties" PropertyRecord PropertyAnnotation)
               (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
-              (annotation id "notes" "notes" NoteRecord NoteAnnotation))
-
-            (context* "/links/:rel" [rel]
-              :tags ["links"]
-              (GET* "/" request
-                :name :get-links
-                :return {s/Keyword [Entity]}
-                :summary "Gets the targets of relationship :rel from the identified entity"
-                (let [auth (:auth/auth-info request)]
-                  (ok {(keyword rel) (links/get-link-targets auth id rel)})))
-
-              (POST* "/" request
-                :name :create-links
-                :return {:entities [Entity]
-                         :links    [LinkInfo]}
-                :body [new-links [NewEntityLink]]
-                :summary "Adds a link"
-                (try+
-                  (let [auth (:auth/auth-info request)
-                        source (first (core/get-entities auth [id]))]
-                    (if source
-                      (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links)))
-                            updates (core/update-entity auth all-updates :direct true)]
-                        (created {:entities (filter :type updates)
-                                  :links    (filter :rel updates)}))
-                      (not-found {:error (str id " not found")})))
-                  (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                    (unauthorized {:error message}))
-                  (catch [:type :ovation.links/target-not-found] {:keys [message]}
-                    (bad-request {:error message}))))
-
-              (context "/:target" [target]
-                (DELETE* "/" request
-                  :name :delete-links
-                  :return {:links [LinkInfo]}
-                  :summary "Remove links"
-                  (try+
-                    (let [auth (:auth/auth-info request)
-                          user-id (auth/authenticated-user-id auth)
-                          source (first (core/get-entities auth [id]))
-                          update (links/delete-link auth source user-id rel target)]
-
-                      (accepted {:links update}))
-                    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                      (unauthorized {:error message}))))))))
+              (annotation id "notes" "notes" NoteRecord NoteAnnotation))))
 
         (context* "/projects" []
           :tags ["projects"]
@@ -188,49 +143,10 @@
             (post-resource "Project" id)
             (put-resource "Project" id)
             (delete-resource "Project" id)
+
             (context* "/links/:rel" [rel]
-              :tags ["links"]
-              (GET* "/" request
-                :name :get-project-links
-                :return {s/Keyword [Entity]}
-                :summary "Gets the targets of relationship :rel from the identified entity"
-                (let [auth (:auth/auth-info request)]
-                  (ok {(keyword rel) (links/get-link-targets auth id rel)})))
-
-              (POST* "/" request
-                :name :create-project-links
-                :return {:entities [Entity]
-                         :links    [LinkInfo]}
-                :body [new-links [NewEntityLink]]
-                :summary "Adds a link"
-                (try+
-                  (let [auth (:auth/auth-info request)
-                        source (first (core/get-entities auth [id]))]
-                    (if source
-                      (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links)))
-                            updates (core/update-entity auth all-updates :direct true)]
-                        (created {:entities (filter :type updates)
-                                  :links    (filter :rel updates)}))
-                      (not-found {:error (str id " not found")})))
-                  (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                    (unauthorized {:error message}))
-                  (catch [:type :ovation.links/target-not-found] {:keys [message]}
-                    (bad-request {:error message}))))
-
-              (context "/:target" [target]
-                (DELETE* "/" request
-                  :name :delete-project-links
-                  :return {:links [LinkInfo]}
-                  :summary "Remove links"
-                  (try+
-                    (let [auth (:auth/auth-info request)
-                          user-id (auth/authenticated-user-id auth)
-                          source (first (core/get-entities auth [id]))
-                          update (links/delete-link auth source user-id rel target)]
-
-                      (accepted {:links update}))
-                    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-                      (unauthorized {:error message}))))))))
+              (rel-related "Project" id rel)
+              (relationships "Project" id rel))))
 
 
         (context* "/sources" []
@@ -241,7 +157,11 @@
             (get-resource "Source" id)
             (post-resource "Source" id)                     ;; TODO only allow Source children; pass list of Schema, or base if empty
             (put-resource "Source" id)
-            (delete-resource "Source" id)))
+            (delete-resource "Source" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Source" id rel)
+              (relationships "Source" id rel))))
 
 
         (context* "/folders" []
@@ -252,7 +172,26 @@
             (get-resource "Folder" id)
             (post-resource "Folder" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
             (put-resource "Folder" id)
-            (delete-resource "Folder" id)))
+            (delete-resource "Folder" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Folder" id rel)
+              (relationships "Folder" id rel))))
+
+
+        (context* "/resources" []
+          :tags ["files"]
+          (get-resources "Resource")
+          (post-resources "Resource")
+          (context* "/:id" [id]
+            (get-resource "Resource" id)
+            (post-resource "Resource" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
+            (put-resource "Resource" id)
+            (delete-resource "Resource" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Resource" id rel)
+              (relationships "Resource" id rel))))
 
 
 
@@ -283,7 +222,11 @@
           (context* "/:id" [id]
             (get-resource "AnalysisRecord" id)
             (put-resource "AnalysisRecord" id)
-            (delete-resource "AnalysisRecord" id)))
+            (delete-resource "AnalysisRecord" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "AnalysisRecord" id rel)
+              (relationships "AnalysisRecord" id rel))))
 
 
         (context* "/provenance" []

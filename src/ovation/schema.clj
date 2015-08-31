@@ -3,11 +3,6 @@
             [schema.core :as s]
             [ovation.constants :as k]))
 
-;;; --- Schema Definitions --- ;;;
-
-(s/defschema Success {:success s/Bool})
-
-
 ;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                    s/Str
@@ -46,14 +41,8 @@
 
 
 ;; -- LINKS -- ;;
-(s/defschema Link {:target_id                    s/Uuid
-                   :rel                          s/Str
-                   (s/optional-key :inverse_rel) s/Str})
-
-(s/defschema NamedLink (assoc Link :name s/Str))
-
-(s/defschema NewEntityLink {:target_id                    s/Str
-                            (s/optional-key :inverse_rel) s/Str})
+(s/defschema NewLink {:target_id                    s/Str
+                      (s/optional-key :inverse_rel) s/Str})
 
 ;; From us.physion.ovation.values.Relation#toMap
 (s/defschema LinkInfo {:_id                          s/Str
@@ -70,18 +59,20 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}})
+                        :attributes {s/Keyword s/Any}
+                        :project    s/Uuid})
 
-(s/defschema BaseEntity (assoc NewEntity :_rev s/Str
-                                         :_id s/Uuid
-                                         (s/optional-key :api_version) s/Int))
+(s/defschema BaseEntity (assoc (dissoc NewEntity :project) :_rev s/Str
+                                                           :_id s/Uuid
+                                                           (s/optional-key :api_version) s/Int))
 
 
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
                       :links {s/Keyword                              s/Str
                               (s/optional-key :_collaboration_roots) [s/Str]}
-                      (s/optional-key :named_links) {s/Keyword {s/Keyword s/Str}}))
+                      :relationships {s/Keyword {:links {:self    s/Str
+                                                         :related s/Str}}}))
 
 
 (s/defschema EntityUpdate BaseEntity)
@@ -90,6 +81,8 @@
   {:inputs                      [s/Uuid]
    :outputs                     [s/Uuid]
    (s/optional-key :parameters) {s/Keyword s/Any}})
+
+(s/defschema JsonApiError {:errors {s/Keyword s/Any}})
 
 ;; -- TRASH INFO -- ;;
 
