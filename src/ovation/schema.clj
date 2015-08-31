@@ -3,6 +3,10 @@
             [schema.core :as s]
             [ovation.constants :as k]))
 
+;; -- Json API -- ;;
+(s/defschema JsonApiError {:errors {s/Keyword s/Any
+                                    (s/optional-key :detail) s/Str}})
+
 ;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                    s/Str
@@ -41,10 +45,9 @@
 
 
 ;; -- LINKS -- ;;
-(s/defschema NewLink {:target_id                    s/Str
+(s/defschema NewLink {:target_id                    s/Uuid
                       (s/optional-key :inverse_rel) s/Str})
 
-;; From us.physion.ovation.values.Relation#toMap
 (s/defschema LinkInfo {:_id                          s/Str
                        (s/optional-key :_rev)        s/Str
                        :user_id                      s/Uuid
@@ -53,6 +56,9 @@
                        :rel                          s/Str
                        (s/optional-key :name)        s/Str
                        (s/optional-key :inverse_rel) s/Str
+                       :links                        {:self    s/Str
+                                                      :related s/Str}
+                       :type                         "Relationship"
                        })
 
 
@@ -60,11 +66,11 @@
 
 (s/defschema NewEntity {:type       s/Str
                         :attributes {s/Keyword s/Any}
-                        :project    s/Uuid})
+                        :links      {:_collaboration_roots [s/Uuid]}})
 
-(s/defschema BaseEntity (assoc (dissoc NewEntity :project) :_rev s/Str
-                                                           :_id s/Uuid
-                                                           (s/optional-key :api_version) s/Int))
+(s/defschema BaseEntity (assoc NewEntity :_rev s/Str
+                                         :_id s/Uuid
+                                         (s/optional-key :api_version) s/Int))
 
 
 (s/defschema Entity (assoc BaseEntity
@@ -75,14 +81,16 @@
                                                          :related s/Str}}}))
 
 
-(s/defschema EntityUpdate BaseEntity)
+(s/defschema EntityUpdate (dissoc BaseEntity :links))
+
+
+;; -- Analyses -- ;;
 
 (s/defschema NewAnalysisRecord
   {:inputs                      [s/Uuid]
    :outputs                     [s/Uuid]
    (s/optional-key :parameters) {s/Keyword s/Any}})
 
-(s/defschema JsonApiError {:errors {s/Keyword s/Any}})
 
 ;; -- TRASH INFO -- ;;
 

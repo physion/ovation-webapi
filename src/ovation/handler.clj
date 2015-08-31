@@ -216,9 +216,9 @@
                   (created {:analysis-records (concat records)}))
 
                 (catch [:type ::links/target-not-found] {:keys [message]}
-                  (bad-request {:error message}))
+                  (bad-request {:errors {:detail message}}))
                 (catch [:type ::links/illegal-target-type] {:keys [message]}
-                  (bad-request {:error message})))))
+                  (bad-request {:errors {:detail message}})))))
           (context* "/:id" [id]
             (get-resource "AnalysisRecord" id)
             (put-resource "AnalysisRecord" id)
