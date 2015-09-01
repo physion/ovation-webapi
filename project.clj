@@ -9,12 +9,12 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "0.22.1"]
-                 [metosin/ring-swagger-ui "2.1.0"]
+                 [metosin/compojure-api "0.22.2"]
+                 [metosin/ring-swagger-ui "2.1.2"]
                  [ring-cors "0.1.7"]
 
                  ;; HTTP and CouchDB
-                 [http-kit "2.1.16"]
+                 [http-kit "2.1.18"]
                  [org.clojure/data.codec "0.1.0"]
                  [com.ashafa/clutch "0.4.0"]
 
@@ -45,7 +45,7 @@
   :plugins [[lein-clojars "0.9.1"]
             [s3-wagon-private "1.1.2"]
             [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]
-            [lein-awsuberwar "0.1.0"]]
+            [lein-awsuberwar "0.1.3"]]
 
   :ring {:handler ovation.handler/app}
 

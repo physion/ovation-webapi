@@ -102,7 +102,7 @@
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (let [auth# (:auth/auth-info request#)]
          (try+
-           (created {:entities (core/create-entity auth# entities# :parent ~id)})
+           (created {:entities (core/create-entity auth# entities# (r/router request#) :parent ~id)})
 
            (catch [:type :ovation.auth/unauthorized] err#
              (unauthorized {:errors {:detail "Not authorized"}})))))))
@@ -173,7 +173,7 @@
            (let [auth# (:auth/auth-info request#)
                  source# (first (core/get-entities auth# [~id] (r/router request#)))]
              (if source#
-               (let [all-updates# (:all (links/add-links auth# source# ~rel (map :target_id new-links#)))
+               (let [all-updates# (:all (links/add-links auth# source# ~rel (map :target_id new-links#) (r/router request#)))
                      updates# (core/update-entity auth# all-updates# :direct true)] ;;TODO this should not use update-entity for linkinfo
                  (created {:entities (filter (fn [doc#] (not= util/RELATION_TYPE (:type doc#))) updates#)
                            :links    (filter :rel updates#)}))

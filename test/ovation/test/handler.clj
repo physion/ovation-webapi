@@ -13,7 +13,8 @@
             [ovation.links :as links]
             [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
             [clojure.string :refer [lower-case capitalize]]
-            [ovation.annotations :as annotations])
+            [ovation.annotations :as annotations]
+            [ovation.routes :as r])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -179,93 +180,15 @@
               doc {:_id        id
                    :_rev       "123"
                    :type       "Entity"
-                   :links      {}
+                   :links      {:self "self"}
                    :attributes {}}]
 
-          (against-background [(core/get-entities auth-info [id]) => [doc]]
+          (against-background [(core/get-entities auth-info [id] ..rt..) => [doc]
+                               (r/router anything) => ..rt..]
             (fact "GET /entities/:id returns status 200"
               (:status (app get)) => 200)
             (fact "GET /entities/:id returns doc"
-              (body-json get) => {:entity doc}))))
-
-      ;(facts "update"
-      ;  (let [id (UUID/randomUUID)
-      ;        attributes {:foo "bar"}
-      ;        entity {:type       "MyEntity"
-      ;                :_id        id
-      ;                :_rev       "1"
-      ;                :attributes attributes}
-      ;        new-attributes {:bar "baz"}
-      ;        update (assoc entity :attributes new-attributes)
-      ;        updated-entity (assoc update :_rev "2" :links {} :_id (str id))
-      ;        request (fn [entity-id] (mock-req (-> (mock/request :put (util/join-path ["" "api" ver/version "entities" (str entity-id)]))
-      ;                                            (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
-      ;
-      ;    (against-background [(core/update-entity auth-info [update]) => [updated-entity]]
-      ;      (fact "succeeds with status 200"
-      ;        (let [response (app (request id))]
-      ;          (:status response) => 200))
-      ;      (fact "updates single entity by ID"
-      ;        (let [request (request id)]
-      ;          (body-json request)) => {:entities [updated-entity]})
-      ;      (fact "fails if entity and path :id do not match"
-      ;        (let [other-id (str (UUID/randomUUID))
-      ;              response (app (request other-id))]
-      ;          (:status response) => 404)))
-      ;
-      ;    (fact "fails if not can? :update"
-      ;      (:status (app (request id))) => 401
-      ;      (provided
-      ;        (core/update-entity auth-info [update]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-      ;    )
-      ;  )
-
-      ;(facts "create"
-      ;  (let [parent-id (str (UUID/randomUUID))
-      ;        new-entity {:type "MyEntity" :attributes {:foo "bar"}}
-      ;        new-entities [new-entity]
-      ;        entity [(assoc new-entity :_id (str (UUID/randomUUID))
-      ;                                  :_rev "1")]
-      ;        request (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" parent-id]))
-      ;                                   (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey))]
-      ;
-      ;    (against-background [(core/create-entity auth-info new-entities :parent parent-id) => [entity]]
-      ;      (fact "POST /:id returns status 201"
-      ;        (let [post (request)]
-      ;          (:status (app post)) => 201))
-      ;      (fact "POST /:id inserts entity with parent"
-      ;        (let [post (request)]
-      ;          (body-json post) => {:entities [entity]})))
-      ;
-      ;    (fact "returns 401 if not can? :create"
-      ;      (:status (app (request))) => 401
-      ;      (provided
-      ;        (core/create-entity auth-info new-entities :parent parent-id) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-      ;    ))
-
-      (facts "delete"
-        (let [id (UUID/randomUUID)
-              attributes {:foo "bar"}
-              entity {:type       "MyEntity"
-                      :_id        id
-                      :_rev       "1"
-                      :attributes attributes}
-              deleted-entity (assoc entity :transh_info {} :_id (str id))
-              request (fn [entity-id] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ver/version "entities" (str entity-id)]))) apikey))]
-
-          (against-background [(core/delete-entity auth-info [(str id)]) => [deleted-entity]]
-            (fact "succeeds with status 202"
-              (let [response (app (request id))]
-                (:status response) => 202))
-            (fact "DELETE /:id trashes entity"
-              (let [request (request id)]
-                (body-json request)) => {:entities [deleted-entity]}))
-
-          (fact "fails if not can? :delete"
-            (:status (app (request id))) => 401
-            (provided
-              (core/delete-entity auth-info [(str id)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-          )))))
+              (body-json get) => {:entity doc})))))))
 
 ;(facts "About links"
 ;  (let [apikey "--apikey--"
@@ -349,25 +272,27 @@
                              :_rev       "123"
                              :type       ~type-name
                              :attributes {}
-                             :links      {}}]
+                             :links      {:self "self"}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all" type-path)
                      (body-json get-req#) => {~(keyword type-path) [project#]})))
 
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
                    (let [source# {:_id        id#
                                   :_rev       "123"
                                   :type       "OtherType"
                                   :attributes {}
-                                  :links      {}}]
+                                  :links      {:self ""}}]
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (app get-req#)) => 404
                        (provided
-                         (core/get-entities auth-info# [id#]) => [source#])))))))
+                         (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
            (facts "create"
              (let [parent-id# ~(str (UUID/randomUUID))
                    new-entity# {:type "MyEntity" :attributes {:foo "bar"}}
@@ -377,7 +302,8 @@
                    request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path parent-id#]))
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-               (against-background [(core/create-entity auth-info# new-entities# :parent parent-id#) => [entity#]]
+               (against-background [(core/create-entity auth-info# new-entities# ..rt.. :parent parent-id#) => [entity#]
+                                    (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
                      (:status (app post#)) => 201))
@@ -388,7 +314,8 @@
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (app (request#))) => 401
                  (provided
-                   (core/create-entity auth-info# new-entities# :parent parent-id#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                   (r/router anything) => ..rt..
+                   (core/create-entity auth-info# new-entities# ..rt.. :parent parent-id#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )
 
              ;; For top-level entities
@@ -400,7 +327,8 @@
                      request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
                                                  (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-                 (against-background [(core/create-entity auth-info# new-entities#) => [entity#]]
+                 (against-background [(core/create-entity auth-info# new-entities# ..rt..) => [entity#]
+                                      (r/router anything) => ..rt..]
                    (fact "POST / returns status 201"
                      (let [post# (request#)]
                        (:status (app post#)) => 201))
@@ -418,8 +346,8 @@
                  (fact "POST / returns 401 if not can? :create"
                    (:status (app (request#))) => 401
                    (provided
-                     (core/create-entity auth-info# new-entities#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-                 ))))))))
+                     (r/router anything) => ..rt..
+                     (core/create-entity auth-info# new-entities# ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))))))))))
 
 
 (defmacro entity-resource-update-tests
@@ -438,25 +366,27 @@
                              :_rev       "123"
                              :type       ~type-name
                              :attributes {}
-                             :links      {}}]
+                             :links      {:self "self"}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all" type-path)
                      (body-json get-req#) => {~(keyword type-path) [project#]})))
 
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
                    (let [source# {:_id        id#
                                   :_rev       "123"
                                   :type       "OtherType"
                                   :attributes {}
-                                  :links      {}}]
+                                  :links      {:self "self"}}]
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (app get-req#)) => 404
                        (provided
-                         (core/get-entities auth-info# [id#]) => [source#])))))))
+                         (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
 
 
            (facts "update"
@@ -465,14 +395,16 @@
                    entity# {:type       ~type-name
                             :_id        id#
                             :_rev       "1"
-                            :attributes attributes#}
+                            :attributes attributes#
+                            :links {:self "self"}}
                    new-attributes# {:bar "baz"}
-                   update# (assoc entity# :attributes new-attributes#)
-                   updated-entity# (assoc update# :_rev "2" :links {} :_id (str id#))
+                   update# (assoc (dissoc entity# :links) :attributes new-attributes#)
+                   updated-entity# (assoc update# :_rev "2" :links {:self "self"} :_id (str id#))
                    request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
                                                          (mock/body (json/write-str (walk/stringify-keys (assoc update# :_id (str id#)))))) apikey#))]
 
-               (against-background [(core/update-entity auth-info# [update#]) => [updated-entity#]]
+               (against-background [(core/update-entity auth-info# [update#] ..rt..) => [updated-entity#]
+                                    (r/router anything) => ..rt..]
                  (fact "succeeds with status 200"
                    (let [response# (app (request# id#))]
                      (:status response#) => 200))
@@ -487,7 +419,8 @@
                (fact "fails if not can? :update"
                  (:status (app (request# id#))) => 401
                  (provided
-                   (core/update-entity auth-info# [update#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                   (r/router anything) => ..rt..
+                   (core/update-entity auth-info# [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )
              ))))))
 
@@ -508,36 +441,42 @@
                              :_rev       "123"
                              :type       ~type-name
                              :attributes {}
-                             :links      {}}]
+                             :links      {:self ""}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type auth-info# ~type-name) => [project#]]
+                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all" type-path)
                      (body-json get-req#) => {~(keyword type-path) [project#]})))
 
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities auth-info# [id#]) => [project#]]
+                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [project#]
+                                      (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
                    (let [source# {:_id        id#
                                   :_rev       "123"
                                   :type       "OtherType"
                                   :attributes {}
-                                  :links      {}}]
+                                  :links      {:self "self"}}]
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (app get-req#)) => 404
                        (provided
-                         (core/get-entities auth-info# [id#]) => [source#])))))))
+                         (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
            (facts "delete"
              (let [id# (UUID/randomUUID)
                    attributes# {:foo "bar"}
                    entity# {:type       "MyEntity"
-                            :_id        id#
+                            :_id        (str id#)
                             :_rev       "1"
-                            :attributes attributes#}
-                   deleted-entity# (assoc entity# :transh_info {} :_id (str id#))
+                            :attributes attributes#
+                            :links      {:self "self"}}
+                   deleted-entity# (assoc entity# :transh_info {:trashing_user (str (UUID/randomUUID))
+                                                                :trasing_date "1971-12-01"
+                                                                :trash_root ""})
                    request# (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
 
-               (against-background [(core/delete-entity auth-info# [(str id#)]) => [deleted-entity#]]
+               (against-background [(core/delete-entity auth-info# [(str id#)] ..rt..) => [deleted-entity#]
+                                    (r/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (app (request# id#))]
                      (:status response#) => 202))
@@ -548,7 +487,8 @@
                (fact "returns 401 if not can? :delete"
                  (:status (app (request# id#))) => 401
                  (provided
-                   (core/delete-entity auth-info# [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (r/router anything) => ..rt..
+                   (core/delete-entity auth-info# [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 
@@ -573,7 +513,8 @@
                           :_rev       "1"
                           :attributes {:parameters parameters}}]
 
-          (against-background [(core/get-entities auth-info (map :_id [in1 in2 out1 out2])) => [in1 in2 out1 out2]]
+          (against-background [(core/get-entities auth-info (map :_id [in1 in2 out1 out2]) ..rt..) => [in1 in2 out1 out2]
+                               (r/router anything) => ..rt..]
             (fact "POST /analysisrecords creates a new analysis record"
               (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
                                      (mock/body (json-post-body [{:inputs     (map :_id [in1 in2])
@@ -583,19 +524,20 @@
                 (:analysis-records (body-json post)) => [{:type "AnalysisRecord"}]
                 (provided
                   (core/create-entity auth-info [{:type       "AnalysisRecord"
-                                                  :attributes {:parameters parameters}}]) => [new-record]
-                  (links/add-links auth-info [new-record] "inputs" [id1 id2] :strict true :required-target-types ["Revision"]) => {:updates ..inputupdates..
+                                                  :attributes {:parameters parameters}}] ..rt..) => [new-record]
+                  (links/add-links auth-info [new-record] "inputs" [id1 id2] ..rt.. :strict true :required-target-types ["Revision"]) => {:updates ..inputupdates..
                                                                                                                                    :links   ..inputlinks..
                                                                                                                                    :all     ..inputs..}
-                  (core/update-entity auth-info ..inputs..) => ..updated-inputs..
+                  (core/update-entity auth-info ..inputs.. ..rt..) => ..updated-inputs..
                   (util/filter-type ANALYSIS_RECORD_TYPE ..updated-inputs..) => ..inputrecords..
-                  (links/add-links auth-info ..inputrecords.. "outputs" [id3 id4] :strict true :required-target-types ["Revision"]) => {:updates ..outputupdates..
+                  (links/add-links auth-info ..inputrecords.. "outputs" [id3 id4] ..rt.. :strict true :required-target-types ["Revision"]) => {:updates ..outputupdates..
                                                                                                                                         :links   ..outputlinks..
                                                                                                                                         :all     ..outputs..}
-                  (core/update-entity auth-info ..outputs..) => ..updated-outputs..
+                  (core/update-entity auth-info ..outputs.. ..rt..) => ..updated-outputs..
                   (util/filter-type ANALYSIS_RECORD_TYPE ..updated-outputs..) => {:type "AnalysisRecord"}))))
 
-          (against-background [(core/get-entities auth-info #{id1 id2}) => [in1]
+          (against-background [(core/get-entities auth-info #{id1 id2} ..rt..) => [in1]
+                               (r/router anything) => ..rt..
                                (auth/check! anything :auth/update anything) => true]
             (fact "POST /analysisrecords returns 400 if inputs/outputs missing"
               (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
@@ -605,14 +547,15 @@
                 (:status (app post)) => 400
                 (provided
                   (core/create-entity auth-info [{:type       "AnalysisRecord"
-                                                  :attributes {:parameters parameters}}]) => [{:type       "AnalysisRecord"
-                                                                                               :_id        (str (util/make-uuid))
-                                                                                               :_rev       "1"
-                                                                                               :attributes {:parameters parameters}}]))))
+                                                  :attributes {:parameters parameters}}] ..rt..) => [{:type       "AnalysisRecord"
+                                                                                                      :_id        (str (util/make-uuid))
+                                                                                                      :_rev       "1"
+                                                                                                      :attributes {:parameters parameters}}]))))
 
 
-          (against-background [(core/get-entities auth-info #{id1 id2}) => [(assoc in1 :type "MyEntity") in2]
-                               (core/get-entities auth-info #{out1 out2}) => [out2 out1]
+          (against-background [(core/get-entities auth-info #{id1 id2} ..rt..) => [(assoc in1 :type "MyEntity") in2]
+                               (r/router anything) => ..rt..
+                               (core/get-entities auth-info #{out1 out2} ..rt..) => [out2 out1]
                                (auth/check! anything :auth/update anything) => true]
             (fact "POST /analysisrecords returns 400 if inputs/outputs are not Revisions"
               (let [post (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "analysisrecords"]))
@@ -622,12 +565,12 @@
                 (:status (app post)) => 400
                 (provided
                   (core/create-entity auth-info [{:type       "AnalysisRecord"
-                                                  :attributes {:parameters parameters}}]) => [new-record])))))))))
+                                                  :attributes {:parameters parameters}}] ..rt..) => [new-record])))))))))
 
-;(facts "About Projects"
-;  (entity-resource-create-tests "Project")
-;  (entity-resource-update-tests "Project")
-;  (entity-resource-deletion-tests "Project"))
+(facts "About Projects"
+  (entity-resource-create-tests "Project")
+  (entity-resource-update-tests "Project")
+  (entity-resource-deletion-tests "Project"))
 ;
 ;(facts "About Sources"
 ;  (entity-resource-create-tests "Source")

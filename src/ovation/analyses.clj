@@ -13,15 +13,15 @@
 
 
 (defn create-analysis-record
-  [auth analysis]
+  [auth analysis routes]
   (let [doc {:type       ANALYSIS_RECORD_TYPE
              :attributes (if-let [params (:parameters analysis)]
                            {:parameters params}
                            {})}
-        records (core/create-entity auth [doc])
-        inputs (links/add-links auth records INPUTS (:inputs analysis) :strict true :required-target-types [REQUIRED_INPUT_TYPE])
-        input-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all inputs)))
-        outputs (links/add-links auth input-records OUTPUTS (:outputs analysis) :strict true :required-target-types [REQUIRED_OUTPUT_TYPE])
-        updated-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all outputs)))]
+        records (core/create-entity auth [doc] routes)
+        inputs (links/add-links auth records INPUTS (:inputs analysis) routes :strict true :required-target-types [REQUIRED_INPUT_TYPE])
+        input-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all inputs) routes))
+        outputs (links/add-links auth input-records OUTPUTS (:outputs analysis) routes :strict true :required-target-types [REQUIRED_OUTPUT_TYPE])
+        updated-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all outputs) routes))]
 
     updated-records))

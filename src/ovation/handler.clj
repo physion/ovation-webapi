@@ -213,7 +213,7 @@
             :summary "Creates and returns a new Analysis Record"
             (let [auth (:auth/auth-info request)]
               (try+
-                (let [records (doall (map #(create-analysis-record auth %) analyses))] ;;TODO could we create all the records at once?
+                (let [records (doall (map #(create-analysis-record auth % (router request)) analyses))] ;;TODO could we create all the records at once?
                   (created {:analysis-records (concat records)}))
 
                 (catch [:type ::links/target-not-found] {:keys [message]}

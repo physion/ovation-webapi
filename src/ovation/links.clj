@@ -95,6 +95,7 @@
     (conj updated-targets updated-src)))
 
 
+;; TODO don't update source or target docs unless it's a type we need to update to/from
 (defn add-links
   "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
   or a Sequential collection of source documents. For each source document, links to all targets are built.
@@ -104,7 +105,7 @@
         :links      <new LinkInfo documents>
         :all        (concat :updates :links)}```
    "
-  [auth sources rel target-ids & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
+  [auth sources rel target-ids routes & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
                                                                                          name nil
                                                                                          strict false
                                                                                          required-target-types nil]}]
@@ -124,12 +125,8 @@
           (do
             (auth/check! authenticated-user-id :auth/update doc)
             (let [doc-id (:_id doc)
-                  path (link-path doc-id rel name)
-                  linked-doc (if name
-                               (assoc-in doc [:named_links (keyword rel) (keyword name)] path)
-                               (assoc-in doc [:links (keyword rel)] path))
-                  source-roots (get-in linked-doc [:links :_collaboration_roots] [])
-                  targets (core/get-entities auth unique-targets)]
+                  source-roots (get-in doc [:links :_collaboration_roots] [])
+                  targets (core/get-entities auth unique-targets routes)]
 
               (if (and strict
                     (not (= (count targets) (count unique-targets))))
@@ -153,7 +150,7 @@
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))
                                   targets)
-                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))
+                          updated-docs (util/into-id-map (update-collaboration-roots doc targets))
                           acc (merge updates-acc updated-docs)]
 
                       (recur (rest docs) acc (concat links-acc links)))
