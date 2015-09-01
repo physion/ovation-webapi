@@ -46,19 +46,24 @@
 
 ;; -- LINKS -- ;;
 (s/defschema NewLink {:target_id                    s/Uuid
-                      (s/optional-key :inverse_rel) s/Str})
+                      (s/optional-key :inverse_rel) s/Str
+                      (s/optional-key :name)        s/Str})
 
 (s/defschema LinkInfo {:_id                          s/Str
                        (s/optional-key :_rev)        s/Str
-                       :user_id                      s/Uuid
+                       :type                         "Relationship"
+
+                       :user_id                      s/Uuid ;; TODO this should be :owner
                        :source_id                    s/Uuid
                        :target_id                    s/Uuid
                        :rel                          s/Str
                        (s/optional-key :name)        s/Str
                        (s/optional-key :inverse_rel) s/Str
+
+                       (s/optional-key :attributes)  {s/Keyword s/Any}
+
                        :links                        {:self    s/Str
                                                       :related s/Str}
-                       :type                         "Relationship"
                        })
 
 
@@ -75,10 +80,10 @@
 
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
-                      :links {s/Keyword                              s/Str
-                              (s/optional-key :_collaboration_roots) [s/Str]}
-                      :relationships {s/Keyword {:links {:self    s/Str
-                                                         :related s/Str}}}))
+                      :links {:self                                  s/Str
+                              s/Keyword                              {:self    s/Str
+                                                                      :related s/Str}
+                              (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
 (s/defschema EntityUpdate (dissoc BaseEntity :links))
