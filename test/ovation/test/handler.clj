@@ -188,60 +188,60 @@
             (fact "GET /entities/:id returns doc"
               (body-json get) => {:entity doc}))))
 
-      (facts "update"
-        (let [id (UUID/randomUUID)
-              attributes {:foo "bar"}
-              entity {:type       "MyEntity"
-                      :_id        id
-                      :_rev       "1"
-                      :attributes attributes}
-              new-attributes {:bar "baz"}
-              update (assoc entity :attributes new-attributes)
-              updated-entity (assoc update :_rev "2" :links {} :_id (str id))
-              request (fn [entity-id] (mock-req (-> (mock/request :put (util/join-path ["" "api" ver/version "entities" (str entity-id)]))
-                                                  (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
+      ;(facts "update"
+      ;  (let [id (UUID/randomUUID)
+      ;        attributes {:foo "bar"}
+      ;        entity {:type       "MyEntity"
+      ;                :_id        id
+      ;                :_rev       "1"
+      ;                :attributes attributes}
+      ;        new-attributes {:bar "baz"}
+      ;        update (assoc entity :attributes new-attributes)
+      ;        updated-entity (assoc update :_rev "2" :links {} :_id (str id))
+      ;        request (fn [entity-id] (mock-req (-> (mock/request :put (util/join-path ["" "api" ver/version "entities" (str entity-id)]))
+      ;                                            (mock/body (json/write-str (walk/stringify-keys (assoc update :_id (str id)))))) apikey))]
+      ;
+      ;    (against-background [(core/update-entity auth-info [update]) => [updated-entity]]
+      ;      (fact "succeeds with status 200"
+      ;        (let [response (app (request id))]
+      ;          (:status response) => 200))
+      ;      (fact "updates single entity by ID"
+      ;        (let [request (request id)]
+      ;          (body-json request)) => {:entities [updated-entity]})
+      ;      (fact "fails if entity and path :id do not match"
+      ;        (let [other-id (str (UUID/randomUUID))
+      ;              response (app (request other-id))]
+      ;          (:status response) => 404)))
+      ;
+      ;    (fact "fails if not can? :update"
+      ;      (:status (app (request id))) => 401
+      ;      (provided
+      ;        (core/update-entity auth-info [update]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+      ;    )
+      ;  )
 
-          (against-background [(core/update-entity auth-info [update]) => [updated-entity]]
-            (fact "succeeds with status 200"
-              (let [response (app (request id))]
-                (:status response) => 200))
-            (fact "updates single entity by ID"
-              (let [request (request id)]
-                (body-json request)) => {:entities [updated-entity]})
-            (fact "fails if entity and path :id do not match"
-              (let [other-id (str (UUID/randomUUID))
-                    response (app (request other-id))]
-                (:status response) => 404)))
-
-          (fact "fails if not can? :update"
-            (:status (app (request id))) => 401
-            (provided
-              (core/update-entity auth-info [update]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-          )
-        )
-
-      (facts "create"
-        (let [parent-id (str (UUID/randomUUID))
-              new-entity {:type "MyEntity" :attributes {:foo "bar"}}
-              new-entities [new-entity]
-              entity [(assoc new-entity :_id (str (UUID/randomUUID))
-                                        :_rev "1")]
-              request (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" parent-id]))
-                                         (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey))]
-
-          (against-background [(core/create-entity auth-info new-entities :parent parent-id) => [entity]]
-            (fact "POST /:id returns status 201"
-              (let [post (request)]
-                (:status (app post)) => 201))
-            (fact "POST /:id inserts entity with parent"
-              (let [post (request)]
-                (body-json post) => {:entities [entity]})))
-
-          (fact "returns 401 if not can? :create"
-            (:status (app (request))) => 401
-            (provided
-              (core/create-entity auth-info new-entities :parent parent-id) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-          ))
+      ;(facts "create"
+      ;  (let [parent-id (str (UUID/randomUUID))
+      ;        new-entity {:type "MyEntity" :attributes {:foo "bar"}}
+      ;        new-entities [new-entity]
+      ;        entity [(assoc new-entity :_id (str (UUID/randomUUID))
+      ;                                  :_rev "1")]
+      ;        request (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" parent-id]))
+      ;                                   (mock/body (json/write-str (walk/stringify-keys new-entities)))) apikey))]
+      ;
+      ;    (against-background [(core/create-entity auth-info new-entities :parent parent-id) => [entity]]
+      ;      (fact "POST /:id returns status 201"
+      ;        (let [post (request)]
+      ;          (:status (app post)) => 201))
+      ;      (fact "POST /:id inserts entity with parent"
+      ;        (let [post (request)]
+      ;          (body-json post) => {:entities [entity]})))
+      ;
+      ;    (fact "returns 401 if not can? :create"
+      ;      (:status (app (request))) => 401
+      ;      (provided
+      ;        (core/create-entity auth-info new-entities :parent parent-id) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+      ;    ))
 
       (facts "delete"
         (let [id (UUID/randomUUID)
@@ -267,71 +267,71 @@
               (core/delete-entity auth-info [(str id)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
           )))))
 
-(facts "About links"
-  (let [apikey "--apikey--"
-        auth-user-id (str (UUID/randomUUID))
-        auth-info {:user "..user.."
-                   :uuid auth-user-id}
-        id (str (UUID/randomUUID))
-        rel "--myrel--"
-        attributes {:foo "bar"}
-        entity {:type       "MyEntity"
-                :_id        id
-                :_rev       "1"
-                :attributes attributes
-                :links      {}}]
-    (against-background [(auth/authorize anything apikey) => auth-info]
-      (facts "GET /entities/:id/links/:rel"
-        (let [request (fn [id] (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id "links" rel])) apikey))]
-          (against-background [(links/get-link-targets auth-info id rel) => [entity]]
-            (fact "succeeds with 200"
-              (let [response (app (request id))]
-                (:status response) => 200))
-            (fact "returns link targets"
-              (body-json (request id)) => {(keyword rel) [entity]}))))
-      (facts "POST /entities/:id/links/:rel"
-        (let [targetid1 (str (UUID/randomUUID))
-              targetid2 (str (UUID/randomUUID))
-              target1 (assoc entity :_id targetid1)
-              target2 (assoc entity :_id targetid2)
-              links [{:target_id targetid1} {:target_id targetid2}]
-              request (fn [id] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" id "links" rel]))
-                                           (mock/body (json/write-str (walk/stringify-keys links)))) apikey))]
-
-          (against-background [(core/get-entities auth-info [id]) => [entity]
-                               (core/update-entity auth-info anything :direct true) => [entity target1 target2]
-                               (links/add-links auth-info entity rel (map :target_id links)) => [entity target1 target2]]
-            (fact "succeeds with 201"
-              (:status (app (request id))) => 201)
-            (fact "returns link documents"
-              (body-json (request id)) => {:entities [entity target1 target2]
-                                           :links    []})
-            (fact "=> 401 if not can? update source"
-              (:status (app (request id))) => 401
-              (provided
-                (links/add-links auth-info entity rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
-
-      (facts "DELETE /entities/:id/links/:rel"
-        (let [targetid (UUID/randomUUID)
-              link {:target_id targetid
-                    :rel       rel
-                    :_id       (UUID/randomUUID)
-                    :source_id (UUID/randomUUID)}
-              request (fn [id] (mock-req (mock/request :delete (util/join-path ["" "api" ver/version "entities" id "links" rel targetid])) apikey))]
-
-          (against-background [(core/get-entities auth-info [id]) => [entity]
-                               (links/delete-link auth-info entity auth-user-id rel (str targetid)) => [link]]
-            (fact "succeeds with 202"
-              (:status (app (request id))) => 202)
-            (fact "deletes link documents"
-              (body-json (request id)) => {:links [(assoc link :_id (str (:_id link))
-                                                               :source_id (str (:source_id link))
-                                                               :target_id (str (:target_id link)))]})
-            (fact "=> 401 if not can? update source"
-              (:status (app (request id))) => 401
-              (provided
-                (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
-      )))
+;(facts "About links"
+;  (let [apikey "--apikey--"
+;        auth-user-id (str (UUID/randomUUID))
+;        auth-info {:user "..user.."
+;                   :uuid auth-user-id}
+;        id (str (UUID/randomUUID))
+;        rel "--myrel--"
+;        attributes {:foo "bar"}
+;        entity {:type       "MyEntity"
+;                :_id        id
+;                :_rev       "1"
+;                :attributes attributes
+;                :links      {}}]
+;    (against-background [(auth/authorize anything apikey) => auth-info]
+;      (facts "GET /entities/:id/links/:rel"
+;        (let [request (fn [id] (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id "links" rel])) apikey))]
+;          (against-background [(links/get-link-targets auth-info id rel) => [entity]]
+;            (fact "succeeds with 200"
+;              (let [response (app (request id))]
+;                (:status response) => 200))
+;            (fact "returns link targets"
+;              (body-json (request id)) => {(keyword rel) [entity]}))))
+;      (facts "POST /entities/:id/links/:rel"
+;        (let [targetid1 (str (UUID/randomUUID))
+;              targetid2 (str (UUID/randomUUID))
+;              target1 (assoc entity :_id targetid1)
+;              target2 (assoc entity :_id targetid2)
+;              links [{:target_id targetid1} {:target_id targetid2}]
+;              request (fn [id] (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "entities" id "links" rel]))
+;                                           (mock/body (json/write-str (walk/stringify-keys links)))) apikey))]
+;
+;          (against-background [(core/get-entities auth-info [id]) => [entity]
+;                               (core/update-entity auth-info anything :direct true) => [entity target1 target2]
+;                               (links/add-links auth-info entity rel (map :target_id links)) => [entity target1 target2]]
+;            (fact "succeeds with 201"
+;              (:status (app (request id))) => 201)
+;            (fact "returns link documents"
+;              (body-json (request id)) => {:entities [entity target1 target2]
+;                                           :links    []})
+;            (fact "=> 401 if not can? update source"
+;              (:status (app (request id))) => 401
+;              (provided
+;                (links/add-links auth-info entity rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
+;
+;      (facts "DELETE /entities/:id/links/:rel"
+;        (let [targetid (UUID/randomUUID)
+;              link {:target_id targetid
+;                    :rel       rel
+;                    :_id       (UUID/randomUUID)
+;                    :source_id (UUID/randomUUID)}
+;              request (fn [id] (mock-req (mock/request :delete (util/join-path ["" "api" ver/version "entities" id "links" rel targetid])) apikey))]
+;
+;          (against-background [(core/get-entities auth-info [id]) => [entity]
+;                               (links/delete-link auth-info entity auth-user-id rel (str targetid)) => [link]]
+;            (fact "succeeds with 202"
+;              (:status (app (request id))) => 202)
+;            (fact "deletes link documents"
+;              (body-json (request id)) => {:links [(assoc link :_id (str (:_id link))
+;                                                               :source_id (str (:source_id link))
+;                                                               :target_id (str (:target_id link)))]})
+;            (fact "=> 401 if not can? update source"
+;              (:status (app (request id))) => 401
+;              (provided
+;                (links/delete-link auth-info entity auth-user-id rel anything) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))
+;      )))
 (defmacro entity-resource-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
   [entity-type]
@@ -624,18 +624,18 @@
                   (core/create-entity auth-info [{:type       "AnalysisRecord"
                                                   :attributes {:parameters parameters}}]) => [new-record])))))))))
 
-(facts "About Projects"
-  (entity-resource-create-tests "Project")
-  (entity-resource-update-tests "Project")
-  (entity-resource-deletion-tests "Project"))
-
-(facts "About Sources"
-  (entity-resource-create-tests "Source")
-  (entity-resource-update-tests "Source")
-  (entity-resource-deletion-tests "Source"))
-
-(facts "About Folders"
-  (entity-resource-create-tests "Folder")
-  (entity-resource-update-tests "Folder")
-  (entity-resource-deletion-tests "Folder"))
+;(facts "About Projects"
+;  (entity-resource-create-tests "Project")
+;  (entity-resource-update-tests "Project")
+;  (entity-resource-deletion-tests "Project"))
+;
+;(facts "About Sources"
+;  (entity-resource-create-tests "Source")
+;  (entity-resource-update-tests "Source")
+;  (entity-resource-deletion-tests "Source"))
+;
+;(facts "About Folders"
+;  (entity-resource-create-tests "Folder")
+;  (entity-resource-update-tests "Folder")
+;  (entity-resource-deletion-tests "Folder"))
 

@@ -17,3 +17,7 @@
 (defn self-route [rt doc]
   (let [type (:type doc)]
     (rt (keyword type))))
+
+(defn annotations-route
+  [rt doc]
+  (rt (keyword (format "%s-attributes" (:type doc)))))

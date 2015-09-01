@@ -7,6 +7,7 @@
 (s/defschema JsonApiError {:errors {s/Keyword s/Any
                                     (s/optional-key :detail) s/Str}})
 
+
 ;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                    s/Str
@@ -70,8 +71,7 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}
-                        :links      {:_collaboration_roots [s/Uuid]}})
+                        :attributes {s/Keyword s/Any}})
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
@@ -81,8 +81,14 @@
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
                       :links {:self                                  s/Str
+                              (s/optional-key :tags)                 s/Str
+                              (s/optional-key :properties)           s/Str
+                              (s/optional-key :notes)                s/Str
+                              (s/optional-key :timeline-events)      s/Str
+
                               s/Keyword                              {:self    s/Str
                                                                       :related s/Str}
+
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
@@ -106,5 +112,20 @@
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
 
+;; -- Relationships -- ;;
+(def EntityRelationships
+  {:project {:sources {:schema Entity}                    ;;TODO update schema
+             :folders {:schema Entity}
+             :files   {:schema Entity}}
+
+   :source  {:children {:schema Entity}
+             :parent   {:schema Entity}}
+
+   :folder  {:children {:schema Entity}
+             :parents  {:schema Entity}
+             :files    {:schema Entity}}
+
+   :file    {:revisions {:schema Entity}
+             :parents   {:schema Entity}}})
 
 

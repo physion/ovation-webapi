@@ -9,7 +9,6 @@
             [ovation.constants :as k]))
 
 
-
 ;; QUERY
 (defn- eq-doc-label
   [label]

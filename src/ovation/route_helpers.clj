@@ -72,9 +72,9 @@
              (created {~type-kw (core/create-entity auth# entities#)})
 
              (catch [:type :ovation.auth/unauthorized] err#
-               (unauthorized {})))
+               (unauthorized {:errors {:detail "Not authorized"}})))
 
-           (bad-request (str "Entities must be of \"type\" " ~type-name)))))))
+           (bad-request {:errors {:detail (str "Entities must be of \"type\" " ~type-name)}}))))))
 
 (defmacro get-resource
   [entity-type id]
@@ -88,7 +88,7 @@
          (if-let [entities# (core/get-entities auth# [~id])]
            (if-let [projects# (seq (filter #(= ~type-name (:type %)) entities#))]
              (ok {~single-type-kw (first projects#)})
-             (not-found {})))))))
+             (not-found {:errors {:detail "Not found"}})))))))
 
 (defmacro post-resource
   [entity-type id]
@@ -103,7 +103,7 @@
            (created {:entities (core/create-entity auth# entities# :parent ~id)})
 
            (catch [:type :ovation.auth/unauthorized] err#
-             (unauthorized {})))))))
+             (unauthorized {:errors {:detail "Not authorized"}})))))))
 
 (defmacro put-resource
   [entity-type id]
@@ -124,7 +124,7 @@
                (ok {~type-kw entities#}))
 
              (catch [:type :ovation.auth/unauthorized] err#
-               (unauthorized {}))))))))
+               (unauthorized {:errors {:detail "Unauthorized"}}))))))))
 
 (defmacro delete-resource
   [entity-type id]

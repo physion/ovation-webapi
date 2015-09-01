@@ -23,6 +23,10 @@
       (UUID. (.getLong buffer) (.getLong buffer)))
     (UUID/fromString s)))
 
+(defn entity-type-keyword
+  [doc]
+  (keyword (s/lower-case (:type doc))))
+
 (defn into-id-map
   "Converts a mappable collection of documents into a map {:_id => doc}"
   [docs]
