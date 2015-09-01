@@ -39,7 +39,7 @@
     (format "%s--%s>%s-->%s" source-id rel name target-id)
     (format "%s--%s-->%s" source-id rel target-id)))
 
-(defn- link-path
+(defn- link-path                                            ;;TODO
   [source-id rel name]
   (if name
     (util/prefixed-path (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)]))
@@ -54,32 +54,24 @@
   (let [current (collaboration-roots doc)]
     (assoc-in doc [:links :_collaboration_roots] (union (set roots) (set current)))))
 
-(defn- update-collaboration-roots-for-target
+(defn- update-collaboration-roots-for-target                ;;TODO
   "[source target] -> [source target]"
   [source target]
 
   (if target
     (let [source-roots (collaboration-roots source)
-          source-type (clojure.string/lower-case (:type source))
+          source-type (util/entity-type-keyword source)
           target-roots (collaboration-roots target)
-          target-type (clojure.string/lower-case (:type target))]
+          target-type (util/entity-type-keyword target)]
       (cond
-        (= source-type "project") [source (add-roots target source-roots)]
-        (= target-type "project") [(add-roots source target-roots) target]
+        (= source-type :project) [source (add-roots target source-roots)]
+        (= target-type :project) [(add-roots source target-roots) target]
 
 
-        (= source-type "folder") [source (add-roots target source-roots)]
-        (= target-type "folder") [(add-roots source target-roots) target]
+        (= source-type :folder) [source (add-roots target source-roots)]
+        (= target-type :folder) [(add-roots source target-roots) target]
 
-        (= source-type "experiment") [source (add-roots target source-roots)]
-        (= target-type "experiment") [(add-roots source target-roots) target]
-
-        (= target-type "source") [source (add-roots target source-roots)]
-
-        (= target-type "protocol") [source (add-roots target source-roots)]
-
-        (and (= source-type "analysisrecord")
-          (= target-type "revision")) [(add-roots source target-roots) target]
+        ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
 
         :else
         [source target]
@@ -103,16 +95,14 @@
     (conj updated-targets updated-src)))
 
 
-;; We don't need to update any entity documents — collaboration roots are only projects, and links don't automatically make an entity go with an other project.
-;; We don't need to modify (or store at all) links except _collboration_roots
 (defn add-links
   "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
   or a Sequential collection of source documents. For each source document, links to all targets are built.
 
   Returns
-  ```{:updates <updated documents>
-   :links <new link documents
-   :all (concat :updates :links)}```
+  ```{  :updates    <updated documents>
+        :links      <new LinkInfo documents>
+        :all        (concat :updates :links)}```
    "
   [auth sources rel target-ids & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
                                                                                          name nil
@@ -163,15 +153,20 @@
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))
                                   targets)
-                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets)) ;; TODO don't need this
+                          updated-docs (util/into-id-map (update-collaboration-roots linked-doc targets))
                           acc (merge updates-acc updated-docs)]
 
                       (recur (rest docs) acc (concat links-acc links)))
                     (throw+ {:type ::illegal-target-type :message "Target(s) not of required type(s)"})))))))))))
 
 (defn delete-link
-  [auth doc user-id rel target-id & {:keys [inverse-rel name] :or [inverse-rel nil
-                                                                   name nil]}]
+  "Returns
+  ```
+  { :update <docs to update>
+    :delete <docs to delete>
+  }"
+
+  [auth doc user-id rel target-id & {:keys [name] :or [name nil]}]
   (auth/check! user-id :auth/update doc)
   (let [link-id (link-id (:_id doc) rel target-id :name name)
         db (couch/db auth)

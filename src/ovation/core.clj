@@ -18,23 +18,23 @@
 
 (defn of-type
   "Gets all entities of the given type"
-  [auth resource & {:keys [include-trashed] :or {include-trashed false}}]
+  [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
     (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
                                                   :reduce       false
                                                   :include_docs true})
-        (tr/from-couch)
+        (tr/from-couch routes)
         (filter-trashed include-trashed))))
 
 
 
 (defn get-entities
   "Gets entities by ID"
-  [auth ids & {:keys [include-trashed] :or {include-trashed false}}]
+  [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)
         docs (filter :_id (couch/all-docs db ids))]
     (-> docs
-      (tr/from-couch)
+      (tr/from-couch routes)
       (filter-trashed include-trashed))))
 
 (defn get-values
@@ -46,10 +46,10 @@
 ;; COMMAND
 
 (defn parent-collaboration-roots
-  [auth parent]
+  [auth parent routes]
   (if (nil? parent)
     []
-    (if-let [doc (first (get-entities auth [parent]))]
+    (if-let [doc (first (get-entities auth [parent] routes))]
       (-> doc
         :links
         :_collaboration_roots)
@@ -58,7 +58,7 @@
 
 (defn create-entity
   "POSTs entity(s) with the given parent and owner"
-  [auth entities & {:keys [parent] :or {parent nil}}]
+  [auth entities routes & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
@@ -67,7 +67,7 @@
     (couch/bulk-docs db
       (tw/to-couch (auth/authenticated-user-id auth)
         entities
-        :collaboration_roots (parent-collaboration-roots auth parent)))
+        :collaboration_roots (parent-collaboration-roots auth parent routes)))
     ))
 
 (defn create-values
@@ -94,7 +94,7 @@
 (defn update-entity
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities & {:keys [direct] :or [direct false]}]
+  [auth entities routes & {:keys [direct] :or [direct false]}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
@@ -103,7 +103,7 @@
     (let [bulk-docs (if direct
                       entities
                       (let [ids  (map :_id entities)
-                            docs (get-entities auth ids)
+                            docs (get-entities auth ids routes)
                             updated-docs (map (update-attributes entities) docs)]
                         (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
@@ -120,9 +120,9 @@
 
 
 (defn delete-entity
-  [auth ids]
+  [auth ids routes]
   (let [db (couch/db auth)
-        docs (get-entities auth ids)]
+        docs (get-entities auth ids routes)]
 
     (when (some #{k/USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))

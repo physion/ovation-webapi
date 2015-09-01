@@ -62,21 +62,21 @@
 
   (facts "`of-type`"
     (fact "it gets all entities of type"
-      (core/of-type ...auth... ...type...) => ...result...
+      (core/of-type ...auth... ...type... ..rt..) => ...result...
       (provided
         (couch/db ...auth...) => ...db...
         (couch/get-view ...db... k/ENTITIES-BY-TYPE-VIEW {:key ...type... :reduce false :include_docs true}) => [...docs...]
-        (tr/from-couch [...docs...]) => ...entities...
+        (tr/from-couch [...docs...] ..rt..) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...)))
 
   (facts "get-entities"
     (facts "with existing entities"
       (fact "it gets a single entity"
-        (core/get-entities ...auth... [...id...]) => ...result...
+        (core/get-entities ...auth... [...id...] ..rt..) => ...result...
         (provided
           (couch/db ...auth...) => ...db...
           (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
-          (tr/from-couch [{:_id ..id1..} {:_id ..id2..}]) => ...entities...
+          (tr/from-couch [{:_id ..id1..} {:_id ..id2..}] ..rt..) => ...entities...
           (core/filter-trashed ...entities... false) => ...result...)))))
 
 
@@ -89,7 +89,7 @@
                       :attributes attributes}]
 
       (fact "it throws unauthorized exception if any :type is User"
-        (core/create-entity ..auth.. [(assoc new-entity :type "User")]) => (throws Exception)
+        (core/create-entity ..auth.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception)
         (provided
           (couch/db ...auth...) => ...db...))
 
@@ -101,20 +101,20 @@
                            (couch/bulk-docs ...db... [...doc...]) => ...result...]
 
         (fact "it sends doc to Couch"
-          (core/create-entity ...auth... [new-entity]) => ...result...)
+          (core/create-entity ...auth... [new-entity] ..routes..) => ...result...)
 
         (facts "with parent"
           (fact "it adds collaboration roots from parent"
-            (core/create-entity ...auth... [new-entity] :parent ...parent...) => ...result...
+            (core/create-entity ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
             (provided
-              (core/parent-collaboration-roots ...auth... ...parent...) => ...collaboration_roots...
+              (core/parent-collaboration-roots ...auth... ...parent... ..rt..) => ...collaboration_roots...
               (tw/to-couch ...owner-id... [{:type       type
                                             :attributes attributes}]
                 :collaboration_roots ...collaboration_roots...) => [...doc...])))
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entity ...auth... [new-entity] :parent nil) => ...result...)))))
+            (core/create-entity ...auth... [new-entity] ..routes.. :parent nil) => ...result...)))))
 
   (facts "`update-entity`"
     (let [type "some-type"
@@ -134,20 +134,20 @@
                              (tw/to-couch ..owner-id.. [update]) => [update]
                              (auth/authenticated-user-id ..auth..) => ..owner-id..
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
-                             (core/get-entities ..auth.. [id]) => [entity]
+                             (core/get-entities ..auth.. [id] ..rt..) => [entity]
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]]
           (fact "it updates attributes"
-            (core/update-entity ..auth.. [update]) => [updated-entity])
+            (core/update-entity ..auth.. [update] ..rt..) => [updated-entity])
           (fact "it fails if authenticated user doesn't have write permission"
-            (core/update-entity ..auth.. [update]) => (throws Exception)
+            (core/update-entity ..auth.. [update] ..rt..) => (throws Exception)
             (provided
               (auth/authenticated-user-id ..auth..) => ..other-id..
               (auth/can? ..other-id.. :auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
-          (core/update-entity ..auth.. [entity]) => (throws Exception)
+          (core/update-entity ..auth.. [entity] ..rt..) => (throws Exception)
           (provided
-            (core/get-entities ..auth.. [id]) => [(assoc entity :type "User")])))))
+            (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
 
   (facts "`delete-entity`"
@@ -164,27 +164,27 @@
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..owner-id..]
 
-        (against-background [(core/get-entities ..auth.. [id]) => [entity]
+        (against-background [(core/get-entities ..auth.. [id] ..rt..) => [entity]
                              (couch/bulk-docs ..db.. [update]) => ..deleted..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entity ..auth.. [id]) => ..deleted..)
+            (core/delete-entity ..auth.. [id] ..rt..) => ..deleted..)
 
           (fact "it fails if entity already trashed"
-            (core/delete-entity ..auth.. [id]) => (throws Exception)
+            (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
             (provided
-              (core/get-entities ..auth.. [id]) => [update]))
+              (core/get-entities ..auth.. [id] ..rt..) => [update]))
 
           (fact "it fails if authenticated user doesn't have write permission"
-            (core/delete-entity ..auth.. [id]) => (throws Exception)
+            (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
             (provided
               (auth/authenticated-user-id ..auth..) => ..other-id..
               (auth/can? ..other-id.. :auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
-          (core/delete-entity ..auth.. [id]) => (throws Exception)
+          (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
           (provided
-            (core/get-entities ..auth.. [id]) => [(assoc entity :type "User")])))))
+            (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
   (facts "`trash-entity` helper"
     (fact "adds required info"
@@ -199,10 +199,10 @@
 
   (facts "`parent-collaboration-roots`"
     (fact "it allows nil parent"
-      (core/parent-collaboration-roots ...auth... nil) => [])
+      (core/parent-collaboration-roots ...auth... nil ..rt..) => [])
 
     (fact "it returns parent links._collaboation_roots"
-      (core/parent-collaboration-roots ..auth.. ..parent..) => ..roots..
+      (core/parent-collaboration-roots ..auth.. ..parent.. ..rt..) => ..roots..
       (provided
-        (core/get-entities ..auth.. [..parent..]) => [{:other_stuff ..other..
-                                                       :links       {:_collaboration_roots ..roots..}}]))))
+        (core/get-entities ..auth.. [..parent..] ..rt..) => [{:other_stuff ..other..
+                                                              :links       {:_collaboration_roots ..roots..}}]))))

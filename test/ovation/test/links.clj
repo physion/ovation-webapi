@@ -86,40 +86,30 @@
                 link-path (util/join-path ["" "api" ver/version "entities" (:_id doc) "links" rel])]
             (:updates (links/add-links ..auth.. doc rel [target-id])) => (contains (assoc-in doc [:links (keyword rel)] link-path))))
 
-        (fact "updates multiple target _collaboration_roots for source:=Experiment"
-          (let [rel "some-rel"
-                source {:_id "src" :type "Experiment" :links {:_collaboration_roots [..roots1..]}}
-                target1 {:_id "target1" :type "Entity" :links {:_collaboration_roots [..roots2..]}}
-                target2 {:_id "target2" :type "Entity" :links {:_collaboration_roots [..roots3..]}}
-                expected1 (assoc-in target1 [:links :_collaboration_roots] #{..roots2.. ..roots1..})
-                expected2 (assoc-in target2 [:links :_collaboration_roots] #{..roots3.. ..roots1..})]
-            (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains #{expected2 expected1})
-            (provided
-              (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
 
-        (fact "updates AnalysisRecord with input Revision _collaboration_roots"
-          (let [rel "inputs"
-                source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
-                target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
-                target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
-                expected (-> source
-                           (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
-                           (assoc-in [:links :inputs] "/api/v1/entities/analysis-record/links/inputs"))]
-            (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
-            (provided
-              (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
-
-        (fact "updates AnalysisRecord with output Revision _collaboration_roots"
-          (let [rel "outputs"
-                source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
-                target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
-                target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
-                expected (-> source
-                           (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
-                           (assoc-in [:links :outputs] "/api/v1/entities/analysis-record/links/outputs"))]
-            (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
-            (provided
-              (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
+        ;(fact "updates AnalysisRecord with input Revision _collaboration_roots"
+        ;  (let [rel "inputs"
+        ;        source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
+        ;        target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
+        ;        target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
+        ;        expected (-> source
+        ;                   (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
+        ;                   (assoc-in [:links :inputs] "/api/v1/entities/analysis-record/links/inputs"))]
+        ;    (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
+        ;    (provided
+        ;      (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
+        ;
+        ;(fact "updates AnalysisRecord with output Revision _collaboration_roots"
+        ;  (let [rel "outputs"
+        ;        source {:_id "analysis-record" :type "AnalysisRecord" :links {:_collaboration_roots [..roots1..]}}
+        ;        target1 {:_id "input1" :type "Revision" :links {:_collaboration_roots [..roots2..]}}
+        ;        target2 {:_id "input2" :type "Revision" :links {:_collaboration_roots [..roots3..]}}
+        ;        expected (-> source
+        ;                   (assoc-in [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})
+        ;                   (assoc-in [:links :outputs] "/api/v1/entities/analysis-record/links/outputs"))]
+        ;    (:updates (links/add-links ..auth.. source rel [target-id target-id2])) => (contains expected)
+        ;    (provided
+        ;      (core/get-entities ..auth.. #{target-id target-id2}) => [target1 target2])))
 
         (fact "updates source _collaboration_roots by aggregating multiple target collaboration roots"
           (let [rel "some-rel"
@@ -149,14 +139,6 @@
             (auth/can? ..id.. :auth/update anything) => false))
 
 
-        (fact "updates target _collaboration_roots for source:=Experiment"
-          (let [rel "some-rel"
-                source {:type "Experiment" :links {:_collaboration_roots [..roots1..]}}
-                target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
-                expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
-            (:updates (links/add-links ..auth.. source rel [target-id])) => (contains expected)
-            (provided
-              (core/get-entities ..auth.. #{target-id}) => [target])))
 
         (fact "updates target _collaboration_roots for source:=Project"
           (let [rel "some-rel"
@@ -200,36 +182,25 @@
             (provided
               (core/get-entities ..auth.. #{target-id}) => [target])))
 
-
-        (fact "updates source _collaboration_roots for target:=Experiment"
-          (let [rel "some-rel"
-                source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
-                target {:_id target-id :type "Experiment" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
-                expected (-> source
-                           (assoc-in [:links :_collaboration_roots] #{..roots1.. ..roots2..})
-                           (assoc-in [:links (keyword rel)] link-path))]
-            (:updates (links/add-links ..auth.. source rel [target-id])) => (contains expected)
-            (provided
-              (core/get-entities ..auth.. #{target-id}) => [target])))
         )))
 
   (facts "`delete-link`"
 
-    (let [doc {:_id   (str (UUID/randomUUID))
-               :type  "MyEntity" `:attrbutes {}
-               :links {:_collaboration_roots []}}
-          target-id (str (UUID/randomUUID))]
+    (let [target-id (str (UUID/randomUUID))
+          doc {:_id   (str (UUID/randomUUID))
+               :type  "MyEntity"
+               :attrbutes {}
+               :links {:_collaboration_roots [target-id]}}]
 
       (against-background [(couch/db ..auth..) => ..db..]
 
         (fact "removes link"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
+            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..deleted..
             (provided
               (couch/all-docs ..db.. [link-id]) => [..link..]
-              (couch/delete-docs ..db.. [..link..]) => ..docs..)))
+              (couch/delete-docs ..db.. [..link..]) => ..deleted..)))
 
         (fact "fails if not can? :update source"
           (links/delete-link ..auth.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
@@ -237,4 +208,10 @@
             (auth/can? ..id.. :auth/update ..doc..) => false))
 
 
-        (future-fact "updates entity _collaboration_roots")))))
+        (fact "updates entity _collaboration_roots"
+          (let [source-id (:_id doc)
+                link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
+            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
+            (provided
+              (couch/all-docs ..db.. [link-id]) => [..link..]
+              (couch/delete-docs ..db.. [..link..]) => ..docs..)))))))

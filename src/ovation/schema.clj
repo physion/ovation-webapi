@@ -1,7 +1,8 @@
 (ns ovation.schema
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.util :as util]))
 
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword s/Any
@@ -52,7 +53,7 @@
 
 (s/defschema LinkInfo {:_id                          s/Str
                        (s/optional-key :_rev)        s/Str
-                       :type                         "Relationship"
+                       :type                         util/RELATION_TYPE
 
                        :user_id                      s/Uuid ;; TODO this should be :owner
                        :source_id                    s/Uuid
@@ -63,8 +64,8 @@
 
                        (s/optional-key :attributes)  {s/Keyword s/Any}
 
-                       :links                        {:self    s/Str
-                                                      :related s/Str}
+                       :links                        {(s/optional-key :_collaboration_roots) [s/Str]
+                                                      (s/optional-key :self) s/Str}
                        })
 
 

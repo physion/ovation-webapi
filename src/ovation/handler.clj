@@ -84,7 +84,7 @@
               :responses {404 {:schema JsonApiError :description "Not found"}}
               :summary "Returns entity with :id"
               (let [auth (:auth/auth-info request)]
-                (if-let [entities (core/get-entities auth [id])]
+                (if-let [entities (core/get-entities auth [id] (router request))]
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
 

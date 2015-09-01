@@ -7,7 +7,9 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
             [ovation.schema :refer :all]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [ovation.util :as util]
+            [ovation.routes :as r]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -52,7 +54,7 @@
        :return {~type-kw [Entity]}
        :summary (str "Gets all top-level " ~type-path)
        (let [auth# (:auth/auth-info request#)
-             entities# (core/of-type auth# ~type-name)]
+             entities# (core/of-type auth# ~type-name (r/router request#))]
          (ok {~type-kw entities#})))))
 
 (defmacro post-resources
@@ -69,7 +71,7 @@
        (let [auth# (:auth/auth-info request#)]
          (if (every? #(= ~type-name (:type %)) entities#)
            (try+
-             (created {~type-kw (core/create-entity auth# entities#)})
+             (created {~type-kw (core/create-entity auth# entities# (r/router request#))})
 
              (catch [:type :ovation.auth/unauthorized] err#
                (unauthorized {:errors {:detail "Not authorized"}})))
@@ -85,7 +87,7 @@
        :return {~single-type-kw Entity}
        :summary ~(str "Returns " type-name " with :id")
        (let [auth# (:auth/auth-info request#)]
-         (if-let [entities# (core/get-entities auth# [~id])]
+         (if-let [entities# (core/get-entities auth# [~id] (r/router request#))]
            (if-let [projects# (seq (filter #(= ~type-name (:type %)) entities#))]
              (ok {~single-type-kw (first projects#)})
              (not-found {:errors {:detail "Not found"}})))))))
@@ -120,7 +122,7 @@
            (not-found {:error (str ~type-name " " entity-id# " ID mismatch")})
            (try+
              (let [auth# (:auth/auth-info request#)
-                   entities# (core/update-entity auth# [update#])]
+                   entities# (core/update-entity auth# [update#] (r/router request#))]
                (ok {~type-kw entities#}))
 
              (catch [:type :ovation.auth/unauthorized] err#
@@ -136,7 +138,7 @@
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
          (let [auth# (:auth/auth-info request#)]
-           (accepted {:entities (core/delete-entity auth# [~id])}))
+           (accepted {:entities (core/delete-entity auth# [~id] (r/router request#))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
@@ -169,20 +171,20 @@
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
          (try+
            (let [auth# (:auth/auth-info request#)
-                 source# (first (core/get-entities auth# [~id]))]
+                 source# (first (core/get-entities auth# [~id] (r/router request#)))]
              (if source#
                (let [all-updates# (:all (links/add-links auth# source# ~rel (map :target_id new-links#)))
-                     updates# (core/update-entity auth# all-updates# :direct true)]
-                 (created {:entities (filter :type updates#)
+                     updates# (core/update-entity auth# all-updates# :direct true)] ;;TODO this should not use update-entity for linkinfo
+                 (created {:entities (filter (fn [doc#] (not= util/RELATION_TYPE (:type doc#))) updates#)
                            :links    (filter :rel updates#)}))
-               (not-found {:error (str ~id " not found")})))
+               (not-found {:errors {:detail (str ~id " not found")}})))
            (catch [:type :ovation.auth/unauthorized] {:keys [message#]}
-             (unauthorized {:error message#}))
+             (unauthorized {:errors {:detail message#}}))
            (catch [:type :ovation.links/target-not-found] {:keys [message#]}
-             (bad-request {:error message#}))))
+             (bad-request {:errors {:detail message#}}))))
        (DELETE* "/" request#
          :name ~(keyword (str "delete-" (lower-case type-name) "-links"))
          ;; Return Accepted, or {:errors} on error
          :summary ~(str "Remove relationships for :rel from " type-name " :id")
-         (accepted)
+         (accepted)                                         ;;TODO — this needs to be implemented
          ))))
