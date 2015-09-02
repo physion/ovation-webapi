@@ -88,46 +88,6 @@
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
 
-            ;;; TODO Remove POST in favor of entity-specific (with schema validation)
-            ;(POST* "/" request
-            ;  :name :create-entity
-            ;  :return {:entities [Entity]}
-            ;  :body [entities [NewEntity]]
-            ;  :summary "Creates and returns a new entity with the identified entity as collaboration root"
-            ;  (let [auth (:auth/auth-info request)]
-            ;    (try+
-            ;      (created {:entities (core/create-entity auth entities :parent id)})
-            ;
-            ;      (catch [:type :ovation.auth/unauthorized] err
-            ;        (unauthorized {:error (:type err)})))))
-            ;
-            ;;; TODO Remove PUT in favor of entity-specific (with schema validation)
-            ;(PUT* "/" request
-            ;  :name :update-entity
-            ;  :return {:entities [Entity]}
-            ;  :body [update EntityUpdate]
-            ;  :summary "Updates and returns entity with :id"
-            ;  (let [entity-id (str (:_id update))]
-            ;    (if-not (= id (str entity-id))
-            ;      (not-found {:error (str "Entity " entity-id " ID mismatch")})
-            ;      (try+
-            ;        (let [auth (:auth/auth-info request)
-            ;              entities (core/update-entity auth [update])]
-            ;          (ok {:entities entities}))
-            ;
-            ;        (catch [:type :ovation.auth/unauthorized] err
-            ;          (unauthorized {:error (:type err)}))))))
-
-            ;(DELETE* "/" request
-            ;  :name :delete-entity
-            ;  :return {:entities [TrashedEntity]}
-            ;  :summary "Deletes (trashes) entity with :id"
-            ;  (try+
-            ;    (let [auth (:auth/auth-info request)]
-            ;      (accepted {:entities (core/delete-entity auth [id])}))
-            ;    (catch [:type :ovation.auth/unauthorized] err
-            ;      (unauthorized {:error (:type err)}))))
-
             (context* "/annotations" []
               :tags ["annotations"]
               (annotation id "keywords" "tags" TagRecord TagAnnotation)

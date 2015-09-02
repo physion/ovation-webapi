@@ -6,7 +6,8 @@
             [ovation.auth :as auth]
             [ovation.core :as core]
             [ovation.version :as ver]
-            [ovation.constants :as k])
+            [ovation.constants :as k]
+            [ovation.routes :as r])
   (:import (java.util UUID)))
 
 (facts "About links"
@@ -59,7 +60,10 @@
                                                                                                              :target_id   target-id
                                                                                                              :rel         ..rel..
                                                                                                              :inverse_rel ..inverse..
-                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]
+                                                                                                                           :self ..url..}})
+          (provided
+            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
 
         (fact "creates link document without inverse"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..)) => (contains {:_id (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
@@ -68,7 +72,10 @@
                                                                                     :source_id (:_id doc)
                                                                                     :target_id target-id
                                                                                     :rel       ..rel..
-                                                                                    :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+                                                                                    :links     {:self ..url..
+                                                                                                :_collaboration_roots [..sourceroot.. ..targetroot..]}})
+          (provided
+            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
         (fact "creates named link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id  (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                             :user_id     ..id..
@@ -78,7 +85,10 @@
                                                                                                                             :name        ..name..
                                                                                                                             :inverse_rel ..inverse..
                                                                                                                             :rel         ..rel..
-                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]
+                                                                                                                                          :self ..url..}})
+          (provided
+            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
 
 
 

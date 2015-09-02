@@ -6,7 +6,8 @@
             [ovation.core :as core]
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [union]]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.routes :as r]))
 
 
 ;; QUERY
@@ -145,7 +146,8 @@
                                                    :source_id doc-id
                                                    :rel       rel
                                                    :user_id   authenticated-user-id
-                                                   :links     {:_collaboration_roots (concat source-roots target-roots)}}
+                                                   :links     {:_collaboration_roots (concat source-roots target-roots)
+                                                               :self                 (r/relationship-route routes doc rel)}}
                                              named (if name (assoc base :name name) base)
                                              link (if inverse-rel (assoc named :inverse_rel inverse-rel) named)]
                                          link))

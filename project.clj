@@ -2,8 +2,8 @@
   :description "Ovation REST API"
   :url "http://ovation.io"
 
-  :repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]
-                 ["s3-ovation-release-repository" {:url "s3p://maven.ovation.io/release"}]]
+  ;:repositories [["s3-ovation-snapshot-repository" {:url "s3p://maven.ovation.io/snapshot"}]
+  ;               ["s3-ovation-release-repository" {:url "s3p://maven.ovation.io/release"}]]
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
@@ -76,12 +76,12 @@
                                               [lein-ring "0.8.10"]]}
              :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                               :secret-key ~(System/getenv "AWS_SECRET_KEY")}
-                               :repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"
-                                                                                 :username   :env/AWS_ACCESS_KEY
-                                                                                 :passphrase :env/AWS_SECRET_KEY}]
-                                              ["s3-ovation-release-repository" {:url        "s3p://maven.ovation.io/release"
-                                                                                :username   :env/AWS_ACCESS_KEY
-                                                                                :passphrase :env/AWS_SECRET_KEY}]]
+                               ;:repositories [["s3-ovation-snapshot-repository" {:url        "s3p://maven.ovation.io/snapshot"
+                               ;                                                  :username   :env/AWS_ACCESS_KEY
+                               ;                                                  :passphrase :env/AWS_SECRET_KEY}]
+                               ;               ["s3-ovation-release-repository" {:url        "s3p://maven.ovation.io/release"
+                               ;                                                 :username   :env/AWS_ACCESS_KEY
+                               ;                                                 :passphrase :env/AWS_SECRET_KEY}]]
                                :local-repo   ".repository"}}
 
   :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
