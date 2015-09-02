@@ -582,14 +582,19 @@
   (entity-resource-create-tests "Project")
   (entity-resource-update-tests "Project")
   (entity-resource-deletion-tests "Project"))
-;
-;(facts "About Sources"
-;  (entity-resource-create-tests "Source")
-;  (entity-resource-update-tests "Source")
-;  (entity-resource-deletion-tests "Source"))
-;
-;(facts "About Folders"
-;  (entity-resource-create-tests "Folder")
-;  (entity-resource-update-tests "Folder")
-;  (entity-resource-deletion-tests "Folder"))
+
+(facts "About Sources"
+  (entity-resource-create-tests "Source")
+  (entity-resource-update-tests "Source")
+  (entity-resource-deletion-tests "Source"))
+
+(facts "About Folders"
+  (entity-resource-create-tests "Folder")
+  (entity-resource-update-tests "Folder")
+  (entity-resource-deletion-tests "Folder"))
+
+(facts "About Files"
+  (entity-resource-create-tests "File")
+  (entity-resource-update-tests "File")
+  (entity-resource-deletion-tests "File"))
 

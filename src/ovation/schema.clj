@@ -118,27 +118,37 @@
 
 ;; TODO
 (def EntityChildren
-  {:project {:folder {:rel "folders"                        ;;?
-                      :inverse_rel "parent"}                ;;?
-             :resource {:rel "files"                        ;;?
-                        :inverse_rel "parent"}              ;;?
-             }
-   :folder {:folder {:rel "children"
-                     :inverse_rel "parent"}}})
+  {:project {:folder {:rel         "folders"
+                      :inverse_rel "parents"}
+             :file   {:rel         "files"
+                      :inverse_rel "parents"}}
+
+   :folder  {:folder {:rel         "folders"
+                      :inverse_rel "parents"}
+             :file   {:rel         "files"
+                      :inverse_rel "parents"}}
+
+   :source  {:source {:rel         "children"
+                      :inverse_rel "parents"}}
+
+   :file    {:revision {:rel         "revisions"
+                        :inverse_rel "file"}}})
 
 (def EntityRelationships
-  {:project {:sources {:schema Entity}                    ;;TODO update schema
-             :folders {:schema Entity}
-             :files   {:schema Entity}}
+  {:project  {:folders {:schema Entity}
+              :files   {:schema Entity}}
 
-   :source  {:children {:schema Entity}
-             :parent   {:schema Entity}}
+   :source   {:children {:schema Entity}
+              :parents  {:schema Entity}
+              :files    {:schema Entity}}
 
-   :folder  {:children {:schema Entity}
-             :parents  {:schema Entity}
-             :files    {:schema Entity}}
+   :folder   {:children {:schema Entity}
+              :parents  {:schema Entity}
+              :files    {:schema Entity}}
 
-   :file    {:revisions {:schema Entity}
-             :parents   {:schema Entity}}})
+   :file     {:revisions {:schema Entity}
+              :parents   {:schema Entity}}
+
+   :revision {:file {:schema Entity}}})
 
 
