@@ -116,7 +116,7 @@
           (post-resources "Source" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Source" id)
-            (post-resource "Source" id [NewEntity])                     ;; TODO only allow Source children; pass list of Schema, or base if empty
+            (post-resource "Source" id [NewEntity])
             (put-resource "Source" id)
             (delete-resource "Source" id)
 
@@ -131,7 +131,7 @@
           (post-resources "Folder" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewEntity])                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
+            (post-resource "Folder" id [NewEntity])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -140,14 +140,13 @@
               (relationships "Folder" id rel))))
 
 
-        ;; TODO allow direct upload?
         (context* "/files" []
           :tags ["files"]
           (get-resources "File")
           (post-resources "File" [NewEntity])
           (context* "/:id" [id]
             (get-resource "File" id)
-            (post-resource "File" id [NewEntity])                     ;; TODO only allow Folder or Revision children; pass list of Schema, or base if empty
+            (post-resource "File" id [NewEntity])
             (put-resource "File" id)
             (delete-resource "File" id)
 

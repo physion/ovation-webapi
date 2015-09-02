@@ -116,7 +116,6 @@
 
 ;; -- Relationships -- ;;
 
-;; TODO
 (def EntityChildren
   {:project {:folder {:rel         "folders"
                       :inverse_rel "parents"}
