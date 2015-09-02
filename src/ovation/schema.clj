@@ -96,6 +96,7 @@
 (s/defschema EntityUpdate (dissoc BaseEntity :links))
 
 
+
 ;; -- Analyses -- ;;
 
 (s/defschema NewAnalysisRecord
@@ -114,6 +115,17 @@
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
 
 ;; -- Relationships -- ;;
+
+;; TODO
+(def EntityChildren
+  {:project {:folder {:rel "folders"                        ;;?
+                      :inverse_rel "parent"}                ;;?
+             :resource {:rel "files"                        ;;?
+                        :inverse_rel "parent"}              ;;?
+             }
+   :folder {:folder {:rel "children"
+                     :inverse_rel "parent"}}})
+
 (def EntityRelationships
   {:project {:sources {:schema Entity}                    ;;TODO update schema
              :folders {:schema Entity}

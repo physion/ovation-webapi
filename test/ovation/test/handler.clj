@@ -10,6 +10,7 @@
             [ovation.util :as util]
             [ovation.version :as ver]
             [schema.core :as s]
+            [ovation.schema :refer [EntityChildren]]
             [ovation.links :as links]
             [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
             [clojure.string :refer [lower-case capitalize]]
@@ -294,36 +295,46 @@
                        (provided
                          (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
            (facts "create"
-             (let [parent-id# ~(str (UUID/randomUUID))
-                   new-entity# {:type "MyEntity" :attributes {:foo "bar"}}
+             (let [parent# {:_id  ~(str (UUID/randomUUID))
+                            :type ~type-name}
+                   new-entity# {:type "Folder"
+                                :attributes {:foo "bar"}}
                    new-entities# [new-entity#]
-                   entity# [(assoc new-entity# :_id ~(str (UUID/randomUUID))
-                                               :_rev "1")]
-                   request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path parent-id#]))
-                                               (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
+                   entity# (assoc new-entity# :_id ~(str (UUID/randomUUID))
+                                                 :_rev "1")
+                   rel# (-> EntityChildren ~(util/entity-type-name-keyword type-name) ~(util/entity-type-name-keyword "Folder") :rel)
+                   inverse_rel# (-> EntityChildren ~(util/entity-type-name-keyword type-name) ~(util/entity-type-name-keyword "Folder") :inverse_rel)
+                   request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path (:_id parent#)]))
+                                               (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))
+                   link# {}
+                   ]
 
-               (against-background [(core/create-entity auth-info# new-entities# ..rt.. :parent parent-id#) => [entity#]
+               (against-background [(core/create-entity auth-info# new-entities# ..rt.. :parent (:_id parent#)) => [entity#]
+                                    (core/get-entities auth-info# (:_id parent#) ..rt..) => [parent#]
+                                    (links/add-links auth-info# [parent#] [entity#] rel# [(:_id entity#)] :inverse_rel inverse_rel#) => {:links [link#]}
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
                      (:status (app post#)) => 201))
                  (fact ~(str "POST /:id inserts entity with " type-name " parent")
                    (let [post# (request#)]
-                     (body-json post#) => {:entities [entity#]})))
+                     (body-json post#) => {:entities [entity#]
+                                           :links    [link#]})))
 
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (app (request#))) => 401
                  (provided
+                   (core/get-entities auth-info# (:_id parent#) ..rt..) => [parent#]
                    (r/router anything) => ..rt..
-                   (core/create-entity auth-info# new-entities# ..rt.. :parent parent-id#) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                   (core/create-entity auth-info# new-entities# ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )
 
              ;; For top-level entities
              (when (#{"Project" "Source" "Protocol"} ~(capitalize type-name))
                (let [new-entity# {:type ~(capitalize type-name) :attributes {:foo "bar"}}
                      new-entities# [new-entity#]
-                     entity# [(assoc new-entity# :_id ~(str (UUID/randomUUID))
-                                                 :_rev "1")]
+                     entity# (assoc new-entity# :_id ~(str (UUID/randomUUID))
+                                                   :_rev "1")
                      request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
                                                  (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 

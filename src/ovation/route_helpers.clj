@@ -59,14 +59,13 @@
 
 (defmacro post-resources
   "POST to resources of type (e.g. \"Project\")"
-  [entity-type]
+  [entity-type schemas]
   (let [type-name (capitalize entity-type)
         type-path (lower-case (str type-name "s"))
         type-kw (keyword type-path)]
     `(POST* "/" request#
-       :name ~(keyword (str "create-" (lower-case type-name)))
        :return {~type-kw [Entity]}
-       :body [entities# [NewEntity]]
+       :body [entities# ~schemas]
        :summary ~(str "Creates a new top-level " type-name)
        (let [auth# (:auth/auth-info request#)]
          (if (every? #(= ~type-name (:type %)) entities#)
@@ -93,19 +92,33 @@
              (not-found {:errors {:detail "Not found"}})))))))
 
 (defmacro post-resource
-  [entity-type id]
+  [entity-type id schemas]
   (let [type-name (capitalize entity-type)]
     `(POST* "/" request#
        :name ~(keyword (str "create-" (lower-case type-name) "-entity"))
-       :return {:entities [Entity]}
-       :body [entities# [NewEntity]]
+       :return {:entities [Entity]
+                          :links [LinkInfo]}
+       :body [entities# ~schemas]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (let [auth# (:auth/auth-info request#)]
          (try+
-           (created {:entities (core/create-entity auth# entities# (r/router request#) :parent ~id)})
+           (let [
+                 routes# (r/router request#)
+                 self# (core/get-entities auth# ~id routes#)
+                 entities# (core/create-entity auth# entities# routes# :parent ~id)
+                 entity_ids# (map :_id entities#)
+
+                 links# (map (fn [target#]
+                               (let [rel# (get-in EntityChildren [~(util/entity-type-name-keyword type-name) (keyword (clojure.string/lower-case (:type target#))) :rel])
+                                     inverse_rel# (get-in EntityChildren [~(util/entity-type-name-keyword type-name) (keyword (clojure.string/lower-case (:type target#))) :inverse_rel])]
+                                 (links/add-links auth# self# [target#] rel# entity_ids# :inverse_rel inverse_rel#))) entities#)
+                 ]
+
+             (created {:entities entities#
+                       :links    (apply concat (map :links links#))}))
 
            (catch [:type :ovation.auth/unauthorized] err#
-             (unauthorized {:errors {:detail "Not authorized"}})))))))
+             (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))))
 
 (defmacro put-resource
   [entity-type id]

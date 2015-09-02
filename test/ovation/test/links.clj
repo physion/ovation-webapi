@@ -66,14 +66,14 @@
             (r/relationship-route ..rt.. doc ..rel..) => ..url..))
 
         (fact "creates link document without inverse"
-          (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..)) => (contains {:_id (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
-                                                                                    :user_id   ..id..
-                                                                                    :type      "Relation"
-                                                                                    :source_id (:_id doc)
-                                                                                    :target_id target-id
-                                                                                    :rel       ..rel..
-                                                                                    :links     {:self ..url..
-                                                                                                :_collaboration_roots [..sourceroot.. ..targetroot..]}})
+          (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..)) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+                                                                                           :user_id   ..id..
+                                                                                           `:type     "Relation"
+                                                                                           :source_id (:_id doc)
+                                                                                           :target_id target-id
+                                                                                           :rel       ..rel..
+                                                                                           :links     {:self                 ..url..
+                                                                                                       :_collaboration_roots [..sourceroot.. ..targetroot..]}})
           (provided
             (r/relationship-route ..rt.. doc ..rel..) => ..url..))
         (fact "creates named link document"

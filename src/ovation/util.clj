@@ -27,6 +27,10 @@
   [doc]
   (keyword (s/lower-case (:type doc))))
 
+(defn entity-type-name-keyword
+  [name]
+  (keyword (s/lower-case name)))
+
 (defn into-id-map
   "Converts a mappable collection of documents into a map {:_id => doc}"
   [docs]

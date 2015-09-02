@@ -98,10 +98,10 @@
         (context* "/projects" []
           :tags ["projects"]
           (get-resources "Project")
-          (post-resources "Project")
+          (post-resources "Project" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Project" id)
-            (post-resource "Project" id)
+            (post-resource "Project" id [NewEntity])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
@@ -113,10 +113,10 @@
         (context* "/sources" []
           :tags ["sources"]
           (get-resources "Source")
-          (post-resources "Source")
+          (post-resources "Source" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Source" id)
-            (post-resource "Source" id)                     ;; TODO only allow Source children; pass list of Schema, or base if empty
+            (post-resource "Source" id [NewEntity])                     ;; TODO only allow Source children; pass list of Schema, or base if empty
             (put-resource "Source" id)
             (delete-resource "Source" id)
 
@@ -128,10 +128,10 @@
         (context* "/folders" []
           :tags ["folders"]
           (get-resources "Folder")
-          (post-resources "Folder")
+          (post-resources "Folder" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
+            (post-resource "Folder" id [NewEntity])                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -143,10 +143,10 @@
         (context* "/resources" []
           :tags ["files"]
           (get-resources "Resource")
-          (post-resources "Resource")
+          (post-resources "Resource" [NewEntity])
           (context* "/:id" [id]
             (get-resource "Resource" id)
-            (post-resource "Resource" id)                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
+            (post-resource "Resource" id [NewEntity])                     ;; TODO only allow Folder or Resource/Revision children; pass list of Schema, or base if empty
             (put-resource "Resource" id)
             (delete-resource "Resource" id)
 
