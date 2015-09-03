@@ -71,8 +71,7 @@
                                :plugins      [[lein-midje "3.1.3"]
                                               [lein-ring "0.8.10"]]}
              :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                                              :secret-key ~(System/getenv "AWS_SECRET_KEY")}
-                               :local-repo   ".repository"}}
+                                              :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
 
   :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
 
