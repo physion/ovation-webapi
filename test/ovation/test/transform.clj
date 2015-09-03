@@ -38,7 +38,7 @@
                                                                         :relB {:self ..relB-self..
                                                                                :related ..relB-related..}})
       (provided
-        (util/entity-type-keyword ..type..) => ..type..
+        (util/entity-type-keyword dto) => ..type..
         (s/EntityRelationships ..type..) => type-rel
         (r/targets-route ..rt.. dto :relA) => ..relA-related..
         (r/targets-route ..rt.. dto :relB) => ..relB-related..
@@ -53,7 +53,7 @@
                                               :type  ..type..
                                               :links {:self ..route..}}
       (provided
-        (..router.. (keyword ..type..)) => ..route..))))
+        (r/self-route ..router.. couch) => ..route..))))
 
 (facts "About doc-to-couch"
   (fact "skips docs without :type"
