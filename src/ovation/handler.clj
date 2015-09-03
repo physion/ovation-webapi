@@ -150,6 +150,13 @@
             (put-resource "File" id)
             (delete-resource "File" id)
 
+            ;(context* "/upload" request
+            ;  (POST*
+            ;    "/" []
+            ;    :multipart-params [file :- upload/TempFileUpload]
+            ;    :middlewares [upload/wrap-multipart-params]
+            ;    (ok (dissoc file :tempfile))))
+
             (context* "/links/:rel" [rel]
               (rel-related "File" id rel)
               (relationships "File" id rel))))
