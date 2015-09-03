@@ -40,8 +40,7 @@
                  ]
 
   :plugins [[lein-clojars "0.9.1"]
-            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]
-            [lein-awsuberwar "0.1.3"]]
+            [lein-beanstalk "0.2.7"]]
 
   :ring {:handler ovation.handler/app}
 
@@ -69,9 +68,9 @@
                                               [http-kit.fake "0.2.1"]
                                               [ring-serve "0.1.2"]]
                                :plugins      [[lein-midje "3.1.3"]
-                                              [lein-ring "0.8.10"]]}
-             :jenkins         {:aws          {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                                              :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
+                                              [lein-ring "0.9.6"]]}
+             :jenkins         {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
+                                     :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
 
   :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
 
