@@ -107,7 +107,7 @@
                             updated-docs (map (update-attributes entities) docs)]
                         (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
-      (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)))))
+      (tr/from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
 
 (defn trash-entity
   [user-id doc]

@@ -135,7 +135,8 @@
                              (auth/authenticated-user-id ..auth..) => ..owner-id..
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..auth.. [id] ..rt..) => [entity]
-                             (couch/bulk-docs ..db.. [update]) => [updated-entity]]
+                             (couch/bulk-docs ..db.. [update]) => [updated-entity]
+                             (tr/from-couch [updated-entity] ..rt..) => [updated-entity]]
           (fact "it updates attributes"
             (core/update-entity ..auth.. [update] ..rt..) => [updated-entity])
           (fact "it fails if authenticated user doesn't have write permission"
