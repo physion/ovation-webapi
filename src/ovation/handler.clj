@@ -90,6 +90,7 @@
 
             (context* "/annotations" []
               :tags ["annotations"]
+              :name :annotations
               (annotation id "keywords" "tags" TagRecord TagAnnotation)
               (annotation id "properties" "properties" PropertyRecord PropertyAnnotation)
               (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)

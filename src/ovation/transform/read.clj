@@ -3,7 +3,8 @@
             [ring.util.http-response :refer [not-found!]]
             [ovation.util :as util]
             [ovation.schema :refer [EntityRelationships]]
-            [ovation.routes :as r]))
+            [ovation.routes :as r]
+            [clojure.tools.logging :as logging]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -30,7 +31,7 @@
 (defn add-relationship-links
   "Adds relationship links for Couch document and router"
   [dto rt]
-  (let [entity-type (util/entity-type-keyword (:type dto))
+  (let [entity-type (util/entity-type-keyword dto)
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
                               [rel {:self (r/relationship-route rt dto rel)
@@ -40,8 +41,8 @@
 
 (defn add-self-link
   "Adds self link to dto"
-  [dto router]
-  (assoc-in dto [:links :self] (r/self-route router dto)))
+  [dto rt]
+  (assoc-in dto [:links :self] (r/self-route rt dto)))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"
@@ -60,7 +61,8 @@
         (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
           (-> doc
             (remove-user-attributes)
-            (remove-private-links)
+            (dissoc :named_links)                           ;; For v3
+            (dissoc :links)                                 ;; For v3
             (add-self-link router)
             (add-annotation-links router)
             (add-relationship-links router)

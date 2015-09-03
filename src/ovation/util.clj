@@ -23,9 +23,15 @@
       (UUID. (.getLong buffer) (.getLong buffer)))
     (UUID/fromString s)))
 
+
+
+(defn entity-type-name
+  [doc]
+  (s/lower-case (:type doc)))
+
 (defn entity-type-keyword
   [doc]
-  (keyword (s/lower-case (:type doc))))
+  (keyword (entity-type-name doc)))
 
 (defn entity-type-name-keyword
   [name]
