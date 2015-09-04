@@ -91,31 +91,41 @@
              (ok {~single-type-kw (first projects#)})
              (not-found {:errors {:detail "Not found"}})))))))
 
+(defn make-child-link*
+  [auth sources target-ids source-type routes]
+  (fn [target]
+    (let [target-type (util/entity-type-keyword target)
+          rel (get-in EntityChildren [source-type target-type :rel])
+          inverse_rel (get-in EntityChildren [source-type target-type :inverse-rel])]
+      (if rel
+        (links/add-links auth sources rel target-ids routes :inverse-rel inverse_rel)
+        []))))
+
+(defn make-child-links*
+  [auth parent-id type-name targets routes]
+  (let [target-ids (map :_id targets)
+        self (core/get-entities auth [parent-id] routes)
+        type (util/entity-type-name-keyword type-name)]
+    (apply concat (map :links (map (make-child-link* auth self target-ids type routes) targets)))))
+
+
 (defmacro post-resource
   [entity-type id schemas]
   (let [type-name (capitalize entity-type)]
     `(POST* "/" request#
-       :name ~(keyword (str "create-" (lower-case type-name) "-entity"))
+       :name ~(keyword (format "create-%s-entity" (lower-case type-name)))
        :return {:entities [Entity]
-                          :links [LinkInfo]}
-       :body [entities# ~schemas]
+                :links    [LinkInfo]}
+       :body [body# ~schemas]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (let [auth# (:auth/auth-info request#)]
          (try+
            (let [
                  routes# (r/router request#)
-                 self# (core/get-entities auth# ~id routes#)
-                 entities# (core/create-entity auth# entities# routes# :parent ~id)
-                 entity_ids# (map :_id entities#)
-
-                 links# (map (fn [target#]
-                               (let [rel# (get-in EntityChildren [~(util/entity-type-name-keyword type-name) (keyword (clojure.string/lower-case (:type target#))) :rel])
-                                     inverse_rel# (get-in EntityChildren [~(util/entity-type-name-keyword type-name) (keyword (clojure.string/lower-case (:type target#))) :inverse_rel])]
-                                 (links/add-links auth# self# [target#] rel# entity_ids# :inverse_rel inverse_rel#))) entities#)
-                 ]
+                 entities# (core/create-entity auth# body# routes# :parent ~id)]
 
              (created {:entities entities#
-                       :links    (apply concat (map :links links#))}))
+                       :links    (make-child-links* auth# ~id ~type-name entities# routes#)}))
 
            (catch [:type :ovation.auth/unauthorized] err#
              (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))))
@@ -155,17 +165,41 @@
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
+(defn rel-related*
+  [auth id rel-name routes]
+  (ok {(keyword rel-name) (links/get-link-targets auth id rel-name routes)}))
+
 
 (defmacro rel-related
   [entity-type id rel]
-  (let [type-name (capitalize entity-type)
-        rel-name (lower-case rel)]
+  (let [type-name (capitalize entity-type)]
     `(GET* "/" request#
        :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
        :return {s/Keyword [Entity]}
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
        (let [auth# (:auth/auth-info request#)]
-         (ok {(keyword ~rel-name) (links/get-link-targets auth# ~id ~rel-name)})))))
+         (rel-related* auth# ~id (lower-case ~rel) (r/router request#))))))
+
+(defn get-relationships*
+  [])
+(defn delete-relationships*
+  [])
+
+(defn post-relationships*
+  [request id new-links rel]
+  (try+
+    (let [auth (:auth/auth-info request)
+          source (first (core/get-entities auth [id] (r/router request)))]
+      (if source
+        (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links) (r/router request)))
+              updates (core/update-entity auth all-updates :direct true)] ;;TODO this should not use update-entity for linkinfo
+          (created {:entities (filter (fn [doc] (not= util/RELATION_TYPE (:type doc))) updates)
+                    :links    (filter :rel updates)}))
+        (not-found {:errors {:detail (str ~id " not found")}})))
+    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
+      (unauthorized {:errors {:detail message}}))
+    (catch [:type :ovation.links/target-not-found] {:keys [message]}
+      (bad-request {:errors {:detail message}}))))
 
 (defmacro relationships
   [entity-type id rel]
@@ -175,26 +209,15 @@
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (ok {:links []}))
+         (ok {:links []}))                                  ;;TODO
 
        (POST* "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
-         (try+
-           (let [auth# (:auth/auth-info request#)
-                 source# (first (core/get-entities auth# [~id] (r/router request#)))]
-             (if source#
-               (let [all-updates# (:all (links/add-links auth# source# ~rel (map :target_id new-links#) (r/router request#)))
-                     updates# (core/update-entity auth# all-updates# :direct true)] ;;TODO this should not use update-entity for linkinfo
-                 (created {:entities (filter (fn [doc#] (not= util/RELATION_TYPE (:type doc#))) updates#)
-                           :links    (filter :rel updates#)}))
-               (not-found {:errors {:detail (str ~id " not found")}})))
-           (catch [:type :ovation.auth/unauthorized] {:keys [message#]}
-             (unauthorized {:errors {:detail message#}}))
-           (catch [:type :ovation.links/target-not-found] {:keys [message#]}
-             (bad-request {:errors {:detail message#}}))))
+         (post-relationships* request# ~id new-links# ~rel))
+
        (DELETE* "/" request#
          :name ~(keyword (str "delete-" (lower-case type-name) "-links"))
          ;; Return Accepted, or {:errors} on error

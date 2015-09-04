@@ -118,20 +118,20 @@
 
 (def EntityChildren
   {:project {:folder {:rel         "folders"
-                      :inverse_rel "parents"}
+                      :inverse-rel "parents"}
              :file   {:rel         "files"
-                      :inverse_rel "parents"}}
+                      :inverse-rel "parents"}}
 
    :folder  {:folder {:rel         "folders"
-                      :inverse_rel "parents"}
+                      :inverse-rel "parents"}
              :file   {:rel         "files"
-                      :inverse_rel "parents"}}
+                      :inverse-rel "parents"}}
 
    :source  {:source {:rel         "children"
-                      :inverse_rel "parents"}}
+                      :inverse-rel "parents"}}
 
    :file    {:revision {:rel         "revisions"
-                        :inverse_rel "file"}}})
+                        :inverse-rel "file"}}})
 
 (def EntityRelationships
   {:project  {:folders {:schema Entity}

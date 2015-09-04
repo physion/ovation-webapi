@@ -23,7 +23,7 @@
     (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
                                                   :reduce       false
                                                   :include_docs true})
-        (tr/from-couch routes)
+        (tr/entity-from-couch routes)
         (filter-trashed include-trashed))))
 
 
@@ -34,7 +34,7 @@
   (let [db (couch/db auth)
         docs (filter :_id (couch/all-docs db ids))]
     (-> docs
-      (tr/from-couch routes)
+      (tr/entity-from-couch routes)
       (filter-trashed include-trashed))))
 
 (defn get-values
@@ -107,7 +107,7 @@
                             updated-docs (map (update-attributes entities) docs)]
                         (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
-      (tr/from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
+      (tr/entity-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
 
 (defn trash-entity
   [user-id doc]

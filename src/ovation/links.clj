@@ -7,7 +7,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [union]]
             [ovation.constants :as k]
-            [ovation.routes :as r]))
+            [ovation.routes :as r]
+            [ovation.transform.read :as tr]))
 
 
 ;; QUERY
@@ -17,18 +18,29 @@
               (= label doc-label)
               false)))
 
-(defn get-link-targets
-  "Gets the document targets for id--rel->"
-  [auth id rel & {:keys [label name] :or {label nil name nil}}]
+(defn get-links
+  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
   (let [db (couch/db auth)
         opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
-              :reduce        false :include_docs true}
-        docs (couch/get-view db k/LINKS-VIEW opts)]
-    (if label
-      (filter (eq-doc-label label) docs)
-      docs)))
+              :reduce        false :include_docs true}]
+    (tr/value-from-couch
+      (couch/get-view db k/LINK-DOCS-VIEW opts)
+      routes)))
+
+(defn get-link-targets
+  "Gets the document targets for id--rel->"
+  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
+  (let [db (couch/db auth)
+        opts {:startkey      (if name [id rel name] [id rel])
+              :endkey        (if name [id rel name] [id rel])
+              :inclusive_end true
+              :reduce        false :include_docs true}]
+    (tr/entity-from-couch (if label
+                     (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
+                     (couch/get-view db k/LINKS-VIEW opts))
+      routes)))
 
 
 

@@ -66,7 +66,7 @@
       (provided
         (couch/db ...auth...) => ...db...
         (couch/get-view ...db... k/ENTITIES-BY-TYPE-VIEW {:key ...type... :reduce false :include_docs true}) => [...docs...]
-        (tr/from-couch [...docs...] ..rt..) => ...entities...
+        (tr/entity-from-couch [...docs...] ..rt..) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...)))
 
   (facts "get-entities"
@@ -76,7 +76,7 @@
         (provided
           (couch/db ...auth...) => ...db...
           (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
-          (tr/from-couch [{:_id ..id1..} {:_id ..id2..}] ..rt..) => ...entities...
+          (tr/entity-from-couch [{:_id ..id1..} {:_id ..id2..}] ..rt..) => ...entities...
           (core/filter-trashed ...entities... false) => ...result...)))))
 
 
@@ -136,7 +136,7 @@
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..auth.. [id] ..rt..) => [entity]
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]
-                             (tr/from-couch [updated-entity] ..rt..) => [updated-entity]]
+                             (tr/entity-from-couch [updated-entity] ..rt..) => [updated-entity]]
           (fact "it updates attributes"
             (core/update-entity ..auth.. [update] ..rt..) => [updated-entity])
           (fact "it fails if authenticated user doesn't have write permission"

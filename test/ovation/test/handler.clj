@@ -295,23 +295,27 @@
                        (provided
                          (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
            (facts "create"
-             (let [parent# {:_id  ~(str (UUID/randomUUID))
+             (let [source-type# ~(util/entity-type-name-keyword type-name)
+                   target-type# (key (first (source-type# EntityChildren)))
+                   rel# (get-in EntityChildren [ source-type# target-type# :rel])
+                   inverse_rel# (get-in EntityChildren [source-type# target-type# :inverse-rel])
+
+                   parent# {:_id  ~(str (UUID/randomUUID))
                             :type ~type-name}
-                   new-entity# {:type "Folder"
+                   new-entity# {:type (capitalize (name target-type#))
                                 :attributes {:foo "bar"}}
                    new-entities# [new-entity#]
                    entity# (assoc new-entity# :_id ~(str (UUID/randomUUID))
-                                                 :_rev "1")
-                   rel# (-> EntityChildren ~(util/entity-type-name-keyword type-name) ~(util/entity-type-name-keyword "Folder") :rel)
-                   inverse_rel# (-> EntityChildren ~(util/entity-type-name-keyword type-name) ~(util/entity-type-name-keyword "Folder") :inverse_rel)
+                                              :_rev "1")
+
                    request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path (:_id parent#)]))
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))
-                   link# {}
+                   links# [{:foo "bar"}]
                    ]
 
                (against-background [(core/create-entity auth-info# new-entities# ..rt.. :parent (:_id parent#)) => [entity#]
-                                    (core/get-entities auth-info# (:_id parent#) ..rt..) => [parent#]
-                                    (links/add-links auth-info# [parent#] [entity#] rel# [(:_id entity#)] :inverse_rel inverse_rel#) => {:links [link#]}
+                                    (core/get-entities auth-info# [(:_id parent#)] ..rt..) => [parent#]
+                                    (links/add-links auth-info# [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
@@ -319,12 +323,11 @@
                  (fact ~(str "POST /:id inserts entity with " type-name " parent")
                    (let [post# (request#)]
                      (body-json post#) => {:entities [entity#]
-                                           :links    [link#]})))
+                                           :links    links#})))
 
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (app (request#))) => 401
                  (provided
-                   (core/get-entities auth-info# (:_id parent#) ..rt..) => [parent#]
                    (r/router anything) => ..rt..
                    (core/create-entity auth-info# new-entities# ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )

@@ -7,6 +7,7 @@
 (def ENTITIES-BY-TYPE-VIEW "entities_by_type")              ;; NB this **MUST** stay in sync with EntityDao$Views/ENTITIES_BY_TYPE
 (def LINKS-VIEW "links")                                    ;; NB this **MUST** stay in sync with EntityDao$Views/LINKS
 (def ANNOTATIONS-VIEW "annotation_docs")
+(def LINK-DOCS-VIEW "link_docs")
 
 
 

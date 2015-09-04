@@ -4,7 +4,7 @@
             [clojure.core.async :refer [>!!]]
             [clojure.tools.logging :as logging]))
 
-(def design-doc "dao")                                      ;; Design doc defined by Java API
+(def design-doc "dao")                                      ;;TODO change to "_api"
 
 (defn db
   "Database URL from authorization info"

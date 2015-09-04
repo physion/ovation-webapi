@@ -23,7 +23,9 @@
   [rt doc]
   (let [type (util/entity-type-name doc)
         id (:_id doc)]
-    (rt (keyword (format "get-%s" type)) {:id id})))
+    (case type
+      util/RELATION_TYPE (rt (keyword (format "get-%s-links" type)) {:id id})
+      (rt (keyword (format "get-%s" type)) {:id id}))))
 
 (defn annotations-route
   [rt doc]

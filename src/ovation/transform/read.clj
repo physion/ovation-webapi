@@ -52,12 +52,12 @@
       (assoc dto :attributes (select-keys m (for [[k v] m :when (= k :name)] k))))
     dto))
 
-(defn couch-to-doc
+(defn couch-to-entity
   [router]
   (fn [doc]
     (if (:error doc)
       (not-found! doc)
-      (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
+      (if (and (:type doc) (not= (str (:type doc)) util/RELATION_TYPE))
         (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
           (-> doc
             (remove-user-attributes)
@@ -70,7 +70,22 @@
         doc))))
 
 
-(defn from-couch
+(defn entity-from-couch
   "Transform couchdb documents."
   [docs router]
-  (map (couch-to-doc router) docs))
+  (map (couch-to-entity router) docs))
+
+(defn couch-to-value
+  [router]
+  (fn [doc]
+    (if (:error doc)
+      (not-found! doc)
+      (if (and (:type doc) (= (str (:type doc)) util/RELATION_TYPE))
+        (-> doc
+          (add-self-link router))
+        doc))))
+
+(defn value-from-couch
+  "Transform couchdb value documents (e.g. LinkInfo)"
+  [docs router]
+  (map (couch-to-value router) docs))
