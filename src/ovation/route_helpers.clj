@@ -212,7 +212,8 @@
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (get-relationships* request# ~id ~rel))
+         (let [relationships# (get-relationships* request# ~id ~rel)]
+           (ok {:links relationships#})))
 
        (POST* "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))

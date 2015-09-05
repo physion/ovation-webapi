@@ -99,15 +99,16 @@
               (annotation id "notes" "notes" NoteRecord NoteAnnotation))))
 
         (context* "/relationships" []
+          :tags ["links"]
           (context* "/:id" [id]
             (GET* "/" request
-              :name :get-relationship
+              :name :get-relation
               :return {:relationship LinkInfo}
               :summary "Relationship document"
               (let [auth (:auth/auth-info request)]
                 (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
             (DELETE* "/" request
-              :name :delete-relationship
+              :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
               (let [auth (:auth/auth-info)

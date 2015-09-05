@@ -4,6 +4,7 @@
             [ovation.util :as util]
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
+            [ovation.constants :as c]
             [clojure.tools.logging :as logging]))
 
 
@@ -81,7 +82,7 @@
     (if (:error doc)
       (not-found! doc)
       (condp = (util/entity-type-name doc)
-        util/RELATION_TYPE (add-self-link doc router)
+        c/RELATION-TYPE-NAME (add-self-link doc router)
         doc))))
 
 (defn value-from-couch
