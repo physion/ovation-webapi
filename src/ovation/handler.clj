@@ -105,7 +105,7 @@
               :return {:relationship LinkInfo}
               :summary "Relationship document"
               (let [auth (:auth/auth-info request)]
-                (ok {:relationship (first (core/get-values auth [id]))})))
+                (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
             (DELETE* "/" request
               :name :delete-relationship
               :return {:relationship LinkInfo}

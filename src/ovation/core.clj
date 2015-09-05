@@ -39,9 +39,12 @@
 
 (defn get-values
   "Get values by ID"
-  [auth ids]
-  (let [db (couch/db auth)]
-    (couch/all-docs db ids))) ;; TODO tr/value-from-couch
+  [auth ids & {:keys [routes]}]
+  (let [db (couch/db auth)
+        docs (couch/all-docs db ids)]
+    (if routes
+      (tr/value-from-couch docs routes)
+      docs)))
 
 ;; COMMAND
 
