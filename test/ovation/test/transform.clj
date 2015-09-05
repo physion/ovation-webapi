@@ -5,7 +5,8 @@
             [ovation.version :refer [version]]
             [ovation.routes :as r]
             [ovation.schema :as s]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [ovation.constants :as c]))
 
 
 (facts "About annotation links"
@@ -60,7 +61,7 @@
                  :type util/RELATION_TYPE}]
       ((tr/couch-to-value ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
       (provided
-        (util/entity-type-name couch) => util/RELATION_TYPE
+        (util/entity-type-name couch) => c/RELATION-TYPE-NAME
         (r/self-route ..rt.. couch) => ..url..))))
 
 (facts "About doc-to-couch"
