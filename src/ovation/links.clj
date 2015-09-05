@@ -52,12 +52,6 @@
     (format "%s--%s>%s-->%s" source-id rel name target-id)
     (format "%s--%s-->%s" source-id rel target-id)))
 
-(defn- link-path                                            ;;TODO
-  [source-id rel name]
-  (if name
-    (util/prefixed-path (util/join-path ["" "entities" source-id "named_links" (clojure.core/name rel) (clojure.core/name name)]))
-    (util/prefixed-path (util/join-path ["" "entities" source-id "links" (clojure.core/name rel)]))))
-
 (defn collaboration-roots
   [doc]
   (get-in doc [:links :_collaboration_roots] []))
@@ -67,7 +61,7 @@
   (let [current (collaboration-roots doc)]
     (assoc-in doc [:links :_collaboration_roots] (union (set roots) (set current)))))
 
-(defn- update-collaboration-roots-for-target                ;;TODO
+(defn- update-collaboration-roots-for-target
   "[source target] -> [source target]"
   [source target]
 
@@ -157,7 +151,7 @@
                                                    :target_id target-id
                                                    :source_id doc-id
                                                    :rel       rel
-                                                   :user_id   authenticated-user-id
+                                                   :owner   authenticated-user-id
                                                    :links     {:_collaboration_roots (concat source-roots target-roots)
                                                                :self                 (r/relationship-route routes doc rel)}}
                                              named (if name (assoc base :name name) base)
@@ -170,16 +164,15 @@
                       (recur (rest docs) acc (concat links-acc links)))
                     (throw+ {:type ::illegal-target-type :message "Target(s) not of required type(s)"})))))))))))
 
-(defn delete-link
-  "Returns
-  ```
-  { :update <docs to update>
-    :delete <docs to delete>
-  }"
-
-  [auth doc user-id rel target-id & {:keys [name] :or [name nil]}]
-  (auth/check! user-id :auth/update doc)
-  (let [link-id (link-id (:_id doc) rel target-id :name name)
-        db (couch/db auth)
-        links (couch/all-docs db [link-id])]
-    (couch/delete-docs db links)))
+(defn delete-links
+  ([auth doc user-id rel target-id & {:keys [name] :or [name nil]}]
+   (auth/check! user-id :auth/update doc)
+   (let [link-id (link-id (:_id doc) rel target-id :name name)
+         db (couch/db auth)
+         links (couch/all-docs db [link-id])]
+     (couch/delete-docs db links)))
+  ([auth doc user-id link-id]
+   (auth/check! user-id :auth/update doc)
+   (let [db (couch/db auth)
+         links (couch/all-docs db [link-id])]
+     (couch/delete-docs db links))))

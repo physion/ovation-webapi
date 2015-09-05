@@ -9,7 +9,8 @@
             [ovation.schema :refer :all]
             [ovation.links :as links]
             [ovation.util :as util]
-            [ovation.routes :as r]))
+            [ovation.routes :as r]
+            [ovation.auth :as auth]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -181,9 +182,10 @@
          (rel-related* auth# ~id (lower-case ~rel) (r/router request#))))))
 
 (defn get-relationships*
-  [])
-(defn delete-relationships*
-  [])
+  [request id rel]
+  (let [auth (:auth/auth-info request)]
+    (links/get-links auth id rel (r/router request))))
+
 
 (defn post-relationships*
   [request id new-links rel]
@@ -191,7 +193,8 @@
     (let [auth (:auth/auth-info request)
           source (first (core/get-entities auth [id] (r/router request)))]
       (if source
-        (let [all-updates (:all (links/add-links auth source rel (map :target_id new-links) (r/router request)))
+        (let [_ (auth/check! (auth/authenticated-user-id auth) :auth/update source)
+              all-updates (:all (links/add-links auth source rel (map :target_id new-links) (r/router request)))
               updates (core/update-entity auth all-updates :direct true)] ;;TODO this should not use update-entity for linkinfo
           (created {:entities (filter (fn [doc] (not= util/RELATION_TYPE (:type doc))) updates)
                     :links    (filter :rel updates)}))
@@ -209,18 +212,11 @@
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (ok {:links []}))                                  ;;TODO
+         (get-relationships* request# ~id ~rel))
 
        (POST* "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
-         (post-relationships* request# ~id new-links# ~rel))
-
-       (DELETE* "/" request#
-         :name ~(keyword (str "delete-" (lower-case type-name) "-links"))
-         ;; Return Accepted, or {:errors} on error
-         :summary ~(str "Remove relationships for :rel from " type-name " :id")
-         (accepted)                                         ;;TODO — this needs to be implemented
-         ))))
+         (post-relationships* request# ~id new-links# ~rel)))))

@@ -18,7 +18,9 @@
             [ring.middleware.logger :refer [wrap-with-logger]]
             [ring.middleware.raygun :refer [wrap-raygun-handler]]
             [clojure.string :refer [lower-case capitalize join]]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [ovation.routes :as r]
+            [ovation.auth :as auth]))
 
 (ovation.logging/setup!)
 
@@ -95,6 +97,28 @@
               (annotation id "properties" "properties" PropertyRecord PropertyAnnotation)
               (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
               (annotation id "notes" "notes" NoteRecord NoteAnnotation))))
+
+        (context* "/relationships" []
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :get-relationship
+              :return {:relationship LinkInfo}
+              :summary "Relationship document"
+              (let [auth (:auth/auth-info request)]
+                (ok {:relationship (first (core/get-values auth [id]))})))
+            (DELETE* "/" request
+              :name :delete-relationship
+              :return {:relationship LinkInfo}
+              :summary "Removes relationship"
+              (let [auth (:auth/auth-info)
+                    relationship (first (core/get-values auth [id]))]
+                (if relationship
+                  (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
+                    (accepted {:relationships (links/delete-links auth
+                                                source
+                                                (auth/authenticated-user-id auth)
+                                                (:_id relationship))}))
+                  (not-found {:errors {:detail "Not found"}}))))))
 
         (context* "/projects" []
           :tags ["projects"]

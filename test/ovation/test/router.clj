@@ -22,9 +22,17 @@
 
   (facts "`self-route`"
     (fact "provides self entity route"
-      (r/self-route ..rt.. ..doc..) => ..route..
-      (provided
-        ..doc.. =contains=> {:_id ..id..}
-        (util/entity-type-name ..doc..) => ..type..
-        (..rt.. (keyword (format "get-%s" ..type..)) {:id ..id..}) => ..route..)))
+      (let [type "mytype"]
+        (r/self-route ..rt.. ..doc..) => ..route..
+        (provided
+          ..doc.. =contains=> {:_id ..id..}
+          (util/entity-type-name ..doc..) => type
+          (..rt.. (keyword (format "get-%s" type)) {:id ..id..}) => ..route..)))
+    (fact "provides self route for Relationship"
+      (let [type util/RELATION_TYPE]
+        (r/self-route ..rt.. ..doc..) => ..route..
+        (provided
+          ..doc.. =contains=> {:_id ..id.. :source_id ..src..}
+          (util/entity-type-name ..doc..) => type
+          (..rt.. (keyword (format "get-%s" type)) {:id ..id..}) => ..route..))))
   )

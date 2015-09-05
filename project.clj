@@ -40,7 +40,8 @@
                  ]
 
   :plugins [[lein-clojars "0.9.1"]
-            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
+            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]
+            [lein-cloverage "1.0.6"]]
 
   :ring {:handler ovation.handler/app}
 

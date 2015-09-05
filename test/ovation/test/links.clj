@@ -7,7 +7,8 @@
             [ovation.core :as core]
             [ovation.version :as ver]
             [ovation.constants :as k]
-            [ovation.routes :as r])
+            [ovation.routes :as r]
+            [ovation.transform.read :as tr])
   (:import (java.util UUID)))
 
 (facts "About links"
@@ -16,15 +17,15 @@
           doc2 {:attributes {:label ..label2..}}
           doc3 {:attributes {}}]
       (against-background [(couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
-                                                                         :endkey        [..id.. ..rel..]
-                                                                         :inclusive_end true
-                                                                         :reduce        false
-                                                                         :include_docs  true}) => [doc1 doc2 doc3]
+                                                                :endkey        [..id.. ..rel..]
+                                                                :inclusive_end true
+                                                                :reduce        false
+                                                                :include_docs  true}) => [doc1 doc2 doc3]
                            (couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
-                                                                         :endkey        [..id.. ..rel.. ..name..]
-                                                                         :inclusive_end true
-                                                                         :reduce        false
-                                                                         :include_docs  true}) => [doc1]
+                                                                :endkey        [..id.. ..rel.. ..name..]
+                                                                :inclusive_end true
+                                                                :reduce        false
+                                                                :include_docs  true}) => [doc1]
                            (auth/can? anything :auth/update anything) => true
                            (couch/db ..auth..) => ..db..]
 
@@ -54,7 +55,7 @@
 
         (fact "creates link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt.. :inverse-rel ..inverse..)) => (contains {:_id  (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
-                                                                                                             :user_id     ..id..
+                                                                                                                    :owner ..id..
                                                                                                              :type        "Relation"
                                                                                                              :source_id   (:_id doc)
                                                                                                              :target_id   target-id
@@ -67,7 +68,7 @@
 
         (fact "creates link document without inverse"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..)) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
-                                                                                           :user_id   ..id..
+                                                                                           :owner     ..id..
                                                                                            `:type     "Relation"
                                                                                            :source_id (:_id doc)
                                                                                            :target_id target-id
@@ -78,7 +79,7 @@
             (r/relationship-route ..rt.. doc ..rel..) => ..url..))
         (fact "creates named link document"
           (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id  (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
-                                                                                                                            :user_id     ..id..
+                                                                                                                                   :owner ..id..
                                                                                                                             :type        "Relation"
                                                                                                                             :source_id   (:_id doc)
                                                                                                                             :target_id   target-id
@@ -163,13 +164,13 @@
         (fact "removes link"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..deleted..
+            (links/delete-links ..auth.. doc ..id.. ..rel.. ..target..) => ..deleted..
             (provided
               (couch/all-docs ..db.. [link-id]) => [..link..]
               (couch/delete-docs ..db.. [..link..]) => ..deleted..)))
 
         (fact "fails if not can? :update source"
-          (links/delete-link ..auth.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
+          (links/delete-links ..auth.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
           (provided
             (auth/can? ..id.. :auth/update ..doc..) => false))
 
@@ -177,7 +178,19 @@
         (fact "updates entity _collaboration_roots"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-link ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
+            (links/delete-links ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
             (provided
               (couch/all-docs ..db.. [link-id]) => [..link..]
-              (couch/delete-docs ..db.. [..link..]) => ..docs..)))))))
+              (couch/delete-docs ..db.. [..link..]) => ..docs..))))))
+
+  (facts "`get-links`"
+    (against-background [(couch/get-view ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
+                                                                  :endkey        [..id.. ..rel..]
+                                                                  :inclusive_end true
+                                                                  :reduce        false
+                                                                  :include_docs  true}) => ..docs..
+                         (couch/db ..auth..) => ..db..
+                         (tr/value-from-couch ..docs.. ..rt..) => ..values..]
+
+      (fact "gets relationship documents"
+        (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))

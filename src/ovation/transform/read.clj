@@ -80,9 +80,8 @@
   (fn [doc]
     (if (:error doc)
       (not-found! doc)
-      (if (and (:type doc) (= (str (:type doc)) util/RELATION_TYPE))
-        (-> doc
-          (add-self-link router))
+      (condp = (util/entity-type-name doc)
+        util/RELATION_TYPE (add-self-link doc router)
         doc))))
 
 (defn value-from-couch

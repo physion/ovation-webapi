@@ -45,7 +45,7 @@
         (r/relationship-route ..rt.. dto :relA) => ..relA-self..
         (r/relationship-route ..rt.. dto :relB) => ..relB-self..)))
 
-  (fact "`add-self-link` adds self link"
+  (fact "`add-self-link` adds self link to entity"
     (let [couch {:_id   ..id..
                  :type  ..type..
                  :links {}}]
@@ -53,7 +53,15 @@
                                               :type  ..type..
                                               :links {:self ..route..}}
       (provided
-        (r/self-route ..router.. couch) => ..route..))))
+        (r/self-route ..router.. couch) => ..route..)))
+
+  (fact "`couch-to-value` adds self link to LinkInfo"
+    (let [couch {:_id ..id..
+                 :type util/RELATION_TYPE}]
+      ((tr/couch-to-value ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
+      (provided
+        (util/entity-type-name couch) => util/RELATION_TYPE
+        (r/self-route ..rt.. couch) => ..url..))))
 
 (facts "About doc-to-couch"
   (fact "skips docs without :type"

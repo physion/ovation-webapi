@@ -41,7 +41,7 @@
   "Get values by ID"
   [auth ids]
   (let [db (couch/db auth)]
-    (couch/all-docs db ids)))
+    (couch/all-docs db ids))) ;; TODO tr/value-from-couch
 
 ;; COMMAND
 

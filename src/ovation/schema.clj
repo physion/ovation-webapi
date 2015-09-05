@@ -55,7 +55,7 @@
                        (s/optional-key :_rev)        s/Str
                        :type                         util/RELATION_TYPE
 
-                       :user_id                      s/Uuid ;; TODO this should be :owner
+                       :owner                        s/Uuid
                        :source_id                    s/Uuid
                        :target_id                    s/Uuid
                        :rel                          s/Str
@@ -65,7 +65,7 @@
                        (s/optional-key :attributes)  {s/Keyword s/Any}
 
                        :links                        {(s/optional-key :_collaboration_roots) [s/Str]
-                                                      (s/optional-key :self) s/Str}
+                                                      (s/optional-key :self)                 s/Str}
                        })
 
 
