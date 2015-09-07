@@ -146,7 +146,7 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/create-annotations auth-info [id] "tags" post) => tags]
+          (against-background [(annotations/create-annotations auth-info anything [id] "tags" post) => tags]
             (fact "creates annotations"
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (post* app path apikey post)]
@@ -163,7 +163,7 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/delete-annotations auth-info [annotation-id]) => tags]
+          (against-background [(annotations/delete-annotations auth-info [annotation-id] anything) => tags]
             (fact "deletes annotations"
               (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
                     {:keys [status body]} (delete* app path apikey)]

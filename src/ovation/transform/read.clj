@@ -71,7 +71,7 @@
         doc))))
 
 
-(defn entity-from-couch
+(defn entities-from-couch
   "Transform couchdb documents."
   [docs router]
   (map (couch-to-entity router) docs))
@@ -85,7 +85,7 @@
         c/RELATION-TYPE-NAME (add-self-link doc router)
         doc))))
 
-(defn value-from-couch
+(defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs router]
   (map (couch-to-value router) docs))

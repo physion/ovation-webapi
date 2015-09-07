@@ -35,9 +35,9 @@
      :links           {:_collaboration_roots (links/collaboration-roots entity)}}))
 
 (defn create-annotations
-  [auth ids annotation-type records]
+  [auth routes ids annotation-type records]
   (let [auth-user-id (auth/authenticated-user-id auth)
-        entities (core/get-entities auth ids)
+        entities (core/get-entities auth ids routes)
         docs (flatten (map (fn [entity]
                             (map #(make-annotation auth-user-id entity annotation-type %) records))
                         entities))]
@@ -45,5 +45,5 @@
     (core/create-values auth docs)))
 
 (defn delete-annotations
-  [auth annotation-ids]
-  (core/delete-values auth annotation-ids))
+  [auth annotation-ids routes]
+  (core/delete-values auth annotation-ids routes))

@@ -47,38 +47,32 @@
           target-id2 (str (UUID/randomUUID))]
 
       (against-background [(couch/db ..auth..) => ..db..
-                           (core/get-entities ..auth.. #{target-id} ..rt..) => [{:_id target-id
-                                                                          :type  "not-a-root"
-                                                                          :links {:_collaboration_roots [..targetroot..]}}]
+                           (core/get-entities ..auth.. [target-id] ..rt..) => [{:_id   target-id
+                                                                                 :type  "not-a-root"
+                                                                                 :links {:_collaboration_roots [..targetroot..]}}]
                            (auth/authenticated-user-id ..auth..) => ..id..]
 
 
         (fact "creates link document"
-          (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt.. :inverse-rel ..inverse..)) => (contains {:_id  (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse..)) => (contains {:_id  (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                                                     :owner ..id..
                                                                                                              :type        "Relation"
                                                                                                              :source_id   (:_id doc)
                                                                                                              :target_id   target-id
                                                                                                              :rel         ..rel..
                                                                                                              :inverse_rel ..inverse..
-                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]
-                                                                                                                           :self ..url..}})
-          (provided
-            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
+                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
         (fact "creates link document without inverse"
-          (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..)) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt..)) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                            :owner     ..id..
                                                                                            `:type     "Relation"
                                                                                            :source_id (:_id doc)
                                                                                            :target_id target-id
                                                                                            :rel       ..rel..
-                                                                                           :links     {:self                 ..url..
-                                                                                                       :_collaboration_roots [..sourceroot.. ..targetroot..]}})
-          (provided
-            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
+                                                                                           :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
         (fact "creates named link document"
-          (:links (links/add-links ..auth.. doc ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id  (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
+          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id  (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                                    :owner ..id..
                                                                                                                             :type        "Relation"
                                                                                                                             :source_id   (:_id doc)
@@ -86,10 +80,7 @@
                                                                                                                             :name        ..name..
                                                                                                                             :inverse_rel ..inverse..
                                                                                                                             :rel         ..rel..
-                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]
-                                                                                                                                          :self ..url..}})
-          (provided
-            (r/relationship-route ..rt.. doc ..rel..) => ..url..))
+                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
 
 
@@ -99,9 +90,9 @@
                 target1 {:_id "target1" :type "Project" :links {:_collaboration_roots [..roots2..]}}
                 target2 {:_id "target2" :type "Project" :links {:_collaboration_roots [..roots3..]}}
                 updated-source (assoc-in source [:links :_collaboration_roots] #{..roots3.. ..roots2.. ..roots1..})]
-            (:updates (links/add-links ..auth.. source rel [target-id target-id2] ..rt..)) => (contains updated-source)
+            (:updates (links/add-links ..auth.. [source] rel [target-id target-id2] ..rt..)) => (contains updated-source)
             (provided
-              (core/get-entities ..auth.. #{target-id target-id2} ..rt..) => [target1 target2])))
+              (core/get-entities ..auth.. [target-id target-id2] ..rt..) => [target1 target2])))
 
 
         (fact "fails if not can? :update"
@@ -116,16 +107,16 @@
                 source {:type "Project" :links {:_collaboration_roots [..roots1..]}}
                 target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
                 expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
-            (:updates (links/add-links ..auth.. source rel [target-id] ..rt..)) => (contains expected)
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
-              (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
 
         (fact "updates target _collaboration_roots for source:=Folder"
           (let [rel "some-rel"
                 source {:type "Folder" :links {:_collaboration_roots [..roots1..]}}
                 target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
                 expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
-            (:updates (links/add-links ..auth.. source rel [target-id] ..rt..)) => (contains expected)
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
               (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
 
@@ -135,7 +126,7 @@
                 target {:_id target-id :type "Project" :links {:_collaboration_roots [..roots2..]}}
                 link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
                 expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
-            (:updates (links/add-links ..auth.. source rel [target-id] ..rt..)) => (contains expected)
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
               (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
 
@@ -143,13 +134,10 @@
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "Folder" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
-                expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
-            (:updates (links/add-links ..auth.. source rel [target-id] ..rt..)) => (contains expected)
+                expected (assoc-in source [:links :_collaboration_roots] [..roots1.. ..roots2..])]
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
-              (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
-
-        )))
+              (core/get-entities ..auth.. #{target-id} ..rt..) => [target]))))))
 
   (facts "`delete-link`"
 
@@ -190,7 +178,7 @@
                                                                   :reduce        false
                                                                   :include_docs  true}) => ..docs..
                          (couch/db ..auth..) => ..db..
-                         (tr/value-from-couch ..docs.. ..rt..) => ..values..]
+                         (tr/values-from-couch ..docs.. ..rt..) => ..values..]
 
       (fact "gets relationship documents"
         (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))

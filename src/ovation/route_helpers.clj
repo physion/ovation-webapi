@@ -32,7 +32,7 @@
        :body [new-annotations# [~record-schema]]
        :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
        (let [auth# (:auth/auth-info request#)]
-         (created {(keyword ~annotation-key) (annotations/create-annotations auth# [~id] ~annotation-key new-annotations#)})))
+         (created {(keyword ~annotation-key) (annotations/create-annotations auth# (r/router request#) [~id] ~annotation-key new-annotations#)})))
 
      (context* "/:annotation-id" [aid#]
        (DELETE* "/" request#
@@ -41,7 +41,7 @@
          :summary ~(str "Removes a " annotation-description " annotation from entity :id")
          (let [auth# (:auth/auth-info request#)
                annotation-id# (-> request# :route-params :annotation-id)]
-           (accepted (map :_id (annotations/delete-annotations auth# [annotation-id#]))))))))
+           (accepted (map :_id (annotations/delete-annotations auth# [annotation-id#] (r/router request#)))))))))
 
 
 (defmacro get-resources
@@ -106,8 +106,9 @@
   [auth parent-id type-name targets routes]
   (let [target-ids (map :_id targets)
         self (core/get-entities auth [parent-id] routes)
-        type (util/entity-type-name-keyword type-name)]
-    (apply concat (map :links (map (make-child-link* auth self target-ids type routes) targets)))))
+        type (util/entity-type-name-keyword type-name)
+        links (map (make-child-link* auth self target-ids type routes) targets)]
+    (apply concat (map :links links))))
 
 
 (defmacro post-resource

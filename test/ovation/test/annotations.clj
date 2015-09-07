@@ -60,18 +60,18 @@
                        :annotation      {:tag ..tag..}
                        :links           {:_collaboration_roots [..root2..]}}
                       ]]
-        (a/create-annotations ..auth.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => ..result..
+        (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => ..result..
         (provided
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. [..id1.. ..id2..]) => [{:_id   ..id1..
+          (core/get-entities ..auth.. [..id1.. ..id2..] ..rt..) => [{:_id   ..id1..
                                                               :links {:_collaboration_roots [..root1..]}}
                                                              {:_id   ..id2..
                                                               :links {:_collaboration_roots [..root2..]}}]
-          (core/create-values ..auth.. expected) => ..result..))))
+          (core/create-values ..auth.. ..rt.. expected) => ..result..))))
 
   (facts "About `delete-annotations`"
     (fact "calls `delete-entities"
-      (a/delete-annotations ..auth.. [..id1.. ..id2..]) => ..result..
+      (a/delete-annotations ..auth.. [..id1.. ..id2..] ..rt..) => ..result..
       (provided
-        (core/delete-values ..auth.. [..id1.. ..id2..]) => ..result..))))
+        (core/delete-values ..auth.. [..id1.. ..id2..] ..rt..) => ..result..))))
 

@@ -23,7 +23,7 @@
     (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
                                                   :reduce       false
                                                   :include_docs true})
-        (tr/entity-from-couch routes)
+        (tr/entities-from-couch routes)
         (filter-trashed include-trashed))))
 
 
@@ -34,7 +34,7 @@
   (let [db (couch/db auth)
         docs (filter :_id (couch/all-docs db ids))]
     (-> docs
-      (tr/entity-from-couch routes)
+      (tr/entities-from-couch routes)
       (filter-trashed include-trashed))))
 
 (defn get-values
@@ -43,7 +43,7 @@
   (let [db (couch/db auth)
         docs (couch/all-docs db ids)]
     (if routes
-      (tr/value-from-couch docs routes)
+      (tr/values-from-couch docs routes)
       docs)))
 
 ;; COMMAND
@@ -75,14 +75,14 @@
 
 (defn create-values
   "POSTs value(s) direct to Couch"
-  [auth values]
+  [auth routes values]
 
   (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
 
   (let [db (couch/db auth)
         docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
-    (couch/bulk-docs db docs)))
+    (tr/values-from-couch (couch/bulk-docs db docs) routes)))
 
 (defn- update-attributes
   [updates]
@@ -110,7 +110,7 @@
                             updated-docs (map (update-attributes entities) docs)]
                         (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
-      (tr/entity-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
 
 (defn trash-entity
   [user-id doc]
@@ -138,7 +138,7 @@
 
 (defn delete-values
   "DELETEs value(s) direct to Couch"
-  [auth ids]
+  [auth ids routes]
 
   (let [values (get-values auth ids)]
     (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
@@ -146,4 +146,4 @@
 
     (let [db (couch/db auth)
           docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
-      (couch/delete-docs db docs))))
+      (tr/values-from-couch (couch/delete-docs db docs) routes))))
