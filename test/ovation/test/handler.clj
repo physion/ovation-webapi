@@ -11,7 +11,6 @@
             [ovation.version :as ver]
             [ovation.schema :refer [EntityChildren]]
             [ovation.links :as links]
-            [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
             [clojure.string :refer [lower-case capitalize]]
             [ovation.annotations :as annotations]
             [ovation.routes :as r])
