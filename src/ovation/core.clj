@@ -83,14 +83,17 @@
         docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) routes)))
 
-(defn- update-attributes
+(defn- merge-updates
   [updates]
   (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes (:attributes update)
-                                                                            :rev        (:_rev update)}]) updates))]
+                                                                            :rev        (:_rev update)
+                                                                            :_collaboration_roots (get-in update [:links :_collaboration_roots])}]) updates))]
     (fn [doc]
-      (let [update (updated-attributes (str (:_id doc)))]
-        (assoc doc :attributes (:attributes update)
-                   :_rev (:rev update))))))
+      (let [update (updated-attributes (str (:_id doc)))
+            roots (:_collaboration_roots update)
+            updated-roots (if (nil? roots) doc (assoc-in doc [:links :_collaboration_roots] (:_collaboration_roots update)))]
+        (assoc updated-roots :attributes (:attributes update)
+                             :_rev (:rev update))))))
 
 
 (defn update-entities
@@ -106,7 +109,7 @@
                       entities
                       (let [ids  (map :_id entities)
                             docs (get-entities auth ids routes)
-                            updated-docs (map (update-attributes entities) docs)]
+                            updated-docs (map (merge-updates entities) docs)]
                         (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))

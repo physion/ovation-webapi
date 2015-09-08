@@ -129,8 +129,11 @@
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
           update (-> entity
                    (assoc-in [:attributes :label] ..label2..)
-                   (assoc-in [:attributes :foo] ..foo..))
-          updated-entity (assoc entity :_rev rev2)]
+                   (assoc-in [:attributes :foo] ..foo..)
+                   (assoc-in [:links :_collaboration_roots] [..roots..]))
+          updated-entity (-> entity
+                           (assoc :_rev rev2)
+                           (assoc-in [:links :_collaboration_roots] [..roots..]))]
       (against-background [(couch/db ..auth..) => ..db..]
         (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
                              (tw/to-couch ..owner-id.. [update]) => [update]

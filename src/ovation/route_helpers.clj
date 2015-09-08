@@ -58,6 +58,18 @@
              entities# (core/of-type auth# ~type-name (r/router request#))]
          (ok {~type-kw entities#})))))
 
+(defn post-resources*
+  [request type-name type-kw entities]
+  (let [auth (:auth/auth-info request)]
+    (if (every? #(= type-name (:type %)) entities)
+      (try+
+        (created {type-kw (core/create-entities auth entities (r/router request))})
+
+        (catch [:type :ovation.auth/unauthorized] err
+          (unauthorized {:errors {:detail "Not authorized"}})))
+
+      (bad-request {:errors {:detail (str "Entities must be of \"type\" " type-name)}}))))
+
 (defmacro post-resources
   "POST to resources of type (e.g. \"Project\")"
   [entity-type schemas]
@@ -68,15 +80,7 @@
        :return {~type-kw [Entity]}
        :body [entities# ~schemas]
        :summary ~(str "Creates a new top-level " type-name)
-       (let [auth# (:auth/auth-info request#)]
-         (if (every? #(= ~type-name (:type %)) entities#)
-           (try+
-             (created {~type-kw (core/create-entities auth# entities# (r/router request#))})
-
-             (catch [:type :ovation.auth/unauthorized] err#
-               (unauthorized {:errors {:detail "Not authorized"}})))
-
-           (bad-request {:errors {:detail (str "Entities must be of \"type\" " ~type-name)}}))))))
+       (post-resources* request# ~type-name ~type-kw entities#))))
 
 (defmacro get-resource
   [entity-type id]
@@ -128,7 +132,7 @@
                   :links    links
                   :updates updates}))
 
-      (catch [:type :ovation.auth/unauthorized] err#
+      (catch [:type :ovation.auth/unauthorized] err
         (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
   )
 
@@ -143,6 +147,19 @@
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (post-resource* request# ~type-name ~id body#))))
 
+(defn put-resource*
+  [request id type-name type-kw updates]
+  (let [entity-id (str (:_id updates))]
+    (if-not (= id (str entity-id))
+      (not-found {:error (str type-name " " entity-id " ID mismatch")})
+      (try+
+        (let [auth (:auth/auth-info request)
+              entities (core/update-entities auth [updates] (r/router request))]
+          (ok {type-kw entities}))
+
+        (catch [:type :ovation.auth/unauthorized] err
+          (unauthorized {:errors {:detail "Unauthorized"}}))))))
+
 (defmacro put-resource
   [entity-type id]
   (let [type-name (capitalize entity-type)
@@ -151,18 +168,9 @@
     `(PUT* "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
        :return {~type-kw [Entity]}
-       :body [update# EntityUpdate]
+       :body [updates# EntityUpdate]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (let [entity-id# (str (:_id update#))]
-         (if-not (= ~id (str entity-id#))
-           (not-found {:error (str ~type-name " " entity-id# " ID mismatch")})
-           (try+
-             (let [auth# (:auth/auth-info request#)
-                   entities# (core/update-entities auth# [update#] (r/router request#))]
-               (ok {~type-kw entities#}))
-
-             (catch [:type :ovation.auth/unauthorized] err#
-               (unauthorized {:errors {:detail "Unauthorized"}}))))))))
+       (put-resource* request# ~id ~type-name ~type-kw updates#))))
 
 (defmacro delete-resource
   [entity-type id]
