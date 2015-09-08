@@ -13,7 +13,6 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
-            [ovation.analyses :refer [create-analysis-record ANALYSIS_RECORD_TYPE]]
             [ring.middleware.conditional :refer [if-url-starts-with]]
             [ring.middleware.logger :refer [wrap-with-logger]]
             [ring.middleware.raygun :refer [wrap-raygun-handler]]
