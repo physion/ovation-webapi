@@ -123,7 +123,7 @@
         (context* "/projects" []
           :tags ["projects"]
           (get-resources "Project")
-          (post-resources "Project" [NewEntity])
+          (post-resources "Project" [NewProject])
           (context* "/:id" [id]
             (get-resource "Project" id)
             (post-resource "Project" id [NewEntity])
@@ -138,10 +138,10 @@
         (context* "/sources" []
           :tags ["sources"]
           (get-resources "Source")
-          (post-resources "Source" [NewEntity])
+          (post-resources "Source" [NewSource])
           (context* "/:id" [id]
             (get-resource "Source" id)
-            (post-resource "Source" id [NewEntity])
+            (post-resource "Source" id [NewSource])
             (put-resource "Source" id)
             (delete-resource "Source" id)
 
@@ -153,10 +153,10 @@
         (context* "/folders" []
           :tags ["folders"]
           (get-resources "Folder")
-          (post-resources "Folder" [NewEntity])
+          (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewEntity])
+            (post-resource "Folder" id [NewFolder NewFile NewRevision])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -168,10 +168,10 @@
         (context* "/files" []
           :tags ["files"]
           (get-resources "File")
-          (post-resources "File" [NewEntity])
+          (post-resources "File" [NewFile])
           (context* "/:id" [id]
             (get-resource "File" id)
-            (post-resource "File" id [NewEntity])
+            (post-resource "File" id [NewRevision])
             (put-resource "File" id)
             (delete-resource "File" id)
 

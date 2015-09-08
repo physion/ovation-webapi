@@ -52,7 +52,7 @@
         type-kw (keyword type-path)]
     `(GET* "/" request#
        :name ~(keyword (str "all-" (lower-case type-name)))
-       :return {~type-kw [Entity]}
+       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :summary (str "Gets all top-level " ~type-path)
        (let [auth# (:auth/auth-info request#)
              entities# (core/of-type auth# ~type-name (r/router request#))]
@@ -77,7 +77,7 @@
         type-path (lower-case (str type-name "s"))
         type-kw (keyword type-path)]
     `(POST* "/" request#
-       :return {~type-kw [Entity]}
+       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :body [entities# ~schemas]
        :summary ~(str "Creates a new top-level " type-name)
        (post-resources* request# ~type-name ~type-kw entities#))))
@@ -88,7 +88,7 @@
         single-type-kw (keyword (lower-case type-name))]
     `(GET* "/" request#
        :name ~(keyword (str "get-" (lower-case type-name)))
-       :return {~single-type-kw Entity}
+       :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
        (let [auth# (:auth/auth-info request#)]
          (if-let [entities# (core/get-entities auth# [~id] (r/router request#))]
@@ -141,9 +141,10 @@
   (let [type-name (capitalize entity-type)]
     `(POST* "/" request#
        :name ~(keyword (format "create-%s-entity" (lower-case type-name)))
-       :return {:entities [Entity]
-                :links    [LinkInfo]}
-       :body [body# ~schemas]
+       :return {:entities [(apply s/either ~schemas)]
+                :links    [LinkInfo]
+                :updates  [Entity]}
+       :body [body# [(apply s/either ~schemas)]]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (post-resource* request# ~type-name ~id body#))))
 
@@ -163,12 +164,13 @@
 (defmacro put-resource
   [entity-type id]
   (let [type-name (capitalize entity-type)
+        update-type (format "%sUpdate" type-name)
         type-path (lower-case (str type-name "s"))
         type-kw (keyword type-path)]
     `(PUT* "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
-       :return {~type-kw [Entity]}
-       :body [updates# EntityUpdate]
+       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
+       :body [updates# ~(clojure.core/symbol "ovation.schema" update-type)]
        :summary ~(str "Updates and returns " type-name " with :id")
        (put-resource* request# ~id ~type-name ~type-kw updates#))))
 

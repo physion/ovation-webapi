@@ -202,22 +202,22 @@
          (facts ~(util/join-path ["" type-path])
            (facts "read"
              (let [id# (str (UUID/randomUUID))
-                   project# {:_id        id#
+                   entity# {:_id        id#
                              :_rev       "123"
                              :type       ~type-name
                              :attributes {}
                              :links      {:self "self"}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [project#]
+                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
-                   (fact ~(str "GET / gets all" type-path)
-                     (body-json get-req#) => {~(keyword type-path) [project#]})))
+                   (fact ~(str "GET / gets all " type-path)
+                     (body-json get-req#) => {~(keyword type-path) [entity#]})))
 
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [project#]
+                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
-                     (body-json get-req#) => {~(keyword (lower-case type-name)) project#})
+                     (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
                    (let [source# {:_id        id#
                                   :_rev       "123"
                                   :type       "OtherType"
@@ -384,6 +384,7 @@
            auth-info# {:user "..user.."}]
 
        (against-background [(auth/authorize anything apikey#) => auth-info#]
+
          (facts ~(util/join-path ["" type-path])
            (facts "read"
              (let [id# (str (UUID/randomUUID))
@@ -412,6 +413,7 @@
                        (:status (app get-req#)) => 404
                        (provided
                          (core/get-entities auth-info# [id#] ..rt..) => [source#])))))))
+
            (facts "delete"
              (let [id# (UUID/randomUUID)
                    attributes# {:foo "bar"}
