@@ -78,7 +78,7 @@
         type-kw (keyword type-path)]
     `(POST* "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [entities# ~schemas]
+       :body [entities# [(apply s/either ~schemas)]]
        :summary ~(str "Creates a new top-level " type-name)
        (post-resources* request# ~type-name ~type-kw entities#))))
 
