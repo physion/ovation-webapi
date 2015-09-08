@@ -59,19 +59,18 @@
       [])))
 
 
-(defn create-entity
+(defn create-entities
   "POSTs entity(s) with the given parent and owner"
   [auth entities routes & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
-      (throw+ {:type ::auth/unauthorized :message "Not authorized to create a User"}))
+      (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
     (couch/bulk-docs db
       (tw/to-couch (auth/authenticated-user-id auth)
         entities
-        :collaboration_roots (parent-collaboration-roots auth parent routes)))
-    ))
+        :collaboration_roots (parent-collaboration-roots auth parent routes)))))
 
 (defn create-values
   "POSTs value(s) direct to Couch"
@@ -94,7 +93,7 @@
                    :_rev (:rev update))))))
 
 
-(defn update-entity
+(defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
   [auth entities routes & {:keys [direct] :or [direct false]}]
@@ -141,8 +140,8 @@
   [auth ids routes]
 
   (let [values (get-values auth ids)]
-    (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
-      (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
+    (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
+      (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
     (let [db (couch/db auth)
           docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]

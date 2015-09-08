@@ -95,27 +95,27 @@
          targets (util/into-id-map target-docs)
          sources-updates {}
          targets-updates {}
-         cross (for [source (util/into-id-map source-docs)
-                     target (util/into-id-map target-docs)]
+         cross (for [source source-docs
+                     target target-docs]
                  [(:_id source) (:_id target)])]
 
-    (let [[source-id target-id] (first cross)]
-      (if (and source-id target-id)
-        (if-let [[source-update target-update] (update-collaboration-roots-for-target (get sources source-id) (get targets target-id))]
-          (recur
-            (assoc sources source-id source-update)         ;; sources
-            (assoc targets target-id target-update)         ;; targets
-            (assoc sources-updates source-id source-update) ;; sources-updates
-            (assoc targets-updates target-id target-update) ;; targets-updates
-            (rest cross))
-          (recur
-            sources
-            targets
-            sources-updates
-            targets-updates
-            (rest cross)))
-        {:sources sources-updates
-         :targets targets-updates}))
+    (if-let [[source-id target-id] (first cross)]
+      (if-let [[source-update target-update] (update-collaboration-roots-for-target (get sources source-id) (get targets target-id))]
+        (recur
+          (assoc sources source-id source-update)           ;; sources
+          (assoc targets target-id target-update)           ;; targets
+          (assoc sources-updates source-id source-update)   ;; sources-updates
+          (assoc targets-updates target-id target-update)   ;; targets-updates
+          (rest cross))
+        (recur
+          sources
+          targets
+          sources-updates
+          targets-updates
+          (rest cross)))
+
+      {:sources (vals sources-updates)
+       :targets (vals targets-updates)})
     ))
 
 (defn make-links
@@ -163,14 +163,10 @@
 
 
 (defn delete-links
-  ([auth doc user-id rel target-id & {:keys [name] :or [name nil]}]
+  ([auth routes doc user-id rel target-id & {:keys [name] :or [name nil]}]
    (auth/check! user-id :auth/update doc)
-   (let [link-id (link-id (:_id doc) rel target-id :name name)
-         db (couch/db auth)
-         links (couch/all-docs db [link-id])]
-     (couch/delete-docs db links)))
-  ([auth doc user-id link-id]
+   (let [link-id (link-id (:_id doc) rel target-id :name name)]
+      (core/delete-values auth [link-id] routes)))
+  ([auth routes doc user-id link-id]
    (auth/check! user-id :auth/update doc)
-   (let [db (couch/db auth)
-         links (couch/all-docs db [link-id])]
-     (couch/delete-docs db links))))
+   (core/delete-values auth [link-id] routes)))

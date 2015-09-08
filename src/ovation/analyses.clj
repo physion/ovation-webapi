@@ -11,17 +11,20 @@
 (def INPUTS "inputs")
 (def OUTPUTS "outputs")
 
-
 (defn create-analysis-record
   [auth analysis routes]
   (let [doc {:type       ANALYSIS_RECORD_TYPE
              :attributes (if-let [params (:parameters analysis)]
                            {:parameters params}
                            {})}
-        records (core/create-entity auth [doc] routes)
-        inputs (links/add-links auth records INPUTS (:inputs analysis) routes :strict true :required-target-types [REQUIRED_INPUT_TYPE])
-        input-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all inputs) routes))
-        outputs (links/add-links auth input-records OUTPUTS (:outputs analysis) routes :strict true :required-target-types [REQUIRED_OUTPUT_TYPE])
-        updated-records (util/filter-type ANALYSIS_RECORD_TYPE (core/update-entity auth (:all outputs) routes))]
+        records (core/create-entities auth [doc] routes)
+        {input-links   :links
+         input-updates :updates} (links/add-links auth records INPUTS (:inputs analysis) routes :strict true :required-target-types [REQUIRED_INPUT_TYPE])
+        {output-links   :links
+         output-updates :updates} (links/add-links auth records OUTPUTS (:outputs analysis) routes :strict true :required-target-types [REQUIRED_OUTPUT_TYPE])
+        links (core/create-values auth routes (concat input-links output-links))
+        updates (core/update-entities auth (concat input-updates output-updates) routes)]
 
-    updated-records))
+    {:links links
+     :analyses records
+     :updates updates}))

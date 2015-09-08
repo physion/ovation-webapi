@@ -115,7 +115,7 @@
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
-                    (accepted {:relationships (links/delete-links auth
+                    (accepted {:relationships (links/delete-links auth (r/router request)
                                                 source
                                                 (auth/authenticated-user-id auth)
                                                 (:_id relationship))}))
@@ -196,31 +196,33 @@
           (context* "/:id" [id]
             (get-resource "User" id)))
 
-        (context* "/analysisrecords" []
-          :tags ["analyses"]
-          (get-resources "AnalysisRecord")
-          (POST* "/" request
-            :name :create-analysis
-            :return {:analysis-records [Entity]}
-            :body [analyses [NewAnalysisRecord]]
-            :summary "Creates and returns a new Analysis Record"
-            (let [auth (:auth/auth-info request)]
-              (try+
-                (let [records (doall (map #(create-analysis-record auth % (router request)) analyses))] ;;TODO could we create all the records at once?
-                  (created {:analysis-records (concat records)}))
-
-                (catch [:type ::links/target-not-found] {:keys [message]}
-                  (bad-request {:errors {:detail message}}))
-                (catch [:type ::links/illegal-target-type] {:keys [message]}
-                  (bad-request {:errors {:detail message}})))))
-          (context* "/:id" [id]
-            (get-resource "AnalysisRecord" id)
-            (put-resource "AnalysisRecord" id)
-            (delete-resource "AnalysisRecord" id)
-
-            (context* "/links/:rel" [rel]
-              (rel-related "AnalysisRecord" id rel)
-              (relationships "AnalysisRecord" id rel))))
+        ;(context* "/analyses" []
+        ;  :tags ["analyses"]
+        ;  (get-resources "AnalysisRecord")
+        ;  (POST* "/" request
+        ;    :name :create-analysis
+        ;    :return {:analyses [NewAnalysisRecord]
+        ;             :links [LinkInfo]
+        ;             :updates [Entity]}
+        ;    :body [analyses [NewAnalysisRecord]]
+        ;    :summary "Creates and returns a new Analysis Record"
+        ;    (let [auth (:auth/auth-info request)]
+        ;      (try+
+        ;        (let [records (doall (map #(create-analysis-record auth % (router request)) analyses))] ;;TODO could we create all the records at once?
+        ;          (created {:analysis-records (concat records)}))
+        ;
+        ;        (catch [:type ::links/target-not-found] {:keys [message]}
+        ;          (bad-request {:errors {:detail message}}))
+        ;        (catch [:type ::links/illegal-target-type] {:keys [message]}
+        ;          (bad-request {:errors {:detail message}})))))
+        ;  (context* "/:id" [id]
+        ;    (get-resource "AnalysisRecord" id)
+        ;    (put-resource "AnalysisRecord" id)
+        ;    (delete-resource "AnalysisRecord" id)
+        ;
+        ;    (context* "/links/:rel" [rel]
+        ;      (rel-related "AnalysisRecord" id rel)
+        ;      (relationships "AnalysisRecord" id rel))))
 
 
         (context* "/provenance" []

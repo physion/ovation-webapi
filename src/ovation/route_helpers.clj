@@ -71,7 +71,7 @@
        (let [auth# (:auth/auth-info request#)]
          (if (every? #(= ~type-name (:type %)) entities#)
            (try+
-             (created {~type-kw (core/create-entity auth# entities# (r/router request#))})
+             (created {~type-kw (core/create-entities auth# entities# (r/router request#))})
 
              (catch [:type :ovation.auth/unauthorized] err#
                (unauthorized {:errors {:detail "Not authorized"}})))
@@ -105,9 +105,9 @@
 (defn make-child-links*
   [auth parent-id type-name targets routes]
   (let [target-ids (map :_id targets)
-        self (core/get-entities auth [parent-id] routes)
+        sources (core/get-entities auth [parent-id] routes)
         type (util/entity-type-name-keyword type-name)
-        links (map (make-child-link* auth self target-ids type routes) targets)]
+        links (map (make-child-link* auth sources target-ids type routes) targets)]
     (apply concat (map :links links))))
 
 
@@ -124,7 +124,7 @@
          (try+
            (let [
                  routes# (r/router request#)
-                 entities# (core/create-entity auth# body# routes# :parent ~id)]
+                 entities# (core/create-entities auth# body# routes# :parent ~id)]
 
              (created {:entities entities#
                        :links    (make-child-links* auth# ~id ~type-name entities# routes#)}))
@@ -147,7 +147,7 @@
            (not-found {:error (str ~type-name " " entity-id# " ID mismatch")})
            (try+
              (let [auth# (:auth/auth-info request#)
-                   entities# (core/update-entity auth# [update#] (r/router request#))]
+                   entities# (core/update-entities auth# [update#] (r/router request#))]
                (ok {~type-kw entities#}))
 
              (catch [:type :ovation.auth/unauthorized] err#
@@ -195,8 +195,8 @@
           source (first (core/get-entities auth [id] (r/router request)))]
       (if source
         (let [_ (auth/check! (auth/authenticated-user-id auth) :auth/update source)
-              all-updates (:all (links/add-links auth source rel (map :target_id new-links) (r/router request)))
-              updates (core/update-entity auth all-updates :direct true)] ;;TODO this should not use update-entity for linkinfo
+              all-updates (:all (links/add-links auth [source] rel (map :target_id new-links) (r/router request)))
+              updates (core/update-entities auth all-updates :direct true)] ;;TODO this should not use update-entity for linkinfo
           (created {:entities (filter (fn [doc] (not= util/RELATION_TYPE (:type doc))) updates)
                     :links    (filter :rel updates)}))
         (not-found {:errors {:detail (str ~id " not found")}})))

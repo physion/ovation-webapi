@@ -95,11 +95,6 @@
               (core/get-entities ..auth.. [target-id target-id2] ..rt..) => [target1 target2])))
 
 
-        (fact "fails if not can? :update"
-          (links/add-links ..auth.. doc ..rel.. [target-id] ..rt..) => (throws Exception)
-          (provided
-            (auth/can? ..id.. :auth/update anything) => false))
-
 
 
         (fact "updates target _collaboration_roots for source:=Project"
@@ -118,7 +113,7 @@
                 expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
-              (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
 
         (fact "updates source _collaboration_roots for target:=Project"
           (let [rel "some-rel"
@@ -128,16 +123,16 @@
                 expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
-              (core/get-entities ..auth.. #{target-id} ..rt..) => [target])))
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
 
         (fact "updates source _collaboration_roots for target:=Folder"
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "Folder" :links {:_collaboration_roots [..roots2..]}}
-                expected (assoc-in source [:links :_collaboration_roots] [..roots1.. ..roots2..])]
+                expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
-              (core/get-entities ..auth.. #{target-id} ..rt..) => [target]))))))
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target]))))))
 
   (facts "`delete-link`"
 
@@ -152,13 +147,12 @@
         (fact "removes link"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-links ..auth.. doc ..id.. ..rel.. ..target..) => ..deleted..
+            (links/delete-links ..auth.. ..rt.. doc ..id.. ..rel.. ..target..) => ..deleted..
             (provided
-              (couch/all-docs ..db.. [link-id]) => [..link..]
-              (couch/delete-docs ..db.. [..link..]) => ..deleted..)))
+              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..)))
 
         (fact "fails if not can? :update source"
-          (links/delete-links ..auth.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
+          (links/delete-links ..auth.. ..rt.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
           (provided
             (auth/can? ..id.. :auth/update ..doc..) => false))
 
@@ -166,10 +160,9 @@
         (fact "updates entity _collaboration_roots"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-links ..auth.. doc ..id.. ..rel.. ..target..) => ..docs..
+            (links/delete-links ..auth.. ..rt.. doc ..id.. ..rel.. ..target..) => ..deleted..
             (provided
-              (couch/all-docs ..db.. [link-id]) => [..link..]
-              (couch/delete-docs ..db.. [..link..]) => ..docs..))))))
+              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..))))))
 
   (facts "`get-links`"
     (against-background [(couch/get-view ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]

@@ -25,23 +25,25 @@
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
-          (core/create-values ..auth.. [{:type "Project"}]) => (throws Throwable))
+          (core/create-values ..auth.. ..rt.. [{:type "Project"}]) => (throws Throwable))
         (fact "bulk-updates values"
-          (core/create-values ..auth.. [{:type "Annotation"}]) => ..result..
+          (core/create-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
           (provided
             (auth/check! ..user.. ::auth/create) => identity
-            (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..result..))))
+            (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
+            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))
     (facts "`delete-values`"
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
           (core/delete-values ..auth.. [{:type "Project"}] anything) => (throws Throwable))
         (fact "calls delete-docs"
-          (core/delete-values ..auth.. [..id..] anything) => ..result..
+          (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
           (provided
             (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..user.. ::auth/delete) => identity
-            (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..result..))))))
+            (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
+            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))))
 
 
 (facts "About Query"
@@ -89,7 +91,7 @@
                       :attributes attributes}]
 
       (fact "it throws unauthorized exception if any :type is User"
-        (core/create-entity ..auth.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception)
+        (core/create-entities ..auth.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception)
         (provided
           (couch/db ...auth...) => ...db...))
 
@@ -101,11 +103,11 @@
                            (couch/bulk-docs ...db... [...doc...]) => ...result...]
 
         (fact "it sends doc to Couch"
-          (core/create-entity ...auth... [new-entity] ..routes..) => ...result...)
+          (core/create-entities ...auth... [new-entity] ..routes..) => ...result...)
 
         (facts "with parent"
           (fact "it adds collaboration roots from parent"
-            (core/create-entity ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
+            (core/create-entities ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
             (provided
               (core/parent-collaboration-roots ...auth... ...parent... ..rt..) => ...collaboration_roots...
               (tw/to-couch ...owner-id... [{:type       type
@@ -114,7 +116,7 @@
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entity ...auth... [new-entity] ..routes.. :parent nil) => ...result...)))))
+            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...)))))
 
   (facts "`update-entity`"
     (let [type "some-type"
@@ -138,15 +140,15 @@
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]
                              (tr/entities-from-couch [updated-entity] ..rt..) => [updated-entity]]
           (fact "it updates attributes"
-            (core/update-entity ..auth.. [update] ..rt..) => [updated-entity])
+            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity])
           (fact "it fails if authenticated user doesn't have write permission"
-            (core/update-entity ..auth.. [update] ..rt..) => (throws Exception)
+            (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
             (provided
               (auth/authenticated-user-id ..auth..) => ..other-id..
               (auth/can? ..other-id.. :auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
-          (core/update-entity ..auth.. [entity] ..rt..) => (throws Exception)
+          (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
           (provided
             (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
 

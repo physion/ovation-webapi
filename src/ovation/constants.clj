@@ -3,6 +3,7 @@
 
 (def USER-ENTITY "User")
 (def ANNOTATION-TYPE "Annotation")
+(def RELATION-TYPE util/RELATION_TYPE)
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
 

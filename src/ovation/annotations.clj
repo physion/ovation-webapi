@@ -42,7 +42,7 @@
                             (map #(make-annotation auth-user-id entity annotation-type %) records))
                         entities))]
 
-    (core/create-values auth docs)))
+    (core/create-values auth routes docs)))
 
 (defn delete-annotations
   [auth annotation-ids routes]
