@@ -100,16 +100,37 @@
           inverse_rel (get-in EntityChildren [source-type target-type :inverse-rel])]
       (if rel
         (links/add-links auth sources rel target-ids routes :inverse-rel inverse_rel)
-        []))))
+        {}))))
 
 (defn make-child-links*
   [auth parent-id type-name targets routes]
   (let [target-ids (map :_id targets)
         sources (core/get-entities auth [parent-id] routes)
         type (util/entity-type-name-keyword type-name)
-        links (map (make-child-link* auth sources target-ids type routes) targets)]
-    (apply concat (map :links links))))
+        results (map (make-child-link* auth sources target-ids type routes) targets)
+        links (apply concat (map :links results))
+        updates (apply concat (map :updates results))]
+    {:links links
+     :updates updates}))
 
+(defn post-resource*
+  [request type-name id body]
+  (let [auth (:auth/auth-info request)]
+    (try+
+      (let [
+            routes (r/router request)
+            entities (core/create-entities auth body routes :parent id)
+            child-links (make-child-links* auth id type-name entities routes)
+            links (core/create-values auth routes (:links child-links))
+            updates (core/update-entities auth (:updates child-links) routes)]
+
+        (created {:entities entities
+                  :links    links
+                  :updates updates}))
+
+      (catch [:type :ovation.auth/unauthorized] err#
+        (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
+  )
 
 (defmacro post-resource
   [entity-type id schemas]
@@ -120,17 +141,7 @@
                 :links    [LinkInfo]}
        :body [body# ~schemas]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
-       (let [auth# (:auth/auth-info request#)]
-         (try+
-           (let [
-                 routes# (r/router request#)
-                 entities# (core/create-entities auth# body# routes# :parent ~id)]
-
-             (created {:entities entities#
-                       :links    (make-child-links* auth# ~id ~type-name entities# routes#)}))
-
-           (catch [:type :ovation.auth/unauthorized] err#
-             (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))))
+       (post-resource* request# ~type-name ~id body#))))
 
 (defmacro put-resource
   [entity-type id]
@@ -168,8 +179,10 @@
            (unauthorized {}))))))
 
 (defn rel-related*
-  [auth id rel-name routes]
-  (ok {(keyword rel-name) (links/get-link-targets auth id rel-name routes)}))
+  [request id rel routes]
+  (let [auth (:auth/auth-info request)
+        related (links/get-link-targets auth id (lower-case rel) routes)]
+  (ok {(keyword rel) related})))
 
 
 (defmacro rel-related
@@ -179,13 +192,13 @@
        :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
        :return {s/Keyword [Entity]}
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
-       (let [auth# (:auth/auth-info request#)]
-         (rel-related* auth# ~id (lower-case ~rel) (r/router request#))))))
+       (rel-related* request# ~id ~rel (r/router request#)))))
 
 (defn get-relationships*
   [request id rel]
-  (let [auth (:auth/auth-info request)]
-    (links/get-links auth id rel (r/router request))))
+  (let [auth (:auth/auth-info request)
+        rels (links/get-links auth id rel (r/router request))]
+    (ok {:links rels})))
 
 
 (defn post-relationships*
@@ -213,8 +226,7 @@
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (let [relationships# (get-relationships* request# ~id ~rel)]
-           (ok {:links relationships#})))
+         (get-relationships* request# ~id ~rel))
 
        (POST* "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))

@@ -76,8 +76,8 @@
   "POSTs value(s) direct to Couch"
   [auth routes values]
 
-  (when-not (every? #{k/ANNOTATION-TYPE} (map :type values))
-    (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\""}))
+  (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
+    (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
   (let [db (couch/db auth)
         docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]

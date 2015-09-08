@@ -53,9 +53,9 @@
 
 (s/defschema LinkInfo {:_id                          s/Str
                        (s/optional-key :_rev)        s/Str
-                       :type                         util/RELATION_TYPE
+                       :type                         (s/eq util/RELATION_TYPE)
 
-                       :user_id                      s/Uuid
+                       :owner                        s/Uuid
                        :source_id                    s/Uuid
                        :target_id                    s/Uuid
                        :rel                          s/Str
