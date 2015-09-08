@@ -9,7 +9,6 @@
             [clojure.walk :as walk]
             [ovation.util :as util]
             [ovation.version :as ver]
-            [schema.core :as s]
             [ovation.schema :refer [EntityChildren]]
             [ovation.links :as links]
             [ovation.analyses :refer [ANALYSIS_RECORD_TYPE]]
@@ -245,12 +244,14 @@
 
                    request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path (:_id parent#)]))
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))
-                   links# [{:foo "bar"}]
+                   links# [{:type "Relation" :foo "bar"}]
                    ]
 
                (against-background [(core/create-entities auth-info# new-entities# ..rt.. :parent (:_id parent#)) => [entity#]
                                     (core/get-entities auth-info# [(:_id parent#)] ..rt..) => [parent#]
                                     (links/add-links auth-info# [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
+                                    (core/create-values auth-info# ..rt.. links#) => links#
+                                    (core/update-entities auth-info# anything ..rt..) => ..updates..
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
@@ -258,7 +259,8 @@
                  (fact ~(str "POST /:id inserts entity with " type-name " parent")
                    (let [post# (request#)]
                      (body-json post#) => {:entities [entity#]
-                                           :links    links#})))
+                                           :links    links#
+                                           :updates {}})))
 
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (app (request#))) => 401
