@@ -4,7 +4,7 @@
             [clojure.core.async :refer [>!!]]
             [clojure.tools.logging :as logging]))
 
-(def design-doc "dao")                                      ;;TODO change to "_api"
+(def design-doc "_api")
 
 (defn db
   "Database URL from authorization info"
