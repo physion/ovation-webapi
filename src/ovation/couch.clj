@@ -4,7 +4,7 @@
             [clojure.core.async :refer [>!!]]
             [clojure.tools.logging :as logging]))
 
-(def design-doc "_api")
+(def design-doc "api")
 
 (defn db
   "Database URL from authorization info"
