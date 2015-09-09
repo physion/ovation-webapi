@@ -132,7 +132,7 @@
                 :target_id (:_id target)
                 :source_id (:_id source)
                 :rel       rel
-                :owner     authenticated-user-id
+                :user_id     authenticated-user-id
                 :links     {:_collaboration_roots (concat source-roots target-roots)}}
           named (if name (assoc base :name name) base)]
       (if inverse-rel (assoc named :inverse_rel inverse-rel) named))))

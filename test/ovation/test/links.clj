@@ -48,39 +48,39 @@
 
       (against-background [(couch/db ..auth..) => ..db..
                            (core/get-entities ..auth.. [target-id] ..rt..) => [{:_id   target-id
-                                                                                 :type  "not-a-root"
-                                                                                 :links {:_collaboration_roots [..targetroot..]}}]
+                                                                                :type  "not-a-root"
+                                                                                :links {:_collaboration_roots [..targetroot..]}}]
                            (auth/authenticated-user-id ..auth..) => ..id..]
 
 
         (fact "creates link document"
-          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse..)) => (contains {:_id  (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
-                                                                                                                    :owner ..id..
-                                                                                                             :type        "Relation"
-                                                                                                             :source_id   (:_id doc)
-                                                                                                             :target_id   target-id
-                                                                                                             :rel         ..rel..
-                                                                                                             :inverse_rel ..inverse..
-                                                                                                             :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse..)) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
+                                                                                                                      :user_id     ..id..
+                                                                                                                      :type        "Relation"
+                                                                                                                      :source_id   (:_id doc)
+                                                                                                                      :target_id   target-id
+                                                                                                                      :rel         ..rel..
+                                                                                                                      :inverse_rel ..inverse..
+                                                                                                                      :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
         (fact "creates link document without inverse"
           (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt..)) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
-                                                                                           :owner     ..id..
-                                                                                           `:type     "Relation"
-                                                                                           :source_id (:_id doc)
-                                                                                           :target_id target-id
-                                                                                           :rel       ..rel..
-                                                                                           :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+                                                                                             :user_id   ..id..
+                                                                                             `:type     "Relation"
+                                                                                             :source_id (:_id doc)
+                                                                                             :target_id target-id
+                                                                                             :rel       ..rel..
+                                                                                             :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
         (fact "creates named link document"
-          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id  (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
-                                                                                                                                   :owner ..id..
-                                                                                                                            :type        "Relation"
-                                                                                                                            :source_id   (:_id doc)
-                                                                                                                            :target_id   target-id
-                                                                                                                            :name        ..name..
-                                                                                                                            :inverse_rel ..inverse..
-                                                                                                                            :rel         ..rel..
-                                                                                                                            :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
+          (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
+                                                                                                                                     :user_id     ..id..
+                                                                                                                                     :type        "Relation"
+                                                                                                                                     :source_id   (:_id doc)
+                                                                                                                                     :target_id   target-id
+                                                                                                                                     :name        ..name..
+                                                                                                                                     :inverse_rel ..inverse..
+                                                                                                                                     :rel         ..rel..
+                                                                                                                                     :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
 
 
@@ -137,10 +137,10 @@
   (facts "`delete-link`"
 
     (let [target-id (str (UUID/randomUUID))
-          doc {:_id   (str (UUID/randomUUID))
-               :type  "MyEntity"
+          doc {:_id       (str (UUID/randomUUID))
+               :type      "MyEntity"
                :attrbutes {}
-               :links {:_collaboration_roots [target-id]}}]
+               :links     {:_collaboration_roots [target-id]}}]
 
       (against-background [(couch/db ..auth..) => ..db..]
 

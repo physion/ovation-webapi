@@ -55,7 +55,7 @@
                        (s/optional-key :_rev)        s/Str
                        :type                         (s/eq util/RELATION_TYPE)
 
-                       :owner                        s/Uuid
+                       :user_id                      s/Uuid
                        :source_id                    s/Uuid
                        :target_id                    s/Uuid
                        :rel                          s/Str
