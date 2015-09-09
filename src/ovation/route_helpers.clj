@@ -216,12 +216,15 @@
   (try+
     (let [auth (:auth/auth-info request)
           source (first (core/get-entities auth [id] (r/router request)))]
+      (when source
+        (auth/check! (auth/authenticated-user-id auth) :auth/update source))
       (if source
-        (let [_ (auth/check! (auth/authenticated-user-id auth) :auth/update source)
-              all-updates (:all (links/add-links auth [source] rel (map :target_id new-links) (r/router request)))
-              updates (core/update-entities auth all-updates :direct true)] ;;TODO this should not use update-entity for linkinfo
-          (created {:entities (filter (fn [doc] (not= util/RELATION_TYPE (:type doc))) updates)
-                    :links    (filter :rel updates)}))
+        (let [routes (r/router request)
+              result (links/add-links auth [source] rel (map :target_id new-links) routes)
+              links (core/create-values auth routes (:links result))
+              updates (core/update-entities auth (:updates result) routes)]
+          (created {:entities updates
+                    :links    links}))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
       (unauthorized {:errors {:detail message}}))
