@@ -215,12 +215,12 @@
   [request id new-links rel]
   (try+
     (let [auth (:auth/auth-info request)
-          source (first (core/get-entities auth [id] (r/router request)))]
+          source (first (core/get-entities auth [id] (r/router request)))
+          routes (r/router request)]
       (when source
         (auth/check! (auth/authenticated-user-id auth) :auth/update source))
       (if source
-        (let [routes (r/router request)
-              result (links/add-links auth [source] rel (map :target_id new-links) routes)
+        (let [result (links/add-links auth [source] rel (map :target_id new-links) routes)
               links (core/create-values auth routes (:links result))
               updates (core/update-entities auth (:updates result) routes)]
           (created {:entities updates
