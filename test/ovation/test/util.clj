@@ -1,9 +1,9 @@
 (ns ovation.test.util
   (:import (java.util UUID)
-           (us.physion.ovation.domain URIs))
+           (java.net URI))
   (:use midje.sweet)
   (:require [ovation.util :as util]
-            [ovation.dao :as dao]))
+            [ovation.version :refer [version]]))
 
 (facts "about UUID parsing"
        (fact "parses UUID string with dashes"
@@ -16,18 +16,18 @@
 (facts "about URI creation"
   (fact "creates URI from UUID string"
     (let [id (str (UUID/randomUUID))]
-      (util/create-uri id) => (URIs/create id)))
+      (util/create-uri id) => (URI. (format "%s://%s/%s"  "ovation"  "entities"  id))))
   (fact "creates URI from UUID"
     (let [id (UUID/randomUUID)]
-      (util/create-uri id) => (URIs/create id)))
+      (util/create-uri id) => (URI. (format "%s://%s/%s"  "ovation"  "entities"  id))))
   (fact "passes through URI"
     (let [uri (util/create-uri (UUID/randomUUID))]
       (util/create-uri uri) => uri)))
 
-(facts "about Users"
-  (fact "gets username for URI"
-    (dao/username-from-user-uri ...api... ...uri...) => ...user...
-    (provided
-      (util/get-entity-id ...uri...) => ...id...
-      (dao/get-entity ...api... ...id...) => ...entity...
-      (#'ovation.dao/get-username ...entity...) => ...user...)))
+(facts "About prefixed-path"
+  (fact "adds prefix"
+    (util/prefixed-path "my/path") => (str "/api/" version "/my/path"))
+  (fact "adds prefix to absolute path"
+    (util/prefixed-path "/my/path") => (str "/api/" version "/my/path"))
+  (fact "skips already-prefixed path"
+    (util/prefixed-path (str "/api/" version "/my/path")) => (str "/api/" version "/my/path")))
