@@ -1,46 +1,21 @@
 (ns ovation.util
   (:import (java.net URI)
-           (java.util UUID))
-  (:require [clojure.string :refer [join]]
-            [ovation.version :refer [version]]
-            [clojure.walk :as walk]
-            [clojure.data.json :as json]
-            [clojure.string :as s]
-            [clj-time.core :as t]
-            [clj-time.format :as tf]))
+           (us.physion.ovation.domain URIs))
+  (:require [ovation.context :as context]
+            [clojure.string :refer [join]]
+            [pathetic.core :refer [url-normalize up-dir]]
+            [ovation.version :refer [version-path]]))
 
-(def RELATION_TYPE "Relation")
-
-(defn make-uuid
-  "Wraps java.util.UUID/randomUUID for test mocking."
-  []
-  (java.util.UUID/randomUUID))
+(defn ctx [api-key]
+  (context/cached-context api-key))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
     (let [buffer (java.nio.ByteBuffer/wrap
                    (javax.xml.bind.DatatypeConverter/parseHexBinary s))]
-      (UUID. (.getLong buffer) (.getLong buffer)))
-    (UUID/fromString s)))
+      (java.util.UUID. (.getLong buffer) (.getLong buffer)))
+    (java.util.UUID/fromString s)))
 
-
-
-(defn entity-type-name
-  [doc]
-  (s/lower-case (:type doc)))
-
-(defn entity-type-keyword
-  [doc]
-  (keyword (entity-type-name doc)))
-
-(defn entity-type-name-keyword
-  [name]
-  (keyword (s/lower-case name)))
-
-(defn into-id-map
-  "Converts a mappable collection of documents into a map {:_id => doc}"
-  [docs]
-  (into {} (map (fn [doc] [(:_id doc) doc]) docs)))
 
 (defn get-entity-id
   "The entity ID for a given URI"
@@ -52,47 +27,17 @@
   "Creates an ovation URI from string id"
   (if (instance? URI id)
     id
-    (URI. (format "ovation://entities/%s" id))))
+    (URIs/create id)))
 
 
-(defn to-json
-  "Converts a keywordized map to json string"
-  [m]
-  (json/write-str (walk/stringify-keys m)))
-
-(defn from-json
-  "Converts a json string to keywordized map"
-  [s]
-
-  (walk/keywordize-keys (json/read-str s)))
+(defn host-from-request [request]
+   (let [scheme (clojure.string/join "" [(name (get request :scheme)) "://"])
+         host (get (get request :headers) "host")]
+     (clojure.string/join "" [scheme host "/"])))
 
 
-(defn join-path
-  [comps]
-  (clojure.string/join "/" comps))
-
-(defn remove-leading-slash
-  [path]
-  (if (.startsWith path "/")
-    (.substring path 1)
-    path))
-
-(defn prefixed-path
-  [p]
-  (let [path (-> p
-               (s/lower-case)
-               (s/trim))
-        prefix (join-path ["" "api" version])]
-    (if (.startsWith path prefix)
-      path
-      (join-path [prefix (remove-leading-slash path)]))))
-
-(defn iso-now
-  "Gets the ISO date time string for (t/now)"
-  []
-  (tf/unparse (tf/formatters :date-hour-minute-second-ms) (t/now)))
-
-(defn filter-type
-  [entity-type docs]
-  (filter #(= entity-type (:type %)) docs))
+(defn ovation-query
+  [request]
+  (let [params (:query-params request)]
+    (join "&" (for [[k v] (select-keys params (for [[k v] params :when (not (= k "api-key"))] k))] (format "%s=%s" k v)))))
 
