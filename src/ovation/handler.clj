@@ -1,178 +1,207 @@
 (ns ovation.handler
-  (:import (us.physion.ovation.domain OvationEntity$AnnotationKeys))
-  (:require [clojure.string :refer [join]]
-            [ring.util.http-response :refer [created ok accepted]]
+  (:require [compojure.api.sweet :refer :all]
+            [compojure.api.routes :refer [path-for*]]
+            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.swagger.schema :refer [field describe]]
-            [ring.swagger.json-schema-dirty]
-            [compojure.api.sweet :refer :all]
-            [schema.core :as s]
-            [pathetic.core :refer [url-normalize]]
-            [ovation.entity :as entity]
-            [ovation.links :as links]
-            [ovation.util :as util]
             [ovation.schema :refer :all]
-            [ovation.dao :as dao]
             [ovation.logging]
+            [ovation.routes :refer [router]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships]]
             [clojure.tools.logging :as logging]
-            ))
+            [ovation.config :as config]
+            [ovation.core :as core]
+            [slingshot.slingshot :refer [try+ throw+]]
+            [ovation.middleware.token-auth :refer [wrap-token-auth]]
+            [ovation.links :as links]
+            [ring.middleware.conditional :refer [if-url-starts-with]]
+            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.middleware.raygun :refer [wrap-raygun-handler]]
+            [clojure.string :refer [lower-case capitalize join]]
+            [schema.core :as s]
+            [ovation.routes :as r]
+            [ovation.auth :as auth]))
 
 (ovation.logging/setup!)
 
-(defmacro annotation
-  "Creates an annotation type endpoint"
-  [id annotation-type annotation-key record-schema annotation-schema]
 
-  `(context ~(str "/" annotation-type) []
-    (GET* "/" []
-      ;:return [~annotation-schema]
-      :query-params [api-key# :- String]
-      :summary ~(str "Returns all " annotation-type " annotations associated with entity :id")
-      (ok (entity/get-specific-annotations api-key# ~id ~annotation-key)))
-
-    (POST* "/" []
-      :return Success
-      :query-params [api-key# :- String]
-      :body [new-annotation# ~record-schema]
-      :summary ~(str "Adds a new " annotation-type " annotation to entity :id")
-      (ok (entity/add-annotation api-key# ~id ~annotation-key new-annotation#)))
-
-    (context "/:annotation-id" [annotation-id#]
-      (DELETE* "/" []
-        :return Success
-        :query-params [api-key# :- String]
-        :summary ~(str "Removes a " annotation-type " annotation from entity :id")
-        (ok (entity/delete-annotation api-key# ~id ~annotation-key annotation-id#))))))
 
 
 
 ;;; --- Routes --- ;;;
 (defapi app
 
-  (middlewares [(wrap-cors
-                  :access-control-allow-origin #".+"        ; FIXME - accept only what we want here
+  (middlewares [
+                (wrap-cors
+                  :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
-                  :access-control-allow-headers ["Content-Type" "Accept"])]
+                  :access-control-allow-headers ["Content-Type" "Accept"])
+
+                ;; Require authorization (via header token auth) for all paths starting with /api
+                (wrap-token-auth
+                  :authserver config/AUTH_SERVER
+                  :required-auth-url-prefix #{"/api"})
+
+
+                (wrap-with-logger                           ;;TODO can we make the middleware conditional rather than testing for each logging call?
+                  :info (fn [x] (when config/LOGGING_HOST (logging/info x)))
+                  :debug (fn [x] (when config/LOGGING_HOST (logging/debug x)))
+                  :error (fn [x] (when config/LOGGING_HOST (logging/error x)))
+                  :warn (fn [x] (when config/LOGGING_HOST (logging/warn x))))
+
+                (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
+                ]
+
     (swagger-ui)
     (swagger-docs
-      :apiVersion "1.0.0"
-      :title "Ovation"
-      :description "Ovation Web API"
-      :contact "support@ovation.io"
-      :termsOfServiceUrl "https://ovation.io/terms_of_service")
+      {:info {
+              :version        "2.0.0"
+              :title          "Ovation"
+              :description    "Ovation Web API"
+              :contact        {:name "Ovation"
+                               :url  "https://ovation.io"}
+              :termsOfService "https://ovation.io/terms_of_service"}}
+      :tags [{:name "entities" :description "Generic entity operations"}
+             {:name "projects" :description "Projects"}
+             {:name "folders" :description "Folders"}
+             {:name "files" :description "Files"}
+             {:name "protocols" :description "Protocols"}
+             {:name "sources" :description "Sources"}
+             {:name "users" :description "Users"}
+             {:name "analyses" :description "Analysis Records"}
+             {:name "annotations" :description "Per-user annotations"}
+             {:name "links" :description "Relationships between entities"}
+             {:name "provenance" :description "Provenance graph"}])
 
-    (swaggered "top-level"
-      (context "/api" []
-        (context "/v1" [] ;; TODO pull this from o.util/version-string
-          (context "/:resource" [resource]
+
+    (context* "/api" []
+      (context* "/v1" []
+        (context* "/entities" []
+          :tags ["entities"]
+          (context* "/:id" [id]
+
             (GET* "/" request
-              :return [Entity]
-              :query-params [api-key :- String]
-              :path-params [resource :- (s/enum "projects" "sources" "protocols")]
-              :summary "Get Projects, Protocols and Top-level Sources"
+              :name :get-entity
+              :return {:entity Entity}
+              :responses {404 {:schema JsonApiError :description "Not found"}}
+              :summary "Returns entity with :id"
+              (let [auth (:auth/auth-info request)]
+                (if-let [entities (core/get-entities auth [id] (router request))]
+                  (ok {:entity (first entities)})
+                  (not-found {:errors {:detail "Not found"}}))))
 
-              (logging/info "Getting top-level" resource)
-              (ok (entity/index-resource api-key resource)))))))
+            (context* "/annotations" []
+              :tags ["annotations"]
+              :name :annotations
+              (annotation id "keywords" "tags" TagRecord TagAnnotation)
+              (annotation id "properties" "properties" PropertyRecord PropertyAnnotation)
+              (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
+              (annotation id "notes" "notes" NoteRecord NoteAnnotation))))
 
-    (swaggered "entities"
-      (context "/api" []
-        (context "/v1" []
-          (context "/entities" []
-            (POST* "/" request
-              :return [Entity]
-              :query-params [api-key :- s/Str]
-              :body [new-dto NewEntity]
-              :summary "Creates and returns an entity"
-              (created (entity/create-entity api-key new-dto)))
+        (context* "/relationships" []
+          :tags ["links"]
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :get-relation
+              :return {:relationship LinkInfo}
+              :summary "Relationship document"
+              (let [auth (:auth/auth-info request)]
+                (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
+            (DELETE* "/" request
+              :name :delete-relation
+              :return {:relationship LinkInfo}
+              :summary "Removes relationship"
+              (let [auth (:auth/auth-info)
+                    relationship (first (core/get-values auth [id]))]
+                (if relationship
+                  (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
+                    (accepted {:relationships (links/delete-links auth (r/router request)
+                                                source
+                                                (auth/authenticated-user-id auth)
+                                                (:_id relationship))}))
+                  (not-found {:errors {:detail "Not found"}}))))))
 
-            (context "/:id" [id]
-              (GET* "/" request
-                :return [Entity]
-                :query-params [api-key :- s/Str]
-                :summary "Returns entity with :id"
-                (ok (dao/into-seq api-key (conj () (dao/get-entity api-key id)))))
-              (PUT* "/" request
-                :return [Entity]
-                :query-params [api-key :- s/Str]
-                :body [dto Entity]
-                :summary "Updates and returns updated entity with :id"
-                (ok (entity/update-entity-attributes api-key id (:attributes dto))))
-              (DELETE* "/" request
-                :return Success
-                :query-params [api-key :- s/Str]
-                :summary "Deletes entity with :id"
-                (accepted (entity/delete-entity api-key id)))
+        (context* "/projects" []
+          :tags ["projects"]
+          (get-resources "Project")
+          (post-resources "Project" [NewProject])
+          (context* "/:id" [id]
+            (get-resource "Project" id)
+            (post-resource "Project" id [NewEntity])
+            (put-resource "Project" id)
+            (delete-resource "Project" id)
 
-              (context "/links" []
-                (POST* "/" []
-                  :return [Success]
-                  :body [link Link]
-                  :query-params [api-key :- s/Str]
-                  :summary "Creates a new link to from this entity"
-                  (created (links/create-link api-key id link)))
-
-                (context "/:rel" [rel]
-                  (GET* "/" []
-                    :return [Entity]
-                    :query-params [api-key :- s/Str]
-                    :summary "Returns all entities associated with entity by the given relation"
-                    (ok (links/get-link api-key id rel)))
-
-                  (DELETE* "/:target" [target]
-                    :return Success
-                    :query-params [api-key :- s/Str]
-                    :summary "Deletes a link to the given target (uuid)"
-                    (ok (links/delete-link api-key id rel target)))))
-
-              (context "/named_links" []
-                (POST* "/" request
-                  :return [Entity]
-                  :body [link NamedLink]
-                  :query-params [api-key :- s/Str]
-                  :summary "Creates a new named link to id :target with no inverse rel"
-                  (created (links/create-named-link api-key id link)))
-
-                (context "/:rel/:named" [rel named]
-                  (GET* "/" request
-                    :return [Entity]
-                    :query-params [api-key :- s/Str]
-                    :summary "Returns all entities associated with entity by the given relation and name"
-                    (ok (links/get-named-link api-key id rel named)))
-                  (DELETE* "/:target" [target]
-                    :return Success
-                    :query-params [api-key :- s/Str]
-                    :summary "Deletes a named link to the given target (uuid)"
-                    (ok (links/delete-named-link api-key id rel named target))))))))))
-
-    (swaggered "annotations"
-      (context "/api" []
-        (context "/v1" []
-          (context "/entities" []
-            (context "/:id" [id]
-              (context "/annotations" []
-
-                (GET* "/" []
-                  ;:return AnnotationsMap
-                  :query-params [api-key :- String]
-                  :summary "Returns all annotations associated with entity"
-                  (ok (entity/get-annotations api-key id)))
+            (context* "/links/:rel" [rel]
+              (rel-related "Project" id rel)
+              (relationships "Project" id rel))))
 
 
-                (annotation id "keywords" OvationEntity$AnnotationKeys/TAGS TagRecord TagAnnotation)
-                (annotation id "properties" OvationEntity$AnnotationKeys/PROPERTIES PropertyRecord PropertyAnnotation)
-                (annotation id "timeline-events" OvationEntity$AnnotationKeys/TIMELINE_EVENTS TimelineEventRecord TimelineEventAnnotation)
-                (annotation id "notes" OvationEntity$AnnotationKeys/NOTES NoteRecord NoteAnnotation)))))))
+        (context* "/sources" []
+          :tags ["sources"]
+          (get-resources "Source")
+          (post-resources "Source" [NewSource])
+          (context* "/:id" [id]
+            (get-resource "Source" id)
+            (post-resource "Source" id [NewSource])
+            (put-resource "Source" id)
+            (delete-resource "Source" id)
 
-    (swaggered "views"
-      (context "/api" []
-        (context "/v1" []
-          (context "/views" []
-            (GET* "/*" request
-              :return [Entity]
-              :query-params [api-key :- s/Str]
-              :summary "Returns entities in view. Views follow CouchDB calling conventions (http://wiki.apache.org/couchdb/HTTP_view_API)"
-              (let [host (util/host-from-request request)]
-                (ok (entity/get-view api-key
-                      (url-normalize (format "%s/%s?%s" host (:uri request) (util/ovation-query request)))))))))))
-    ))
+            (context* "/links/:rel" [rel]
+              (rel-related "Source" id rel)
+              (relationships "Source" id rel))))
+
+
+        (context* "/folders" []
+          :tags ["folders"]
+          (get-resources "Folder")
+          (post-resources "Folder" [NewFolder])
+          (context* "/:id" [id]
+            (get-resource "Folder" id)
+            (post-resource "Folder" id [NewFolder NewFile NewRevision])
+            (put-resource "Folder" id)
+            (delete-resource "Folder" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Folder" id rel)
+              (relationships "Folder" id rel))))
+
+
+        (context* "/files" []
+          :tags ["files"]
+          (get-resources "File")
+          (post-resources "File" [NewFile])
+          (context* "/:id" [id]
+            (get-resource "File" id)
+            (post-resource "File" id [NewRevision])
+            (put-resource "File" id)
+            (delete-resource "File" id)
+
+            ;(context* "/upload" request
+            ;  (POST*
+            ;    "/" []
+            ;    :multipart-params [file :- upload/TempFileUpload]
+            ;    :middlewares [upload/wrap-multipart-params]
+            ;    (ok (dissoc file :tempfile))))
+
+            (context* "/links/:rel" [rel]
+              (rel-related "File" id rel)
+              (relationships "File" id rel))))
+
+
+
+
+        (context* "/users" []
+          :tags ["users"]
+          (get-resources "User")
+          (context* "/:id" [id]
+            (get-resource "User" id)))
+
+
+        (context* "/provenance" []
+          :tags ["provenance"]
+          (POST* "/" request
+            :name :get-provenance
+            ;:return {:provenance ProvGraph}
+            :summary "Returns the provenance graph expanding from the POSTed entity IDs"
+            (let [auth (:auth/auth-info request)]
+              nil)))))))
 

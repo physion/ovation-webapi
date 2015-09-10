@@ -1,88 +1,172 @@
 (ns ovation.links
   (:require [ovation.util :refer [create-uri]]
-            [ovation.dao :refer [into-seq get-entity]]
-            [ring.util.http-response :as r]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [ovation.couch :as couch]
+            [ovation.util :as util]
+            [ovation.auth :as auth]
+            [ovation.core :as core]
+            [slingshot.slingshot :refer [throw+]]
+            [clojure.set :refer [union]]
+            [ovation.constants :as k]
+            [ovation.routes :as r]
+            [ovation.transform.read :as tr]))
 
 
-(defn get-entities [entity rel]
-  (.getEntities entity rel))
+;; QUERY
+(defn- eq-doc-label
+  [label]
+  (fn [doc] (if-let [doc-label (get-in doc [:attributes :label])]
+              (= label doc-label)
+              false)))
 
-(defn-traced get-link
-  "Returns all entities from entity(id)->rel and returns them"
-  [api-key id rel]
-  (into-seq api-key (into () (get-entities (get-entity api-key id) rel))))
+(defn get-links
+  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
+  (let [db (couch/db auth)
+        opts {:startkey      (if name [id rel name] [id rel])
+              :endkey        (if name [id rel name] [id rel])
+              :inclusive_end true
+              :reduce        false :include_docs true}]
+    (tr/values-from-couch
+      (couch/get-view db k/LINK-DOCS-VIEW opts)
+      routes)))
 
-(defn-traced add-link
-  "Adds a link (:rel) to entity with the given target and inverse"
-  [entity rel target & {:keys [inverse] :or {inverse nil}}]
-
-  (.addLink entity rel (create-uri target) inverse)
-  true)
-
-(defn-traced remove-link
-  "Remoes a link (:rel) from an entity"
-  [entity rel target]
-  (.removeLink entity rel (create-uri target))
-  true)
-
-(defn-traced create-link [api-key id link]
-  "Creates a new link from entity(id) -> entity(target)"
-  (let [entity (get-entity api-key id)
-        target (:target_id link)
-        inverse (:inverse_rel link)
-        rel (:rel link)]
-    (if (add-link entity rel target :inverse inverse)
-      {:success true}
-      (r/internal-server-error! "Unable to create link"))))
-
-(defn-traced delete-link [api-key id rel target]
-  "Deletes a named link on entity(id)"
-  (let [entity (get-entity api-key id)]
-    (if (remove-link entity rel target)
-      {:success true}
-      (r/internal-server-error! {:success false}))))
+(defn get-link-targets
+  "Gets the document targets for id--rel->"
+  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
+  (let [db (couch/db auth)
+        opts {:startkey      (if name [id rel name] [id rel])
+              :endkey        (if name [id rel name] [id rel])
+              :inclusive_end true
+              :reduce        false :include_docs true}]
+    (tr/entities-from-couch (if label
+                     (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
+                     (couch/get-view db k/LINKS-VIEW opts))
+      routes)))
 
 
-(defn-traced get-named-entities
-  "Calls entity.getNamedEntities"
-  [entity rel name]
-  (.getNamedEntities entity rel name))
 
-(defn-traced add-named-link
-  "Adds a named link via entity.addNamedLink"
-  [entity rel named target & {:keys [inverse] :or {inverse nil}}]
-  (.addNamedLink entity rel named (create-uri target) inverse)
-  true)
 
-(defn-traced remove-named-link
-  "Removes a named link via entity.removeNamedLink"
-  [entity rel named target]
-  (.removeNamedLink entity rel named (create-uri target))
-  true)
+;; COMMAND
+(defn- link-id
+  [source-id rel target-id & {:keys [name] :or [name nil]}]
+  (if name
+    (format "%s--%s>%s-->%s" source-id rel name target-id)
+    (format "%s--%s-->%s" source-id rel target-id)))
 
-(defn-traced get-named-link
-  "Returns all entities from entity(id)->link"
-  [api-key id rel named]
+(defn collaboration-roots
+  [doc]
+  (get-in doc [:links :_collaboration_roots] []))
 
-  (into-seq api-key (into () (get-named-entities (get-entity api-key id) rel named))))
+(defn- add-roots
+  [doc roots]
+  (let [current (collaboration-roots doc)]
+    (assoc-in doc [:links :_collaboration_roots] (union (set roots) (set current)))))
 
-(defn-traced create-named-link
-  "Creates a new link from entity(id) -> entity(target)"
-  [api-key id link]
-  (let [entity (get-entity api-key id)
-        target (:target_id link)
-        inverse (:inverse_rel link)
-        rel (:rel link)
-        named (:name link)]
-    (if (add-named-link entity rel named target :inverse inverse)
-      [entity]
-      (r/internal-server-error! "Unable to create link")))
-  )
+(defn- update-collaboration-roots-for-target
+  "[source target] -> [source target]"
+  [source target]
 
-(defn-traced delete-named-link [api-key id rel named target]
-  "Deletes a named link on entity(id)"
-  (let [entity (get-entity api-key id)]
-    (if (remove-named-link entity rel named target)
-      {:success true}
-      (r/internal-server-error! {:success false}))))
+  (let [source-roots (collaboration-roots source)
+        source-type (util/entity-type-keyword source)
+        target-roots (collaboration-roots target)
+        target-type (util/entity-type-keyword target)]
+    (cond
+      (= source-type :project) [source (add-roots target source-roots)]
+      (= target-type :project) [(add-roots source target-roots) target]
+
+
+      (= source-type :folder) [source (add-roots target source-roots)]
+      (= target-type :folder) [(add-roots source target-roots) target]
+
+      ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
+
+      :else
+      nil
+      )))
+
+(defn- update-collaboration-roots
+  "Update source and all target collaboration roots.
+  Uses a recursive strategy to update source for each target, while accumulating source and target updates. The only
+  tricky bit is that we want a (map) of sources and targets so that we can keep cumulative updates, but also want
+  a separate collection of the sources and targets that actually need to be updated. Otherwise, we try to update everything
+  even when it's not necessary."
+  [source-docs target-docs]
+
+  (loop [sources (util/into-id-map source-docs)
+         targets (util/into-id-map target-docs)
+         sources-updates {}
+         targets-updates {}
+         cross (for [source source-docs
+                     target target-docs]
+                 [(:_id source) (:_id target)])]
+
+    (if-let [[source-id target-id] (first cross)]
+      (if-let [[source-update target-update] (update-collaboration-roots-for-target (get sources source-id) (get targets target-id))]
+        (recur
+          (assoc sources source-id source-update)           ;; sources
+          (assoc targets target-id target-update)           ;; targets
+          (assoc sources-updates source-id source-update)   ;; sources-updates
+          (assoc targets-updates target-id target-update)   ;; targets-updates
+          (rest cross))
+        (recur
+          sources
+          targets
+          sources-updates
+          targets-updates
+          (rest cross)))
+
+      {:sources (vals sources-updates)
+       :targets (vals targets-updates)})
+    ))
+
+(defn make-links
+  [authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]
+
+  (for [source sources
+        target targets]
+    (let [source-roots (collaboration-roots source)
+          target-roots (collaboration-roots target)
+          source-id (:_id source)
+          target-id (:_id target)
+          base {:_id       (link-id source-id rel target-id :name name)
+                :type      util/RELATION_TYPE
+                :target_id (:_id target)
+                :source_id (:_id source)
+                :rel       rel
+                :user_id     authenticated-user-id
+                :links     {:_collaboration_roots (concat source-roots target-roots)}}
+          named (if name (assoc base :name name) base)]
+      (if inverse-rel (assoc named :inverse_rel inverse-rel) named))))
+
+(defn add-links
+  "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
+  or a Sequential collection of source documents. For each source document, links to all targets are built.
+
+  Returns
+  ```{  :updates    <updated documents>
+        :links      <new LinkInfo documents>}```
+   "
+  [auth sources rel target-ids routes & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
+                                                                                                    name nil
+                                                                                                    strict false
+                                                                                                    required-target-types nil]}]
+
+  (let [authenticated-user-id (auth/authenticated-user-id auth)
+        targets (core/get-entities auth target-ids routes)]
+
+    (when (and strict (not= (count targets) (count (into #{} target-ids))))
+      (throw+ {:type ::target-not-found :message "Target(s) not found"}))
+
+    (let [links (make-links authenticated-user-id sources rel targets inverse-rel :name name)
+          updates (update-collaboration-roots sources targets)]
+      {:links   links
+       :updates (concat (:sources updates) (:targets updates))})))
+
+
+(defn delete-links
+  ([auth routes doc user-id rel target-id & {:keys [name] :or [name nil]}]
+   (auth/check! user-id :auth/update doc)
+   (let [link-id (link-id (:_id doc) rel target-id :name name)]
+      (core/delete-values auth [link-id] routes)))
+  ([auth routes doc user-id link-id]
+   (auth/check! user-id :auth/update doc)
+   (core/delete-values auth [link-id] routes)))
