@@ -126,14 +126,42 @@
                           (assoc :type (s/eq "File"))))
 
 (s/defschema NewRevision (-> NewEntity
-                           (assoc :type (s/eq "Revision"))))
+                           (assoc :type (s/eq "Revision"))
+                           (assoc :attributes {:content_type s/Str
+                                               :data_url     s/Str
+                                               :file_name    s/Str
+                                               :version      s/Str
+                                               :head         s/Uuid
+                                               :resource     s/Uuid
+                                               s/Keyword     s/Any})))
+
 (s/defschema Revision (-> Entity
-                        (assoc :type (s/eq "Revision"))))
+                        (assoc :type (s/eq "Revision"))
+                        (assoc :attributes {:content_type s/Str
+                                            :data_url     s/Str
+                                            :file_name    s/Str
+                                            :version      s/Str
+                                            :head         s/Uuid
+                                            :resource     s/Uuid
+                                            s/Keyword     s/Any})))
 (s/defschema RevisionUpdate (-> EntityUpdate
-                              (assoc :type (s/eq "Revision"))))
+                              (assoc :type (s/eq "Revision"))
+                              (assoc :attributes {:content_type s/Str
+                                                  :data_url     s/Str
+                                                  :file_name    s/Str
+                                                  :version      s/Str
+                                                  :head         s/Uuid
+                                                  :resource     s/Uuid
+                                                  s/Keyword     s/Any})))
 
 (s/defschema User (-> Entity
                     (assoc :type (s/eq "User"))))
+
+;; -- Upload -- ;;
+(s/defschema UploadInfo {:bucket     s/Str
+                         :path       s/Str
+                         :access-key s/Str
+                         :secret-key s/Str})
 
 ;; -- Analyses -- ;;
 
@@ -172,20 +200,21 @@
                         :inverse-rel "file"}}})
 
 (def EntityRelationships
-  {:project  {:folders {:schema Entity}
-              :files   {:schema Entity}}
+  {:project  {:folders {:schema Folder}
+              :files   {:schema File}}
 
-   :source   {:children {:schema Entity}
+   :source   {:children {:schema Source}
+              :parents  {:schema Source}
+              :files    {:schema File}}
+
+   :folder   {:children {:schema Folder}
               :parents  {:schema Entity}
-              :files    {:schema Entity}}
+              :files    {:schema File}}
 
-   :folder   {:children {:schema Entity}
-              :parents  {:schema Entity}
-              :files    {:schema Entity}}
-
-   :file     {:revisions {:schema Entity}
+   :file     {:revisions {:schema Revision}
+              :head      {:schema Revision}
               :parents   {:schema Entity}}
 
-   :revision {:file {:schema Entity}}})
+   :revision {:file {:schema File}}})
 
 
