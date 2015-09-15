@@ -171,7 +171,7 @@
           (post-resources "File" [NewFile])
           (context* "/:id" [id]
             (get-resource "File" id)
-            (post-resource "File" id [NewRevision])
+            (post-resource "File" id [NewRevision])         ;; TODO (post-revision)
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -182,9 +182,8 @@
 
         (context* "/revisions" []
           :tags ["files"]
-          (get-resources "Revision")
-          (post-resources "Revision" [NewRevision])
           (context* "/:id" [id]
+            ;(post-revision id) ;; TODO
             (get-resource "Revision" id)
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
