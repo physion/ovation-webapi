@@ -14,7 +14,7 @@
   failure."
   [request authserver]
   (let [auth ((:headers request) "authorization")
-        token (and auth (last (re-find #"Token token=(.*)$" auth)))
+        token (and auth (last (re-find #"Bearer (.*)$" auth)))
         auth (auth/authorize authserver token)]             ;; throws! authserver response if failure
     (-> request
       (assoc :auth/auth-info
