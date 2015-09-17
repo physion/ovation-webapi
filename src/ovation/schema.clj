@@ -131,7 +131,7 @@
                                                :data_url     s/Str
                                                :file_name    s/Str
                                                :version      s/Str
-                                               :head         s/Uuid
+                                               :previous     [s/Uuid]
                                                :resource     s/Uuid
                                                s/Keyword     s/Any})))
 
@@ -141,7 +141,7 @@
                                             :data_url     s/Str
                                             :file_name    s/Str
                                             :version      s/Str
-                                            :head         s/Uuid
+                                            :previous     [s/Uuid]
                                             :resource     s/Uuid
                                             s/Keyword     s/Any})))
 (s/defschema RevisionUpdate (-> EntityUpdate
@@ -150,7 +150,7 @@
                                                   :data_url     s/Str
                                                   :file_name    s/Str
                                                   :version      s/Str
-                                                  :head         s/Uuid
+                                                  :previous     [s/Uuid]
                                                   :resource     s/Uuid
                                                   s/Keyword     s/Any})))
 
@@ -182,7 +182,7 @@
 
 ;; -- Relationships -- ;;
 
-(def EntityChildren
+(def EntityChildren                                         ;; relationships to create when posting a child to a parent entity
   {:project {:folder {:rel         "folders"
                       :inverse-rel "parents"}
              :file   {:rel         "files"
@@ -199,7 +199,7 @@
    :file    {:revision {:rel         "revisions"
                         :inverse-rel "file"}}})
 
-(def EntityRelationships
+(def EntityRelationships                                    ;; rels to put into entity links at read
   {:project  {:folders {:schema Folder}
               :files   {:schema File}}
 

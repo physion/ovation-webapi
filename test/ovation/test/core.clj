@@ -85,7 +85,7 @@
 
 (facts "About Command"
   (facts "`create-entity`"
-    (let [type ...type...
+    (let [type "..type.."                                    ; Anything but user
           attributes {:label ...label...}
           new-entity {:type       type
                       :attributes attributes}]

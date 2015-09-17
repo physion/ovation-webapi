@@ -27,7 +27,7 @@
 (defn mock-req
   [req apikey]
   (-> req
-    (mock/header "Authorization" (str "Bearer" apikey))
+    (mock/header "Authorization" (format "Bearer %s" apikey))
     (mock/content-type "application/json")))
 
 (defn body-json
@@ -460,7 +460,7 @@
   (entity-resource-update-tests "Folder")
   (entity-resource-deletion-tests "Folder"))
 
-(facts "About Files"
-  (entity-resource-create-tests "File")
-  (entity-resource-update-tests "File")
-  (entity-resource-deletion-tests "File"))
+;(facts "About Files"
+;  (entity-resource-create-tests "File")
+;  (entity-resource-update-tests "File")
+;  (entity-resource-deletion-tests "File"))

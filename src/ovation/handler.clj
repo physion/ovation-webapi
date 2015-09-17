@@ -156,7 +156,7 @@
           (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewFolder NewFile])
+            (post-resource "Folder" id [NewFolder NewFile NewRevision]) ;;TODO post-revision if its a revision
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -171,7 +171,7 @@
           (post-resources "File" [NewFile])
           (context* "/:id" [id]
             (get-resource "File" id)
-            (post-resource "File" id [NewRevision])         ;; TODO (post-revision)
+            (post-resource "File" id [NewRevision])         ;; TODO (post-revision) — handle _head and
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -183,7 +183,7 @@
         (context* "/revisions" []
           :tags ["files"]
           (context* "/:id" [id]
-            ;(post-revision id) ;; TODO
+            ;(post-revision id) ;; TODO post-revision
             (get-resource "Revision" id)
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
