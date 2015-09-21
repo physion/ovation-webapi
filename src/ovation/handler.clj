@@ -1,7 +1,7 @@
 (ns ovation.handler
   (:require [compojure.api.sweet :refer :all]
             [compojure.api.routes :refer [path-for*]]
-            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
+            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ovation.schema :refer :all]
             [ovation.logging]
@@ -156,7 +156,7 @@
           (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewFolder NewFile NewRevision])
+            (post-resource "Folder" id [NewFolder NewFile NewRevision]) ;;TODO post-revision if its a revision
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -171,22 +171,62 @@
           (post-resources "File" [NewFile])
           (context* "/:id" [id]
             (get-resource "File" id)
-            (post-resource "File" id [NewRevision])
+            (POST* "/" request
+              :name "create-file-entity"
+              :return {:revisions [Revision]
+                       :links     [LinkInfo]
+                       :updates   [Entity]}
+              :body [revisions [NewRevision]]
+              :summary "Creates a new downstream Revision from the current HEAD Revision"
+              (let [auth (:auth/auth-info request)]
+                (try+
+                  (let [routes (r/router request)
+                        parent (first (core/get-entities auth [id] routes))
+                        result (ovation.revisions/create-revisions auth routes parent revisions)
+                        links (core/create-values auth routes (:links result))
+                        updates (core/update-entities auth (:updates result) routes)]
+                    {:revisions (:revisions result)
+                     :links     links
+                     :updates   updates})
+                  (catch [:type :ovation.revisions/file-revision-conflict] err
+                    (conflict {:errors {:detail (:message err)}})))))
             (put-resource "File" id)
             (delete-resource "File" id)
-
-            ;(context* "/upload" request
-            ;  (POST*
-            ;    "/" []
-            ;    :multipart-params [file :- upload/TempFileUpload]
-            ;    :middlewares [upload/wrap-multipart-params]
-            ;    (ok (dissoc file :tempfile))))
 
             (context* "/links/:rel" [rel]
               (rel-related "File" id rel)
               (relationships "File" id rel))))
 
 
+        (context* "/revisions" []
+          :tags ["files"]
+          (context* "/:id" [id]
+            (get-resource "Revision" id)
+            (put-resource "Revision" id)
+            (delete-resource "Revision" id)
+            (POST* "/" request
+              :name "create-revision-entity"
+              :return {:revisions [Revision]
+                       :links     [LinkInfo]
+                       :updates   [Entity]}
+              :body [revisions [NewRevision]]
+              :summary "Creates a new downstream Revision"
+              (let [auth (:auth/auth-info request)]
+                (try+
+                  (let [routes (r/router request)
+                        parent (first (core/get-entities auth [id] routes))
+                        result (ovation.revisions/create-revisions auth routes parent revisions)
+                        links (core/create-values auth routes (:links result))
+                        updates (core/update-entities auth (:updates result) routes)]
+                    {:revisions (:revisions result)
+                     :links     links
+                     :updates   updates})
+                  (catch [:type :ovation.revisions/file-revision-conflict] err
+                    (conflict {:errors {:detail (:message err)}})))))
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Revision" id rel)
+              (relationships "Revision" id rel))))
 
 
         (context* "/users" []

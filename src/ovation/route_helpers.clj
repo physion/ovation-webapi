@@ -148,6 +148,7 @@
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
        (post-resource* request# ~type-name ~id body#))))
 
+
 (defn put-resource*
   [request id type-name type-kw updates]
   (let [entity-id (str (:_id updates))]
