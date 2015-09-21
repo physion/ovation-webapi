@@ -10,6 +10,7 @@
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
+            [ovation.revisions :as revisions]
             [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
@@ -182,7 +183,7 @@
                 (try+
                   (let [routes (r/router request)
                         parent (first (core/get-entities auth [id] routes))
-                        result (ovation.revisions/create-revisions auth routes parent revisions)
+                        result (revisions/create-revisions auth routes parent revisions)
                         links (core/create-values auth routes (:links result))
                         updates (core/update-entities auth (:updates result) routes)]
                     {:revisions (:revisions result)
@@ -215,7 +216,7 @@
                 (try+
                   (let [routes (r/router request)
                         parent (first (core/get-entities auth [id] routes))
-                        result (ovation.revisions/create-revisions auth routes parent revisions)
+                        result (revisions/create-revisions auth routes parent revisions)
                         links (core/create-values auth routes (:links result))
                         updates (core/update-entities auth (:updates result) routes)]
                     {:revisions (:revisions result)
