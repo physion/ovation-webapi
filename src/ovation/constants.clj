@@ -3,6 +3,8 @@
 
 (def USER-ENTITY "User")
 (def ANNOTATION-TYPE "Annotation")
+(def REVISION-TYPE "Revision")
+(def FILE-TYPE "File")
 (def RELATION-TYPE util/RELATION_TYPE)
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
@@ -12,6 +14,7 @@
 (def LINKS-VIEW "links")                                    ;; NB this **MUST** stay in sync with EntityDao$Views/LINKS
 (def ANNOTATIONS-VIEW "annotation_docs")
 (def LINK-DOCS-VIEW "link_docs")
+(def REVISIONS-VIEW "revisions")
 
 
 
