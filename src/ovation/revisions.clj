@@ -20,17 +20,17 @@
   [auth routes file parent new-revisions]
   (let [previous (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
         new-revs (map #(-> %
-                        (assoc-in [:attributes :resource] (:_id file))
+                        (assoc-in [:attributes :file_id] (:_id file))
                         (assoc-in [:attributes :previous] previous)) new-revisions)
         revisions (core/create-entities auth new-revs routes)
-        links-result (links/add-links auth [file] :revisions (map :_id revisions) routes :inverse-rel :resource)]
+        links-result (links/add-links auth [file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
   [auth routes parent new-revisions]
-  (let [files (core/get-entities auth [(get-in parent [:attributes :resource])] routes)]
+  (let [files (core/get-entities auth [(get-in parent [:attributes :file_id])] routes)]
     (create-revisions-from-file auth routes (first files) parent new-revisions)))
 
 (defn create-revisions

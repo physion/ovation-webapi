@@ -24,11 +24,6 @@
 (ovation.logging/setup!)
 
 
-;; Force SSL when FORCE_SSL is present. This makes it easy to disable in
-;; development, and enable in production.
-(def ^:private force-ssl? (contains? env :force-ssl))
-
-
 ;;; --- Routes --- ;;;
 (defapi app
 

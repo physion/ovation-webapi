@@ -26,14 +26,14 @@
               (provided
                 ..parent.. =contains=> {:type       k/REVISION-TYPE
                                         :_id        ..previd..
-                                        :attributes {:resource ..rsrcid..
+                                        :attributes {:file_id ..rsrcid..
                                                      :previous [..oldprev..]}}
                 (core/create-entities ..auth.. [{:type       "Revision"
                                                  :attributes {:previous [..oldprev.. ..previd..]
-                                                              :resource ..rsrcid..}}] ..rt..) => [rev]
+                                                              :file_id ..rsrcid..}}] ..rt..) => [rev]
                 ..rev.. =contains=> {:_id ..revid..}
                 (core/get-entities ..auth.. [..rsrcid..] ..rt..) => [file]
-                (links/add-links ..auth.. [file] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                (links/add-links ..auth.. [file] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                            :links   ..links..}))))
         (facts "from a File"
           (facts "with single HEAD revision"
@@ -43,7 +43,7 @@
                     rev {:type       k/REVISION-TYPE
                          :_id        ..revid..
                          :attributes {:previous [..headid..]
-                                      :resource ..fileid..}}]
+                                      :file_id ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
                                                                              :updates   []}
@@ -54,11 +54,11 @@
                   (rev/get-head-revisions ..auth.. ..rt.. ..file..) => [{:type       k/REVISION-TYPE
                                                                          :_id        ..headid..
                                                                          :attributes {:previous []
-                                                                                      :resource [..fileid..]}}]
+                                                                                      :file_id [..fileid..]}}]
                   (core/create-entities ..auth.. [{:type       "Revision"
                                                    :attributes {:previous [..headid..]
-                                                                :resource ..fileid..}}] ..rt..) => [rev]
-                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                                                                :file_id ..fileid..}}] ..rt..) => [rev]
+                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                                  :links   ..links..}))))
           (facts "without HEAD revision"
             (fact "creates a new revision"
@@ -67,7 +67,7 @@
                     rev {:type       k/REVISION-TYPE
                          :_id        ..revid..
                          :attributes {:previous [..headid..]
-                                      :resource ..fileid..}}]
+                                      :file_id ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
                                                                              :updates   []}
@@ -78,8 +78,8 @@
                   (rev/get-head-revisions ..auth.. ..rt.. ..file..) => []
                   (core/create-entities ..auth.. [{:type       "Revision"
                                                    :attributes {:previous []
-                                                                :resource ..fileid..}}] ..rt..) => [rev]
-                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                                                                :file_id ..fileid..}}] ..rt..) => [rev]
+                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                                  :links   ..links..})))))))
 
     (facts "HEAD"
