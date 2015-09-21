@@ -3,6 +3,11 @@
             [compojure.api.routes :refer [path-for*]]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.conditional :refer [if-url-starts-with]]
+            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.middleware.raygun :refer [wrap-raygun-handler]]
+            [slingshot.slingshot :refer [try+ throw+]]
+            [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
@@ -11,21 +16,17 @@
             [ovation.config :as config]
             [ovation.core :as core]
             [ovation.revisions :as revisions]
-            [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
-            [ring.middleware.conditional :refer [if-url-starts-with]]
-            [ring.middleware.logger :refer [wrap-with-logger]]
-            [ring.middleware.raygun :refer [wrap-raygun-handler]]
-            [clojure.string :refer [lower-case capitalize join]]
-            [schema.core :as s]
             [ovation.routes :as r]
             [ovation.auth :as auth]))
 
 (ovation.logging/setup!)
 
 
-
+;; Force SSL when FORCE_SSL is present. This makes it easy to disable in
+;; development, and enable in production.
+(def ^:private force-ssl? (contains? env :force-ssl))
 
 
 ;;; --- Routes --- ;;;
