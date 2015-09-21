@@ -21,7 +21,8 @@
                   file {:_id  ..rsrcid..
                         :type k/FILE-TYPE}]
               (rev/create-revisions ..auth.. ..rt.. ..parent.. [new-revision]) => {:revisions [rev]
-                                                                                   :links     ..links..}
+                                                                                   :links     ..links..
+                                                                                   :updates   []}
               (provided
                 ..parent.. =contains=> {:type       k/REVISION-TYPE
                                         :_id        ..previd..
@@ -44,7 +45,8 @@
                          :attributes {:previous [..headid..]
                                       :resource ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
-                                                                             :links     ..links..}
+                                                                             :links     ..links..
+                                                                             :updates   []}
                 (provided
                   ..file.. =contains=> {:type       k/FILE-TYPE
                                         :_id        ..fileid..
@@ -67,7 +69,8 @@
                          :attributes {:previous [..headid..]
                                       :resource ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
-                                                                             :links     ..links..}
+                                                                             :links     ..links..
+                                                                             :updates   []}
                 (provided
                   ..file.. =contains=> {:type       k/FILE-TYPE
                                         :_id        ..fileid..

@@ -25,7 +25,8 @@
         revisions (core/create-entities auth new-revs routes)
         links-result (links/add-links auth [file] :revisions (map :_id revisions) routes :inverse-rel :resource)]
     {:revisions revisions
-     :links     (:links links-result)}))
+     :links     (:links links-result)
+     :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
   [auth routes parent new-revisions]
