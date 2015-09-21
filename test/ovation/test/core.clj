@@ -100,7 +100,8 @@
                                                          :attributes attributes}]
                              :collaboration_roots []) => [...doc...]
                            (auth/authenticated-user-id ...auth...) => ...owner-id...
-                           (couch/bulk-docs ...db... [...doc...]) => ...result...]
+                           (couch/bulk-docs ...db... [...doc...]) => ...result...
+                           (tr/entities-from-couch ...result... ..routes..) => ...result...]
 
         (fact "it sends doc to Couch"
           (core/create-entities ...auth... [new-entity] ..routes..) => ...result...)
@@ -109,6 +110,7 @@
           (fact "it adds collaboration roots from parent"
             (core/create-entities ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
             (provided
+              (tr/entities-from-couch ...result... ..rt..) => ...result...
               (core/parent-collaboration-roots ...auth... ...parent... ..rt..) => ...collaboration_roots...
               (tw/to-couch ...owner-id... [{:type       type
                                             :attributes attributes}]
