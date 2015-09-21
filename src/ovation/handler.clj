@@ -11,7 +11,7 @@
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions*]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -175,18 +175,7 @@
                        :updates   [Entity]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (let [auth (:auth/auth-info request)]
-                (try+
-                  (let [routes (r/router request)
-                        parent (first (core/get-entities auth [id] routes))
-                        result (revisions/create-revisions auth routes parent revisions)
-                        links (core/create-values auth routes (:links result))
-                        updates (core/update-entities auth (:updates result) routes)]
-                    {:revisions (:revisions result)
-                     :links     links
-                     :updates   updates})
-                  (catch [:type :ovation.revisions/file-revision-conflict] err
-                    (conflict {:errors {:detail (:message err)}})))))
+              (post-revision* request id revisions))
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -208,18 +197,7 @@
                        :updates   [Entity]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
-              (let [auth (:auth/auth-info request)]
-                (try+
-                  (let [routes (r/router request)
-                        parent (first (core/get-entities auth [id] routes))
-                        result (revisions/create-revisions auth routes parent revisions)
-                        links (core/create-values auth routes (:links result))
-                        updates (core/update-entities auth (:updates result) routes)]
-                    {:revisions (:revisions result)
-                     :links     links
-                     :updates   updates})
-                  (catch [:type :ovation.revisions/file-revision-conflict] err
-                    (conflict {:errors {:detail (:message err)}})))))
+              (post-revision* request id revisions))
 
             (context* "/links/:rel" [rel]
               (rel-related "Revision" id rel)

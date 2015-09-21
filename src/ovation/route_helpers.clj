@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request]]
+            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -10,7 +10,8 @@
             [ovation.links :as links]
             [ovation.util :as util]
             [ovation.routes :as r]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ovation.revisions :as revisions]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -248,3 +249,18 @@
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
          (post-relationships* request# ~id new-links# ~rel)))))
+
+(defn post-revisions*
+  [request id revisions]
+  (let [auth (:auth/auth-info request)]
+    (try+
+      (let [routes (r/router request)
+            parent (first (core/get-entities auth [id] routes))
+            result (revisions/create-revisions auth routes parent revisions)
+            links (core/create-values auth routes (:links result))
+            updates (core/update-entities auth (:updates result) routes)]
+        {:revisions (:revisions result)
+         :links     links
+         :updates   updates})
+      (catch [:type :ovation.revisions/file-revision-conflict] err
+        (conflict {:errors {:detail (:message err)}})))))
