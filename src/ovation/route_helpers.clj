@@ -256,7 +256,9 @@
     (try+
       (let [routes (r/router request)
             parent (first (core/get-entities auth [id] routes))
-            result (revisions/create-revisions auth routes parent revisions)
+            revisions-with-ids (map #(assoc % :_id (util/make-uuid)) revisions)
+            revisions-with-resources (revisions/make-resource auth revisions-with-ids)
+            result (revisions/create-revisions auth routes parent revisions-with-resources)
             links (core/create-values auth routes (:links result))
             updates (core/update-entities auth (:updates result) routes)]
         {:revisions (:revisions result)

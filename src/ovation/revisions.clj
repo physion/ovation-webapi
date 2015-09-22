@@ -3,7 +3,11 @@
             [ovation.constants :as k]
             [slingshot.slingshot :refer [throw+]]
             [ovation.links :as links]
-            [ovation.couch :as couch]))
+            [ovation.couch :as couch]
+            [ovation.config :as config]
+            [ovation.util :as util]
+            [org.httpkit.client :as http]
+            [clojure.walk :as walk]))
 
 (defn get-head-revisions
   [auth routes file]
@@ -42,3 +46,29 @@
                   (when (> (count heads) 1)
                     (throw+ {:type ::file-revision-conflict :message "File has multiple head revisions"}))
                   (create-revisions-from-file auth routes parent (first heads) new-revisions))))
+
+
+(defn make-resource
+  [auth revision]
+  (let [body {:entity_id (:_id revision)
+              :path      (get-in revision [:attributes :name] (:_id revision))}
+        resp (http/post config/RESOURCES_SERVER {:basic-auth       [(:api_key auth) "X"]
+                                                 :body             (util/to-json body)
+                                                 :content-type     :json
+                                                 :accept           :json
+                                                 :as               :json
+                                                 :throw-exceptions true})
+        url (:public_url @resp)
+        aws (:aws @resp)
+        post-url (:url @resp)]
+    (when (nil? url)
+      (throw+ {:type ::resource-creation-failed :message "Resource creation failed" :status (:status @resp)}))
+
+    {:revision (assoc-in revision [:attributes :url] url)
+     :aws      aws
+     :post-url post-url}))
+
+(defn make-resources
+  "Create Rails Resources for each revision and update attributes accordingly"
+  [auth revisions]
+  (map #(make-resource auth %) revisions))

@@ -153,7 +153,7 @@
           (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewFolder NewFile NewRevision]) ;;TODO post-revision if its a revision
+            (post-resource "Folder" id [NewFolder NewFile])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -175,7 +175,7 @@
                        :updates   [Entity]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (post-revision* request id revisions))
+              (post-revisions* request id revisions))
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -197,7 +197,7 @@
                        :updates   [Entity]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
-              (post-revision* request id revisions))
+              (post-revisions* request id revisions))
 
             (context* "/links/:rel" [rel]
               (rel-related "Revision" id rel)

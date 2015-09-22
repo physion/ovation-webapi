@@ -6,7 +6,18 @@
             [ovation.links :as links]
             [ovation.auth :as auth]
             [ovation.constants :as k]
-            [ovation.couch :as couch]))
+            [ovation.couch :as couch]
+            [ovation.config :as config]
+            [org.httpkit.fake :refer [with-fake-http]])
+  (:import (clojure.lang ExceptionInfo)))
+
+(defn sling-throwable
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context
+                                     exception-map
+                                     (str "throw+: " map)
+                                     nil
+                                     (slingshot.support/stack-trace))))
 
 
 (facts "About Revisions"
@@ -94,4 +105,24 @@
                                                      :startkey ..fileid..
                                                      :endkey   ..fileid..}) => {:rows [{:key   ..fileid..
                                                                                         :value [[..revid..], 3]}]}
-            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))))))
+            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))))
+
+    (facts "Rails Resources"
+      (facts "`make-resource`"
+        (fact "creates a Rails Resource"
+          (let [revid "revid"]
+            (with-fake-http [config/RESOURCES_SERVER {:public_url ..url..
+                                                      :aws        ..aws..
+                                                      :url        ..post..}]
+              (rev/make-resource ..auth.. {:_id        revid
+                                           :attributes {}}) => {:revision {:_id        revid
+                                                                           :attributes {:url ..url..}}
+                                                                :aws      ..aws..
+                                                                :post-url ..post..}
+              (provided
+                ..rsrc.. =contains=> {:url ..url..}))))
+        (fact "+throws if rails API fails"
+          (let [revid "revid"]
+            (with-fake-http [config/RESOURCES_SERVER 500]
+              (rev/make-resource ..auth.. {:_id        revid
+                                           :attributes {}}) => (throws ExceptionInfo))))))))
