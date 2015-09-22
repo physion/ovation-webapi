@@ -11,7 +11,8 @@
             [ovation.util :as util]
             [ovation.routes :as r]
             [ovation.auth :as auth]
-            [ovation.revisions :as revisions]))
+            [ovation.revisions :as revisions]
+            [clojure.walk :as walk]))
 
 (defmacro annotation
   "Creates an annotation type endpoint"
@@ -266,6 +267,6 @@
          :links     links
          :updates   updates
          :aws       (map (fn [m] {:id  (get-in m [:revision :_id])
-                                  :aws (:aws m)}) revisions-with-resources)})
+                                  :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))

@@ -171,11 +171,7 @@
             (get-resource "File" id)
             (POST* "/" request
               :name "create-file-entity"
-              :return {:revisions [Revision]
-                       :links     [LinkInfo]
-                       :updates   [Entity]
-                       :aws       [{:id  s/Str
-                                    :aws {s/Str s/Any}}]}
+              :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id revisions)))
@@ -195,11 +191,7 @@
             (delete-resource "Revision" id)
             (POST* "/" request
               :name "create-revision-entity"
-              :return {:revisions [Revision]
-                       :links     [LinkInfo]
-                       :updates   [Entity]
-                       :aws       [{:id  s/Str
-                                    :aws {s/Str s/Any}}]}
+              :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))

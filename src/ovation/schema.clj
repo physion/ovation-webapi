@@ -150,6 +150,12 @@
                                                   :file_id                  s/Uuid
                                                   s/Keyword                 s/Any})))
 
+(s/defschema CreateRevisionResponse {:revisions [Revision]
+                                     :links     [LinkInfo]
+                                     :updates   [Entity]
+                                     :aws       [{:id  s/Str
+                                                  :aws {s/Keyword s/Any}}]})
+
 (s/defschema User (-> Entity
                     (assoc :type (s/eq "User"))))
 
