@@ -18,7 +18,9 @@
                                                                           :reduce   true
                                                                           :group    true}))))
         ids (first result)]
-    (core/get-entities auth ids routes)))
+    (if (nil? ids)
+      []
+      (core/get-entities auth ids routes))))
 
 (defn- create-revisions-from-file
   [auth routes file parent new-revisions]
@@ -54,21 +56,19 @@
               :path      (get-in revision [:attributes :name] (:_id revision))}
         resp (http/post config/RESOURCES_SERVER {:basic-auth       [(:api_key auth) "X"]
                                                  :body             (util/to-json body)
-                                                 :content-type     :json
-                                                 :accept           :json
-                                                 :as               :json
-                                                 :throw-exceptions true})
-        url (:public_url @resp)
-        aws (:aws @resp)
-        post-url (:url @resp)]
-    (when (nil? url)
-      (throw+ {:type ::resource-creation-failed :message "Resource creation failed" :status (:status @resp)}))
+                                                 :headers          {"Content-Type" "application/json"}})]
+    (when-not (= (:status @resp) 201)
+      (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
-    {:revision (assoc-in revision [:attributes :url] url)
-     :aws      aws
-     :post-url post-url}))
+    (let [result (util/from-json (:body @resp))
+          url (:public_url result)
+          aws (:aws result)
+          post-url (:url result)]
+      {:revision (assoc-in revision [:attributes :url] url)
+       :aws      aws
+       :post-url post-url})))
 
 (defn make-resources
   "Create Rails Resources for each revision and update attributes accordingly"
   [auth revisions]
-  (map #(make-resource auth %) revisions))
+  (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel

@@ -256,13 +256,16 @@
     (try+
       (let [routes (r/router request)
             parent (first (core/get-entities auth [id] routes))
-            revisions-with-ids (map #(assoc % :_id (util/make-uuid)) revisions)
-            revisions-with-resources (revisions/make-resource auth revisions-with-ids)
-            result (revisions/create-revisions auth routes parent revisions-with-resources)
+            revisions-with-ids (map #(assoc % :_id (str (util/make-uuid))) revisions)
+            revisions-with-resources (revisions/make-resources auth revisions-with-ids)
+            result (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
             links (core/create-values auth routes (:links result))
             updates (core/update-entities auth (:updates result) routes)]
+
         {:revisions (:revisions result)
          :links     links
-         :updates   updates})
+         :updates   updates
+         :aws       (map (fn [m] {:id  (get-in m [:revision :_id])
+                                  :aws (:aws m)}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))

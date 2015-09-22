@@ -19,7 +19,8 @@
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
             [ovation.routes :as r]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [schema.core :as s]))
 
 (ovation.logging/setup!)
 
@@ -172,10 +173,12 @@
               :name "create-file-entity"
               :return {:revisions [Revision]
                        :links     [LinkInfo]
-                       :updates   [Entity]}
+                       :updates   [Entity]
+                       :aws       [{:id  s/Str
+                                    :aws {s/Str s/Any}}]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (post-revisions* request id revisions))
+              (created (post-revisions* request id revisions)))
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -194,10 +197,12 @@
               :name "create-revision-entity"
               :return {:revisions [Revision]
                        :links     [LinkInfo]
-                       :updates   [Entity]}
+                       :updates   [Entity]
+                       :aws       [{:id  s/Str
+                                    :aws {s/Str s/Any}}]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
-              (post-revisions* request id revisions))
+              (created (post-revisions* request id revisions)))
 
             (context* "/links/:rel" [rel]
               (rel-related "Revision" id rel)
