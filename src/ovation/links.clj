@@ -131,11 +131,11 @@
                 :type      util/RELATION_TYPE
                 :target_id (:_id target)
                 :source_id (:_id source)
-                :rel       rel
-                :user_id     authenticated-user-id
+                :rel       (clojure.core/name rel)
+                :user_id   authenticated-user-id
                 :links     {:_collaboration_roots (concat source-roots target-roots)}}
           named (if name (assoc base :name name) base)]
-      (if inverse-rel (assoc named :inverse_rel inverse-rel) named))))
+      (if inverse-rel (assoc named :inverse_rel (clojure.core/name inverse-rel)) named))))
 
 (defn add-links
   "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc

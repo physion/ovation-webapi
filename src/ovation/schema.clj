@@ -128,31 +128,27 @@
 (s/defschema NewRevision (-> NewEntity
                            (assoc :type (s/eq "Revision"))
                            (assoc :attributes {:content_type s/Str
-                                               :data_url     s/Str
-                                               :file_name    s/Str
-                                               :version      s/Str
-                                               :previous     [s/Uuid]
-                                               :resource     s/Uuid
+                                               :name    s/Str
                                                s/Keyword     s/Any})))
 
 (s/defschema Revision (-> Entity
                         (assoc :type (s/eq "Revision"))
-                        (assoc :attributes {:content_type s/Str
-                                            :data_url     s/Str
-                                            :file_name    s/Str
-                                            :version      s/Str
-                                            :previous     [s/Uuid]
-                                            :resource     s/Uuid
-                                            s/Keyword     s/Any})))
+                        (assoc :attributes {:content_type             s/Str
+                                            :url                      s/Str
+                                            :name                     s/Str
+                                            (s/optional-key :version) s/Str
+                                            :previous                 [s/Uuid]
+                                            :file_id                  s/Uuid
+                                            s/Keyword                 s/Any})))
 (s/defschema RevisionUpdate (-> EntityUpdate
                               (assoc :type (s/eq "Revision"))
-                              (assoc :attributes {:content_type s/Str
-                                                  :data_url     s/Str
-                                                  :file_name    s/Str
-                                                  :version      s/Str
-                                                  :previous     [s/Uuid]
-                                                  :resource     s/Uuid
-                                                  s/Keyword     s/Any})))
+                              (assoc :attributes {:content_type             s/Str
+                                                  :url                      s/Str
+                                                  :name                     s/Str
+                                                  (s/optional-key :version) s/Str
+                                                  :previous                 [s/Uuid]
+                                                  :file_id                  s/Uuid
+                                                  s/Keyword                 s/Any})))
 
 (s/defschema User (-> Entity
                     (assoc :type (s/eq "User"))))

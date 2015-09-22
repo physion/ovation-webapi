@@ -6,7 +6,18 @@
             [ovation.links :as links]
             [ovation.auth :as auth]
             [ovation.constants :as k]
-            [ovation.couch :as couch]))
+            [ovation.couch :as couch]
+            [ovation.config :as config]
+            [org.httpkit.fake :refer [with-fake-http]])
+  (:import (clojure.lang ExceptionInfo)))
+
+(defn sling-throwable
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context
+                                     exception-map
+                                     (str "throw+: " map)
+                                     nil
+                                     (slingshot.support/stack-trace))))
 
 
 (facts "About Revisions"
@@ -26,14 +37,14 @@
               (provided
                 ..parent.. =contains=> {:type       k/REVISION-TYPE
                                         :_id        ..previd..
-                                        :attributes {:resource ..rsrcid..
+                                        :attributes {:file_id ..rsrcid..
                                                      :previous [..oldprev..]}}
                 (core/create-entities ..auth.. [{:type       "Revision"
                                                  :attributes {:previous [..oldprev.. ..previd..]
-                                                              :resource ..rsrcid..}}] ..rt..) => [rev]
+                                                              :file_id ..rsrcid..}}] ..rt..) => [rev]
                 ..rev.. =contains=> {:_id ..revid..}
                 (core/get-entities ..auth.. [..rsrcid..] ..rt..) => [file]
-                (links/add-links ..auth.. [file] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                (links/add-links ..auth.. [file] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                            :links   ..links..}))))
         (facts "from a File"
           (facts "with single HEAD revision"
@@ -43,7 +54,7 @@
                     rev {:type       k/REVISION-TYPE
                          :_id        ..revid..
                          :attributes {:previous [..headid..]
-                                      :resource ..fileid..}}]
+                                      :file_id ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
                                                                              :updates   []}
@@ -54,11 +65,11 @@
                   (rev/get-head-revisions ..auth.. ..rt.. ..file..) => [{:type       k/REVISION-TYPE
                                                                          :_id        ..headid..
                                                                          :attributes {:previous []
-                                                                                      :resource [..fileid..]}}]
+                                                                                      :file_id [..fileid..]}}]
                   (core/create-entities ..auth.. [{:type       "Revision"
                                                    :attributes {:previous [..headid..]
-                                                                :resource ..fileid..}}] ..rt..) => [rev]
-                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                                                                :file_id ..fileid..}}] ..rt..) => [rev]
+                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                                  :links   ..links..}))))
           (facts "without HEAD revision"
             (fact "creates a new revision"
@@ -67,7 +78,7 @@
                     rev {:type       k/REVISION-TYPE
                          :_id        ..revid..
                          :attributes {:previous [..headid..]
-                                      :resource ..fileid..}}]
+                                      :file_id ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
                                                                              :updates   []}
@@ -78,8 +89,8 @@
                   (rev/get-head-revisions ..auth.. ..rt.. ..file..) => []
                   (core/create-entities ..auth.. [{:type       "Revision"
                                                    :attributes {:previous []
-                                                                :resource ..fileid..}}] ..rt..) => [rev]
-                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :resource) => {:updates []
+                                                                :file_id ..fileid..}}] ..rt..) => [rev]
+                  (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                                  :links   ..links..})))))))
 
     (facts "HEAD"
@@ -94,4 +105,24 @@
                                                      :startkey ..fileid..
                                                      :endkey   ..fileid..}) => {:rows [{:key   ..fileid..
                                                                                         :value [[..revid..], 3]}]}
-            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))))))
+            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))))
+
+    (facts "Rails Resources"
+      (facts "`make-resource`"
+        (fact "creates a Rails Resource"
+          (let [revid "revid"]
+            (with-fake-http [config/RESOURCES_SERVER {:public_url ..url..
+                                                      :aws        ..aws..
+                                                      :url        ..post..}]
+              (rev/make-resource ..auth.. {:_id        revid
+                                           :attributes {}}) => {:revision {:_id        revid
+                                                                           :attributes {:url ..url..}}
+                                                                :aws      ..aws..
+                                                                :post-url ..post..}
+              (provided
+                ..rsrc.. =contains=> {:url ..url..}))))
+        (fact "+throws if rails API fails"
+          (let [revid "revid"]
+            (with-fake-http [config/RESOURCES_SERVER 500]
+              (rev/make-resource ..auth.. {:_id        revid
+                                           :attributes {}}) => (throws ExceptionInfo))))))))

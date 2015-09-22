@@ -67,10 +67,11 @@
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
-    (couch/bulk-docs db
-      (tw/to-couch (auth/authenticated-user-id auth)
-        entities
-        :collaboration_roots (parent-collaboration-roots auth parent routes)))))
+    (tr/entities-from-couch (couch/bulk-docs db
+                              (tw/to-couch (auth/authenticated-user-id auth)
+                                entities
+                                :collaboration_roots (parent-collaboration-roots auth parent routes)))
+      routes)))
 
 (defn create-values
   "POSTs value(s) direct to Couch"

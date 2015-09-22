@@ -3,29 +3,26 @@
             [compojure.api.routes :refer [path-for*]]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.conditional :refer [if-url-starts-with]]
+            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.middleware.raygun :refer [wrap-raygun-handler]]
+            [slingshot.slingshot :refer [try+ throw+]]
+            [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions*]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
             [ovation.revisions :as revisions]
-            [slingshot.slingshot :refer [try+ throw+]]
             [ovation.middleware.token-auth :refer [wrap-token-auth]]
             [ovation.links :as links]
-            [ring.middleware.conditional :refer [if-url-starts-with]]
-            [ring.middleware.logger :refer [wrap-with-logger]]
-            [ring.middleware.raygun :refer [wrap-raygun-handler]]
-            [clojure.string :refer [lower-case capitalize join]]
-            [schema.core :as s]
             [ovation.routes :as r]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [schema.core :as s]))
 
 (ovation.logging/setup!)
-
-
-
 
 
 ;;; --- Routes --- ;;;
@@ -157,7 +154,7 @@
           (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
-            (post-resource "Folder" id [NewFolder NewFile NewRevision]) ;;TODO post-revision if its a revision
+            (post-resource "Folder" id [NewFolder NewFile])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
 
@@ -176,21 +173,12 @@
               :name "create-file-entity"
               :return {:revisions [Revision]
                        :links     [LinkInfo]
-                       :updates   [Entity]}
+                       :updates   [Entity]
+                       :aws       [{:id  s/Str
+                                    :aws {s/Str s/Any}}]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (let [auth (:auth/auth-info request)]
-                (try+
-                  (let [routes (r/router request)
-                        parent (first (core/get-entities auth [id] routes))
-                        result (revisions/create-revisions auth routes parent revisions)
-                        links (core/create-values auth routes (:links result))
-                        updates (core/update-entities auth (:updates result) routes)]
-                    {:revisions (:revisions result)
-                     :links     links
-                     :updates   updates})
-                  (catch [:type :ovation.revisions/file-revision-conflict] err
-                    (conflict {:errors {:detail (:message err)}})))))
+              (created (post-revisions* request id revisions)))
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -209,21 +197,12 @@
               :name "create-revision-entity"
               :return {:revisions [Revision]
                        :links     [LinkInfo]
-                       :updates   [Entity]}
+                       :updates   [Entity]
+                       :aws       [{:id  s/Str
+                                    :aws {s/Str s/Any}}]}
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
-              (let [auth (:auth/auth-info request)]
-                (try+
-                  (let [routes (r/router request)
-                        parent (first (core/get-entities auth [id] routes))
-                        result (revisions/create-revisions auth routes parent revisions)
-                        links (core/create-values auth routes (:links result))
-                        updates (core/update-entities auth (:updates result) routes)]
-                    {:revisions (:revisions result)
-                     :links     links
-                     :updates   updates})
-                  (catch [:type :ovation.revisions/file-revision-conflict] err
-                    (conflict {:errors {:detail (:message err)}})))))
+              (created (post-revisions* request id revisions)))
 
             (context* "/links/:rel" [rel]
               (rel-related "Revision" id rel)
