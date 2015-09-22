@@ -59,8 +59,8 @@
                                                                                                                       :type        "Relation"
                                                                                                                       :source_id   (:_id doc)
                                                                                                                       :target_id   target-id
-                                                                                                                      :rel         ..rel..
-                                                                                                                      :inverse_rel ..inverse..
+                                                                                                                      :rel         (clojure.core/name ..rel..)
+                                                                                                                      :inverse_rel (clojure.core/name ..inverse..)
                                                                                                                       :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
         (fact "creates link document without inverse"
@@ -69,7 +69,7 @@
                                                                                              `:type     "Relation"
                                                                                              :source_id (:_id doc)
                                                                                              :target_id target-id
-                                                                                             :rel       ..rel..
+                                                                                             :rel       (clojure.core/name ..rel..)
                                                                                              :links     {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
         (fact "creates named link document"
           (:links (links/add-links ..auth.. [doc] ..rel.. [target-id] ..rt.. :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
@@ -78,8 +78,8 @@
                                                                                                                                      :source_id   (:_id doc)
                                                                                                                                      :target_id   target-id
                                                                                                                                      :name        ..name..
-                                                                                                                                     :inverse_rel ..inverse..
-                                                                                                                                     :rel         ..rel..
+                                                                                                                                     :inverse_rel (clojure.core/name ..inverse..)
+                                                                                                                                     :rel         (clojure.core/name ..rel..)
                                                                                                                                      :links       {:_collaboration_roots [..sourceroot.. ..targetroot..]}}))
 
 

@@ -8,7 +8,8 @@
             [ovation.constants :as k]
             [ovation.couch :as couch]
             [ovation.config :as config]
-            [org.httpkit.fake :refer [with-fake-http]])
+            [org.httpkit.fake :refer [with-fake-http]]
+            [ovation.util :as util])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn sling-throwable
@@ -111,18 +112,20 @@
       (facts "`make-resource`"
         (fact "creates a Rails Resource"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER {:public_url ..url..
-                                                      :aws        ..aws..
-                                                      :url        ..post..}]
+            (with-fake-http [config/RESOURCES_SERVER {:status 201
+                                                      :body   (util/to-json {:public_url "url"
+                                                                             :aws        "aws"
+                                                                             :url        "post"})}]
               (rev/make-resource ..auth.. {:_id        revid
                                            :attributes {}}) => {:revision {:_id        revid
-                                                                           :attributes {:url ..url..}}
-                                                                :aws      ..aws..
-                                                                :post-url ..post..}
+                                                                           :attributes {:url "url"}}
+                                                                :aws      "aws"
+                                                                :post-url "post"}
               (provided
                 ..rsrc.. =contains=> {:url ..url..}))))
         (fact "+throws if rails API fails"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER 500]
+            (with-fake-http [config/RESOURCES_SERVER {:status 500
+                                                      :body "{}"}]
               (rev/make-resource ..auth.. {:_id        revid
                                            :attributes {}}) => (throws ExceptionInfo))))))))
