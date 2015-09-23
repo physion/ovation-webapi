@@ -230,7 +230,6 @@
            (facts "create"
              (let [source-type# ~(util/entity-type-name-keyword type-name)
                    target-type# (key (first (source-type# EntityChildren)))
-                   plural-source-type# ~(util/entity-type-name-keyword type-path)
                    rel# (get-in EntityChildren [ source-type# target-type# :rel])
                    inverse_rel# (get-in EntityChildren [source-type# target-type# :inverse-rel])
 
