@@ -32,7 +32,7 @@
                 (wrap-cors
                   :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
-                  :access-control-allow-headers ["Content-Type" "Accept"])
+                  :access-control-allow-headers [:accept :content-type :authorization])
 
                 ;; Require authorization (via header token auth) for all paths starting with /api
                 (wrap-token-auth
