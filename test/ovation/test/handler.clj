@@ -381,9 +381,7 @@
                  (:status (app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/update-entities auth-info# [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-               )
-             ))))))
+                   (core/update-entities auth-info# [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-deletion-tests
