@@ -230,6 +230,7 @@
            (facts "create"
              (let [source-type# ~(util/entity-type-name-keyword type-name)
                    target-type# (key (first (source-type# EntityChildren)))
+                   plural-source-type# ~(util/entity-type-name-keyword type-path)
                    rel# (get-in EntityChildren [ source-type# target-type# :rel])
                    inverse_rel# (get-in EntityChildren [source-type# target-type# :inverse-rel])
 
@@ -237,7 +238,7 @@
                             :type ~type-name}
                    new-entity# {:type (capitalize (name target-type#))
                                 :attributes {:foo "bar"}}
-                   new-entities# [new-entity#]
+                   new-entities# {:entities [new-entity#]}
                    entity# (assoc new-entity# :_id ~(str (UUID/randomUUID))
                                               :_rev "1")
 
@@ -246,7 +247,7 @@
                    links# [{:type "Relation" :foo "bar"}]
                    ]
 
-               (against-background [(core/create-entities auth-info# new-entities# ..rt.. :parent (:_id parent#)) => [entity#]
+               (against-background [(core/create-entities auth-info# [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
                                     (core/get-entities auth-info# [(:_id parent#)] ..rt..) => [parent#]
                                     (links/add-links auth-info# [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
                                     (core/create-values auth-info# ..rt.. links#) => links#
@@ -265,19 +266,21 @@
                  (:status (app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities auth-info# new-entities# ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                   (core/create-entities auth-info# [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )
 
              ;; For top-level entities
              (when (#{"Project" "Source" "Protocol"} ~(capitalize type-name))
                (let [new-entity# {:type ~(capitalize type-name) :attributes {:foo "bar"}}
-                     new-entities# [new-entity#]
+                     plural-source-type# ~(util/entity-type-name-keyword type-path)
+
+                     new-entities# {plural-source-type# [new-entity#] }
                      entity# (assoc new-entity# :_id ~(str (UUID/randomUUID))
                                                    :_rev "1")
                      request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
                                                  (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-                 (against-background [(core/create-entities auth-info# new-entities# ..rt..) => [entity#]
+                 (against-background [(core/create-entities auth-info# [new-entity#] ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact "POST / returns status 201"
                      (let [post# (request#)]
@@ -297,7 +300,7 @@
                    (:status (app (request#))) => 401
                    (provided
                      (r/router anything) => ..rt..
-                     (core/create-entities auth-info# new-entities# ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))))))))))
+                     (core/create-entities auth-info# [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))))))))))
 
 
 (defmacro entity-resource-update-tests

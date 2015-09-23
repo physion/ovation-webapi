@@ -80,9 +80,9 @@
         type-kw (keyword type-path)]
     `(POST* "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [entities# [(apply s/either ~schemas)]]
+       :body [entities# {s/Keyword [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
-       (post-resources* request# ~type-name ~type-kw entities#))))
+       (post-resources* request# ~type-name ~type-kw (~type-kw entities#)))))
 
 (defmacro get-resource
   [entity-type id]
@@ -146,9 +146,9 @@
        :return {:entities [(apply s/either ~schemas)]
                 :links    [LinkInfo]
                 :updates  [Entity]}
-       :body [body# [(apply s/either ~schemas)]]
+       :body [body# {:entities [(apply s/either ~schemas)]}]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
-       (post-resource* request# ~type-name ~id body#))))
+       (post-resource* request# ~type-name ~id (:entities body#)))))
 
 
 (defn put-resource*
