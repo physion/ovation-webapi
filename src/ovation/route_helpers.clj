@@ -152,13 +152,13 @@
 
 
 (defn put-resource*
-  [request id type-name type-kw updates]
-  (let [entity-id (str (:_id updates))]
+  [request id type-name type-kw update]
+  (let [entity-id (str (:_id update))]
     (if-not (= id (str entity-id))
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
         (let [auth (:auth/auth-info request)
-              entities (core/update-entities auth [updates] (r/router request))]
+              entities (core/update-entities auth [update] (r/router request))]
           (ok {type-kw entities}))
 
         (catch [:type :ovation.auth/unauthorized] err
@@ -173,9 +173,9 @@
     `(PUT* "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [updates# ~(clojure.core/symbol "ovation.schema" update-type)]
+       :body [update# ~(clojure.core/symbol "ovation.schema" update-type)]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (put-resource* request# ~id ~type-name ~type-kw updates#))))
+       (put-resource* request# ~id ~type-name ~type-kw update#))))
 
 (defmacro delete-resource
   [entity-type id]
@@ -270,3 +270,11 @@
                                   :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))
+
+
+(defn get-head-revisions*
+  [request id]
+  (let [auth (:auth/auth-info request)]
+    (let [routes (r/router request)
+          file (first (core/get-entities auth [id] routes))]
+      )))
