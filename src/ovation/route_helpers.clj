@@ -158,8 +158,8 @@
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
         (let [auth (:auth/auth-info request)
-              entities (core/update-entities auth [updates] (r/router request))]
-          (ok {type-kw entities}))
+              entity (first (core/update-entities auth [updates] (r/router request)))]
+          (ok {type-kw entity}))
 
         (catch [:type :ovation.auth/unauthorized] err
           (unauthorized {:errors {:detail "Unauthorized"}}))))))
@@ -169,13 +169,13 @@
   (let [type-name (capitalize entity-type)
         update-type (format "%sUpdate" type-name)
         type-path (lower-case (str type-name "s"))
-        type-kw (keyword type-path)]
+        type-kw (util/entity-type-name-keyword type-name)]
     `(PUT* "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
-       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [updates# ~(clojure.core/symbol "ovation.schema" update-type)]
+       :return {~type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
+       :body [updates# {~type-kw ~(clojure.core/symbol "ovation.schema" update-type)}]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (put-resource* request# ~id ~type-name ~type-kw updates#))))
+       (put-resource* request# ~id ~type-name ~type-kw (~type-kw updates#)))))
 
 (defmacro delete-resource
   [entity-type id]

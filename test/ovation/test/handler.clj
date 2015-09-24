@@ -360,9 +360,10 @@
                             :links {:self "self"}}
                    new-attributes# {:bar "baz"}
                    update# (assoc (dissoc entity# :links) :attributes new-attributes#)
+                   put-body# {~(util/entity-type-name-keyword type-name) (assoc update# :_id (str id#))}
                    updated-entity# (assoc update# :_rev "2" :links {:self "self"} :_id (str id#))
                    request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
-                                                         (mock/body (json/write-str (walk/stringify-keys (assoc update# :_id (str id#)))))) apikey#))]
+                                                         (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
                (against-background [(core/update-entities auth-info# [update#] ..rt..) => [updated-entity#]
                                     (r/router anything) => ..rt..]
@@ -371,7 +372,7 @@
                      (:status response#) => 200))
                  (fact "updates single entity by ID"
                    (let [request# (request# id#)]
-                     (body-json request#)) => {~(keyword type-path) [updated-entity#]})
+                     (body-json request#)) => {~(util/entity-type-name-keyword type-name) updated-entity#})
                  (fact "fails if entity and path :id do not match"
                    (let [other-id# (str (UUID/randomUUID))
                          response# (app (request# other-id#))]
