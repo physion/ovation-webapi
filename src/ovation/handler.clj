@@ -170,13 +170,13 @@
           (context* "/:id" [id]
             (get-resource "File" id)
             (POST* "/" request
-              :name "create-file-entity"
+              :name :create-file-entity
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id revisions)))
             (GET* "/heads" request
-              :name "file-head-revisions"
+              :name :file-head-revisions
               :return {:revisions [Revision]}
               :summary "Gets the HEAD revision(s) for this file"
               (get-head-revisions* request id))
@@ -195,7 +195,7 @@
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
             (POST* "/" request
-              :name "create-revision-entity"
+              :name :create-revision-entity
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
