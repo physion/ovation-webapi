@@ -56,6 +56,8 @@
       (provided
         (r/self-route ..router.. couch) => ..route..)))
 
+  (future-fact "`add-relationship-links` adds heads to File entity links")
+
   (fact "`couch-to-value` adds self link to LinkInfo"
     (let [couch {:_id ..id..
                  :type util/RELATION_TYPE}]

@@ -464,3 +464,7 @@
 ;  (entity-resource-create-tests "File")
 ;  (entity-resource-update-tests "File")
 ;  (entity-resource-deletion-tests "File"))
+
+(facts "About revisions routes"
+  (facts "/files/:id/HEAD"
+    (future-fact "returns HEAD revisions")))
