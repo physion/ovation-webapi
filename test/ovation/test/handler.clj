@@ -180,6 +180,7 @@
                    :_rev       "123"
                    :type       "Entity"
                    :links      {:self "self"}
+                   :relationships {}
                    :attributes {}}]
 
           (against-background [(core/get-entities auth-info [id] ..rt..) => [doc]
@@ -205,7 +206,8 @@
                             :_rev       "123"
                             :type       ~type-name
                             :attributes {}
-                            :links      {:self "self"}}]
+                            :links      {:self "self"}
+                            :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
                  (against-background [(core/of-type auth-info# ~type-name ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
@@ -228,7 +230,8 @@
                             :_rev       "123"
                             :type       ~type-name
                             :attributes {}
-                            :links      {:self "self"}}]
+                            :links      {:self "self"}
+                            :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
                  (against-background [(core/get-entities auth-info# [id#] ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
@@ -357,11 +360,15 @@
                             :_id        id#
                             :_rev       "1"
                             :attributes attributes#
-                            :links {:self "self"}}
+                            :links      {:self "self"}
+                            :relationships {}}
                    new-attributes# {:bar "baz"}
-                   update# (assoc (dissoc entity# :links) :attributes new-attributes#)
+                   update# (-> entity#
+                             (dissoc :links)
+                             (dissoc :relationships)
+                             (assoc :attributes new-attributes#))
                    put-body# {~(util/entity-type-name-keyword type-name) (assoc update# :_id (str id#))}
-                   updated-entity# (assoc update# :_rev "2" :links {:self "self"} :_id (str id#))
+                   updated-entity# (assoc update# :_rev "2" :links {:self "self"} :relationships {} :_id (str id#))
                    request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
                                                          (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
@@ -458,3 +465,8 @@
   (entity-resources-read-tests "File")
   (entity-resource-update-tests "File")
   (entity-resource-deletion-tests "File"))
+
+
+(facts "About revisions routes"
+  (facts "/files/:id/HEAD"
+    (future-fact "returns HEAD revisions")))
