@@ -8,7 +8,7 @@
 
 (facts "About get-head-revisions*"
   (fact "returns HEAD revisions for file"
-    (r/get-head-revisions* ..req.. ..id..) => {:body ..revs.. :headers {} :status 200}
+    (r/get-head-revisions* ..req.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
     (provided
       ..req.. =contains=> {:auth/auth-info ..auth..}
       ..file.. =contains=> {:type "File"}

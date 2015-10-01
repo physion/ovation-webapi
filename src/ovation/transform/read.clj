@@ -12,12 +12,10 @@
 (defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
   [e rt]
-  (let [id (:_id e)
-        prefix (r/annotations-route rt e)
-        properties {:properties (clojure.string/join [prefix "/properties"])}
-        tags {:tags (clojure.string/join [prefix "/tags"])}
-        timeline-events {:timeline-events (clojure.string/join [prefix "/timeline-events"])}
-        notes {:notes (clojure.string/join [prefix "/notes"])}]
+  (let [properties {:properties (r/annotations-route rt e "properties")}
+        tags {:tags (r/annotations-route rt e "tags")}
+        timeline-events {:timeline-events (r/annotations-route rt e "timeline_events")}
+        notes {:notes (r/annotations-route rt e "notes")}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
 (defn remove-private-links

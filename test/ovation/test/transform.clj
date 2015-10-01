@@ -18,10 +18,16 @@
                                                                        :properties      "/api/v1/entities/123/annotations/properties"
                                                                        :tags            "/api/v1/entities/123/annotations/tags"
                                                                        :notes           "/api/v1/entities/123/annotations/notes"
-                                                                       :timeline-events "/api/v1/entities/123/annotations/timeline-events"}}
+                                                                       :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
     (provided
       (r/annotations-route ..rt.. {:_id   "123"
-                                   :links {:foo "bar"}}) => "/api/v1/entities/123/annotations")))
+                                   :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
 (facts "About DTO link modifications"
   (fact "`remove-hidden-links` removes '_...' links"
