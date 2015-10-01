@@ -38,7 +38,8 @@
                               [rel {:self (r/relationship-route rt dto rel)
                                     :related (r/targets-route rt dto rel)}]
                               ) relationships))]
-    (assoc-in dto [:links] (merge links (get dto :links {})))))
+
+    (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
 
 (defn add-self-link
   "Adds self link to dto"

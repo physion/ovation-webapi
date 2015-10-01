@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict not-found!]]
+            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -80,9 +80,9 @@
         type-kw (keyword type-path)]
     `(POST* "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [entities# [(apply s/either ~schemas)]]
+       :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
-       (post-resources* request# ~type-name ~type-kw entities#))))
+       (post-resources* request# ~type-name ~type-kw (~type-kw entities#)))))
 
 (defmacro get-resource
   [entity-type id]
@@ -146,20 +146,20 @@
        :return {:entities [(apply s/either ~schemas)]
                 :links    [LinkInfo]
                 :updates  [Entity]}
-       :body [body# [(apply s/either ~schemas)]]
+       :body [body# {:entities [(apply s/either ~schemas)]}]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
-       (post-resource* request# ~type-name ~id body#))))
+       (post-resource* request# ~type-name ~id (:entities body#)))))
 
 
 (defn put-resource*
-  [request id type-name type-kw update]
-  (let [entity-id (str (:_id update))]
+  [request id type-name type-kw updates]
+  (let [entity-id (str (:_id updates))]
     (if-not (= id (str entity-id))
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
         (let [auth (:auth/auth-info request)
-              entities (core/update-entities auth [update] (r/router request))]
-          (ok {type-kw entities}))
+              entity (first (core/update-entities auth [updates] (r/router request)))]
+          (ok {type-kw entity}))
 
         (catch [:type :ovation.auth/unauthorized] err
           (unauthorized {:errors {:detail "Unauthorized"}}))))))
@@ -169,13 +169,13 @@
   (let [type-name (capitalize entity-type)
         update-type (format "%sUpdate" type-name)
         type-path (lower-case (str type-name "s"))
-        type-kw (keyword type-path)]
+        type-kw (util/entity-type-name-keyword type-name)]
     `(PUT* "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
-       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :body [update# ~(clojure.core/symbol "ovation.schema" update-type)]
+       :return {~type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
+       :body [updates# {~type-kw ~(clojure.core/symbol "ovation.schema" update-type)}]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (put-resource* request# ~id ~type-name ~type-kw update#))))
+       (put-resource* request# ~id ~type-name ~type-kw (~type-kw updates#)))))
 
 (defmacro delete-resource
   [entity-type id]
@@ -270,13 +270,3 @@
                                   :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))
-
-
-(defn get-head-revisions*
-  [request id]
-  (let [auth (:auth/auth-info request)]
-    (let [routes (r/router request)
-          file (first (core/get-entities auth [id] routes))]
-      (when (nil? file)
-        (not-found! {:errors (format "Unable to find file %s" id)}))
-      (revisions/get-head-revisions auth routes file))))

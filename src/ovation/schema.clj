@@ -81,15 +81,15 @@
 
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
+                      :relationships {s/Keyword {:self              s/Str
+                                                 :related           s/Str
+                                                 }
+                                      }
                       :links {:self                                  s/Str
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
                               (s/optional-key :timeline-events)      s/Str
-
-                              s/Keyword                              {:self    s/Str
-                                                                      :related s/Str}
-
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
