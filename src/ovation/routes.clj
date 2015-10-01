@@ -25,6 +25,10 @@
         id (:_id doc)]
     (rt (keyword (format "get-%s" type)) {:id id})))
 
+(defn heads-route
+  [rt doc]
+  (rt :file-head-revisions {:id (:_id doc)}))
+
 (defn annotations-route
   [rt doc]
   (rt :annotations {:id (:_id doc)}))

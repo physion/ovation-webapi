@@ -13,7 +13,9 @@
             [ovation.links :as links]
             [clojure.string :refer [lower-case capitalize]]
             [ovation.annotations :as annotations]
-            [ovation.routes :as r])
+            [ovation.routes :as r]
+            [ovation.constants :as k]
+            [ovation.revisions :as revisions])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -469,4 +471,31 @@
 
 (facts "About revisions routes"
   (facts "/files/:id/HEAD"
-    (future-fact "returns HEAD revisions")))
+    (let []
+      (fact "returns HEAD revisions"
+        (let [apikey "--apikey--"
+              auth-info {:user "..user.."}
+              id (str (UUID/randomUUID))
+              doc {:_id           id
+                   :_rev          "123"
+                   :type          k/FILE-TYPE
+                   :links         {:self "self"}
+                   :relationships {}
+                   :attributes    {}}
+              revs [{:_id           id
+                     :_rev          "123"
+                     :type          k/REVISION-TYPE
+                     :links         {:self "self"}
+                     :relationships {}
+                     :attributes    {:content_type             ""
+                                     :name                     ""
+                                     :url                      ""
+                                     :previous                 [(str (util/make-uuid))]
+                                     :file_id                  (str (util/make-uuid))}}]
+              get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
+          (body-json get) => {:revisions revs}
+          (provided
+            (auth/authorize anything apikey) => auth-info
+            (core/get-entities auth-info [id] ..rt..) => [doc]
+            (r/router anything) => ..rt..
+            (revisions/get-head-revisions auth-info ..rt.. doc) => revs))))))

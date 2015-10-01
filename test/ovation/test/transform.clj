@@ -6,7 +6,8 @@
             [ovation.routes :as r]
             [ovation.schema :as s]
             [ovation.util :as util]
-            [ovation.constants :as c]))
+            [ovation.constants :as c]
+            [ovation.constants :as k]))
 
 
 (facts "About annotation links"
@@ -47,6 +48,18 @@
         (r/relationship-route ..rt.. dto :relA) => ..relA-self..
         (r/relationship-route ..rt.. dto :relB) => ..relB-self..)))
 
+
+  (fact "`add-relationship-links` adds heads to File entity links"
+    (let [type-rel {}
+          type k/FILE-TYPE
+          typekw (util/entity-type-name-keyword type)
+          dto {:type type :links {:_collaboration_roots [..collab..]}}]
+      (tr/add-heads-link dto ..rt..) => (-> dto
+                                                  (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
+                                                                      :heads ..headrt..}))
+      (provided
+        (r/heads-route ..rt.. dto) => ..headrt..)))
+
   (fact "`add-self-link` adds self link to entity"
     (let [couch {:_id   ..id..
                  :type  ..type..
@@ -56,8 +69,6 @@
                                               :links {:self ..route..}}
       (provided
         (r/self-route ..router.. couch) => ..route..)))
-
-  (future-fact "`add-relationship-links` adds heads to File entity links")
 
   (fact "`couch-to-value` adds self link to LinkInfo"
     (let [couch {:_id ..id..

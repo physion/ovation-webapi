@@ -283,4 +283,4 @@
     ;(when-not (= "File" (:type file))
     ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
 
-    (ok (revisions/get-head-revisions auth routes file))))
+    (ok {:revisions (revisions/get-head-revisions auth routes file)})))
