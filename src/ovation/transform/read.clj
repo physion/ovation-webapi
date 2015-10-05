@@ -5,7 +5,8 @@
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
             [ovation.constants :as c]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [ovation.constants :as k]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -41,6 +42,12 @@
 
     (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
 
+(defn add-heads-link
+  [dto rt]
+  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/FILE-TYPE))
+    (assoc-in dto [:links :heads] (r/heads-route rt dto))
+    dto))
+
 (defn add-self-link
   "Adds self link to dto"
   [dto rt]
@@ -66,6 +73,7 @@
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
             (add-self-link router)
+            (add-heads-link router)
             (add-annotation-links router)
             (add-relationship-links router)
             (assoc-in [:links :_collaboration_roots] collaboration-roots)))

@@ -11,7 +11,7 @@
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions*]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions*]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -124,7 +124,7 @@
           (post-resources "Project" [NewProject])
           (context* "/:id" [id]
             (get-resource "Project" id)
-            (post-resource "Project" id [NewEntity])
+            (post-resource "Project" id [NewFolder NewFile])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
@@ -170,11 +170,16 @@
           (context* "/:id" [id]
             (get-resource "File" id)
             (POST* "/" request
-              :name "create-file-entity"
+              :name :create-file-entity
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id revisions)))
+            (GET* "/heads" request
+              :name :file-head-revisions
+              :return {:revisions [Revision]}
+              :summary "Gets the HEAD revision(s) for this file"
+              (get-head-revisions* request id))
             (put-resource "File" id)
             (delete-resource "File" id)
 
@@ -190,7 +195,7 @@
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
             (POST* "/" request
-              :name "create-revision-entity"
+              :name :create-revision-entity
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"

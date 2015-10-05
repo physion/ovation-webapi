@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -270,3 +270,17 @@
                                   :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))
+
+(defn get-head-revisions*
+  [request id]
+  (let [auth (:auth/auth-info request)
+        routes (r/router request)
+        file (first (core/get-entities auth [id] routes))]
+
+    (when (nil? file)
+      (not-found! {:errors {:detail "File not found"}}))
+
+    ;(when-not (= "File" (:type file))
+    ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
+
+    (ok {:revisions (revisions/get-head-revisions auth routes file)})))
