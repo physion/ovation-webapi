@@ -35,6 +35,8 @@
       ensure-id
       add-api-version
       (add-owner owner-id)
+      (dissoc :links)
+      (dissoc :relationships)
       (add-collaboration-roots collaboration-roots))
     doc))
 

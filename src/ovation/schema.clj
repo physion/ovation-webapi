@@ -5,7 +5,7 @@
             [ovation.util :as util]))
 
 ;; -- Json API -- ;;
-(s/defschema JsonApiError {:errors {s/Keyword s/Any
+(s/defschema JsonApiError {:errors {s/Keyword                s/Any
                                     (s/optional-key :detail) s/Str}})
 
 
@@ -81,9 +81,9 @@
 
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
-                      :relationships {s/Keyword {:self              s/Str
-                                                 :related           s/Str
-                                                 }
+                      :relationships {s/Keyword {
+                                                 :self    s/Str
+                                                 :related s/Str}
                                       }
                       :links {:self                                  s/Str
                               (s/optional-key :tags)                 s/Str
@@ -93,62 +93,62 @@
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
-(s/defschema EntityUpdate (dissoc BaseEntity :links))
+(s/defschema EntityUpdate (dissoc BaseEntity :links :relationships))
 
 ;; -- Entity types --;;
 (s/defschema NewProject (-> NewEntity
-                          (assoc :type (s/eq "Project"))))
+                            (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
-                       (assoc :type (s/eq "Project"))))
+                         (assoc :type (s/eq "Project"))))
 (s/defschema ProjectUpdate (-> EntityUpdate
-                             (assoc :type (s/eq "Project"))))
+                               (assoc :type (s/eq "Project"))))
 
 (s/defschema NewSource (-> NewEntity
-                         (assoc :type (s/eq "Source"))))
+                           (assoc :type (s/eq "Source"))))
 (s/defschema Source (-> Entity
-                      (assoc :type (s/eq "Source"))))
+                        (assoc :type (s/eq "Source"))))
 (s/defschema SourceUpdate (-> EntityUpdate
-                            (assoc :type (s/eq "Source"))))
+                              (assoc :type (s/eq "Source"))))
 
 
 (s/defschema NewFolder (-> NewEntity
-                         (assoc :type (s/eq "Folder"))))
+                           (assoc :type (s/eq "Folder"))))
 (s/defschema Folder (-> Entity
-                      (assoc :type (s/eq "Folder"))))
+                        (assoc :type (s/eq "Folder"))))
 (s/defschema FolderUpdate (-> EntityUpdate
-                            (assoc :type (s/eq "Folder"))))
+                              (assoc :type (s/eq "Folder"))))
 
 (s/defschema NewFile (-> NewEntity
-                       (assoc :type (s/eq "File"))))
+                         (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                    (assoc :type (s/eq "File"))))
+                      (assoc :type (s/eq "File"))))
 (s/defschema FileUpdate (-> EntityUpdate
-                          (assoc :type (s/eq "File"))))
+                            (assoc :type (s/eq "File"))))
 
 (s/defschema NewRevision (-> NewEntity
-                           (assoc :type (s/eq "Revision"))
-                           (assoc :attributes {:content_type s/Str
-                                               :name    s/Str
-                                               s/Keyword     s/Any})))
+                             (assoc :type (s/eq "Revision"))
+                             (assoc :attributes {:content_type s/Str
+                                                 :name         s/Str
+                                                 s/Keyword     s/Any})))
 
 (s/defschema Revision (-> Entity
-                        (assoc :type (s/eq "Revision"))
-                        (assoc :attributes {:content_type             s/Str
-                                            :url                      s/Str
-                                            :name                     s/Str
-                                            (s/optional-key :version) s/Str
-                                            :previous                 [s/Uuid]
-                                            :file_id                  s/Uuid
-                                            s/Keyword                 s/Any})))
+                          (assoc :type (s/eq "Revision"))
+                          (assoc :attributes {:content_type             s/Str
+                                              :url                      s/Str
+                                              :name                     s/Str
+                                              (s/optional-key :version) s/Str
+                                              :previous                 [s/Uuid]
+                                              :file_id                  s/Uuid
+                                              s/Keyword                 s/Any})))
 (s/defschema RevisionUpdate (-> EntityUpdate
-                              (assoc :type (s/eq "Revision"))
-                              (assoc :attributes {:content_type             s/Str
-                                                  :url                      s/Str
-                                                  :name                     s/Str
-                                                  (s/optional-key :version) s/Str
-                                                  :previous                 [s/Uuid]
-                                                  :file_id                  s/Uuid
-                                                  s/Keyword                 s/Any})))
+                                (assoc :type (s/eq "Revision"))
+                                (assoc :attributes {:content_type             s/Str
+                                                    :url                      s/Str
+                                                    :name                     s/Str
+                                                    (s/optional-key :version) s/Str
+                                                    :previous                 [s/Uuid]
+                                                    :file_id                  s/Uuid
+                                                    s/Keyword                 s/Any})))
 
 (s/defschema CreateRevisionResponse {:revisions [Revision]
                                      :links     [LinkInfo]
@@ -157,7 +157,7 @@
                                                   :aws {s/Keyword s/Any}}]})
 
 (s/defschema User (-> Entity
-                    (assoc :type (s/eq "User"))))
+                      (assoc :type (s/eq "User"))))
 
 ;; -- Upload -- ;;
 (s/defschema UploadInfo {:bucket     s/Str

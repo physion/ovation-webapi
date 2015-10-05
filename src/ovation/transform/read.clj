@@ -35,7 +35,7 @@
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
                               [rel {:self (r/relationship-route rt dto rel)
-                                    :related (r/targets-route rt dto rel)}]
+                                            :related (r/targets-route rt dto rel)}]
                               ) relationships))]
 
     (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
@@ -70,6 +70,7 @@
             (remove-user-attributes)
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
+            (dissoc :relationships)
             (add-self-link router)
             (add-heads-link router)
             (add-annotation-links router)
