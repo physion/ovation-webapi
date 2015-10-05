@@ -30,5 +30,5 @@
   (rt :file-head-revisions {:id (:_id doc)}))
 
 (defn annotations-route
-  [rt doc]
-  (rt :annotations {:id (:_id doc)}))
+  [rt doc annotation-type]
+  (rt (keyword (format "get-%s" annotation-type)) {:id (:_id doc)}))
