@@ -6,7 +6,8 @@
             [ovation.routes :as r]
             [ovation.schema :as s]
             [ovation.util :as util]
-            [ovation.constants :as c]))
+            [ovation.constants :as c]
+            [ovation.constants :as k]))
 
 
 (facts "About annotation links"
@@ -17,10 +18,16 @@
                                                                        :properties      "/api/v1/entities/123/annotations/properties"
                                                                        :tags            "/api/v1/entities/123/annotations/tags"
                                                                        :notes           "/api/v1/entities/123/annotations/notes"
-                                                                       :timeline-events "/api/v1/entities/123/annotations/timeline-events"}}
+                                                                       :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
     (provided
       (r/annotations-route ..rt.. {:_id   "123"
-                                   :links {:foo "bar"}}) => "/api/v1/entities/123/annotations")))
+                                   :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
+      (r/annotations-route ..rt.. {:_id   "123"
+                                   :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
 (facts "About DTO link modifications"
   (fact "`remove-hidden-links` removes '_...' links"
@@ -33,11 +40,12 @@
     (let [type-rel {:relA {}
                     :relB {}}
           dto {:type ..type.. :links {:_collaboration_roots [..collab..]}}]
-      (tr/add-relationship-links dto ..rt..) => (assoc-in dto [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
-                                                                        :relA {:self ..relA-self..
-                                                                               :related ..relA-related..}
-                                                                        :relB {:self ..relB-self..
-                                                                               :related ..relB-related..}})
+      (tr/add-relationship-links dto ..rt..) => (-> dto
+                                                  (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])})
+                                                  (assoc-in [:relationships] {:relA {:self    ..relA-self..
+                                                                                     :related ..relA-related..}
+                                                                              :relB {:self    ..relB-self..
+                                                                                     :related ..relB-related..}}))
       (provided
         (util/entity-type-keyword dto) => ..type..
         (s/EntityRelationships ..type..) => type-rel
@@ -45,6 +53,18 @@
         (r/targets-route ..rt.. dto :relB) => ..relB-related..
         (r/relationship-route ..rt.. dto :relA) => ..relA-self..
         (r/relationship-route ..rt.. dto :relB) => ..relB-self..)))
+
+
+  (fact "`add-relationship-links` adds heads to File entity links"
+    (let [type-rel {}
+          type k/FILE-TYPE
+          typekw (util/entity-type-name-keyword type)
+          dto {:type type :links {:_collaboration_roots [..collab..]}}]
+      (tr/add-heads-link dto ..rt..) => (-> dto
+                                                  (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
+                                                                      :heads ..headrt..}))
+      (provided
+        (r/heads-route ..rt.. dto) => ..headrt..)))
 
   (fact "`add-self-link` adds self link to entity"
     (let [couch {:_id   ..id..

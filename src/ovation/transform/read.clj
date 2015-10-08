@@ -5,18 +5,17 @@
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
             [ovation.constants :as c]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [ovation.constants :as k]))
 
 
 (defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
   [e rt]
-  (let [id (:_id e)
-        prefix (r/annotations-route rt e)
-        properties {:properties (clojure.string/join [prefix "/properties"])}
-        tags {:tags (clojure.string/join [prefix "/tags"])}
-        timeline-events {:timeline-events (clojure.string/join [prefix "/timeline-events"])}
-        notes {:notes (clojure.string/join [prefix "/notes"])}]
+  (let [properties {:properties (r/annotations-route rt e "properties")}
+        tags {:tags (r/annotations-route rt e "tags")}
+        timeline-events {:timeline-events (r/annotations-route rt e "timeline_events")}
+        notes {:notes (r/annotations-route rt e "notes")}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
 (defn remove-private-links
@@ -36,9 +35,16 @@
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
                               [rel {:self (r/relationship-route rt dto rel)
-                                    :related (r/targets-route rt dto rel)}]
+                                            :related (r/targets-route rt dto rel)}]
                               ) relationships))]
-    (assoc-in dto [:links] (merge links (get dto :links {})))))
+
+    (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
+
+(defn add-heads-link
+  [dto rt]
+  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/FILE-TYPE))
+    (assoc-in dto [:links :heads] (r/heads-route rt dto))
+    dto))
 
 (defn add-self-link
   "Adds self link to dto"
@@ -64,7 +70,9 @@
             (remove-user-attributes)
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
+            (dissoc :relationships)
             (add-self-link router)
+            (add-heads-link router)
             (add-annotation-links router)
             (add-relationship-links router)
             (assoc-in [:links :_collaboration_roots] collaboration-roots)))
