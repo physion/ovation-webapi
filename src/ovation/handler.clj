@@ -172,9 +172,9 @@
             (POST* "/" request
               :name :create-file-entity
               :return CreateRevisionResponse
-              :body [revisions [NewRevision]]
+              :body   [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (created (post-revisions* request id revisions)))
+              (created (post-revisions* request id (:entities revisions))))
             (GET* "/heads" request
               :name :file-head-revisions
               :return {:revisions [Revision]}

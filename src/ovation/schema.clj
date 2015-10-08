@@ -86,6 +86,7 @@
                                                  :related s/Str}
                                       }
                       :links {:self                                  s/Str
+                              (s/optional-key :heads)                s/Str
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
@@ -121,7 +122,9 @@
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                      (assoc :type (s/eq "File"))))
+                      (assoc :type (s/eq "File"))
+                      (assoc-in [:links :heads] s/Str)))
+
 (s/defschema FileUpdate (-> EntityUpdate
                             (assoc :type (s/eq "File"))))
 
@@ -150,7 +153,7 @@
                                                     :file_id                  s/Uuid
                                                     s/Keyword                 s/Any})))
 
-(s/defschema CreateRevisionResponse {:revisions [Revision]
+(s/defschema CreateRevisionResponse {:entities [Revision]
                                      :links     [LinkInfo]
                                      :updates   [Entity]
                                      :aws       [{:id  s/Str
