@@ -128,4 +128,10 @@
             (with-fake-http [config/RESOURCES_SERVER {:status 500
                                                       :body "{}"}]
               (rev/make-resource ..auth.. {:_id        revid
-                                           :attributes {}}) => (throws ExceptionInfo))))))))
+                                           :attributes {}}) => (throws ExceptionInfo))))
+        (fact "does not create a Rails resource if :url is present already"
+          (rev/make-resource ..auth.. ..rev..) => {:revision ..rev..
+                                                   :aws      {}
+                                                   :post-url ..url..}
+          (provided
+            ..rev.. =contains=> {:url ..url..}))))))

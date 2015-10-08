@@ -263,7 +263,7 @@
             links (core/create-values auth routes (:links result))
             updates (core/update-entities auth (:updates result) routes)]
 
-        {:revisions (:revisions result)
+        {:entities (:revisions result)
          :links     links
          :updates   updates
          :aws       (map (fn [m] {:id  (get-in m [:revision :_id])

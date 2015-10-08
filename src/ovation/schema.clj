@@ -86,6 +86,7 @@
                                                  :related s/Str}
                                       }
                       :links {:self                                  s/Str
+                              (s/optional-key :heads)                s/Str
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
@@ -121,15 +122,19 @@
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                      (assoc :type (s/eq "File"))))
+                      (assoc :type (s/eq "File"))
+                      (assoc-in [:links :heads] s/Str)))
+
 (s/defschema FileUpdate (-> EntityUpdate
                             (assoc :type (s/eq "File"))))
 
 (s/defschema NewRevision (-> NewEntity
                              (assoc :type (s/eq "Revision"))
-                             (assoc :attributes {:content_type s/Str
-                                                 :name         s/Str
-                                                 s/Keyword     s/Any})))
+                             (assoc :attributes {:content_type             s/Str
+                                                 :name                     s/Str
+                                                 (s/optional-key :url)     s/Str
+                                                 (s/optional-key :version) s/Str
+                                                 s/Keyword                 s/Any})))
 
 (s/defschema Revision (-> Entity
                           (assoc :type (s/eq "Revision"))
@@ -150,7 +155,7 @@
                                                     :file_id                  s/Uuid
                                                     s/Keyword                 s/Any})))
 
-(s/defschema CreateRevisionResponse {:revisions [Revision]
+(s/defschema CreateRevisionResponse {:entities [Revision]
                                      :links     [LinkInfo]
                                      :updates   [Entity]
                                      :aws       [{:id  s/Str
