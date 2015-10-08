@@ -52,21 +52,26 @@
 
 (defn make-resource
   [auth revision]
-  (let [body {:entity_id (:_id revision)
-              :path      (get-in revision [:attributes :name] (:_id revision))}
-        resp (http/post config/RESOURCES_SERVER {:basic-auth       [(:api_key auth) "X"]
-                                                 :body             (util/to-json body)
-                                                 :headers          {"Content-Type" "application/json"}})]
-    (when-not (= (:status @resp) 201)
-      (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
+  (if (:url revision)
+    {:revision revision
+     :aws      {}
+     :post-url (:url revision)}
 
-    (let [result (util/from-json (:body @resp))
-          url (:public_url result)
-          aws (:aws result)
-          post-url (:url result)]
-      {:revision (assoc-in revision [:attributes :url] url)
-       :aws      aws
-       :post-url post-url})))
+    (let [body {:entity_id (:_id revision)
+                :path      (get-in revision [:attributes :name] (:_id revision))}
+          resp (http/post config/RESOURCES_SERVER {:basic-auth [(:api_key auth) "X"]
+                                                   :body       (util/to-json body)
+                                                   :headers    {"Content-Type" "application/json"}})]
+      (when-not (= (:status @resp) 201)
+        (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
+
+      (let [result (util/from-json (:body @resp))
+            url (:public_url result)
+            aws (:aws result)
+            post-url (:url result)]
+        {:revision (assoc-in revision [:attributes :url] url)
+         :aws      aws
+         :post-url post-url}))))
 
 (defn make-resources
   "Create Rails Resources for each revision and update attributes accordingly"

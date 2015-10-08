@@ -127,9 +127,11 @@
 
 (s/defschema NewRevision (-> NewEntity
                              (assoc :type (s/eq "Revision"))
-                             (assoc :attributes {:content_type s/Str
-                                                 :name         s/Str
-                                                 s/Keyword     s/Any})))
+                             (assoc :attributes {:content_type             s/Str
+                                                 :name                     s/Str
+                                                 (s/optional-key :url)     s/Str
+                                                 (s/optional-key :version) s/Str
+                                                 s/Keyword                 s/Any})))
 
 (s/defschema Revision (-> Entity
                           (assoc :type (s/eq "Revision"))
