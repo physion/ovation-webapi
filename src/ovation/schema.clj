@@ -122,8 +122,7 @@
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                      (assoc :type (s/eq "File"))
-                      (assoc-in [:links :heads] s/Str)))
+                      (assoc :type (s/eq "File"))))
 
 (s/defschema FileUpdate (-> EntityUpdate
                             (assoc :type (s/eq "File"))))
