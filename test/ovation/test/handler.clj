@@ -493,7 +493,7 @@
                                      :previous                 [(str (util/make-uuid))]
                                      :file_id                  (str (util/make-uuid))}}]
               get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
-          (body-json get) => {:entities revs}
+          (body-json get) => {:revisions revs}
           (provided
             (auth/authorize anything apikey) => auth-info
             (core/get-entities auth-info [id] ..rt..) => [doc]
