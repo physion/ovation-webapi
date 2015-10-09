@@ -94,7 +94,7 @@
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
-(s/defschema EntityUpdate (dissoc BaseEntity :links :relationships))
+(s/defschema EntityUpdate (dissoc Entity :links :relationships))
 
 ;; -- Entity types --;;
 (s/defschema NewProject (-> NewEntity
