@@ -29,7 +29,8 @@
           (fact "creates a new revision with resource attribute and appending parent id to previous chain"
             (let [new-revision {:type       k/REVISION-TYPE
                                 :attributes {}}
-                  rev {:_id ..revid..}
+                  rev {:_id ..revid..
+                       :_rev ..revrev..}
                   file {:_id  ..rsrcid..
                         :type k/FILE-TYPE}]
               (rev/create-revisions ..auth.. ..rt.. ..parent.. [new-revision]) => {:revisions [rev]
@@ -53,9 +54,10 @@
               (let [newrev {:type       k/REVISION-TYPE
                             :attributes {}}
                     rev {:type       k/REVISION-TYPE
+                         :_rev       ..revrev..
                          :_id        ..revid..
                          :attributes {:previous [..headid..]
-                                      :file_id ..fileid..}}]
+                                      :file_id  ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
                                                                              :updates   []}
