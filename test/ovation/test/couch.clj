@@ -63,6 +63,6 @@
 (facts "About merge-updates"
   (fact "updates _rev"
     (let [docs [{:_id ..id1.. :_rev ..rev1..} {:_id ..id2.. :_rev ..rev2..}]
-          updates [{:_id ..id1.. :_rev ..rev3..}]]
+          updates [{:id ..id1.. :rev ..rev3..}]]
       (couch/merge-updates docs updates) => [{:_id ..id1.. :_rev ..rev3..} {:_id ..id2.. :_rev ..rev2..}])))
 
