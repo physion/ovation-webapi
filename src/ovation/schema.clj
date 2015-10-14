@@ -213,7 +213,7 @@
               :parents  {:schema Source}
               :files    {:schema File}}
 
-   :folder   {:children {:schema Folder}
+   :folder   {:folders  {:schema Folder}
               :parents  {:schema Entity}
               :files    {:schema File}}
 
