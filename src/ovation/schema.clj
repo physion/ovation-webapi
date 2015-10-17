@@ -16,7 +16,8 @@
                      :user                   s/Uuid
                      :entity                 s/Uuid
                      :type                   (s/eq "Annotation")
-                     (s/optional-key :links) {s/Keyword s/Str}})
+                     (s/optional-key :links) {(s/optional-key :_collaboration_roots) [s/Str]
+                                              s/Keyword s/Str}})
 
 (s/defschema AnnotationTypes (s/enum k/TAGS
                                      k/PROPERTIES

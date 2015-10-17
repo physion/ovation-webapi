@@ -22,13 +22,17 @@
 (defn- make-annotation
   [user-id entity t record]
 
-  (let [entity-id (:_id entity)]
+  (let [entity-id (:_id entity)
+        entity-collaboration-roots (links/collaboration-roots entity)
+        roots (if (or  (nil? entity-collaboration-roots) (empty? entity-collaboration-roots))
+                [entity-id]
+                entity-collaboration-roots)]
     {:user            user-id
      :entity          entity-id
      :annotation_type t
      :annotation      record
      :type            k/ANNOTATION-TYPE
-     :links           {:_collaboration_roots (links/collaboration-roots entity)}}))
+     :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
   [auth routes ids annotation-type records]
@@ -37,7 +41,6 @@
         docs (flatten (map (fn [entity]
                             (map #(make-annotation auth-user-id entity annotation-type %) records))
                         entities))]
-
     (core/create-values auth routes docs)))
 
 (defn delete-annotations

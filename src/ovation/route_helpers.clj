@@ -20,6 +20,12 @@
         annotations (annotations/get-annotations auth [id] annotation-key)]
     (ok {(keyword annotation-key) annotations})))
 
+(defn post-annotations*
+  [request id annotation-key annotations]
+  (let [auth (:auth/auth-info request)
+        annotations-kw (keyword annotation-key)]
+    (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
+
 (defmacro annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
@@ -38,8 +44,7 @@
          :return {(keyword ~annotation-key) [~annotation-schema]}
          :body [new-annotations# {(keyword ~annotation-key) [~record-schema]}]
          :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
-         (let [auth# (:auth/auth-info request#)]
-           (created {(keyword ~annotation-key) (annotations/create-annotations auth# (r/router request#) [~id] ~annotation-key ((keyword ~annotation-key) new-annotations#))})))
+         (post-annotations* request# ~id ~annotation-key ((keyword ~annotation-key) new-annotations#)))
 
        (context* "/:annotation-id" [aid#]
          (DELETE* "/" request#
