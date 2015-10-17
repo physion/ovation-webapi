@@ -54,7 +54,7 @@
 
 (defn collaboration-roots
   [doc]
-  (get-in doc [:links :_collaboration_roots] []))
+  (get-in doc [:links :_collaboration_roots] [(:_id doc)]))
 
 (defn- add-roots
   [doc roots]
