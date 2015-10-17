@@ -138,7 +138,7 @@
 
       (facts "POST /entities/:id/annotations/:type"
         (let [id (str (util/make-uuid))
-              post [{:tag "--tag--"}]
+              post {:tags [{:tag "--tag--"}]}
               tags [{:_id             (str (util/make-uuid))
                      :_rev            "1"
                      :entity          id
@@ -146,7 +146,7 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/create-annotations auth-info anything [id] "tags" post) => tags]
+          (against-background [(annotations/create-annotations auth-info anything [id] "tags" (:tags post)) => tags]
             (fact "creates annotations"
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (post* app path apikey post)]

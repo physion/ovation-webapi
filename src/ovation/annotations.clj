@@ -13,13 +13,9 @@
   (let [db (couch/db auth)
         opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
-              :reduce       false}
-        annotations (couch/get-view db k/ANNOTATIONS-VIEW opts)
-        annotations-by-entity (group-by #(keyword (:entity %)) annotations)
-        grouped-annotations (map (fn [[entity annotations]]
-                                   [entity (group-by #(keyword (:user %)) annotations)]) annotations-by-entity)]
+              :reduce       false}]
 
-    (into {} grouped-annotations)))
+    (couch/get-view db k/ANNOTATIONS-VIEW opts)))
 
 
 ;; WRITE
