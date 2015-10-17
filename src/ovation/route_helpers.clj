@@ -50,7 +50,7 @@
          (DELETE* "/" request#
            :name ~(keyword (str "delete-" (lower-case annotation-key)))
            :return [s/Str]
-           :summary ~(str "Removes a " annotation-description " annotation from entity :id")
+           :summary ~(str "Removes a " annotation-description " annotation from entity :id. Returns a list of ids of deleted annotations.")
            (let [auth# (:auth/auth-info request#)
                  annotation-id# (-> request# :route-params :annotation-id)]
              (accepted (map :_id (annotations/delete-annotations auth# [annotation-id#] (r/router request#))))))))))
