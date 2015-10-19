@@ -57,7 +57,8 @@
                                    {:name "webapi-production"
                                     :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
 
-                                   {:name "webapi-development-2"}]}}
+                                   {:name "webapi-clinical"
+                                    :env {"OVATION_IO_HOST_URI" "https://clinical.ovation.io"}}]}}
 
   :profiles {
              :ovation-web-api {:ring         {:handler ovation.handler/app}
