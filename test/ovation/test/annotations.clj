@@ -34,10 +34,11 @@
                 :_rev            ..rev..
                 :entity          id2
                 :user            user2}]
-        (a/get-annotations ..auth.. [id1 id2] ..type..) => {(keyword id1) {(keyword user1) [a1]
-                                                                           (keyword user2) [a2]}
-                                                            (keyword id2) {(keyword user1) [a3]
-                                                                           (keyword user2) [a4]}}
+        (a/get-annotations ..auth.. [id1 id2] ..type..) => [a1 a2 a3 a4]
+        ;{(keyword id1) {(keyword user1) [a1]
+        ;                                                                   (keyword user2) [a2]}
+        ;                                                    (keyword id2) {(keyword user1) [a3]
+        ;                                                                   (keyword user2) [a4]}}
         (provided
           (couch/get-view ..db.. "annotation_docs" {:keys         [[id1 ..type..]
                                                                    [id2 ..type..]]

@@ -13,26 +13,26 @@
   (let [db (couch/db auth)
         opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
-              :reduce       false}
-        annotations (couch/get-view db k/ANNOTATIONS-VIEW opts)
-        annotations-by-entity (group-by #(keyword (:entity %)) annotations)
-        grouped-annotations (map (fn [[entity annotations]]
-                                   [entity (group-by #(keyword (:user %)) annotations)]) annotations-by-entity)]
+              :reduce       false}]
 
-    (into {} grouped-annotations)))
+    (couch/get-view db k/ANNOTATIONS-VIEW opts)))
 
 
 ;; WRITE
 (defn- make-annotation
   [user-id entity t record]
 
-  (let [entity-id (:_id entity)]
+  (let [entity-id (:_id entity)
+        entity-collaboration-roots (links/collaboration-roots entity)
+        roots (if (or  (nil? entity-collaboration-roots) (empty? entity-collaboration-roots))
+                [entity-id]
+                entity-collaboration-roots)]
     {:user            user-id
      :entity          entity-id
      :annotation_type t
      :annotation      record
      :type            k/ANNOTATION-TYPE
-     :links           {:_collaboration_roots (links/collaboration-roots entity)}}))
+     :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
   [auth routes ids annotation-type records]
@@ -41,7 +41,6 @@
         docs (flatten (map (fn [entity]
                             (map #(make-annotation auth-user-id entity annotation-type %) records))
                         entities))]
-
     (core/create-values auth routes docs)))
 
 (defn delete-annotations
