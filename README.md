@@ -1,6 +1,6 @@
 # Ovation REST API
 
-FIXME
+HTTP API for the Ovation Scientific Data Layer
 
 ## Prerequisites
 
