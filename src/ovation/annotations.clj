@@ -4,7 +4,8 @@
             [ovation.auth :as auth]
             [ovation.core :as core]
             [ovation.links :as links]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.util :as util]))
 
 
 ;; READ
@@ -27,7 +28,8 @@
         roots (if (or  (nil? entity-collaboration-roots) (empty? entity-collaboration-roots))
                 [entity-id]
                 entity-collaboration-roots)]
-    {:user            user-id
+    {:_id             (util/make-uuid)
+     :user            user-id
      :entity          entity-id
      :annotation_type t
      :annotation      record
@@ -38,9 +40,9 @@
   [auth routes ids annotation-type records]
   (let [auth-user-id (auth/authenticated-user-id auth)
         entities (core/get-entities auth ids routes)
-        docs (flatten (map (fn [entity]
-                            (map #(make-annotation auth-user-id entity annotation-type %) records))
-                        entities))]
+        docs (doall (flatten (map (fn [entity]
+                                    (map #(make-annotation auth-user-id entity annotation-type %) records))
+                               entities)))]
     (core/create-values auth routes docs)))
 
 (defn delete-annotations
