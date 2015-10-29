@@ -26,6 +26,12 @@
         annotations-kw (keyword annotation-key)]
     (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
 
+(defn delete-annotations*
+  [request annotation-key]
+  (let [auth (:auth/auth-info request)
+        annotation-id (-> request :route-params :annotation-id)]
+    (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
+
 (defmacro annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
@@ -50,10 +56,8 @@
          (DELETE* "/" request#
            :name ~(keyword (str "delete-" (lower-case annotation-key)))
            :return [s/Str]
-           :summary ~(str "Removes a " annotation-description " annotation from entity :id. Returns a list of ids of deleted annotations.")
-           (let [auth# (:auth/auth-info request#)
-                 annotation-id# (-> request# :route-params :annotation-id)]
-             (accepted (map :_id (annotations/delete-annotations auth# [annotation-id#] (r/router request#))))))))))
+           :summary ~(str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
+           (delete-annotations* request# ~annotation-key))))))
 
 
 (defmacro get-resources

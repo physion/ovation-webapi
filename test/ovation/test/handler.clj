@@ -168,7 +168,7 @@
               (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
                     {:keys [status body]} (delete* app path apikey)]
                 status => 202
-                body => [annotation-id]))))))))
+                body => {:tags tags}))))))))
 
 (facts "About /entities"
   (let [apikey "--apikey--"

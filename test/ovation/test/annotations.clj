@@ -74,7 +74,7 @@
           (core/create-values ..auth.. ..rt.. expected) => ..result..))))
 
   (facts "About `delete-annotations`"
-    (fact "calls `delete-entities"
+    (fact "calls `delete-values"
       (a/delete-annotations ..auth.. [..id1.. ..id2..] ..rt..) => ..result..
       (provided
         (core/delete-values ..auth.. [..id1.. ..id2..] ..rt..) => ..result..))))
