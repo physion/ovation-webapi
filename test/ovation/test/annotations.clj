@@ -47,14 +47,16 @@
 
   (facts "About `create-annotations`"
     (fact "creates annotation documents"
-      (let [expected [{:entity          ..id1..
+      (let [expected [{:_id             ..uuid..
+                       :entity          ..id1..
                        :user            ..user..
                        :annotation_type ..type..
                        :type            "Annotation"
                        :annotation      {:tag ..tag..}
                        :links           {:_collaboration_roots [..root1..]}}
 
-                      {:entity          ..id2..
+                      {:_id             ..uuid..
+                       :entity          ..id2..
                        :user            ..user..
                        :annotation_type ..type..
                        :type            "Annotation"
@@ -63,6 +65,7 @@
                       ]]
         (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => ..result..
         (provided
+          (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
           (core/get-entities ..auth.. [..id1.. ..id2..] ..rt..) => [{:_id   ..id1..
                                                               :links {:_collaboration_roots [..root1..]}}
@@ -71,7 +74,7 @@
           (core/create-values ..auth.. ..rt.. expected) => ..result..))))
 
   (facts "About `delete-annotations`"
-    (fact "calls `delete-entities"
+    (fact "calls `delete-values"
       (a/delete-annotations ..auth.. [..id1.. ..id2..] ..rt..) => ..result..
       (provided
         (core/delete-values ..auth.. [..id1.. ..id2..] ..rt..) => ..result..))))
