@@ -30,3 +30,5 @@ examples/.ipynb_checkpoints/webapi-walkthrough-checkpoint.ipynb
 ovation_webapi.iml
 
 node_modules
+
+*.iml
