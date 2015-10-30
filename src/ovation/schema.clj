@@ -11,7 +11,7 @@
 
 ;; -- ANNOTATIONS -- ;;
 
-(def AnnotationBase {:_id                    s/Uuid
+(def AnnotationBase {:_id                    s/Str
                      :_rev                   s/Str
                      :user                   s/Uuid
                      :entity                 s/Uuid
