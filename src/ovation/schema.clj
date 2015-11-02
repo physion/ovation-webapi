@@ -206,7 +206,7 @@
    :file    {:revision {:rel         "revisions"
                         :inverse-rel "file"}
              :source   {:rel         "sources"
-                        :inverse-rel "revisions"}}})
+                        :inverse-rel "files"}}})
 
 (def EntityRelationships                                    ;; rels to put into entity links at read
   {:project  {:folders {:schema Folder}
