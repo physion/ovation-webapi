@@ -466,7 +466,14 @@
   (entity-resource-read-tests "File")
   (entity-resources-read-tests "File")
   (entity-resource-update-tests "File")
-  (entity-resource-deletion-tests "File"))
+  (entity-resource-deletion-tests "File")
+  (facts "related Sources"
+    (let [apikey "---apikey---"
+          auth-info {:user "...user..."}]
+      (against-background [(auth/authorize anything apikey) => auth-info]
+
+        (future-fact "associates created Source"
+          )))))
 
 
 (facts "About revisions routes"
