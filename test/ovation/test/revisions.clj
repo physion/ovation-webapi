@@ -108,7 +108,18 @@
                                                      :startkey ..fileid..
                                                      :endkey   ..fileid..}) => {:rows [{:key   ..fileid..
                                                                                         :value [[..revid..], 3]}]}
-            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))))
+            (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))
+        (fact "returns all HEAD revisions"
+          (rev/get-head-revisions ..auth.. ..rt.. ..file..) => [..rev1.. ..rev2..]
+          (provided
+            (couch/db ..auth..) => ..db..
+            ..file.. =contains=> {:_id ..fileid..}
+            (couch/get-view ..db.. k/REVISIONS-VIEW {:reduce   true
+                                                     :group    true
+                                                     :startkey ..fileid..
+                                                     :endkey   ..fileid..}) => {:rows [{:key   ..fileid..
+                                                                                        :value [[..revid1.. ..revid2..], 3]}]}
+            (core/get-entities ..auth.. [..revid1.. ..revid2..] ..rt..) => [..rev1.. ..rev2..]))))
 
     (facts "Rails Resources"
       (facts "`make-resource`"
