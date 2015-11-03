@@ -4,7 +4,10 @@ HTTP API for the Ovation Scientific Data Layer
 
 ## Prerequisites
 
-You will need [Leiningen][1] 1.7.0 or above installed.
+You will need 
+
+* [Leiningen][1] 2.3.4+
+* Java 1.8+
 
 [1]: https://github.com/technomancy/leiningen
 
