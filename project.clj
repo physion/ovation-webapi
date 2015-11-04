@@ -55,7 +55,7 @@
                                     :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
 
                                    {:name "webapi-production"
-                                    :env  {"OVATION_IO_HOST_URI" "https://ovation.io"}}
+                                    :env  {"OVATION_IO_HOST_URI" "https://services.ovation.io"}}
 
                                    {:name "webapi-clinical"
                                     :env {"OVATION_IO_HOST_URI" "https://clinical.ovation.io"}}]}}
