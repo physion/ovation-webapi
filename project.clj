@@ -32,16 +32,13 @@
                  [ring.middleware.conditional "0.1.0"]
 
                  ;; Other
-                 [clj-time "0.9.0"]
                  [org.clojure/data.json "0.2.6"]
 
                  ;; Raygun.io
                  [thegreatape/ring-raygun "0.1.0"]
                  ]
 
-  :plugins [[lein-clojars "0.9.1"]
-            [lein-elastic-beanstalk "0.2.8-SNAPSHOT"]
-            [lein-cloverage "1.0.6"]]
+  :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation.handler/app}
 
