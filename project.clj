@@ -6,7 +6,7 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "0.22.2"]
+                 [metosin/compojure-api "0.23.1"]
                  [metosin/ring-swagger-ui "2.1.2"]
                  [ring-cors "0.1.7"]
 
