@@ -117,9 +117,10 @@
   (fn [target]
     (let [target-type (util/entity-type-keyword target)
           rel (get-in EntityChildren [source-type target-type :rel])
-          inverse_rel (get-in EntityChildren [source-type target-type :inverse-rel])]
+          inverse-rel (get-in EntityChildren [source-type target-type :inverse-rel])]
+
       (if rel
-        (links/add-links auth sources rel target-ids routes :inverse-rel inverse_rel)
+        (links/add-links auth sources rel target-ids routes :inverse-rel inverse-rel)
         {}))))
 
 (defn make-child-links*
