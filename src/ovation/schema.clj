@@ -204,7 +204,9 @@
                       :inverse-rel "parents"}}
 
    :file    {:revision {:rel         "revisions"
-                        :inverse-rel "file"}}})
+                        :inverse-rel "file"}
+             :source   {:rel         "sources"
+                        :inverse-rel "files"}}})
 
 (def EntityRelationships                                    ;; rels to put into entity links at read
   {:project  {:folders {:schema Folder}
@@ -212,7 +214,8 @@
 
    :source   {:children {:schema Source}
               :parents  {:schema Source}
-              :files    {:schema File}}
+              :files    {:schema File}
+              :revisions {:schema Revision}}
 
    :folder   {:folders  {:schema Folder}
               :parents  {:schema Entity}
@@ -220,7 +223,8 @@
 
    :file     {:revisions {:schema Revision}
               :head      {:schema Revision}
-              :parents   {:schema Entity}}
+              :parents   {:schema Entity}
+              :sources   {:schema Source}}
 
    :revision {:file {:schema File}}})
 
