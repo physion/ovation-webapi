@@ -69,7 +69,7 @@
                                               [ring-serve "0.1.2"]]
                                :plugins      [[lein-midje "3.2"]
                                               [lein-ring "0.9.7"]]}
-             :jenkins         {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
+             :ci              {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                      :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
 
   :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
