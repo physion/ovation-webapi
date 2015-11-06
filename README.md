@@ -1,5 +1,7 @@
 # Ovation REST API
 
+[![Dependencies Status](https://jarkeeper.com/physion/ovation-webapi/status.svg)](https://jarkeeper.com/physion/ovation-webapi)
+
 HTTP API for the Ovation Scientific Data Layer
 
 ## Prerequisites
