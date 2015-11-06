@@ -1,6 +1,6 @@
 # Ovation REST API
 
-[![Dependencies Status](https://jarkeeper.com/physion/ovation-webapi/status.svg)](https://jarkeeper.com/physion/ovation-webapi)
+[ ![Codeship Status for physion/ovation-webapi](https://codeship.com/projects/5f378b10-5e1d-0133-8441-3a8f5e5e1065/status?branch=master)](https://codeship.com/projects/111263) [![Dependencies Status](https://jarkeeper.com/physion/ovation-webapi/status.svg)](https://jarkeeper.com/physion/ovation-webapi)
 
 HTTP API for the Ovation Scientific Data Layer
 
