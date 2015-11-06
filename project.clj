@@ -5,10 +5,17 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/core.async "0.2.371"]
 
+                 ;; To manage compojure's outdated deps
+                 [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
+
                  ;; Compojure API and middleware
                  [metosin/compojure-api "0.23.1"]
                  [metosin/ring-swagger-ui "2.1.3"]
                  [ring-cors "0.1.7"]
+                 [thegreatape/ring-raygun "0.1.0"]
+                 [ring.middleware.logger "0.5.0"]
+                 [ring.middleware.conditional "0.2.0" :exclusions [ring]]
+
 
                  ;; HTTP and CouchDB
                  [http-kit "2.1.19"]
@@ -28,14 +35,9 @@
                                                     javax.jms/jms
                                                     com.sun.jmdk/jmxtools
                                                     com.sun.jmx/jmxri]]
-                 [ring.middleware.logger "0.5.0"]
-                 [ring.middleware.conditional "0.2.0"]
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
-
-                 ;; Raygun.io
-                 [thegreatape/ring-raygun "0.1.0"]
                  ]
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
