@@ -42,5 +42,5 @@
         (core/get-entities ..auth.. [..fileid..] ..rt..) => (seq [file-entity])
         (core/get-entities ..auth.. [..id2..] ..rt..) => (seq [source-entity])
         (core/create-entities ..auth.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
-        (core/create-values ..auth.. ..rt.. [relationship]) => ..links..
+        (core/create-values ..auth.. ..rt.. anything) => ..links..
         (core/update-entities ..auth.. anything ..rt..) => ..updates..))))

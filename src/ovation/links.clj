@@ -77,6 +77,9 @@
       (= source-type :folder) [source (add-roots target source-roots)]
       (= target-type :folder) [(add-roots source target-roots) target]
 
+      (= source-type :source) [(add-roots source target-roots) target]
+      (= target-type :source) [source (add-roots target source-roots)]
+
       ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
 
       :else
@@ -145,10 +148,9 @@
   ```{  :updates    <updated documents>
         :links      <new LinkInfo documents>}```
    "
-  [auth sources rel target-ids routes & {:keys [inverse-rel name strict required-target-types] :or [inverse-rel nil
-                                                                                                    name nil
-                                                                                                    strict false
-                                                                                                    required-target-types nil]}]
+  [auth sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
+                                                                              name nil
+                                                                              strict false]}]
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
         targets (core/get-entities auth target-ids routes)]
