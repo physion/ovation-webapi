@@ -106,7 +106,7 @@
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
-              (let [auth (:auth/auth-info)
+              (let [auth (:auth/auth-info request)
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
