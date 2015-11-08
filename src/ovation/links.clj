@@ -77,6 +77,9 @@
       (= source-type :folder) [source (add-roots target source-roots)]
       (= target-type :folder) [(add-roots source target-roots) target]
 
+      (= source-type :source) [(add-roots source target-roots) target]
+      (= target-type :source) [source (add-roots target source-roots)]
+
       ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
 
       :else
