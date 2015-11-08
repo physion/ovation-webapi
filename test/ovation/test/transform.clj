@@ -7,7 +7,9 @@
             [ovation.schema :as s]
             [ovation.util :as util]
             [ovation.constants :as c]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [clj-time.core :as t]
+            [clj-time.format :as f]))
 
 
 (facts "About annotation links"
@@ -75,7 +77,7 @@
                                               :links {:self ..route..}}
       (provided
         (r/self-route ..router.. couch) => ..route..)))
-
+  ;
   (fact "`couch-to-value` adds self link to LinkInfo"
     (let [couch {:_id ..id..
                  :type util/RELATION_TYPE}]
@@ -93,9 +95,27 @@
     (let [other {:_id "bar" :rel "some-rel" :type "Relation"}]
       (tw/doc-to-couch ..owner.. ..roots.. other) => other))
 
+  (fact "adds updated_at date"
+    (let [doc {:type ..type.. :attributes {:label ..label..}}]
+      (:attributes (tw/doc-to-couch ..owner.. ..roots.. doc)) => (contains {:updated-at ..time..})
+      (provided
+        (f/unparse (f/formatters :date-time) anything) => ..time..)))
+
+  (fact "adds created_at date"
+    (let [doc {:type ..type.. :attributes {:label ..label..}}]
+      (:attributes (tw/doc-to-couch ..owner.. ..roots.. doc)) => (contains {:created-at ..time..})
+      (provided
+        (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
+
+  (fact "does not add created_at date if already present"
+    (let [doc {:type ..type.. :attributes {:label ..label.. :created-at ..old..}}]
+      (get-in (tw/doc-to-couch ..owner.. ..roots.. doc) [:attributes :created-at]) => ..old..
+      (provided
+        (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
+
   (fact "adds collaboration roots"
     (let [doc {:type ..type.. :attributes {:label ..label..}}]
-      (tw/doc-to-couch ..owner.. ..roots.. doc) =contains=> (assoc-in doc [:links :_collaboration_roots] ..roots..))))
+      (get-in (tw/doc-to-couch ..owner.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
 
 
 (facts "About `add-owner`"

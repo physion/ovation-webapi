@@ -14,7 +14,6 @@
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
                  [ring.middleware.logger "0.5.0"]
-                 [ring.middleware.conditional "0.2.0" :exclusions [ring]]
 
 
                  ;; HTTP and CouchDB
