@@ -238,11 +238,12 @@
       (when source
         (auth/check! (auth/authenticated-user-id auth) :auth/update source))
       (if source
-        (let [result (links/add-links auth [source] rel (map :target_id new-links) routes)
-              links (core/create-values auth routes (:links result))
-              updates (core/update-entities auth (:updates result) routes)]
-          (created {:entities updates
-                    :links    links}))
+        (let [groups (group-by :inverse_rel new-links)
+              link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
+          (let [links (core/create-values auth routes (flatten (map :links link-groups)))
+                updates (core/update-entities auth (flatten (map :updates link-groups)) routes)]
+            (created {:updates updates
+                      :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
       (unauthorized {:errors {:detail message}}))
@@ -261,7 +262,8 @@
 
        (POST* "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))
-         :return {:links [LinkInfo]}
+         :return {:links   [LinkInfo]
+                  :updates [Entity]}
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
          (post-relationships* request# ~id new-links# ~rel)))))
