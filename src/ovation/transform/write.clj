@@ -2,7 +2,9 @@
   (:require [ovation.version :refer [version version-path]]
             [ovation.version :as ver]
             [ovation.util :as util]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [clj-time.core :as t]
+            [clj-time.format :as f]))
 
 (defn ensure-id
   "Makes sure there's an _id for entity"
@@ -28,16 +30,29 @@
     (assoc-in doc [:links :_collaboration_roots] roots)
     doc))
 
+(defn ensure-created-at
+  [doc timestamp]
+  (if (not (get-in doc [:attributes :created-at]))
+    (assoc-in doc [:attributes :created-at] timestamp)
+    doc))
+
+(defn add-updated-at
+  [doc timestamp]
+  (assoc-in doc [:attributes :updated-at] timestamp))
+
 (defn doc-to-couch
   [owner-id collaboration-roots doc]
   (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
-    (-> doc
-      ensure-id
-      add-api-version
-      (add-owner owner-id)
-      (dissoc :links)
-      (dissoc :relationships)
-      (add-collaboration-roots collaboration-roots))
+    (let [time (f/unparse (f/formatters :date-time) (t/now))]
+      (-> doc
+        ensure-id
+        (ensure-created-at time)
+        add-api-version
+        (add-owner owner-id)
+        (add-updated-at time)
+        (dissoc :links)
+        (dissoc :relationships)
+        (add-collaboration-roots collaboration-roots)))
     doc))
 
 (defn to-couch
