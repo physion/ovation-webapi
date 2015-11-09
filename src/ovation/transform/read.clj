@@ -1,6 +1,6 @@
 (ns ovation.transform.read
   (:require [ovation.version :refer [version version-path]]
-            [ring.util.http-response :refer [not-found!]]
+            [ring.util.http-response :refer [conflict! unauthorized! forbidden!]]
             [ovation.util :as util]
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
@@ -62,21 +62,21 @@
 (defn couch-to-entity
   [router]
   (fn [doc]
-    (if (:error doc)
-      (not-found! doc)
-      (if (and (:type doc) (not= (str (:type doc)) util/RELATION_TYPE))
-        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
-          (-> doc
-            (remove-user-attributes)
-            (dissoc :named_links)                           ;; For v3
-            (dissoc :links)                                 ;; For v3
-            (dissoc :relationships)
-            (add-self-link router)
-            (add-heads-link router)
-            (add-annotation-links router)
-            (add-relationship-links router)
-            (assoc-in [:links :_collaboration_roots] collaboration-roots)))
-        doc))))
+    (case (:error doc)
+      "conflict" (conflict!)
+      "forbidden" (forbidden!)
+      "unauthorized" (unauthorized!)
+      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
+        (-> doc
+          (remove-user-attributes)
+          (dissoc :named_links)                           ;; For v3
+          (dissoc :links)                                 ;; For v3
+          (dissoc :relationships)
+          (add-self-link router)
+          (add-heads-link router)
+          (add-annotation-links router)
+          (add-relationship-links router)
+          (assoc-in [:links :_collaboration_roots] collaboration-roots))))))
 
 
 (defn entities-from-couch
@@ -87,8 +87,10 @@
 (defn couch-to-value
   [router]
   (fn [doc]
-    (if (:error doc)
-      (not-found! doc)
+    (case (:error doc)
+      "conflict" (conflict! doc)
+      "forbidden" (forbidden!)
+      "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (add-self-link doc router)
         doc))))

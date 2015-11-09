@@ -387,6 +387,13 @@
                          response# (app (request# other-id#))]
                      (:status response#) => 404)))
 
+               ;(against-background [(r/router anything) => ..rt..]
+               ;  (fact "fails with status 409"
+               ;    (let [response# (app (request# id#))]
+               ;      (:status response#) => 409
+               ;      (provided
+               ;        (core/update-entities auth-info# [update#] ..rt..) =throws=> (sling-throwable {:status 409})))))
+
                (fact "fails if not can? :update"
                  (:status (app (request# id#))) => 401
                  (provided
