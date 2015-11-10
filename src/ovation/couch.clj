@@ -35,11 +35,13 @@
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
     (map #(if-let [rev (update-map (:_id %))]
            (assoc % :_rev rev)
-           (cond (:error %)
-                 "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:id %)})
-                 "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:id %)})
-                 "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
-                 %)) docs)))
+           (case (:error %)
+             "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:_id %)})
+             "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:_id %)})
+             "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
+             %
+             ))
+      docs)))
 
 (defn bulk-docs
   "Creates or updates documents"
