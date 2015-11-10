@@ -9,7 +9,8 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [clj-time.core :as t]
-            [clj-time.format :as f]))
+            [clj-time.format :as f])
+  (:import (clojure.lang ExceptionInfo)))
 
 
 (facts "About annotation links"
@@ -30,6 +31,15 @@
                                    :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
       (r/annotations-route ..rt.. {:_id   "123"
                                    :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
+
+(facts "About error handling"
+  (facts "in couch-to-entity"
+    (fact "throws conflict! if any doc has {:error 'conflict'}"
+      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
+    (fact "throws forbidden! if any doc has {:error 'forbidden'}"
+      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
+    (fact "throws unauthorized! if any doc has {:error 'unauthorized'}"
+      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
 
 (facts "About DTO link modifications"
   (fact "`remove-hidden-links` removes '_...' links"

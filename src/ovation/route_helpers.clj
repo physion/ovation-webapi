@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -177,7 +177,16 @@
           (ok {type-kw entity}))
 
         (catch [:type :ovation.auth/unauthorized] err
-          (unauthorized {:errors {:detail "Unauthorized"}}))))))
+          (unauthorized {:errors {:detail "Unauthorized"}}))
+        (catch [:type :ovation.couch/conflict] err
+          (conflict {:errors {:detail "Document update conflict"
+                              :id     (:id err)}}))
+        (catch [:type :ovation.couch/forbidden] err
+          (forbidden {:errors {:detail "Document update forbidden"
+                               :id     (:id err)}}))
+        (catch [:type :ovation.couch/unauthorized] err
+          (unauthorized {:errors {:detail "Document update unauthorized"
+                                  :id     (:id err)}}))))))
 
 (defmacro put-resource
   [entity-type id]

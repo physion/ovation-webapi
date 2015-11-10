@@ -2,7 +2,7 @@
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
             [clojure.core.async :refer [>!!]]
-            [clojure.tools.logging :as logging]))
+            [slingshot.slingshot :refer [throw+]]))
 
 (def design-doc "api")
 
@@ -35,7 +35,13 @@
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
     (map #(if-let [rev (update-map (:_id %))]
            (assoc % :_rev rev)
-           %) docs)))
+           (case (:error %)
+             "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:_id %)})
+             "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:_id %)})
+             "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
+             %
+             ))
+      docs)))
 
 (defn bulk-docs
   "Creates or updates documents"

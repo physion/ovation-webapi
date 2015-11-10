@@ -111,7 +111,7 @@
                       (let [ids  (map :_id entities)
                             docs (get-entities auth ids routes)
                             updated-docs (map (merge-updates entities) docs)]
-                        (vals (merge (util/into-id-map entities) (util/into-id-map updated-docs)))))
+                        updated-docs))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
 
