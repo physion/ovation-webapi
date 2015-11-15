@@ -2,8 +2,6 @@
   (:use midje.sweet)
   (:require [ovation.auth :as auth]
             [org.httpkit.fake :refer [with-fake-http]]
-            [clojure.walk :as walk]
-            [clojure.data.json :as json]
             [clojure.data.codec.base64 :as b64]
             [ovation.util :as util])
   (:import (clojure.lang ExceptionInfo)))
@@ -18,7 +16,6 @@
       (let [apikey "my-api-key"
             server "https://some.ovation.io"
             auth (clojure.string/join ":" [apikey apikey])
-            b64auth (string-to-base64-string auth)
             ckey "cloudant-api-key"
             curl "<cloudant db url>"
             session (util/to-json {:cloudant_key    ckey

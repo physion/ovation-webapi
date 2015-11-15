@@ -18,7 +18,8 @@
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [ovation.teams :as teams]))
 
 (ovation.logging/setup!)
 
@@ -210,21 +211,20 @@
           (context* "/:id" [id]
             (get-resource "User" id)))
 
-        ;(context* "/teams"
-        ;  (context* "/:id" [id]
-        ;    (GET* "/" request
-        ;      :name :get-team
-        ;      :return {:team Team}
-        ;      :summary "Gets Project Team"
-        ;      (ok (get-team* request id)))))
+        (context* "/teams" []
+          :tags ["teams"]
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :get-team
+              :return {:team Team}
+              :summary "Gets Project Team"
+              (ok (teams/get-team* request id)))))
 
-
-        (context* "/provenance" []
-          :tags ["provenance"]
-          (POST* "/" request
-            :name :get-provenance
-            ;:return {:provenance ProvGraph}
-            :summary "Returns the provenance graph expanding from the POSTed entity IDs"
-            (let [auth (:auth/auth-info request)]
-              nil)))))))
+        (context* "/roles" []
+          :tags ["teams"]
+          (GET* "/" request
+            :name :all-roles
+            :return {:roles [s/Str]}
+            (ok (teams/get-roles* request))))
+        ))))
 

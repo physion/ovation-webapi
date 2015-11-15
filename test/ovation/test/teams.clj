@@ -2,11 +2,13 @@
   (:use midje.sweet)
   (:require [ovation.auth :as auth]
             [ovation.teams :as teams]
-            [ovation.routes :as routes])
+            [ovation.routes :as routes]
+            [org.httpkit.fake :refer [with-fake-http]]
+            [ovation.util :as util])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About Teams API"
-  (facts "get-team"
+  (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                          ..request.. =contains=> {:auth/auth-info ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
@@ -19,4 +21,13 @@
           (routes/named-route ..rt.. :get-team {:id ..id..}) => ..self-url..))
 
       (fact "should throw not-found! for non-existant team"
-        (teams/get-team* ..request.. ..id..) => (throws ExceptionInfo)))))
+        (with-fake-http [] {:status 404}
+          (teams/get-team* ..request.. ..id..)) => (throws ExceptionInfo))))
+
+  (facts "get-roles*"
+    (against-background [..request.. =contains=> {:auth/auth-info ..auth..}
+                         ..auth.. =contains=> {:api_key ..apikey..}]
+      (fact "should return organization roles"
+        (with-fake-http [] {:status 200
+                            :body   (util/to-json {:roles ["role1" "role2"]})}
+          (teams/get-roles* ..request..)) => {:roles ["role1" "role2"]}))))

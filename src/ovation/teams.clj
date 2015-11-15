@@ -11,3 +11,7 @@
     {:team {:id          team-id
             :memberships []
             :links       {:self (routes/named-route rt :get-team {:id team-id})}}}))
+
+(defn get-roles*
+  [request]
+  {:roles []})
