@@ -28,6 +28,6 @@
     (against-background [..request.. =contains=> {:auth/auth-info ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}]
       (fact "should return organization roles"
-        (with-fake-http [] {:status 200
-                            :body   (util/to-json {:roles ["role1" "role2"]})}
+        (with-fake-http ["https://dev.ovation.io/api/v1/roles" {:status 200
+                                                                :body   (util/to-json {:roles ["role1" "role2"]})}]
           (teams/get-roles* ..request..)) => {:roles ["role1" "role2"]}))))

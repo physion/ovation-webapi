@@ -218,13 +218,23 @@
               :name :get-team
               :return {:team Team}
               :summary "Gets Project Team"
-              (ok (teams/get-team* request id)))))
+              (ok (teams/get-team* request id)))
+            (context* "/memberships" []
+              (POST* "/" request
+                :name :create-membership
+                :return {:membership TeamMembership}
+                :body [body {:membership NewTeamMembership}]
+                (created (teams/post-membership* request id (:membership body))))
+              (context* "/:mid" [mid]
+                (PUT* "/" request
+                  :name :update-membership
+                  :return {:membership TeamMembership}
+                  :body [body {:membership TeamMembership}]
+                  (ok (teams/put-membership* request id (:membership body))))))))
 
         (context* "/roles" []
           :tags ["teams"]
           (GET* "/" request
             :name :all-roles
             :return {:roles [s/Str]}
-            (ok (teams/get-roles* request))))
-        ))))
-
+            (ok (teams/get-roles* request))))))))

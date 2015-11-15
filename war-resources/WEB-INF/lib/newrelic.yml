@@ -258,9 +258,5 @@ development:
   <<: *default_settings
   app_name: api-dev.ovation.io
 
-test:
-  <<: *default_settings
-  app_name: api.ovation.io (Test)
-
 production:
   <<: *default_settings
