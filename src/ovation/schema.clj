@@ -2,7 +2,8 @@
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
             [ovation.constants :as k]
-            [ovation.util :as util]))
+            [ovation.util :as util])
+  (:import (org.junit.rules TestName)))
 
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any
@@ -163,6 +164,24 @@
 
 (s/defschema User (-> Entity
                       (assoc :type (s/eq "User"))))
+
+;; -- Teams -- ;;
+(s/defschema TeamMembership
+  {:id    s/Str,
+   :team  s/Uuid,
+   :roles [s/Str],
+   :links {:self s/Str
+           :user s/Str}})
+
+(s/defschema NewTeamMembership
+  {:user  {:attributes {:email s/Str}}
+   :roles [s/Str]})
+
+(s/defschema Team
+  {:id          s/Uuid
+   :type        (s/eq "Team")
+   :memberships [TeamMembership]
+   :links       {:self s/Str}})
 
 ;; -- Upload -- ;;
 (s/defschema UploadInfo {:bucket     s/Str

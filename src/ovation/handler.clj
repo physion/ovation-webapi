@@ -210,6 +210,14 @@
           (context* "/:id" [id]
             (get-resource "User" id)))
 
+        ;(context* "/teams"
+        ;  (context* "/:id" [id]
+        ;    (GET* "/" request
+        ;      :name :get-team
+        ;      :return {:team Team}
+        ;      :summary "Gets Project Team"
+        ;      (ok (get-team* request id)))))
+
 
         (context* "/provenance" []
           :tags ["provenance"]
