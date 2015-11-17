@@ -16,15 +16,70 @@
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
       (let [team-id (str (util/make-uuid))
-            team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])]
+            user-id (str (util/make-uuid))
+            team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])
+            rails-team {:team {:id                  1
+                               :name                team-id
+                               :uuid                team-id
+                               :organization        {}
+                               :project             {}
+                               :roles               []
+                               :pending_memberships [{
+                                                      :id        232,
+                                                      :role_name "Administrator'",
+                                                      :email     "newmember@example.com"
+                                                      },
+                                                     {
+                                                      :id        2323,
+                                                      :role_name "Member",
+                                                      :email     "newmember@example.com"
+                                                      }]
+                               :memberships         [{:id      3232
+                                                      :team_id 1
+                                                      :added   "2015-02-01"
+                                                      :role_id 21
+                                                      :user    {
+                                                                :id    3
+                                                                :uuid  user-id
+                                                                :name  "Bob"
+                                                                :email "bob@example.com"
+                                                                :links {:roles "..."}
+                                                                }
+                                                      :links   {:membership_roles ""}}]}}
+            expected {:team {:id                  1
+                             :name                team-id
+                             :uuid                team-id
+                             :roles               []
+                             :pending_memberships [{
+                                                    :id        232,
+                                                    :role_name "Administrator'",
+                                                    :email     "newmember@example.com"
+                                                    },
+                                                   {
+                                                    :id        2323,
+                                                    :role_name "Member",
+                                                    :email     "newmember@example.com"
+                                                    }]
+                             :memberships         [{:id      3232
+                                                    :team_id 1
+                                                    :added   "2015-02-01"
+                                                    :role_id 21
+                                                    :user    {
+                                                              :id    3
+                                                              :uuid  user-id
+                                                              :name  "Bob"
+                                                              :email "bob@example.com"
+                                                              :links {:roles "..."}
+                                                              }
+                                                    :links   {:membership_roles ""}}]
+                             :links               {:self        ..self-url..
+                                                   :memberships ..membership-url..}}}]
+
         (fact "should return existing team"
           (with-fake-http [team-url {:status 200
-                                     :body   (util/to-json {:team {:id          team-id
-                                                                   :memberships []}})}]
-            (teams/get-team* ..request.. team-id) => {:team {:id          team-id
-                                                             :memberships []
-                                                             :links       {:self        ..self-url..
-                                                                           :memberships ..membership-url..}}}
+                                     :body   (util/to-json rails-team)}]
+
+            (teams/get-team* ..request.. team-id) => expected
             (provided
               (routes/named-route ..rt.. :get-team {:id team-id}) => ..self-url..
               (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..)))

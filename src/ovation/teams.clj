@@ -64,8 +64,13 @@
                                                             (not-found! {:errors {:detail "Team not found"}}))
                     :else (throw! response))]
 
-      (assoc-in team [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
-                                     :memberships (routes/named-route rt :post-memberships {:id team-id})}))))
+      (-> team
+        ;(assoc-in [:team :id] (:uuid team))
+        ;(update-in [:team] dissoc :uuid)
+        (update-in [:team] dissoc :project)
+        (update-in [:team] dissoc :organization)
+        (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
+                                  :memberships (routes/named-route rt :post-memberships {:id team-id})})))))
 
 
 
