@@ -184,8 +184,7 @@
    :links       {:self s/Str}})
 
 (s/defschema NewTeam
-  {:id   s/Uuid
-   :name s/Str})
+  {:uuid   s/Uuid})
 
 
 

@@ -46,6 +46,10 @@
       (tr/values-from-couch docs routes)
       docs)))
 
+(defn get-owner
+  [auth routes entity]
+  (first (get-entities auth [(:owner entity)] routes)))
+
 ;; COMMAND
 
 (defn parent-collaboration-roots

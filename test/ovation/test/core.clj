@@ -79,7 +79,13 @@
           (couch/db ...auth...) => ...db...
           (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
           (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..rt..) => ...entities...
-          (core/filter-trashed ...entities... false) => ...result...)))))
+          (core/filter-trashed ...entities... false) => ...result...))))
+
+  (facts "get-owner"
+    (fact "it gets the entity owner"
+      (core/get-owner ..auth.. ..rt.. {:owner ..owner-id..}) => ..user..
+      (provided
+        (core/get-entities ..auth.. [..owner-id..] ..rt..) => [..user..]))))
 
 
 

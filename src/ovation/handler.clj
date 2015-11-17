@@ -3,7 +3,7 @@
             [compojure.api.routes :refer [path-for*]]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.logger :refer [wrap-with-logger]]
             [ring.middleware.raygun :refer [wrap-raygun-handler]]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
@@ -39,11 +39,12 @@
                   :required-auth-url-prefix #{"/api"})
 
 
-                (wrap-with-logger                           ;;TODO can we make the middleware conditional rather than testing for each logging call?
-                  :info (fn [x] (when config/LOGGING_HOST (logging/info x)))
-                  :debug (fn [x] (when config/LOGGING_HOST (logging/debug x)))
-                  :error (fn [x] (when config/LOGGING_HOST (logging/error x)))
-                  :warn (fn [x] (when config/LOGGING_HOST (logging/warn x))))
+                (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
+                                   :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
+                                   :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
+                                   :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
+                                   :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
+                                   :exceptions false})
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
                 ]
@@ -227,19 +228,14 @@
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
             (context* "/memberships" []
-              (GET* "/" request
-                :name :team-memberships
-                :return {:memerships [TeamMembership]}
-                (ok (teams/get-memberships* request id)))
-
               (POST* "/" request
-                :name :create-membership
+                :name :post-memberships
                 :return {:membership TeamMembership}
                 :body [body {:membership NewTeamMembership}]
                 (created (teams/post-membership* request id (:membership body))))
               (context* "/:mid" [mid]
                 (PUT* "/" request
-                  :name :update-membership
+                  :name :put-membership
                   :return {:membership TeamMembership}
                   :body [body {:membership TeamMembership}]
                   (ok (teams/put-membership* request id (:membership body))))))))))))

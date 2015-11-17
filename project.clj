@@ -13,7 +13,7 @@
                  [metosin/ring-swagger-ui "2.1.3"]
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
-                 [ring.middleware.logger "0.5.0"]
+                 [ring-logger "0.7.5"]
 
 
                  ;; HTTP and CouchDB
