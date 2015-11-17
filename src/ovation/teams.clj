@@ -7,7 +7,8 @@
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found!]]
             [ovation.core :as core]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ovation.constants :as k]))
 
 
 (defn api-key
@@ -67,6 +68,7 @@
       (-> team
         ;(assoc-in [:team :id] (:uuid team))
         ;(update-in [:team] dissoc :uuid)
+        (assoc-in [:team :type] k/TEAM-TYPE)
         (update-in [:team] dissoc :project)
         (update-in [:team] dissoc :organization)
         (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})

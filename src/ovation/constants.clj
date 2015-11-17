@@ -6,6 +6,7 @@
 (def REVISION-TYPE "Revision")
 (def FILE-TYPE "File")
 (def RELATION-TYPE util/RELATION_TYPE)
+(def TEAM-TYPE "Team")
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
 

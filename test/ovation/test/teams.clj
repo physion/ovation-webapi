@@ -47,6 +47,7 @@
                                                                 }
                                                       :links   {:membership_roles ""}}]}}
             expected {:team {:id                  1
+                             :type                "Team"
                              :name                team-id
                              :uuid                team-id
                              :roles               []

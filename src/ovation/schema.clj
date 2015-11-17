@@ -177,11 +177,26 @@
   {:user  {:attributes {:email s/Str}}
    :roles [s/Str]})
 
+(s/defschema TeamRole
+  {:id              s/Int
+   :organization_id s/Int
+   :name            s/Str
+   :links           {s/Keyword s/Str}})
+
+(s/defschema PendingTeamMembership
+  {:id        s/Int
+   :role_name s/Str
+   :email     s/Str})
+
 (s/defschema Team
-  {:id          s/Uuid
-   :type        (s/eq "Team")
-   :memberships [TeamMembership]
-   :links       {:self s/Str}})
+  {:id                  s/Int
+   :type                (s/eq "Team")
+   :uuid                s/Uuid
+   :name                s/Str
+   :roles               [TeamRole]
+   :pending_memberships [PendingTeamMembership]
+   :memberships         [TeamMembership]
+   :links               {s/Keyword s/Str}})
 
 (s/defschema NewTeam
   {:uuid   s/Uuid})
