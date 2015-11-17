@@ -183,18 +183,10 @@
    :memberships [TeamMembership]
    :links       {:self s/Str}})
 
-;; -- Upload -- ;;
-(s/defschema UploadInfo {:bucket     s/Str
-                         :path       s/Str
-                         :access-key s/Str
-                         :secret-key s/Str})
+(s/defschema NewTeam
+  {:id   s/Uuid
+   :name s/Str})
 
-;; -- Analyses -- ;;
-
-(s/defschema NewAnalysisRecord
-  {:inputs                      [s/Uuid]
-   :outputs                     [s/Uuid]
-   (s/optional-key :parameters) {s/Keyword s/Any}})
 
 
 ;; -- TRASH INFO -- ;;

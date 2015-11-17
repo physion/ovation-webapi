@@ -4,7 +4,8 @@
             [ovation.teams :as teams]
             [ovation.routes :as routes]
             [org.httpkit.fake :refer [with-fake-http]]
-            [ovation.util :as util])
+            [ovation.util :as util]
+            [ovation.config :as config])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About Teams API"
@@ -13,21 +14,32 @@
                          ..request.. =contains=> {:auth/auth-info ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
-      (fact "should return existing team"
-        (teams/get-team* ..request.. ..id..) => {:team {:id          ..id..
-                                                        :memberships []
-                                                        :links       {:self ..self-url..}}}
-        (provided
-          (routes/named-route ..rt.. :get-team {:id ..id..}) => ..self-url..))
+      (let [team-id (str (util/make-uuid))
+            team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])]
+        (fact "should return existing team"
+          (with-fake-http [team-url {:status 200
+                                     :body   (util/to-json {:team {:id          team-id
+                                                                   :memberships []}})}]
+            (teams/get-team* ..request.. team-id) => {:team {:id          team-id
+                                                             :memberships []
+                                                             :links       {:self  ..self-url..
+                                                                           :roles ..roles-url..}}}
+            (provided
+              (routes/named-route ..rt.. :get-team {:id team-id}) => ..self-url..
+              (routes/named-route ..rt.. :all-roles {:id team-id}) => ..roles-url..)))
 
-      (fact "should throw not-found! for non-existant team"
-        (with-fake-http [] {:status 404}
-          (teams/get-team* ..request.. ..id..)) => (throws ExceptionInfo))))
+        (fact "should throw not-found! for non-existant team"
+          (with-fake-http [team-url {:status 404}]
+            (teams/get-team* ..request.. team-id)) => (throws ExceptionInfo)))))
 
-  (facts "get-roles*"
-    (against-background [..request.. =contains=> {:auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}]
-      (fact "should return organization roles"
-        (with-fake-http ["https://dev.ovation.io/api/v1/roles" {:status 200
-                                                                :body   (util/to-json {:roles ["role1" "role2"]})}]
-          (teams/get-roles* ..request..)) => {:roles ["role1" "role2"]}))))
+  (facts "get-memberships*"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
+                         ..request.. =contains=> {:auth/auth-info ..auth..}
+                         ..auth.. =contains=> {:api_key ..apikey..}
+                         (routes/router ..request..) => ..rt..]
+      (let [team-id (str (util/make-uuid))
+            memberships-url (util/join-path [config/TEAMS_SERVER "teams" team-id "memberships"])]
+        (fact "returns team Memberships"
+          (with-fake-http [memberships-url {:status 200
+                                            :body   (util/to-json {:memberships []})}]
+            (teams/get-memberships* ..request.. team-id) => {:memberships []}))))))

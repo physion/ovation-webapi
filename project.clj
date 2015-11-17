@@ -22,7 +22,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.21.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.22.0"]
 
 
                  ;; Logging

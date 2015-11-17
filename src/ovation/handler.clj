@@ -213,6 +213,13 @@
 
         (context* "/teams" []
           :tags ["teams"]
+
+          (POST* "/" request
+            :name :post-teams
+            :body [team [NewTeam]]
+            :return {:team Team}
+            :summary "Creates a new Team")
+
           (context* "/:id" [id]
             (GET* "/" request
               :name :get-team
@@ -220,6 +227,11 @@
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
             (context* "/memberships" []
+              (GET* "/" request
+                :name :team-memberships
+                :return {:memerships [TeamMembership]}
+                (ok (teams/get-memberships* request id)))
+
               (POST* "/" request
                 :name :create-membership
                 :return {:membership TeamMembership}
@@ -230,11 +242,4 @@
                   :name :update-membership
                   :return {:membership TeamMembership}
                   :body [body {:membership TeamMembership}]
-                  (ok (teams/put-membership* request id (:membership body))))))))
-
-        (context* "/roles" []
-          :tags ["teams"]
-          (GET* "/" request
-            :name :all-roles
-            :return {:roles [s/Str]}
-            (ok (teams/get-roles* request))))))))
+                  (ok (teams/put-membership* request id (:membership body))))))))))))
