@@ -103,31 +103,26 @@
                             (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
                          (assoc :type (s/eq "Project"))))
-(s/defschema ProjectUpdate (-> EntityUpdate
-                               (assoc :type (s/eq "Project"))))
+
 
 (s/defschema NewSource (-> NewEntity
                            (assoc :type (s/eq "Source"))))
 (s/defschema Source (-> Entity
                         (assoc :type (s/eq "Source"))))
-(s/defschema SourceUpdate (-> EntityUpdate
-                              (assoc :type (s/eq "Source"))))
+
 
 
 (s/defschema NewFolder (-> NewEntity
                            (assoc :type (s/eq "Folder"))))
 (s/defschema Folder (-> Entity
                         (assoc :type (s/eq "Folder"))))
-(s/defschema FolderUpdate (-> EntityUpdate
-                              (assoc :type (s/eq "Folder"))))
+
 
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
                       (assoc :type (s/eq "File"))))
 
-(s/defschema FileUpdate (-> EntityUpdate
-                            (assoc :type (s/eq "File"))))
 
 (s/defschema NewRevision (-> NewEntity
                              (assoc :type (s/eq "Revision"))
@@ -146,15 +141,7 @@
                                               :previous                 [s/Uuid]
                                               :file_id                  s/Uuid
                                               s/Keyword                 s/Any})))
-(s/defschema RevisionUpdate (-> EntityUpdate
-                                (assoc :type (s/eq "Revision"))
-                                (assoc :attributes {:content_type             s/Str
-                                                    :url                      s/Str
-                                                    :name                     s/Str
-                                                    (s/optional-key :version) s/Str
-                                                    :previous                 [s/Uuid]
-                                                    :file_id                  s/Uuid
-                                                    s/Keyword                 s/Any})))
+
 
 (s/defschema CreateRevisionResponse {:entities [Revision]
                                      :links     [LinkInfo]
