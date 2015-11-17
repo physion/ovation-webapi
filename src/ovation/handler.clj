@@ -215,12 +215,6 @@
         (context* "/teams" []
           :tags ["teams"]
 
-          (POST* "/" request
-            :name :post-teams
-            :body [team [NewTeam]]
-            :return {:team Team}
-            :summary "Creates a new Team")
-
           (context* "/:id" [id]
             (GET* "/" request
               :name :get-team

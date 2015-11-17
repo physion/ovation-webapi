@@ -167,26 +167,31 @@
 
 ;; -- Teams -- ;;
 (s/defschema TeamMembership
-  {:id    s/Str,
-   :team  s/Uuid,
-   :roles [s/Str],
-   :links {:self s/Str
-           :user s/Str}})
+  {:id    s/Int,
+   :team_id s/Int,
+   :added s/Str
+   :role_id s/Int,
+   :user {:id s/Int
+          :uuid s/Uuid
+          :name s/Str
+          :email s/Str
+          :links {s/Keyword s/Str}}
+   :links {s/Keyword s/Str}})
 
-(s/defschema NewTeamMembership
+(s/defschema NewTeamMembership                              ;TODO
   {:user  {:attributes {:email s/Str}}
    :roles [s/Str]})
+
+(s/defschema PendingTeamMembership
+  {:id        s/Int
+   :role_name s/Str
+   :email     s/Str})
 
 (s/defschema TeamRole
   {:id              s/Int
    :organization_id s/Int
    :name            s/Str
    :links           {s/Keyword s/Str}})
-
-(s/defschema PendingTeamMembership
-  {:id        s/Int
-   :role_name s/Str
-   :email     s/Str})
 
 (s/defschema Team
   {:id                  s/Int
@@ -197,9 +202,6 @@
    :pending_memberships [PendingTeamMembership]
    :memberships         [TeamMembership]
    :links               {s/Keyword s/Str}})
-
-(s/defschema NewTeam
-  {:uuid   s/Uuid})
 
 
 

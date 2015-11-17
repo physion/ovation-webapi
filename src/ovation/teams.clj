@@ -39,7 +39,7 @@
        :memberships [{:id    "?"
                       :email (get-in owner [:attributes :email])}]})))
 
-(defn create-team
+(defn create-team                                           ;TODO
   [request team-id]
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
