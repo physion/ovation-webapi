@@ -171,7 +171,7 @@
    :team_id s/Int,
    :added s/Str
    :role_id s/Int,
-   :user {:id s/Int
+   :user {:id s/Str
           :uuid s/Uuid
           :name s/Str
           :email s/Str

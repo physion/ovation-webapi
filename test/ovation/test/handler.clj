@@ -522,27 +522,27 @@
             auth-info {:user "..user.."}
             id (str (util/make-uuid))
             get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
-            team {:id                  1
+            team {:id                  "1"
                   :type                "Team"
                   :name                id
                   :uuid                id
                   :roles               []
                   :pending_memberships [{
-                                         :id        232,
+                                         :id        "232",
                                          :role_name "Administrator'",
                                          :email     "newmember@example.com"
                                          },
                                         {
-                                         :id        2323,
+                                         :id        "2323",
                                          :role_name "Member",
                                          :email     "newmember@example.com"
                                          }]
-                  :memberships         [{:id      3232
+                  :memberships         [{:id      "3232"
                                          :team_id 1
                                          :added   "2015-02-01"
                                          :role_id 21
                                          :user    {
-                                                   :id    3
+                                                   :id    "3"
                                                    :uuid  (str (util/make-uuid))
                                                    :name  "Bob"
                                                    :email "bob@example.com"
