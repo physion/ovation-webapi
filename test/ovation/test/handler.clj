@@ -15,7 +15,8 @@
             [ovation.annotations :as annotations]
             [ovation.routes :as r]
             [ovation.constants :as k]
-            [ovation.revisions :as revisions])
+            [ovation.revisions :as revisions]
+            [ovation.teams :as teams])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -513,3 +514,44 @@
             (core/get-entities auth-info [id] ..rt..) => [doc]
             (r/router anything) => ..rt..
             (revisions/get-head-revisions auth-info ..rt.. doc) => revs))))))
+
+(facts "About Teams API"
+  (facts "GET /teams/:id"
+    (fact "returns team"
+      (let [apikey "--apikey--"
+            auth-info {:user "..user.."}
+            id (str (util/make-uuid))
+            get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
+            team {:id                  1
+                  :type                "Team"
+                  :name                id
+                  :uuid                id
+                  :roles               []
+                  :pending_memberships [{
+                                         :id        232,
+                                         :role_name "Administrator'",
+                                         :email     "newmember@example.com"
+                                         },
+                                        {
+                                         :id        2323,
+                                         :role_name "Member",
+                                         :email     "newmember@example.com"
+                                         }]
+                  :memberships         [{:id      3232
+                                         :team_id 1
+                                         :added   "2015-02-01"
+                                         :role_id 21
+                                         :user    {
+                                                   :id    3
+                                                   :uuid  (str (util/make-uuid))
+                                                   :name  "Bob"
+                                                   :email "bob@example.com"
+                                                   :links {:roles "..."}
+                                                   }
+                                         :links   {:membership_roles ""}}]
+                  :links               {:self        "--url--"
+                                        :memberships "--membership--url--"}}]
+        (body-json get) => {:team team}
+        (provided
+          (auth/authorize anything apikey) => auth-info
+          (teams/get-team* anything id) => {:team team})))))
