@@ -243,6 +243,8 @@
                   (ok (teams/delete-membership* request id mid)))))))
 
         (context* "/roles" []
+          :tags ["teams"]
+
           (GET* "/" request
             :name :all-roles
             :return {:roles [TeamRole]}
