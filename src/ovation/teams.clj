@@ -41,9 +41,8 @@
 
 (defn create-team
   [request team-uuid]
-  (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
-        url (routes/named-route rt :post-teams {})
+  (let [opts (-request-opts (api-key request))
+        url (-make-url "teams")
         body (util/to-json {:team {:uuid team-uuid}})
         response @(httpkit.client/post url (assoc opts :body body))]
     (when (not (http-predicates/created? response))
