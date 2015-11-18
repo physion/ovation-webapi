@@ -190,9 +190,12 @@
    :name            s/Str
    :links           {s/Keyword s/Str}})
 
+(s/defschema NewTeamRole
+  (dissoc TeamRole :links))
+
 (s/defschema NewTeamMembership
   {:email s/Str
-   :role  TeamRole})
+   :role  NewTeamRole})
 
 (s/defschema Team
   {:id                  s/Int
