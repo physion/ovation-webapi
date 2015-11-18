@@ -227,7 +227,8 @@
             (context* "/memberships" []
               (POST* "/" request
                 :name :post-memberships
-                :return {:membership TeamMembership}
+                :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
+                :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
                 :body [body {:membership NewTeamMembership}]
                 (created (teams/post-membership* request id (:membership body))))
               (context* "/:mid" [mid]

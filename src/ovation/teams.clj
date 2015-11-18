@@ -79,9 +79,12 @@
 (defn -membership-result
   [team-uuid rt response]
   (let [result (util/from-json (:body response))
-        membership-id (get-in result [:pending_membership :id])]
-    (-> result
-      (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))
+        membership-id (or (get-in result [:pending_membership :id])
+                        (get-in result [:membership :id]))]
+    (if (:membership result)
+      (-> result
+        (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))
+      result)))
 
 (defn put-membership*
   [request team-uuid membership]                              ;; membership is a TeamMembership

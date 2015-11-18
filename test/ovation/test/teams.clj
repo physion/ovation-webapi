@@ -106,7 +106,7 @@
       (let [team-uuid (str (util/make-uuid))
             team-id "1"
             team-url (util/join-path [config/TEAMS_SERVER "teams" team-uuid])
-            memberships-url (util/join-path [config/TEAMS_SERVER "teams" team-uuid "memberships"])
+            memberships-url (util/join-path [config/TEAMS_SERVER "memberships"])
             membership-id "1"
             membership-url (util/join-path [memberships-url membership-id])
             team {:team {:id          team-uuid
