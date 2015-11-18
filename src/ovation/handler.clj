@@ -240,4 +240,13 @@
                 (DELETE* "/" request
                   :name :delete-membership
                   :return {:membership TeamMembership}
-                  (ok (teams/delete-membership* request id mid)))))))))))
+                  (ok (teams/delete-membership* request id mid)))))))
+
+        (context* "/roles" []
+          :tags ["teams"]
+
+          (GET* "/" request
+            :name :all-roles
+            :return {:roles [TeamRole]}
+            :summary "Gets all team Roles for the current Organization"
+            (ok (teams/get-roles* request))))))))

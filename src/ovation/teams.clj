@@ -148,3 +148,15 @@
         (throw! response))
 
       (-membership-result team-uuid rt response))))
+
+(defn get-roles*
+  [request]
+  (let [opts (-request-opts (api-key request))
+        url (-make-url "roles")]
+
+    (let [response @(httpkit.client/get url opts)]
+      (when (not (http-predicates/ok? response))
+        (throw! response))
+      (let [body (util/from-json (:body response))
+            roles (:roles body)]
+        {:roles roles}))))
