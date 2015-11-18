@@ -167,4 +167,22 @@
 
         (fact "throws! responses not 201"
           (with-fake-http [{:url teams-url :method :post} {:status 401}]
-            (teams/create-team ..request.. team-id) => (throws ExceptionInfo)))))))
+            (teams/create-team ..request.. team-id) => (throws ExceptionInfo))))))
+
+  (facts "get-roles*"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
+                         ..request.. =contains=> {:auth/auth-info ..auth..}
+                         ..auth.. =contains=> {:api_key ..apikey..}
+                         (routes/router ..request..) => ..rt..]
+      (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])
+            roles [{:id              2323,
+                    :name            "Member",
+                    :organization_id 1},
+                   {:id              233,
+                    :name            "Currator",
+                    :organization_id 1}]]
+        (fact "gets organization roles"
+          (with-fake-http [{:url roles-url :method :get} {:status 200
+                                                          :body   (util/to-json {:roles roles})}]
+            (teams/get-roles* ..request..) => {:roles (map #(assoc % :links {}) roles)}))))))
+
