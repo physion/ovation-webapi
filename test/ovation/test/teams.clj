@@ -177,12 +177,14 @@
       (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])
             roles [{:id              2323,
                     :name            "Member",
-                    :organization_id 1},
+                    :organization_id 1,
+                    :links           {}},
                    {:id              233,
                     :name            "Currator",
-                    :organization_id 1}]]
+                    :organization_id 1,
+                    :links           {}}]]
         (fact "gets organization roles"
           (with-fake-http [{:url roles-url :method :get} {:status 200
                                                           :body   (util/to-json {:roles roles})}]
-            (teams/get-roles* ..request..) => {:roles (map #(assoc % :links {}) roles)}))))))
+            (teams/get-roles* ..request..) => {:roles roles}))))))
 
