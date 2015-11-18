@@ -2,7 +2,8 @@
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
             [ovation.constants :as k]
-            [ovation.util :as util]))
+            [ovation.util :as util])
+  (:import (org.junit.rules TestName)))
 
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any
@@ -164,18 +165,45 @@
 (s/defschema User (-> Entity
                       (assoc :type (s/eq "User"))))
 
-;; -- Upload -- ;;
-(s/defschema UploadInfo {:bucket     s/Str
-                         :path       s/Str
-                         :access-key s/Str
-                         :secret-key s/Str})
+;; -- Teams -- ;;
+(s/defschema TeamMembership
+  {:id    s/Int,
+   :team_id s/Int,
+   :added s/Str
+   :role_id s/Int,
+   :user {:id s/Int
+          :uuid s/Uuid
+          :name s/Str
+          :email s/Str
+          :links {s/Keyword s/Str}}
+   :links {s/Keyword s/Str}})
 
-;; -- Analyses -- ;;
 
-(s/defschema NewAnalysisRecord
-  {:inputs                      [s/Uuid]
-   :outputs                     [s/Uuid]
-   (s/optional-key :parameters) {s/Keyword s/Any}})
+(s/defschema PendingTeamMembership
+  {:id        s/Int
+   :role_name s/Str
+   :email     s/Str})
+
+(s/defschema TeamRole
+  {:id              s/Int
+   :organization_id s/Int
+   :name            s/Str
+   :links           {s/Keyword s/Str}})
+
+(s/defschema NewTeamMembership
+  {:email s/Str
+   :role  TeamRole})
+
+(s/defschema Team
+  {:id                  s/Int
+   :type                (s/eq "Team")
+   :uuid                s/Uuid
+   :name                s/Str
+   :roles               [TeamRole]
+   :pending_memberships [PendingTeamMembership]
+   :memberships         [TeamMembership]
+   :links               {s/Keyword s/Str}})
+
 
 
 ;; -- TRASH INFO -- ;;

@@ -13,7 +13,7 @@
                  [metosin/ring-swagger-ui "2.1.3"]
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
-                 [ring.middleware.logger "0.5.0"]
+                 [ring-logger "0.7.5"]
 
 
                  ;; HTTP and CouchDB
@@ -22,7 +22,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.21.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.22.0"]
 
 
                  ;; Logging

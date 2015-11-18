@@ -3,7 +3,7 @@
             [compojure.api.routes :refer [path-for*]]
             [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.logger :refer [wrap-with-logger]]
             [ring.middleware.raygun :refer [wrap-raygun-handler]]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
@@ -18,7 +18,8 @@
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [ovation.teams :as teams]))
 
 (ovation.logging/setup!)
 
@@ -38,11 +39,12 @@
                   :required-auth-url-prefix #{"/api"})
 
 
-                (wrap-with-logger                           ;;TODO can we make the middleware conditional rather than testing for each logging call?
-                  :info (fn [x] (when config/LOGGING_HOST (logging/info x)))
-                  :debug (fn [x] (when config/LOGGING_HOST (logging/debug x)))
-                  :error (fn [x] (when config/LOGGING_HOST (logging/error x)))
-                  :warn (fn [x] (when config/LOGGING_HOST (logging/warn x))))
+                (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
+                                   :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
+                                   :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
+                                   :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
+                                   :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
+                                   :exceptions false})
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
                 ]
@@ -210,13 +212,29 @@
           (context* "/:id" [id]
             (get-resource "User" id)))
 
+        (context* "/teams" []
+          :tags ["teams"]
 
-        (context* "/provenance" []
-          :tags ["provenance"]
-          (POST* "/" request
-            :name :get-provenance
-            ;:return {:provenance ProvGraph}
-            :summary "Returns the provenance graph expanding from the POSTed entity IDs"
-            (let [auth (:auth/auth-info request)]
-              nil)))))))
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :get-team
+              :return {:team Team}
+              :summary "Gets Project Team"
+              (ok (teams/get-team* request id)))
+            (context* "/memberships" []
+              (POST* "/" request
+                :name :post-memberships
+                :return {:membership TeamMembership}
+                :body [body {:membership NewTeamMembership}]
+                (created (teams/post-membership* request id (:membership body))))
+              (context* "/:mid" [mid]
+                (PUT* "/" request
+                  :name :put-membership
+                  :return {:membership TeamMembership}
+                  :body [body {:membership TeamMembership}]
+                  (ok (teams/put-membership* request id (:membership body))))
 
+                (DELETE* "/" request
+                  :name :delete-membership
+                  :return {:membership TeamMembership}
+                  (ok (teams/delete-membership* request id mid)))))))))))
