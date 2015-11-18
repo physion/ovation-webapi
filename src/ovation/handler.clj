@@ -19,7 +19,8 @@
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [schema.core :as s]
-            [ovation.teams :as teams]))
+            [ovation.teams :as teams]
+            [new-reliquary.ring :refer [wrap-newrelic-transaction]]))
 
 (ovation.logging/setup!)
 
@@ -47,6 +48,8 @@
                                    :exceptions false})
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
+
+                (wrap-newrelic-transaction)
                 ]
 
     (swagger-ui)

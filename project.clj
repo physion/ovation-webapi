@@ -23,6 +23,7 @@
 
                  ;; New Relic agent (JAR)
                  [com.newrelic.agent.java/newrelic-agent "3.22.0"]
+                 [yleisradio/new-reliquary "1.0.0"]
 
 
                  ;; Logging
