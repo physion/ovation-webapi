@@ -76,11 +76,23 @@
 
 
 
+;{:id    s/Int,
+; :team_id s/Int,
+; :added s/Str
+; :role_id s/Int,
+; :user {:id s/Int
+;        :uuid s/Uuid
+;        :name s/Str
+;        :email s/Str
+;        :links {s/Keyword s/Str}}
+; :links {s/Keyword s/Str}}
+
 (defn put-membership*
-  [request team-id membership])
+  [request team-id membership]                              ;; membership is a TeamMembership
+  )
 
 
-(defn post-membership* {}
+(defn post-membership*
   [request team-uuid membership]                            ;; membership is a NewTeamMembership
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
@@ -90,8 +102,8 @@
                  (logging/info (str "Creating Team for " team-uuid))
                  (create-team request team-uuid)))
         team-id (get-in team [:team :id])
-        role (get-in membership [:membership :role])
-        email (get-in membership [:membership :email])
+        role (:role membership)
+        email (:email membership)
         body {:membership {:team_id team-id
                            :role_id (:id role)
                            :email   email}}]
@@ -107,3 +119,8 @@
             membership-id (get-in result [:membership :id])]
         (-> result
           (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))))
+
+
+(defn delete-membership*
+  [request team-uuid membership-id]
+  nil)

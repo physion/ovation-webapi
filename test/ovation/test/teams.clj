@@ -112,8 +112,8 @@
             team {:team {:id          team-uuid
                          :memberships []}}
             user-email "example@example.com"
-            membership {:membership {:email   user-email
-                                     :role {:id 1}}}]
+            membership {:email user-email
+                        :role  {:id 1}}]
 
         (against-background [(routes/named-route ..rt.. :put-membership {:id team-uuid :mid membership-id}) => membership-url
                              (routes/named-route ..rt.. :get-team {:id team-uuid}) => team-url
