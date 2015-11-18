@@ -167,7 +167,7 @@
 
 ;; -- Teams -- ;;
 (s/defschema TeamMembership
-  {:id    s/Int,
+  {:id    s/Str,
    :team_id s/Int,
    :added s/Str
    :role_id s/Int,
@@ -180,12 +180,12 @@
 
 
 (s/defschema PendingTeamMembership
-  {:id        s/Int
+  {:id        s/Str
    :role_name s/Str
    :email     s/Str})
 
 (s/defschema TeamRole
-  {:id              s/Int
+  {:id              s/Str
    :organization_id s/Int
    :name            s/Str
    :links           {s/Keyword s/Str}})
@@ -198,7 +198,7 @@
    :role  NewTeamRole})
 
 (s/defschema Team
-  {:id                  s/Int
+  {:id                  s/Str
    :type                (s/eq "Team")
    :uuid                s/Uuid
    :name                s/Str
