@@ -26,18 +26,6 @@
    :basic-auth [api-key "X"]
    :headers    {"Content-Type" "application/json; charset=utf-8"}})
 
-(defn -default-team
-  [request team-id]
-  (let [auth (:auth/auth-info request)
-        rt (routes/router request)
-        project (first (core/get-entities auth [team-id] rt))]
-
-    (when (nil? project)
-      (not-found! {:errors {:detail "Project not found"}}))
-    (if-let [owner (core/get-owner auth rt project)]
-      {:id          team-id
-       :memberships [{:id    "?"
-                      :email (get-in owner [:attributes :email])}]})))
 
 (defn create-team
   [request team-uuid]
