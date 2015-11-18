@@ -5,7 +5,7 @@
             [org.httpkit.client :as httpkit.client]
             [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
-            [ring.util.http-response :refer [throw! bad-request! not-found!]]
+            [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.core :as core]
             [ovation.auth :as auth]
             [ovation.constants :as k]))
@@ -39,12 +39,12 @@
        :memberships [{:id    "?"
                       :email (get-in owner [:attributes :email])}]})))
 
-(defn create-team                                           ;TODO
-  [request team-id]
+(defn create-team
+  [request team-uuid]
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
         url (routes/named-route rt :post-teams {})
-        body (util/to-json {:team {}})
+        body (util/to-json {:team {:uuid team-uuid}})
         response @(httpkit.client/post url (assoc opts :body body))]
     (when (not (http-predicates/created? response))
       (throw! response))
@@ -79,15 +79,25 @@
 (defn put-membership*
   [request team-id membership])
 
+
 (defn post-membership* {}
-  [request team-id membership]
+  [request team-uuid membership]                            ;; membership is a NewTeamMembership
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
-        url (-make-url "teams" team-id "memberships")
-        team (or (get-team* request team-id :allow-nil false)
-               (create-team request team-id))
-        body (-> membership
-               (assoc :team_uuid (:uuid (:uuid team))))]
+        url (-make-url "teams" team-uuid "memberships")
+        team (or (get-team* request team-uuid :allow-nil true)
+               (do
+                 (logging/info (str "Creating Team for " team-uuid))
+                 (create-team request team-uuid)))
+        team-id (get-in team [:team :id])
+        role (get-in membership [:membership :role])
+        email (get-in membership [:membership :email])
+        body {:membership {:team_id team-id
+                           :role_id (:id role)
+                           :email   email}}]
+
+    (when (or (nil? team-id) (nil? role) (nil? email))
+      (throw! unprocessable-entity!))
 
     (let [response @(httpkit.client/post url (assoc opts :body (util/to-json body)))]
       (when (not (http-predicates/created? response))
@@ -96,4 +106,4 @@
       (let [result (util/from-json (:body response))
             membership-id (get-in result [:membership :id])]
         (-> result
-          (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-id :mid membership-id})))))))
+          (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))))

@@ -165,9 +165,6 @@
           :links {s/Keyword s/Str}}
    :links {s/Keyword s/Str}})
 
-(s/defschema NewTeamMembership                              ;TODO
-  {:user  {:attributes {:email s/Str}}
-   :roles [s/Str]})
 
 (s/defschema PendingTeamMembership
   {:id        s/Int
@@ -179,6 +176,10 @@
    :organization_id s/Int
    :name            s/Str
    :links           {s/Keyword s/Str}})
+
+(s/defschema NewTeamMembership
+  {:email s/Str
+   :role  TeamRole})
 
 (s/defschema Team
   {:id                  s/Int
