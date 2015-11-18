@@ -167,11 +167,11 @@
 
 ;; -- Teams -- ;;
 (s/defschema TeamMembership
-  {:id    s/Str,
-   :team_id s/Int,
+  {:id    (s/either s/Str s/Int),
+   :team_id (s/either s/Str s/Int),
    :added s/Str
-   :role_id s/Int,
-   :user {:id s/Str
+   :role_id (s/either s/Str s/Int),
+   :user {:id (s/either s/Str s/Int)
           :uuid s/Uuid
           :name s/Str
           :email s/Str
@@ -185,8 +185,8 @@
    :email     s/Str})
 
 (s/defschema TeamRole
-  {:id              s/Str
-   :organization_id s/Int
+  {:id              (s/either s/Str s/Int)
+   :organization_id (s/either s/Str s/Int)
    :name            s/Str
    :links           {s/Keyword s/Str}})
 
@@ -198,7 +198,7 @@
    :role  NewTeamRole})
 
 (s/defschema Team
-  {:id                  s/Str
+  {:id                  (s/either s/Str s/Int)
    :type                (s/eq "Team")
    :uuid                s/Uuid
    :name                s/Str
