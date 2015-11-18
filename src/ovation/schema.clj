@@ -180,7 +180,7 @@
 
 
 (s/defschema PendingTeamMembership
-  {:id        s/Str
+  {:id        (s/either s/Str s/Int)
    :role_name s/Str
    :email     s/Str})
 

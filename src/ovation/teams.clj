@@ -22,7 +22,7 @@
 
 (defn -request-opts
   [api-key]
-  {:timeout    200                                          ; ms
+  {:timeout    1000                                          ; ms
    :basic-auth [api-key "X"]
    :headers    {"Content-Type" "application/json; charset=utf-8"}})
 
@@ -70,6 +70,8 @@
         (assoc-in [:team :type] k/TEAM-TYPE)
         (update-in [:team] dissoc :project)
         (update-in [:team] dissoc :organization)
+        (update-in [:team] dissoc :project_id)
+        (update-in [:team] dissoc :organization_id)
         (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
                                   :memberships (routes/named-route rt :post-memberships {:id team-id})})))))
 
@@ -89,7 +91,7 @@
 (defn -membership-result
   [team-uuid rt response]
   (let [result (util/from-json (:body response))
-        membership-id (get-in result [:membership :id])]
+        membership-id (get-in result [:pending_membership :id])]
     (-> result
       (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))
 
@@ -114,7 +116,7 @@
   [request team-uuid membership]                            ;; membership is a NewTeamMembership
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
-        url (-make-url "teams" team-uuid "memberships")
+        url (-make-url "memberships")
         team (or (get-team* request team-uuid :allow-nil true)
                (do
                  (logging/info (str "Creating Team for " team-uuid))
@@ -122,7 +124,7 @@
         team-id (get-in team [:team :id])
         role (:role membership)
         email (:email membership)
-        body {:membership {:team_id team-id
+        body {:membership {:team_id team-uuid
                            :role_id (:id role)
                            :email   email}}]
 
