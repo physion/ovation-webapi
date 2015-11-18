@@ -167,7 +167,4 @@
 
         (fact "throws! responses not 201"
           (with-fake-http [{:url teams-url :method :post} {:status 401}]
-            (teams/create-team ..request.. team-id) => (throws ExceptionInfo))))))
-
-  (facts "put-membership*"
-    (future-fact "updates memberhsip role")))
+            (teams/create-team ..request.. team-id) => (throws ExceptionInfo)))))))

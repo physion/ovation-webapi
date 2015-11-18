@@ -87,9 +87,28 @@
 ;        :links {s/Keyword s/Str}}
 ; :links {s/Keyword s/Str}}
 
+(defn -membership-result
+  [team-uuid rt response]
+  (let [result (util/from-json (:body response))
+        membership-id (get-in result [:membership :id])]
+    (-> result
+      (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))
+
 (defn put-membership*
-  [request team-id membership]                              ;; membership is a TeamMembership
-  )
+  [request team-uuid membership]                              ;; membership is a TeamMembership
+  (let [rt (routes/router request)
+        opts (-request-opts (api-key request))
+        url (-make-url "teams" team-uuid "memberships" (:id membership))
+        role-id (get-in membership [:role :id])
+        body {:membership {:role_id role-id}}]
+    (when (nil? role-id)
+      (throw! unprocessable-entity!))
+
+    (let [response @(httpkit.client/put url (assoc opts :body (util/to-json body)))]
+      (when (not (http-predicates/ok? response))
+        (throw! response))
+
+      (-membership-result team-uuid rt response))))
 
 
 (defn post-membership*
@@ -115,12 +134,17 @@
       (when (not (http-predicates/created? response))
         (throw! response))
 
-      (let [result (util/from-json (:body response))
-            membership-id (get-in result [:membership :id])]
-        (-> result
-          (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))))))
+      (-membership-result team-uuid rt response))))
 
 
 (defn delete-membership*
   [request team-uuid membership-id]
-  nil)
+  (let [rt (routes/router request)
+        opts (-request-opts (api-key request))
+        url (-make-url "teams" team-uuid "memberships" membership-id)]
+
+    (let [response @(httpkit.client/delete url opts)]
+      (when (not (http-predicates/ok? response))
+        (throw! response))
+
+      (-membership-result team-uuid rt response))))
