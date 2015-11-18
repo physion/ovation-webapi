@@ -31,16 +31,20 @@
 
 (defn get-link-targets
   "Gets the document targets for id--rel->"
-  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
+  [auth id rel routes & {:keys [label name include-trashed] :or {label nil
+                                                                 name nil
+                                                                 include-trashed false}}]
   (let [db (couch/db auth)
         opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
-              :reduce        false :include_docs true}]
-    (tr/entities-from-couch (if label
-                     (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
-                     (couch/get-view db k/LINKS-VIEW opts))
-      routes)))
+              :reduce        false :include_docs true}
+        docs (if label
+               (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
+               (couch/get-view db k/LINKS-VIEW opts))]
+    (-> docs
+      (tr/entities-from-couch routes)
+      (core/filter-trashed include-trashed))))
 
 
 
