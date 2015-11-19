@@ -26,15 +26,15 @@
                                :project             {}
                                :roles               []
                                :pending_memberships [{
-                                                      :id        "232",
+                                                      :id        "232"
                                                       :type      "PendingMembership"
-                                                      :role_name "Administrator'",
+                                                      :role_name "Administrator'"
                                                       :email     "newmember@example.com"
                                                       },
                                                      {
-                                                      :id        "2323",
+                                                      :id        "2323"
                                                       :type      "PendingMembership"
-                                                      :role_name "Member",
+                                                      :role_name "Member"
                                                       :email     "newmember@example.com"
                                                       }]
                                :memberships         [{:id      "3"
@@ -57,21 +57,21 @@
                              :roles               []
                              :pending_memberships [{
                                                     :id        "232",
-                                                    :role_name "Administrator'",
+                                                    :role_name "Administrator'"
                                                     :email     "newmember@example.com"
-                                                    :type "PendingMembership"
+                                                    :type      "PendingMembership"
                                                     },
                                                    {
-                                                    :id        "2323",
-                                                    :role_name "Member",
+                                                    :id        "2323"
+                                                    :role_name "Member"
                                                     :email     "newmember@example.com"
-                                                    :type "PendingMembership"
+                                                    :type      "PendingMembership"
                                                     }]
                              :memberships         [{:id      "3"
                                                     :team_id 1
                                                     :added   "2015-02-01"
                                                     :role_id 21
-                                                    :type "Membership"
+                                                    :type    "Membership"
                                                     :user    {
                                                               :id    "3"
                                                               :uuid  user-id

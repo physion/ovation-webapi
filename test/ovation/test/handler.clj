@@ -531,16 +531,19 @@
                                          :id        "232",
                                          :role_name "Administrator'",
                                          :email     "newmember@example.com"
+                                         :type      "PendingMembership"
                                          },
                                         {
                                          :id        "2323",
                                          :role_name "Member",
                                          :email     "newmember@example.com"
+                                         :type      "PendingMembership"
                                          }]
                   :memberships         [{:id      "3232"
                                          :team_id 1
                                          :added   "2015-02-01"
                                          :role_id 21
+                                         :type    "Membership"
                                          :user    {
                                                    :id    "3"
                                                    :uuid  (str (util/make-uuid))
