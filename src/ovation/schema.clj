@@ -169,6 +169,7 @@
 (s/defschema TeamMembership
   {:id    (s/either s/Str s/Int),
    :team_id (s/either s/Str s/Int),
+   :type  s/Str
    :added s/Str
    :role_id (s/either s/Str s/Int),
    :user {:id (s/either s/Str s/Int)
@@ -182,7 +183,9 @@
 (s/defschema PendingTeamMembership
   {:id        (s/either s/Str s/Int)
    :role_name s/Str
-   :email     s/Str})
+   :email     s/Str
+   :type      s/Str
+   })
 
 (s/defschema TeamRole
   {:id              (s/either s/Str s/Int)
