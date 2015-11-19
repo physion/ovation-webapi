@@ -19,6 +19,7 @@
             user-id (str (util/make-uuid))
             team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])
             rails-team {:team {:id                  "1"
+                               :type                "Team"
                                :name                team-id
                                :uuid                team-id
                                :organization        {}
@@ -26,16 +27,19 @@
                                :roles               []
                                :pending_memberships [{
                                                       :id        "232",
+                                                      :type      "PendingMembership"
                                                       :role_name "Administrator'",
                                                       :email     "newmember@example.com"
                                                       },
                                                      {
                                                       :id        "2323",
+                                                      :type      "PendingMembership"
                                                       :role_name "Member",
                                                       :email     "newmember@example.com"
                                                       }]
                                :memberships         [{:id      "3"
                                                       :team_id 1
+                                                      :type    "Membership"
                                                       :added   "2015-02-01"
                                                       :role_id 21
                                                       :user    {
@@ -55,16 +59,19 @@
                                                     :id        "232",
                                                     :role_name "Administrator'",
                                                     :email     "newmember@example.com"
+                                                    :type "PendingMembership"
                                                     },
                                                    {
                                                     :id        "2323",
                                                     :role_name "Member",
                                                     :email     "newmember@example.com"
+                                                    :type "PendingMembership"
                                                     }]
                              :memberships         [{:id      "3"
                                                     :team_id 1
                                                     :added   "2015-02-01"
                                                     :role_id 21
+                                                    :type "Membership"
                                                     :user    {
                                                               :id    "3"
                                                               :uuid  user-id
