@@ -173,6 +173,7 @@
    :added s/Str
    :role_id (s/either s/Str s/Int),
    :user {:id (s/either s/Str s/Int)
+          :type s/Str
           :uuid s/Uuid
           :name s/Str
           :email s/Str

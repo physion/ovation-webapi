@@ -546,6 +546,7 @@
                                          :type    "Membership"
                                          :user    {
                                                    :id    "3"
+                                                   :type  "User"
                                                    :uuid  (str (util/make-uuid))
                                                    :name  "Bob"
                                                    :email "bob@example.com"

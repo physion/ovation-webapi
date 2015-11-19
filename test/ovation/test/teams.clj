@@ -44,6 +44,7 @@
                                                       :role_id 21
                                                       :user    {
                                                                 :id    "3"
+                                                                :type  "User"
                                                                 :uuid  user-id
                                                                 :name  "Bob"
                                                                 :email "bob@example.com"
@@ -74,6 +75,7 @@
                                                     :type    "Membership"
                                                     :user    {
                                                               :id    "3"
+                                                              :type  "User"
                                                               :uuid  user-id
                                                               :name  "Bob"
                                                               :email "bob@example.com"
