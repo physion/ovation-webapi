@@ -178,6 +178,14 @@
           (with-fake-http [{:url teams-url :method :post} {:status 401}]
             (teams/create-team ..request.. team-id) => (throws ExceptionInfo))))))
 
+  (facts "put-membership*"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
+                         ..request.. =contains=> {:auth/auth-info ..auth..}
+                         ..auth.. =contains=> {:api_key ..apikey..}
+                         (routes/router ..request..) => ..rt..]
+      (fact "throws 422 if mid does not match :id"
+        (teams/put-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} 2) => (throws ExceptionInfo))))
+
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                          ..request.. =contains=> {:auth/auth-info ..auth..}
