@@ -130,16 +130,13 @@
 
 
 (defn delete-membership*
-  [request team-uuid membership-id]
-  (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
+  [request membership-id]
+  (let [opts (-request-opts (api-key request))
         url (-make-url "memberships" membership-id)]
 
     (let [response @(httpkit.client/delete url opts)]
       (when (not (http-predicates/no-content? response))
-        (throw! response))
-
-      (-membership-result team-uuid rt response))))
+        (throw! response)))))
 
 (defn get-roles*
   [request]
