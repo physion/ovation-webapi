@@ -13,6 +13,17 @@ You will need
 
 [1]: https://github.com/technomancy/leiningen
 
+## Testing
+
+To test from the command line, run:
+
+    lein midje
+    
+Or from a REPL (with sweet, sweet autotest):
+
+    (use 'midje.repl)
+    (autotest)
+
 ## Running
 
 To start a web server for the application, run:
