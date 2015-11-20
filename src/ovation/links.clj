@@ -81,6 +81,9 @@
       (= source-type :folder) [source (add-roots target source-roots)]
       (= target-type :folder) [(add-roots source target-roots) target]
 
+      (= source-type :file) [source (add-roots target source-roots)]
+      (= target-type :file) [(add-roots source target-roots) target]
+
       (= source-type :source) [(add-roots source target-roots) target]
       (= target-type :source) [source (add-roots target source-roots)]
 
