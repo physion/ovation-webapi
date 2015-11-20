@@ -236,7 +236,7 @@
                   :name :put-membership
                   :return {:membership TeamMembership}
                   :body [body {:membership NewTeamMembership}]
-                  (ok (teams/put-membership* request id (:membership body))))
+                  (ok (teams/put-membership* request id (:membership body) mid)))
 
                 (DELETE* "/" request
                   :name :delete-membership

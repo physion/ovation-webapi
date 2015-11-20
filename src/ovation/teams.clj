@@ -87,10 +87,10 @@
       result)))
 
 (defn put-membership*
-  [request team-uuid membership]                              ;; membership is a TeamMembership
+  [request team-uuid membership membership-id]                              ;; membership is a TeamMembership
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
-        url (-make-url "teams" team-uuid "memberships" (:id membership))
+        url (-make-url "memberships" membership-id)
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
     (when (nil? role-id)
