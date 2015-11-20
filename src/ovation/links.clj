@@ -58,7 +58,8 @@
 
 (defn collaboration-roots
   [doc]
-  (or (get-in doc [:links :_collaboration_roots]) [(:_id doc)]))
+  (or (when-not empty? (get-in doc [:links :_collaboration_roots]))
+    [(:_id doc)]))
 
 (defn- add-roots
   [doc roots]
@@ -86,8 +87,6 @@
 
       (= source-type :source) [(add-roots source target-roots) target]
       (= target-type :source) [source (add-roots target source-roots)]
-
-      ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
 
       :else
       nil
