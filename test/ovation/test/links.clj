@@ -116,12 +116,31 @@
             (provided
               (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
 
+        (fact "updates target _collaboration_roots for source:=File"
+          (let [rel "some-rel"
+                source {:type "File" :links {:_collaboration_roots [..roots1..]}}
+                target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
+                expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
+            (provided
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
+
         (fact "updates source _collaboration_roots for target:=Project"
           (let [rel "some-rel"
                 source-collab-root (str (UUID/randomUUID))
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [source-collab-root]}}
                 target {:_id target-id :type "Project" :links {:_collaboration_roots nil}}
                 expected (assoc-in source [:links :_collaboration_roots] #{source-collab-root target-id})]
+            (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
+            (provided
+              (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
+
+        (fact "updates source _collaboration_roots for target:=File"
+          (let [rel "some-rel"
+                source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
+                target {:_id target-id :type "File" :links {:_collaboration_roots [..roots2..]}}
+                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
+                expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
