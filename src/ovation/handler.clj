@@ -1,7 +1,7 @@
 (ns ovation.handler
   (:require [compojure.api.sweet :refer :all]
             [compojure.api.routes :refer [path-for*]]
-            [ring.util.http-response :refer [created ok accepted not-found unauthorized bad-request conflict]]
+            [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.logger :refer [wrap-with-logger]]
             [ring.middleware.raygun :refer [wrap-raygun-handler]]
@@ -241,7 +241,8 @@
                 (DELETE* "/" request
                   :name :delete-membership
                   :return {:membership TeamMembership}
-                  (ok (teams/delete-membership* request id mid)))))))
+                  (teams/delete-membership* request mid)
+                  (no-content))))))
 
         (context* "/roles" []
           :tags ["teams"]
