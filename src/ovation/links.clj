@@ -58,8 +58,10 @@
 
 (defn collaboration-roots
   [doc]
-  (or (when-not empty? (get-in doc [:links :_collaboration_roots]))
-    [(:_id doc)]))
+  (let [roots (get-in doc [:links :_collaboration_roots])]
+    (if (or (empty? roots) (nil? roots))
+      [(:_id doc)]
+      roots)))
 
 (defn- add-roots
   [doc roots]
