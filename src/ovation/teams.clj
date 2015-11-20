@@ -133,10 +133,10 @@
   [request team-uuid membership-id]
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
-        url (-make-url "teams" team-uuid "memberships" membership-id)]
+        url (-make-url "memberships" membership-id)]
 
     (let [response @(httpkit.client/delete url opts)]
-      (when (not (http-predicates/ok? response))
+      (when (not (http-predicates/no-content? response))
         (throw! response))
 
       (-membership-result team-uuid rt response))))
