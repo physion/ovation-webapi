@@ -100,9 +100,9 @@
 
         (fact "updates target _collaboration_roots for source:=Project"
           (let [rel "some-rel"
-                source {:type "Project" :links {:_collaboration_roots [..roots1..]}}
-                target {:type "Entity" :links {:_collaboration_roots [..roots2..]}}
-                expected (assoc-in target [:links :_collaboration_roots] #{..roots2.. ..roots1..})]
+                source {:type "Project" :links {:_collaboration_roots nil} :_id ..proj-id..}
+                target {:type "Entity" :links {:_collaboration_roots [..roots1..]} :_id target-id}
+                expected (assoc-in target [:links :_collaboration_roots] #{..proj-id.. ..roots1..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
@@ -118,10 +118,10 @@
 
         (fact "updates source _collaboration_roots for target:=Project"
           (let [rel "some-rel"
-                source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
-                target {:_id target-id :type "Project" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
-                expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
+                source-collab-root (str (UUID/randomUUID))
+                source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [source-collab-root]}}
+                target {:_id target-id :type "Project" :links {:_collaboration_roots nil}}
+                expected (assoc-in source [:links :_collaboration_roots] #{source-collab-root target-id})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
               (core/get-entities ..auth.. [target-id] ..rt..) => [target])))
