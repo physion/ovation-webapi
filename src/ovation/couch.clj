@@ -20,7 +20,9 @@
   (cl/with-db db
     (let [result (cl/get-view design-doc view opts)]
       (if (:include_docs opts)
-        (map :doc result)
+        (->> result
+          (map :doc)
+          (filter #(not (nil? %))))
         result))))
 
 (defn all-docs
