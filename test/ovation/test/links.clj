@@ -191,7 +191,7 @@
                                                                   :reduce        false
                                                                   :include_docs  true}) => ..docs..
                          (couch/db ..auth..) => ..db..
-                         (tr/values-from-couch ..docs.. ..rt..) => ..values..]
+                         (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..values..]
 
       (fact "gets relationship documents"
         (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))

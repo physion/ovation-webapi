@@ -43,7 +43,7 @@
   (let [db (couch/db auth)
         docs (couch/all-docs db ids)]
     (if routes
-      (tr/values-from-couch docs routes)
+      (tr/values-from-couch docs auth routes)
       docs)))
 
 (defn get-owner
@@ -87,7 +87,7 @@
 
   (let [db (couch/db auth)
         docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
-    (tr/values-from-couch (couch/bulk-docs db docs) routes)))
+    (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
 (defn- merge-updates
   [updates]
@@ -156,4 +156,4 @@
 
     (let [db (couch/db auth)
           docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
-      (tr/values-from-couch (couch/delete-docs db docs) routes))))
+      (tr/values-from-couch (couch/delete-docs db docs) auth routes))))

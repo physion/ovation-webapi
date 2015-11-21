@@ -93,17 +93,18 @@
   (map (couch-to-entity auth router) docs))
 
 (defn couch-to-value
-  [router]
+  [auth router]
   (fn [doc]
     (case (:error doc)
       "conflict" (conflict! doc)
       "forbidden" (forbidden!)
       "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
-        c/RELATION-TYPE-NAME (add-self-link doc router)
+        c/RELATION-TYPE-NAME (-> doc
+                               (add-self-link router))
         doc))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
-  [docs router]
-  (map (couch-to-value router) docs))
+  [docs auth router]
+  (map (couch-to-value auth router) docs))

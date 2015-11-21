@@ -78,7 +78,8 @@
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
-                                         (s/optional-key :api_version) s/Int))
+                                         (s/optional-key :api_version) s/Int
+                                         (s/optional-key :permissions) {s/Keyword s/Bool}))
 
 
 (s/defschema Entity (assoc BaseEntity
@@ -96,9 +97,10 @@
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
-(s/defschema EntityUpdate (dissoc BaseEntity :links :relationships))
+(s/defschema EntityUpdate (-> BaseEntity
+                            (dissoc BaseEntity :links :relationships :permissions)))
 
-;; -- Entity types --;;
+  ;; -- Entity types --;;
 (s/defschema NewProject (-> NewEntity
                             (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
@@ -209,7 +211,8 @@
    :roles               [TeamRole]
    :pending_memberships [PendingTeamMembership]
    :memberships         [TeamMembership]
-   :links               {s/Keyword s/Str}})
+   :links               {s/Keyword s/Str}
+   (s/optional-key :permissions) {s/Keyword s/Bool}})
 
 
 

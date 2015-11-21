@@ -92,7 +92,7 @@
   (fact "`couch-to-value` adds self link to LinkInfo"
     (let [couch {:_id ..id..
                  :type util/RELATION_TYPE}]
-      ((tr/couch-to-value ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
+      ((tr/couch-to-value ..auth.. ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
       (provided
         (util/entity-type-name couch) => c/RELATION-TYPE-NAME
         (r/self-route ..rt.. couch) => ..url..))))

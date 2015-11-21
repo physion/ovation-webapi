@@ -27,6 +27,7 @@
               :reduce        false :include_docs true}]
     (tr/values-from-couch
       (couch/get-view db k/LINK-DOCS-VIEW opts)
+      auth
       routes)))
 
 (defn get-link-targets

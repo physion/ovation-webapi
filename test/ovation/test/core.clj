@@ -31,7 +31,7 @@
           (provided
             (auth/check! ..user.. ::auth/create) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
-            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))
+            (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "`delete-values`"
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..user..]
@@ -43,7 +43,7 @@
             (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..user.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
-            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))))
+            (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
 
 
 (facts "About Query"
