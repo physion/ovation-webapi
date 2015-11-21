@@ -9,7 +9,8 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [clj-time.core :as t]
-            [clj-time.format :as f])
+            [clj-time.format :as f]
+            [ovation.auth :as auth])
   (:import (clojure.lang ExceptionInfo)))
 
 
@@ -148,10 +149,12 @@
 
 (facts "About permissions"
   (facts "for entities"
-    (facts "owner"
-      (fact "add-entity-permissions sets {update: true}"
-        (tr/add-entity-permissions {:owner ..id..} ..id..) =contains=> {:permissions {:update true}})
-      (fact "add-entity-permissions sets {delete: true"
-        (tr/add-entity-permissions {:owner ..id..} ..id..) =contains=> {:permissions {:delete true}})))
+    (let [doc {:owner ..id..}]
+      (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
+        (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
+                                                                           :delete ..delete..})
+        (provided
+          (auth/can? ..id.. :auth/update doc) => ..update..
+          (auth/can? ..id.. :auth/delete doc) => ..delete..))))
   (facts "for values"))
 

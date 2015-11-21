@@ -53,6 +53,7 @@
         (add-updated-at time)
         (dissoc :links)
         (dissoc :relationships)
+        (dissoc :permissions)
         (add-collaboration-roots roots)))
     doc))
 
