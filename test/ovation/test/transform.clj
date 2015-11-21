@@ -35,11 +35,11 @@
 (facts "About error handling"
   (facts "in couch-to-entity"
     (fact "throws conflict! if any doc has {:error 'conflict'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
+      ((tr/couch-to-entity ..auth..  ..rt..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
     (fact "throws forbidden! if any doc has {:error 'forbidden'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
+      ((tr/couch-to-entity ..auth.. ..rt..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
     (fact "throws unauthorized! if any doc has {:error 'unauthorized'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
+      ((tr/couch-to-entity ..auth.. ..rt..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
 
 (facts "About DTO link modifications"
   (fact "`remove-hidden-links` removes '_...' links"
@@ -145,4 +145,13 @@
   (fact "Does not remove other entity attributes"
     (let [doc {:type "MyEntity" :attributes {:label ..label..}}]
       (tr/remove-user-attributes doc) => doc)))
+
+(facts "About permissions"
+  (facts "for entities"
+    (facts "owner"
+      (fact "add-entity-permissions sets {update: true}"
+        (tr/add-entity-permissions {:owner ..id..} ..id..) =contains=> {:permissions {:update true}})
+      (fact "add-entity-permissions sets {delete: true"
+        (tr/add-entity-permissions {:owner ..id..} ..id..) =contains=> {:permissions {:delete true}})))
+  (facts "for values"))
 

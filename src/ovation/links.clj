@@ -43,7 +43,7 @@
                (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
                (couch/get-view db k/LINKS-VIEW opts))]
     (-> docs
-      (tr/entities-from-couch routes)
+      (tr/entities-from-couch auth routes)
       (core/filter-trashed include-trashed))))
 
 

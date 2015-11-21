@@ -52,7 +52,7 @@
         (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:body   session
                                                                                 :status 200}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
 
-          (auth/authorize server apikey) => {:cloudant_key    ckey
+          (auth/authenticate server apikey) => {:cloudant_key    ckey
                                              :cloudant_db_url curl}))
 
       ))
