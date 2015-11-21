@@ -92,6 +92,12 @@
   [docs auth router]
   (map (couch-to-entity auth router) docs))
 
+(defn add-value-permissions
+  [doc authenticated-user]
+  (-> doc
+    (assoc-in [:permissions :update] (auth/can? authenticated-user :auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? authenticated-user :auth/delete doc))))
+
 (defn couch-to-value
   [auth router]
   (fn [doc]
@@ -101,8 +107,11 @@
       "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (-> doc
-                               (add-self-link router))
-        doc))))
+                               (add-self-link router)
+                               ;(add-value-permissions :user_id (auth/authenticated-user-id auth))
+                               )
+        ;; default
+        (add-value-permissions doc (auth/authenticated-user-id auth))))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"

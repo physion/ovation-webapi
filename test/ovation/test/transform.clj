@@ -156,5 +156,10 @@
         (provided
           (auth/can? ..id.. :auth/update doc) => ..update..
           (auth/can? ..id.. :auth/delete doc) => ..delete..))))
-  (facts "for values"))
+  (facts "for annotations"
+    (let [doc {:user ..id..
+               :type "Annotation"}]
+      (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
+        (tr/add-value-permissions doc ..id..) => (assoc doc :permissions {:update true
+                                                                          :delete true})))))
 
