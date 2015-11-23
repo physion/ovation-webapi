@@ -28,7 +28,7 @@
                                                                 :include_docs  true}) => [doc1]
                            (auth/can? anything :auth/update anything) => true
                            (couch/db ..auth..) => ..db..
-                           (tr/couch-to-entity ..rt..) => (fn [doc] doc)]
+                           (tr/couch-to-entity ..auth.. ..rt..) => (fn [doc] doc)]
 
         (fact "gets entity rel targets"
           (links/get-link-targets ..auth.. ..id.. ..rel.. ..rt..) => [doc1 doc2 doc3])
@@ -191,7 +191,7 @@
                                                                   :reduce        false
                                                                   :include_docs  true}) => ..docs..
                          (couch/db ..auth..) => ..db..
-                         (tr/values-from-couch ..docs.. ..rt..) => ..values..]
+                         (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..values..]
 
       (fact "gets relationship documents"
         (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))

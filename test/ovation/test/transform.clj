@@ -9,7 +9,8 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [clj-time.core :as t]
-            [clj-time.format :as f])
+            [clj-time.format :as f]
+            [ovation.auth :as auth])
   (:import (clojure.lang ExceptionInfo)))
 
 
@@ -35,11 +36,11 @@
 (facts "About error handling"
   (facts "in couch-to-entity"
     (fact "throws conflict! if any doc has {:error 'conflict'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
+      ((tr/couch-to-entity ..auth..  ..rt..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
     (fact "throws forbidden! if any doc has {:error 'forbidden'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
+      ((tr/couch-to-entity ..auth.. ..rt..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
     (fact "throws unauthorized! if any doc has {:error 'unauthorized'}"
-      ((tr/couch-to-entity ..rt..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
+      ((tr/couch-to-entity ..auth.. ..rt..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
 
 (facts "About DTO link modifications"
   (fact "`remove-hidden-links` removes '_...' links"
@@ -91,7 +92,7 @@
   (fact "`couch-to-value` adds self link to LinkInfo"
     (let [couch {:_id ..id..
                  :type util/RELATION_TYPE}]
-      ((tr/couch-to-value ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
+      ((tr/couch-to-value ..auth.. ..rt..) couch) => (assoc-in couch [:links :self] ..url..)
       (provided
         (util/entity-type-name couch) => c/RELATION-TYPE-NAME
         (r/self-route ..rt.. couch) => ..url..))))
@@ -145,4 +146,20 @@
   (fact "Does not remove other entity attributes"
     (let [doc {:type "MyEntity" :attributes {:label ..label..}}]
       (tr/remove-user-attributes doc) => doc)))
+
+(facts "About permissions"
+  (facts "for entities"
+    (let [doc {:owner ..id..}]
+      (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
+        (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
+                                                                           :delete ..delete..})
+        (provided
+          (auth/can? ..id.. :auth/update doc) => ..update..
+          (auth/can? ..id.. :auth/delete doc) => ..delete..))))
+  (facts "for annotations"
+    (let [doc {:user ..id..
+               :type "Annotation"}]
+      (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
+        (tr/add-value-permissions doc ..id..) => (assoc doc :permissions {:update true
+                                                                          :delete true})))))
 

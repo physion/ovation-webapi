@@ -27,6 +27,7 @@
               :reduce        false :include_docs true}]
     (tr/values-from-couch
       (couch/get-view db k/LINK-DOCS-VIEW opts)
+      auth
       routes)))
 
 (defn get-link-targets
@@ -43,7 +44,7 @@
                (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
                (couch/get-view db k/LINKS-VIEW opts))]
     (-> docs
-      (tr/entities-from-couch routes)
+      (tr/entities-from-couch auth routes)
       (core/filter-trashed include-trashed))))
 
 

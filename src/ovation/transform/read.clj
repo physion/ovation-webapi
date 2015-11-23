@@ -6,7 +6,8 @@
             [ovation.routes :as r]
             [ovation.constants :as c]
             [clojure.tools.logging :as logging]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.auth :as auth]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -59,8 +60,14 @@
       (assoc dto :attributes (select-keys m (for [[k v] m :when (= k :name)] k))))
     dto))
 
+(defn add-entity-permissions
+  [doc authenticated-user]
+  (-> doc
+    (assoc-in [:permissions :update] (auth/can? authenticated-user :auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? authenticated-user :auth/delete doc))))
+
 (defn couch-to-entity
-  [router]
+  [auth router]
   (fn [doc]
     (case (:error doc)
       "conflict" (conflict!)
@@ -76,26 +83,37 @@
           (add-heads-link router)
           (add-annotation-links router)
           (add-relationship-links router)
-          (assoc-in [:links :_collaboration_roots] collaboration-roots))))))
+          (assoc-in [:links :_collaboration_roots] collaboration-roots)
+          (add-entity-permissions (auth/authenticated-user-id auth)))))))
 
 
 (defn entities-from-couch
   "Transform couchdb documents."
-  [docs router]
-  (map (couch-to-entity router) docs))
+  [docs auth router]
+  (map (couch-to-entity auth router) docs))
+
+(defn add-value-permissions
+  [doc authenticated-user]
+  (-> doc
+    (assoc-in [:permissions :update] (auth/can? authenticated-user :auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? authenticated-user :auth/delete doc))))
 
 (defn couch-to-value
-  [router]
+  [auth router]
   (fn [doc]
     (case (:error doc)
       "conflict" (conflict! doc)
       "forbidden" (forbidden!)
       "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
-        c/RELATION-TYPE-NAME (add-self-link doc router)
-        doc))))
+        c/RELATION-TYPE-NAME (-> doc
+                               (add-self-link router)
+                               ;(add-value-permissions :user_id (auth/authenticated-user-id auth))
+                               )
+        ;; default
+        (add-value-permissions doc (auth/authenticated-user-id auth))))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
-  [docs router]
-  (map (couch-to-value router) docs))
+  [docs auth router]
+  (map (couch-to-value auth router) docs))

@@ -7,6 +7,9 @@
             [clojure.tools.logging :as logging]))
 
 
+
+;; Authentication
+
 (defn get-auth
   "Async get user info for ovation.io API key"
   [authserver apikey]
@@ -36,7 +39,7 @@
       (:body)
       (util/from-json))))
 
-(defn authorize
+(defn authenticate
   "Gets the Cloudant API key and database URL for an Ovation API key."
   [authserver apikey]
   (auth-info (get-auth authserver apikey)))
@@ -45,6 +48,9 @@
   "The UUID of the authorized user"
   [auth]
   (:uuid auth))
+
+
+;; Authorization
 
 (defn- can-write?
   [auth-user-id doc]
