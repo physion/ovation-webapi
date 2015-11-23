@@ -27,6 +27,7 @@
               :reduce        false :include_docs true}]
     (tr/values-from-couch
       (couch/get-view db k/LINK-DOCS-VIEW opts)
+      auth
       routes)))
 
 (defn get-link-targets
@@ -43,7 +44,7 @@
                (filter (eq-doc-label label) (couch/get-view db k/LINKS-VIEW opts))
                (couch/get-view db k/LINKS-VIEW opts))]
     (-> docs
-      (tr/entities-from-couch routes)
+      (tr/entities-from-couch auth routes)
       (core/filter-trashed include-trashed))))
 
 
@@ -58,7 +59,10 @@
 
 (defn collaboration-roots
   [doc]
-  (get-in doc [:links :_collaboration_roots] [(:_id doc)]))
+  (let [roots (get-in doc [:links :_collaboration_roots])]
+    (if (or (empty? roots) (nil? roots))
+      [(:_id doc)]
+      roots)))
 
 (defn- add-roots
   [doc roots]
@@ -81,10 +85,11 @@
       (= source-type :folder) [source (add-roots target source-roots)]
       (= target-type :folder) [(add-roots source target-roots) target]
 
+      (= source-type :file) [source (add-roots target source-roots)]
+      (= target-type :file) [(add-roots source target-roots) target]
+
       (= source-type :source) [(add-roots source target-roots) target]
       (= target-type :source) [source (add-roots target source-roots)]
-
-      ;(and (= source-type :analysisrecord) (= target-type :revision)) [(add-roots source target-roots) target]
 
       :else
       nil

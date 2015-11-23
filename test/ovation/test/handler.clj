@@ -120,7 +120,7 @@
 (facts "About annotations"
   (let [apikey "--apikey--"
         auth-info {:user "..user.."}]
-    (against-background [(auth/authorize anything apikey) => auth-info]
+    (against-background [(auth/authenticate anything apikey) => auth-info]
       (facts "GET /entities/:id/annotations/:type"
         (let [id (str (util/make-uuid))
               tags [{:_id             (str (util/make-uuid))
@@ -174,7 +174,7 @@
 (facts "About /entities"
   (let [apikey "--apikey--"
         auth-info {:user "..user.."}]
-    (against-background [(auth/authorize anything apikey) => auth-info]
+    (against-background [(auth/authenticate anything apikey) => auth-info]
 
       (facts "read"
         (let [id (str (UUID/randomUUID))
@@ -201,7 +201,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
              (let [id# (str (UUID/randomUUID))
@@ -225,7 +225,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [id# (str (UUID/randomUUID))
@@ -259,7 +259,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [source-type# ~(util/entity-type-name-keyword type-name)
@@ -311,7 +311,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
            (facts "create"
              (let [new-entity# {:type ~(capitalize type-name) :attributes {:foo "bar"}}
@@ -354,7 +354,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
              (let [id# (UUID/randomUUID)
@@ -410,7 +410,7 @@
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
-       (against-background [(auth/authorize anything apikey#) => auth-info#]
+       (against-background [(auth/authenticate anything apikey#) => auth-info#]
 
          (facts ~(util/join-path ["" type-path])
            (facts "delete"
@@ -478,7 +478,7 @@
   (facts "related Sources"
     (let [apikey "---apikey---"
           auth-info {:user "...user..."}]
-      (against-background [(auth/authorize anything apikey) => auth-info]
+      (against-background [(auth/authenticate anything apikey) => auth-info]
 
         (future-fact "associates created Source"
           )))))
@@ -510,7 +510,7 @@
               get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
           (body-json get) => {:revisions revs}
           (provided
-            (auth/authorize anything apikey) => auth-info
+            (auth/authenticate anything apikey) => auth-info
             (core/get-entities auth-info [id] ..rt..) => [doc]
             (r/router anything) => ..rt..
             (revisions/get-head-revisions auth-info ..rt.. doc) => revs))))))
@@ -557,5 +557,5 @@
                                         :memberships "--membership--url--"}}]
         (body-json get) => {:team team}
         (provided
-          (auth/authorize anything apikey) => auth-info
+          (auth/authenticate anything apikey) => auth-info
           (teams/get-team* anything id) => {:team team})))))

@@ -31,7 +31,7 @@
           (provided
             (auth/check! ..user.. ::auth/create) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
-            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))
+            (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "`delete-values`"
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..user..]
@@ -43,7 +43,7 @@
             (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..user.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
-            (tr/values-from-couch ..docs.. ..rt..) => ..result..))))))
+            (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
 
 
 (facts "About Query"
@@ -68,7 +68,7 @@
       (provided
         (couch/db ...auth...) => ...db...
         (couch/get-view ...db... k/ENTITIES-BY-TYPE-VIEW {:key ...type... :reduce false :include_docs true}) => [...docs...]
-        (tr/entities-from-couch [...docs...] ..rt..) => ...entities...
+        (tr/entities-from-couch [...docs...] ..auth.. ..rt..) => ...entities...
         (core/filter-trashed ...entities... false) => ...result...)))
 
   (facts "get-entities"
@@ -78,7 +78,7 @@
         (provided
           (couch/db ...auth...) => ...db...
           (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
-          (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..rt..) => ...entities...
+          (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ...entities...
           (core/filter-trashed ...entities... false) => ...result...))))
 
   (facts "get-owner"
@@ -107,7 +107,7 @@
                              :collaboration_roots []) => [...doc...]
                            (auth/authenticated-user-id ...auth...) => ...owner-id...
                            (couch/bulk-docs ...db... [...doc...]) => ...result...
-                           (tr/entities-from-couch ...result... ..routes..) => ...result...]
+                           (tr/entities-from-couch ...result... ..auth.. ..routes..) => ...result...]
 
         (fact "it sends doc to Couch"
           (core/create-entities ...auth... [new-entity] ..routes..) => ...result...)
@@ -116,7 +116,7 @@
           (fact "it adds collaboration roots from parent"
             (core/create-entities ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
             (provided
-              (tr/entities-from-couch ...result... ..rt..) => ...result...
+              (tr/entities-from-couch ...result... ..auth.. ..rt..) => ...result...
               (core/parent-collaboration-roots ...auth... ...parent... ..rt..) => ...collaboration_roots...
               (tw/to-couch ...owner-id... [{:type       type
                                             :attributes attributes}]
@@ -149,7 +149,7 @@
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..auth.. [id] ..rt..) => [entity]
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]
-                             (tr/entities-from-couch [updated-entity] ..rt..) => [updated-entity]]
+                             (tr/entities-from-couch [updated-entity] ..auth.. ..rt..) => [updated-entity]]
           (fact "it updates attributes"
             (core/update-entities ..auth.. [update] ..rt..) => [updated-entity])
           (fact "it fails if authenticated user doesn't have write permission"

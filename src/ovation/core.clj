@@ -21,10 +21,10 @@
   [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
     (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
-                                                  :reduce       false
-                                                  :include_docs true})
-        (tr/entities-from-couch routes)
-        (filter-trashed include-trashed))))
+                                                    :reduce       false
+                                                    :include_docs true})
+      (tr/entities-from-couch auth routes)
+      (filter-trashed include-trashed))))
 
 
 
@@ -34,7 +34,7 @@
   (let [db (couch/db auth)
         docs (filter :_id (couch/all-docs db ids))]
     (-> docs
-      (tr/entities-from-couch routes)
+      (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
 (defn get-values
@@ -43,7 +43,7 @@
   (let [db (couch/db auth)
         docs (couch/all-docs db ids)]
     (if routes
-      (tr/values-from-couch docs routes)
+      (tr/values-from-couch docs auth routes)
       docs)))
 
 (defn get-owner
@@ -75,6 +75,7 @@
                               (tw/to-couch (auth/authenticated-user-id auth)
                                 entities
                                 :collaboration_roots (parent-collaboration-roots auth parent routes)))
+      auth
       routes)))
 
 (defn create-values
@@ -86,7 +87,7 @@
 
   (let [db (couch/db auth)
         docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
-    (tr/values-from-couch (couch/bulk-docs db docs) routes)))
+    (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
 (defn- merge-updates
   [updates]
@@ -112,12 +113,14 @@
 
     (let [bulk-docs (if direct
                       entities
-                      (let [ids  (map :_id entities)
+                      (let [ids (map :_id entities)
                             docs (get-entities auth ids routes)
                             updated-docs (map (merge-updates entities) docs)]
                         updated-docs))
           auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
-      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs)) routes))))
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+        auth
+        routes))))
 
 (defn trash-entity
   [user-id doc]
@@ -153,4 +156,4 @@
 
     (let [db (couch/db auth)
           docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
-      (tr/values-from-couch (couch/delete-docs db docs) routes))))
+      (tr/values-from-couch (couch/delete-docs db docs) auth routes))))
