@@ -94,8 +94,8 @@
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
     (when (or (nil? role-id)
-            (not= membership-id (:id membership)))
-      (throw! unprocessable-entity!))
+            (nil? membership-id))
+      (unprocessable-entity!))
 
     (let [response @(httpkit.client/put url (assoc opts :body (util/to-json body)))]
       (when (not (http-predicates/ok? response))
@@ -121,7 +121,7 @@
                            :email   email}}]
 
     (when (or (nil? team-id) (nil? role) (nil? email))
-      (throw! unprocessable-entity!))
+      (unprocessable-entity!))
 
     (let [response @(httpkit.client/post url (assoc opts :body (util/to-json body)))]
       (when (not (http-predicates/created? response))
