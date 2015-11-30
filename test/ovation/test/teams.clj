@@ -183,8 +183,8 @@
                          ..request.. =contains=> {:auth/auth-info ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
-      (fact "throws 422 if mid does not match :id"
-        (teams/put-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} 2) => (throws ExceptionInfo))))
+      (fact "throws 422 if mid is not specified"
+        (teams/put-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
