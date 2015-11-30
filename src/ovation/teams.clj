@@ -94,7 +94,7 @@
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
     (when (or (nil? role-id)
-            (not= membership-id (:id membership)))
+            (nil? membership-id))
       (throw! unprocessable-entity!))
 
     (let [response @(httpkit.client/put url (assoc opts :body (util/to-json body)))]
