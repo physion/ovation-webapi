@@ -80,7 +80,7 @@
                             :attributes {}}
                     rev {:type       k/REVISION-TYPE
                          :_id        ..revid..
-                         :attributes {:previous [..headid..]
+                         :attributes {:previous []
                                       :file_id ..fileid..}}]
                 (rev/create-revisions ..auth.. ..rt.. ..file.. [newrev]) => {:revisions [rev]
                                                                              :links     ..links..
@@ -91,7 +91,7 @@
                                         :attributes {}}
                   (rev/get-head-revisions ..auth.. ..rt.. ..file..) => []
                   (core/create-entities ..auth.. [{:type       "Revision"
-                                                   :attributes {:previous []
+                                                   :attributes {:previous [] ;; <- this is key
                                                                 :file_id ..fileid..}}] ..rt..) => [rev]
                   (links/add-links ..auth.. [..file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
                                                                                                                  :links   ..links..})))))))
