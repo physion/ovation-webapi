@@ -169,7 +169,7 @@
           attributes {:label ..label1..}
           new-entity {:type       type
                       :attributes attributes}
-          id (util/make-uuid)
+          id (str (util/make-uuid))
           rev "1"
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
           update (assoc entity :trash_info {:trashing_user ..owner-id...
@@ -179,10 +179,12 @@
                            (auth/authenticated-user-id ..auth..) => ..owner-id..]
 
         (against-background [(core/get-entities ..auth.. [id] ..rt..) => [entity]
-                             (couch/bulk-docs ..db.. [update]) => ..deleted..
+                             (tw/to-couch ..owner-id.. [update]) => ..update-docs..
+                             (couch/bulk-docs ..db.. ..update-docs..) => ..deleted..
+                             (tr/entities-from-couch ..deleted.. ..auth.. ..rt..) => ..result..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entity ..auth.. [id] ..rt..) => ..deleted..)
+            (core/delete-entity ..auth.. [id] ..rt..) => ..result..)
 
           (fact "it fails if entity already trashed"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)

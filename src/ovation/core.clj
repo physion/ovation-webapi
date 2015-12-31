@@ -143,7 +143,9 @@
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
-      (couch/bulk-docs db auth-checked-docs))))
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+                              auth
+                              routes))))
 
 
 (defn delete-values
