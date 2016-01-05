@@ -14,7 +14,8 @@
   "Async get user info for ovation.io API key"
   [authserver apikey]
   (let [url (util/join-path [authserver "api" "v1" "users"])
-        opts {:basic-auth [apikey apikey]}]
+        opts {:basic-auth [apikey apikey]
+              :accept     :json}]
 
     (http/get url opts)))
 
@@ -42,7 +43,8 @@
 (defn authenticate
   "Gets the Cloudant API key and database URL for an Ovation API key."
   [authserver apikey]
-  (auth-info (get-auth authserver apikey)))
+  (-> (auth-info (get-auth authserver apikey))
+      (assoc :server authserver)))
 
 (defn authenticated-user-id
   "The UUID of the authorized user"
@@ -51,6 +53,23 @@
 
 
 ;; Authorization
+(defn get-permissions
+  [auth docs]
+  (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
+        apikey (:api_key auth)
+        opts {:basic-auth   [apikey apikey]
+              :query-params {:uuids (map :_id docs)}
+              :accept       :json}]
+
+    (let [response @(http/get url opts)]
+      (when (not (hp/ok? response))
+        (logging/error "Unable to retrieve object permissions")
+        (throw! response))
+
+      (-> response
+          :body
+          (util/from-json)
+          ))))
 
 (defn- can-write?
   [auth-user-id doc]

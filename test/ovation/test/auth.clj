@@ -3,8 +3,10 @@
   (:require [ovation.auth :as auth]
             [org.httpkit.fake :refer [with-fake-http]]
             [clojure.data.codec.base64 :as b64]
-            [ovation.util :as util])
-  (:import (clojure.lang ExceptionInfo)))
+            [ovation.util :as util]
+            [clojure.data.json :as json])
+  (:import (clojure.lang ExceptionInfo)
+           (java.util UUID)))
 
 
 (defn string-to-base64-string [original]
@@ -53,7 +55,8 @@
                                                                                 :status 200}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
 
           (auth/authenticate server apikey) => {:cloudant_key    ckey
-                                             :cloudant_db_url curl}))
+                                                :cloudant_db_url curl
+                                                :server          server}))
 
       ))
 
@@ -112,4 +115,18 @@
                                          :owner ..user..}) => true
       (auth/can? ..user.. ::auth/delete {:type "Entity"
                                          :owner ..other..}) => false)))
+
+(facts "About `get-permissions`"
+       (fact "gets permissions from auth server"
+             (let [uuids [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+                   expected {:permissions [{:uuid        (first uuids)
+                                            :permissions {}}
+                                           {:uuid        (last uuids)
+                                            :permissions {}}]}
+                   docs [{:_id (first uuids)} {:_id (last uuids)}]
+                   server "https://some.ovation.io"
+                   auth {:server server}]
+               (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str expected)
+                                                                                                        :status 200}]
+                               (auth/get-permissions auth docs) => expected))))
 
