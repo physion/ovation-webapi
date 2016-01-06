@@ -194,4 +194,14 @@
                          (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..values..]
 
       (fact "gets relationship documents"
-        (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))
+        (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..)))
+
+  (facts "`collaboration-roots`"
+    (fact "returns _collaboration_roots"
+      (links/collaboration-roots {:links {:_collaboration_roots [..root..]}}) => [..root..])
+    (fact "returns _id if no roots"
+      (links/collaboration-roots {:_id ..id.. :links {:foo ..foo..}}) => [..id..])
+    (fact "returns _id if empty roots"
+      (links/collaboration-roots {:_id ..id.. :links {:_collaboration_roots []}}) => [..id..])
+    (fact "returns empty if include-self is false"
+      (links/collaboration-roots {:_id ..id.. :links {:_collaboration_roots []}} :include-self false) => [])))

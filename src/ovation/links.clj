@@ -58,15 +58,17 @@
     (format "%s--%s-->%s" source-id rel target-id)))
 
 (defn collaboration-roots
-  [doc]
+  [doc & {:keys [include-self]
+          :or   {include-self true}}]
   (let [roots (get-in doc [:links :_collaboration_roots])]
-    (if (or (empty? roots) (nil? roots))
+    (if (and include-self
+          (or (empty? roots) (nil? roots)))
       [(:_id doc)]
       roots)))
 
 (defn- add-roots
   [doc roots]
-  (let [current (collaboration-roots doc)]
+  (let [current (collaboration-roots doc :include-self false)]
     (assoc-in doc [:links :_collaboration_roots] (union (set roots) (set current)))))
 
 (defn- update-collaboration-roots-for-target
