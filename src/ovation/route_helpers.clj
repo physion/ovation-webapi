@@ -245,7 +245,7 @@
           source (first (core/get-entities auth [id] (r/router request)))
           routes (r/router request)]
       (when source
-        (auth/check! (auth/authenticated-user-id auth) :auth/update source))
+        (auth/check! auth :auth/update source))
       (if source
         (let [groups (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]

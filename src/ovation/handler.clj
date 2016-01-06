@@ -117,7 +117,6 @@
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
                     (accepted {:relationships (links/delete-links auth (r/router request)
                                                 source
-                                                (auth/authenticated-user-id auth)
                                                 (:_id relationship))}))
                   (not-found {:errors {:detail "Not found"}}))))))
 

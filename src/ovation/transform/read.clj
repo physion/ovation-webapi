@@ -61,10 +61,10 @@
     dto))
 
 (defn add-entity-permissions
-  [doc authenticated-user]
+  [doc auth]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? authenticated-user :auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? authenticated-user :auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? auth :auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? auth :auth/delete doc))))
 
 (defn couch-to-entity
   [auth router]
@@ -84,7 +84,7 @@
           (add-annotation-links router)
           (add-relationship-links router)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)
-          (add-entity-permissions (auth/authenticated-user-id auth)))))))
+          (add-entity-permissions auth))))))
 
 
 (defn entities-from-couch
@@ -93,10 +93,10 @@
   (map (couch-to-entity auth router) docs))
 
 (defn add-value-permissions
-  [doc authenticated-user]
+  [doc auth]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? authenticated-user :auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? authenticated-user :auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? auth :auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? auth :auth/delete doc))))
 
 (defn couch-to-value
   [auth router]
@@ -111,7 +111,7 @@
                                ;(add-value-permissions :user_id (auth/authenticated-user-id auth))
                                )
         ;; default
-        (add-value-permissions doc (auth/authenticated-user-id auth))))))
+        (add-value-permissions doc auth)))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"

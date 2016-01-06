@@ -86,7 +86,7 @@
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
   (let [db (couch/db auth)
-        docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
+        docs (map (auth/check! auth ::auth/create) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
 (defn- merge-updates
@@ -117,7 +117,7 @@
                             docs (get-entities auth ids routes)
                             updated-docs (map (merge-updates entities) docs)]
                         updated-docs))
-          auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
+          auth-checked-docs (doall (map (auth/check! auth :auth/update) bulk-docs))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth
         routes))))
@@ -142,7 +142,7 @@
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
-          auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
+          auth-checked-docs (vec (map (auth/check! auth :auth/delete) trashed))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
                               auth
                               routes))))
@@ -157,5 +157,5 @@
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
     (let [db (couch/db auth)
-          docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
+          docs (map (auth/check! auth ::auth/delete) values)]
       (tr/values-from-couch (couch/delete-docs db docs) auth routes))))
