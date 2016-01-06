@@ -4,7 +4,8 @@
             [ring.util.http-predicates :as hp]
             [ring.util.http-response :refer [throw!]]
             [slingshot.slingshot :refer [throw+]]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [clojure.data.json :as json]))
 
 
 
@@ -54,11 +55,11 @@
 
 ;; Authorization
 (defn get-permissions
-  [auth docs]
+  [auth collaboration-roots]
   (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
         apikey (:api_key auth)
         opts {:basic-auth   [apikey apikey]
-              :query-params {:uuids (map :_id docs)}
+              :query-params {:uuids (json/write-str collaboration-roots)}
               :accept       :json}]
 
     (let [response @(http/get url opts)]
@@ -68,30 +69,53 @@
 
       (-> response
           :body
-          (util/from-json)
-          ))))
+        (util/from-json)))))
+
+
+(defn collect-permissions
+  [permissions perm]
+  (map #(-> % :permissions perm) (:permissions permissions)))
 
 (defn- can-write?
-  [auth-user-id doc]
-  (case (:type doc)
-    "Annotation" (= auth-user-id (:user doc))
-    ;; default
-    (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))))
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+    (case (:type doc)
+      "Annotation" (= auth-user-id (:user doc))
+      ;; default
+      (let [permissions (get-permissions auth (get-in doc [:links :_collaboration_roots]))]
+        (or
+          ;; user is owner and can read all roots
+          (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+              (every? true? (collect-permissions permissions :read)))
+
+          ;; user can write any of the roots
+          (some true? (collect-permissions permissions :write)))))))
+
+
+(defn- can-delete?
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+    (case (:type doc)
+      "Annotation" (= auth-user-id (:user doc))
+      ;; default
+      (let [permissions (get-permissions auth (get-in doc [:links :_collaboration_roots]))]
+        (or (every? true? (collect-permissions permissions :write))
+          (= auth-user-id (:owner doc)))))))
 
 (defn can?
-  [auth-user-id op doc]
+  [auth op doc]
   (case op
-    ::create (can-write? auth-user-id doc)
-    ::update (can-write? auth-user-id doc)
-    ::delete (can-write? auth-user-id doc)
+    ::create (can-write? auth doc)
+    ::update (can-write? auth doc)
+    ::delete (can-delete? auth doc)
     ;;default
-    (not (nil? auth-user-id))))
+    (not (nil? (authenticated-user-id auth)))))
 
 (defn check!
-  ([auth-user-id op]
+  ([auth op]
    (fn [doc]
-     (when-not (can? auth-user-id op doc)
+     (when-not (can? auth op doc)
                (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
      doc))
-  ([auth-user-id op doc]
-   ((check! auth-user-id op) doc)))
+  ([auth op doc]
+   ((check! auth op) doc)))

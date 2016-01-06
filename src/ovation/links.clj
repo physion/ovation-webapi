@@ -176,10 +176,10 @@
 
 
 (defn delete-links
-  ([auth routes doc user-id rel target-id & {:keys [name] :or [name nil]}]
-   (auth/check! user-id :auth/update doc)
+  ([auth routes doc rel target-id & {:keys [name] :or [name nil]}]
+   (auth/check! auth :auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
       (core/delete-values auth [link-id] routes)))
-  ([auth routes doc user-id link-id]
-   (auth/check! user-id :auth/update doc)
+  ([auth routes doc link-id]
+   (auth/check! auth :auth/update doc)
    (core/delete-values auth [link-id] routes)))

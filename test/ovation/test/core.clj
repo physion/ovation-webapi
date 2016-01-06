@@ -29,7 +29,7 @@
         (fact "bulk-updates values"
           (core/create-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
           (provided
-            (auth/check! ..user.. ::auth/create) => identity
+            (auth/check! ..auth.. ::auth/create) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "`delete-values`"
@@ -41,7 +41,7 @@
           (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
           (provided
             (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
-            (auth/check! ..user.. ::auth/delete) => identity
+            (auth/check! ..auth.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
 
@@ -155,8 +155,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
             (provided
-              (auth/authenticated-user-id ..auth..) => ..other-id..
-              (auth/can? ..other-id.. :auth/update anything) => false)))
+              (auth/can? ..auth.. :auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
@@ -194,8 +193,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
             (provided
-              (auth/authenticated-user-id ..auth..) => ..other-id..
-              (auth/can? ..other-id.. :auth/delete anything) => false)))
+              (auth/can? ..auth.. :auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
