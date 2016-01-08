@@ -82,7 +82,8 @@
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
       ;; default
-      (let [permissions (get-permissions auth (get-in doc [:links :_collaboration_roots]))]
+      (let [collaboration-root-ids (get-in doc [:links :_collaboration_roots])
+            permissions (get-permissions auth collaboration-root-ids)]
         (or
           ;; user is owner and can read all roots
           (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
