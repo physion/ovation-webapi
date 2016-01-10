@@ -76,17 +76,45 @@
   [permissions perm]
   (map #(-> % :permissions perm) (:permissions permissions)))
 
-(defn- can-write?
+(defn effective-collaboration-roots
+  [doc]
+  (case (:type doc)
+    "Project" (conj (get-in doc [:links :_collaboration_roots]) (:_id doc))
+
+    ;; default
+    (get-in doc [:links :_collaboration_roots])))
+
+(defn- can-create?
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+
+    (case (:type doc)
+      ;; User owns annotations and can read all collaboration roots
+      "Annotation" (and (= auth-user-id (:user doc))
+                     (every? true? (collect-permissions (get-permissions auth [(:entity doc)]) :read)))
+
+      "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+
+      ;; default (Entity)
+      (let [collaboration-root-ids (effective-collaboration-roots doc)
+            permissions            (get-permissions auth collaboration-root-ids)]
+
+        (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+          (every? true? (collect-permissions permissions :read)))))))
+
+(defn- can-update?
   [auth doc]
   (let [auth-user-id (authenticated-user-id auth)]
     (case (:type doc)
-      "Annotation" (= auth-user-id (:user doc))
-      ;; default
-      (let [collaboration-root-ids (get-in doc [:links :_collaboration_roots])
+      "Annotation" (and (= auth-user-id (:user doc)))
+
+      ;; default (Entity)
+      (let [collaboration-root-ids (effective-collaboration-roots doc)
             permissions (get-permissions auth collaboration-root-ids)]
+        ;; handle entity with collaboration roots
         (or
           ;; user is owner and can read all roots
-          (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+          (and (= auth-user-id (:owner doc))
               (every? true? (collect-permissions permissions :read)))
 
           ;; user can write any of the roots
@@ -99,15 +127,15 @@
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
       ;; default
-      (let [permissions (get-permissions auth (get-in doc [:links :_collaboration_roots]))]
+      (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
 (defn can?
   [auth op doc]
   (case op
-    ::create (can-write? auth doc)
-    ::update (can-write? auth doc)
+    ::create (can-create? auth doc)
+    ::update (can-update? auth doc)
     ::delete (can-delete? auth doc)
     ;;default
     (not (nil? (authenticated-user-id auth)))))
