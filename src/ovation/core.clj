@@ -5,7 +5,8 @@
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 
 
@@ -71,12 +72,15 @@
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
-    (tr/entities-from-couch (couch/bulk-docs db
-                              (tw/to-couch (auth/authenticated-user-id auth)
-                                entities
-                                :collaboration_roots (parent-collaboration-roots auth parent routes)))
-      auth
-      routes)))
+    (let [entities (tr/entities-from-couch (couch/bulk-docs db
+                                             (tw/to-couch (auth/authenticated-user-id auth)
+                                               entities
+                                               :collaboration_roots (parent-collaboration-roots auth parent routes)))
+                     auth
+                     routes)]
+      (doall (map #(when (= (:type %) "Project")
+                    (teams/create-team {::auth/auth-info auth} (:_id %))) entities))
+      entities)))
 
 (defn create-values
   "POSTs value(s) direct to Couch"
@@ -105,8 +109,8 @@
 (defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct update-op] :or [direct false
-                                                         update-op ::auth/update]}]
+  [auth entities routes & {:keys [direct update-op] :or {irect    false
+                                                         update-op ::auth/update}}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
