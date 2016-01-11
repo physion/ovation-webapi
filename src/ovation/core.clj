@@ -105,7 +105,8 @@
 (defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct] :or [direct false]}]
+  [auth entities routes & {:keys [direct update-op] :or [direct false
+                                                         update-op ::auth/update]}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
@@ -117,7 +118,7 @@
                             docs (get-entities auth ids routes)
                             updated-docs (map (merge-updates entities) docs)]
                         updated-docs))
-          auth-checked-docs (doall (map (auth/check! auth ::auth/update) bulk-docs))]
+          auth-checked-docs (doall (map (auth/check! auth update-op) bulk-docs))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth
         routes))))

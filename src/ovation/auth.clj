@@ -90,13 +90,9 @@
 
     (case (:type doc)
       ;; User owns annotations and can read all collaboration roots
-      "Annotation" (and (= auth-user-id (:user doc))
-                     (not (nil? (some true? (collect-permissions (get-permissions auth [(:entity doc)]) :read)))))
+      "Annotation" (= auth-user-id (:user doc))
 
-      "Relation" (and (= auth-user-id (:user_id doc))
-                   (not (nil? (some true? (collect-permissions (get-permissions auth [(:source_id doc) (:target_id doc)]) :read)))))
-
-      ;;:user_id
+      "Relation" (= auth-user-id (:user_id doc))
 
       "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
 
