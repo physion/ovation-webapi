@@ -32,7 +32,7 @@
   (logging/info (str "Creating Team for " team-uuid))
   (let [opts (request-opts (api-key request))
         url (make-url "teams")
-        body (util/to-json {:team {:uuid team-uuid}})
+        body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]
     (when (not (http-predicates/created? response))
       (throw! response))
