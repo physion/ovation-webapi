@@ -4,14 +4,14 @@
             [ovation.routes :as routes]
             [ovation.core :as core]
             [ovation.revisions :as revisions]
-            [ovation.util :as util])
+            [ovation.auth :as auth])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About get-head-revisions*"
   (fact "returns HEAD revisions for file"
     (r/get-head-revisions* ..req.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
     (provided
-      ..req.. =contains=> {:auth/auth-info ..auth..}
+      ..req.. =contains=> {::auth/auth-info ..auth..}
       ..file.. =contains=> {:type "File"}
       (routes/router ..req..) => ..rt..
       (core/get-entities ..auth.. [..id..] ..rt..) => (seq [..file..])
@@ -20,7 +20,7 @@
   (fact "+throws not-found if file is not found"
     (r/get-head-revisions* ..req.. ..id..) => (throws ExceptionInfo)
     (provided
-      ..req.. =contains=> {:auth/auth-info ..auth..}
+      ..req.. =contains=> {::auth/auth-info ..auth..}
       (routes/router ..req..) => ..rt..
       (core/get-entities ..auth.. [..id..] ..rt..) => [])))
 
@@ -29,14 +29,13 @@
     (let [source-entity {:type "Source"
                          :_id  ..id2..}
           file-entity {:type "File"
-                       :_id  ..fileid..}
-          relationship {:_id "..fileid..--sources-->..id2..", :type "Relation", :target_id ..id2.., :source_id ..fileid.., :rel "sources", :user_id nil, :links {:_collaboration_roots '(..fileid.. ..id2..)}, :inverse_rel "files"}]
+                       :_id  ..fileid..}]
       (:body (r/post-resource* ..req.. "file" ..fileid.. [{:type       "Source"
                                                            :attributes {}}])) => {:entities (seq [source-entity])
                                                                                   :links    ..links..
                                                                                   :updates  ..updates..}
       (provided
-        ..req.. =contains=> {:auth/auth-info ..auth..}
+        ..req.. =contains=> {::auth/auth-info ..auth..}
 
         (routes/router ..req..) => ..rt..
         (core/get-entities ..auth.. [..fileid..] ..rt..) => (seq [file-entity])

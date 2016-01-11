@@ -87,15 +87,37 @@
       ...auth... =contains=> {:uuid ...id...})))
 
 (facts "About `can?`"
-  (facts :create
+  (facts ":create"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
       (facts "Annotations"
-        (fact "require :user match authenticated user"
+        (fact "allowed when :user is authenticated user and can read all roots"
           (auth/can? ..auth.. ::auth/create {:type "Annotation"
-                                             :user ..user..}) => true
+                                             :user ..user..
+                                             :entity ..id..}) => true
+          (provided
+            (auth/get-permissions ..auth.. [..id..]) => ..permissions..
+            (auth/collect-permissions ..permissions.. :read) => [true]))
+        (fact "denied when :user is not authenticated user but can read all roots"
           (auth/can? ..auth.. ::auth/create {:type "Annotation"
-                                             :user ..other..}) => false))
+                                             :user ..other..
+                                             :entity ..id..}) => false)
 
+        (fact "denited when :user is authenticated user but cannot read all roots"
+          (auth/can? ..auth.. ::auth/create {:type "Annotation"
+                                             :user ..user..
+                                             :entity ..id..}) => false
+          (provided
+            (auth/get-permissions ..auth.. [..id..]) => ..permissions..
+            (auth/collect-permissions ..permissions.. :read) => [true false])))
+
+
+      (facts "projects"
+        (fact "allow when :owner nil"
+          (auth/can? ..auth.. ::auth/create {:type "Project"
+                                             :owner nil}) => true)
+        (fact "allow when :owner is current user"
+          (auth/can? ..auth.. ::auth/create {:type "Project"
+                                             :owner ..user..}) => true))
 
       (facts "entities"
         (fact "allow when :owner nil and can read all roots"
@@ -129,22 +151,13 @@
         (fact "denies when :owner is auth user and cannot read all roots"
           (auth/can? ..auth.. ::auth/create {:type  "Entity"
                                              :owner ..user..
-                                             :links {:_collaboration_roots [..root..]}}) => true
+                                             :links {:_collaboration_roots [..root..]}}) => false
           (provided
             (auth/authenticated-user-id ..auth..) => ..user..
             (auth/get-permissions ..auth.. [..root..]) => ..permissions..
-            (auth/collect-permissions ..permissions.. :read) => [true true]))
+            (auth/collect-permissions ..permissions.. :read) => [true false])))))
 
-        (fact "allows when can write any of roots"
-          (auth/can? ..auth.. ::auth/create {:type  "Entity"
-                                             :owner ..user..
-                                             :links {:_collaboration_roots [..root..]}}) => true
-          (provided
-            (auth/authenticated-user-id ..auth..) => ..other..
-            (auth/get-permissions ..auth.. [..root..]) => ..permissions..
-            (auth/collect-permissions ..permissions.. :write) => [true false])))))
-
-  (facts :update
+  (facts ":update"
     (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))]
       (fact "Delegates to get-permissions when not owner"
         (auth/can? ..auth.. ::auth/update {:type  "Entity"

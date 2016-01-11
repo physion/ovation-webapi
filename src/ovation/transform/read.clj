@@ -5,7 +5,6 @@
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
             [ovation.constants :as c]
-            [clojure.tools.logging :as logging]
             [ovation.constants :as k]
             [ovation.auth :as auth]))
 
@@ -57,14 +56,14 @@
   [dto]
   (if (= (:type dto) "User")
     (let [m (get dto :attributes {})]
-      (assoc dto :attributes (select-keys m (for [[k v] m :when (= k :name)] k))))
+      (assoc dto :attributes (select-keys m (for [[k _] m :when (= k :name)] k))))
     dto))
 
 (defn add-entity-permissions
   [doc auth]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? auth :auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth :auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
 (defn couch-to-entity
   [auth router]
@@ -95,8 +94,8 @@
 (defn add-value-permissions
   [doc auth]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? auth :auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth :auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
 (defn couch-to-value
   [auth router]

@@ -17,9 +17,9 @@
         token (and auth (last (re-find #"Bearer (.*)$" auth)))
         auth (auth/authenticate authserver token)]             ;; throws! authserver response if failure
     (-> request
-      (assoc :auth/auth-info
+      (assoc ::auth/auth-info
              (and token auth))
-      (assoc :auth/api-key token))))
+      (assoc ::auth/api-key token))))
 
 (defn token-authentication-failure
   "Returns a 401 unauthorized, along with body text that indicates the same.
@@ -40,7 +40,7 @@
     (if (and required-auth-url-prefix
           (not (empty? (filter #(.startsWith (lower-case (:uri request)) (lower-case %)) required-auth-url-prefix))))
       (let [token-req (token-auth-request request authserver)]
-        (if (:auth/auth-info token-req)
+        (if (::auth/auth-info token-req)
           (handler token-req)
           (token-authentication-failure custom-response)))
       (handler request))))

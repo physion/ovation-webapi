@@ -151,11 +151,14 @@
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]
                              (tr/entities-from-couch [updated-entity] ..auth.. ..rt..) => [updated-entity]]
           (fact "it updates attributes"
-            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity])
+            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity]
+            (provided
+              (auth/can? ..auth.. ::auth/update anything) => true))
+
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
             (provided
-              (auth/can? ..auth.. :auth/update anything) => false)))
+              (auth/can? ..auth.. ::auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
@@ -183,7 +186,9 @@
                              (tr/entities-from-couch ..deleted.. ..auth.. ..rt..) => ..result..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entity ..auth.. [id] ..rt..) => ..result..)
+            (core/delete-entity ..auth.. [id] ..rt..) => ..result..
+            (provided
+              (auth/can? ..auth.. ::auth/delete anything) => true))
 
           (fact "it fails if entity already trashed"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
@@ -193,7 +198,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
             (provided
-              (auth/can? ..auth.. :auth/delete anything) => false)))
+              (auth/can? ..auth.. ::auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)

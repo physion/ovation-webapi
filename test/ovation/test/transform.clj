@@ -69,9 +69,7 @@
 
 
   (fact "`add-relationship-links` adds heads to File entity links"
-    (let [type-rel {}
-          type k/FILE-TYPE
-          typekw (util/entity-type-name-keyword type)
+    (let [type k/FILE-TYPE
           dto {:type type :links {:_collaboration_roots [..collab..]}}]
       (tr/add-heads-link dto ..rt..) => (-> dto
                                                   (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
@@ -132,7 +130,7 @@
 (facts "About `add-owner`"
   (fact "`add-owner` adds owner element"
     (let [doc {:type ..type.. :attributes {:label ..label..}}]
-      (tw/add-owner doc ..owner..) => (assoc doc :owner ..owner..))))
+      (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..))))
 
 (facts "About `remove-user-attributes`"
   (fact "Removes User entity attributes"
@@ -154,8 +152,8 @@
         (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
                                                                            :delete ..delete..})
         (provided
-          (auth/can? ..id.. :auth/update doc) => ..update..
-          (auth/can? ..id.. :auth/delete doc) => ..delete..))))
+          (auth/can? ..id.. :ovation.auth/update doc) => ..update..
+          (auth/can? ..id.. :ovation.auth/delete doc) => ..delete..))))
   (facts "for annotations"
     (let [doc {:user ..id..
                :type "Annotation"}]

@@ -6,14 +6,13 @@
             [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
-            [ovation.core :as core]
             [ovation.auth :as auth]
             [ovation.constants :as k]))
 
 
 (defn api-key
   [request]
-  (let [auth (:auth/auth-info request)]
+  (let [auth (::auth/auth-info request)]
     (:api_key auth)))
 
 (defn -make-url
@@ -29,6 +28,8 @@
 
 (defn create-team
   [request team-uuid]
+
+  (logging/info (str "Creating Team for " team-uuid))
   (let [opts (-request-opts (api-key request))
         url (-make-url "teams")
         body (util/to-json {:team {:uuid team-uuid}})
@@ -38,8 +39,7 @@
     (util/from-json (:body response))))
 
 (defn get-team*
-  [request team-id & {:keys [allow-nil]
-                      :or   {allow-nil false}}]
+  [request team-id]
   (let [rt (routes/router request)
         opts (-request-opts (api-key request))
         url (-make-url "teams" team-id)
@@ -48,13 +48,10 @@
     (if-let [team (cond
                     (http-predicates/ok? response) (util/from-json (:body response))
 
-                    (http-predicates/not-found? response) (when (not allow-nil)
-                                                            (not-found! {:errors {:detail "Team not found"}}))
+                    (http-predicates/not-found? response) (create-team request team-id)
                     :else (throw! response))]
 
       (-> team
-        ;(assoc-in [:team :id] (:uuid team))
-        ;(update-in [:team] dissoc :uuid)
         (assoc-in [:team :type] k/TEAM-TYPE)
         (update-in [:team] dissoc :project)
         (update-in [:team] dissoc :organization)
@@ -106,17 +103,14 @@
 
 (defn post-membership*
   [request team-uuid membership]                            ;; membership is a NewTeamMembership
-  (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
-        url (-make-url "memberships")
-        team (or (get-team* request team-uuid :allow-nil true)
-               (do
-                 (logging/info (str "Creating Team for " team-uuid))
-                 (create-team request team-uuid)))
+  (let [rt      (routes/router request)
+        opts    (-request-opts (api-key request))
+        url     (-make-url "memberships")
+        team    (get-team* request team-uuid)
         team-id (get-in team [:team :id])
-        role (:role membership)
-        email (:email membership)
-        body {:membership {:team_id team-uuid
+        role    (:role membership)
+        email   (:email membership)
+        body    {:membership {:team_id team-uuid
                            :role_id (:id role)
                            :email   email}}]
 
