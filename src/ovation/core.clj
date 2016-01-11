@@ -117,7 +117,7 @@
                             docs (get-entities auth ids routes)
                             updated-docs (map (merge-updates entities) docs)]
                         updated-docs))
-          auth-checked-docs (doall (map (auth/check! auth :auth/update) bulk-docs))]
+          auth-checked-docs (doall (map (auth/check! auth ::auth/update) bulk-docs))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth
         routes))))
@@ -142,7 +142,7 @@
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
-          auth-checked-docs (vec (map (auth/check! auth :auth/delete) trashed))]
+          auth-checked-docs (vec (map (auth/check! auth ::auth/delete) trashed))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
                               auth
                               routes))))

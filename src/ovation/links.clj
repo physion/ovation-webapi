@@ -7,7 +7,6 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [union]]
             [ovation.constants :as k]
-            [ovation.routes :as r]
             [ovation.transform.read :as tr]))
 
 
@@ -177,9 +176,9 @@
 
 (defn delete-links
   ([auth routes doc rel target-id & {:keys [name] :or [name nil]}]
-   (auth/check! auth :auth/update doc)
+   (auth/check! auth ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
       (core/delete-values auth [link-id] routes)))
   ([auth routes doc link-id]
-   (auth/check! auth :auth/update doc)
+   (auth/check! auth ::auth/update doc)
    (core/delete-values auth [link-id] routes)))

@@ -118,7 +118,7 @@
               (every? true? (collect-permissions permissions :read)))
 
           ;; user can write any of the roots
-          (some true? (collect-permissions permissions :write)))))))
+          (not (nil? (some true? (collect-permissions permissions :write)))))))))
 
 
 (defn- can-delete?
@@ -134,9 +134,9 @@
 (defn can?
   [auth op doc]
   (case op
-    ::create (can-create? auth doc)
-    ::update (can-update? auth doc)
-    ::delete (can-delete? auth doc)
+    :ovation.auth/create (can-create? auth doc)
+    :ovation.auth/update (can-update? auth doc)
+    :ovation.auth/delete (can-delete? auth doc)
     ;;default
     (not (nil? (authenticated-user-id auth)))))
 

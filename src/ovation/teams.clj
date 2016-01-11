@@ -6,14 +6,13 @@
             [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
-            [ovation.core :as core]
             [ovation.auth :as auth]
             [ovation.constants :as k]))
 
 
 (defn api-key
   [request]
-  (let [auth (:auth/auth-info request)]
+  (let [auth (::auth/auth-info request)]
     (:api_key auth)))
 
 (defn -make-url

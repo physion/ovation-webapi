@@ -18,10 +18,12 @@
   [doc]
   (assoc doc :api_version ver/schema-version))
 
-(defn add-owner
+(defn ensure-owner
   "Adds owner reference"
   [doc owner-id]
-  (assoc doc :owner owner-id))
+  (if (nil? (:owner doc))
+    (assoc doc :owner owner-id)
+    doc))
 
 
 (defn add-collaboration-roots
@@ -49,7 +51,7 @@
         ensure-id
         (ensure-created-at time)
         add-api-version
-        (add-owner owner-id)
+        (ensure-owner owner-id)
         (add-updated-at time)
         (dissoc :links)
         (dissoc :relationships)
