@@ -123,6 +123,7 @@
           ;  (auth/get-permissions ..auth.. [..src.. ..target..]) => ..perms..
           ;  (auth/collect-permissions ..perms.. :read) => [true true])
           )
+
         ;(fact "denied when :user is authenticated user and cannot read source and target"
         ;  (auth/can? ..auth.. ::auth/create {:type "Relation"
         ;                                     :user_id ..user..

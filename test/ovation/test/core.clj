@@ -9,7 +9,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 (facts "About values"
   (facts "read"
@@ -124,7 +125,20 @@
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...)))))
+            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...))
+
+        (facts "with Project"
+          (fact "creates team for Projects"
+            (core/create-entities ..auth.. [{:type       "Project"
+                                             :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
+                                                                                                   :_id  ..id..}]
+            (provided
+              (teams/create-team {::auth/auth-info ..auth..} ..id..) => ..team..
+              (tw/to-couch ...owner-id... [{:type       "Project"
+                                            :attributes attributes}]
+                :collaboration_roots []) => [...doc...]
+              (tr/entities-from-couch ...result... ..auth.. ..routes..) => [{:type "Project"
+                                                                             :_id  ..id..}]))))))
 
   (facts "`update-entity`"
     (let [type "some-type"

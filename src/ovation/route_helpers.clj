@@ -149,7 +149,7 @@
                   :links    links
                   :updates updates}))
 
-      (catch [:type :ovation.auth/unauthorized] _
+      (catch [:type :ovation.auth/unauthorized] err
         (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
   )
 
@@ -249,7 +249,7 @@
         (let [groups (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
           (let [links (core/create-values auth routes (flatten (map :links link-groups)))
-                updates (core/update-entities auth (flatten (map :updates link-groups)) routes)]
+                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :update-op ::auth/create)]
             (created {:updates updates
                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
