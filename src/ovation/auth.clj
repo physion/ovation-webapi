@@ -59,7 +59,7 @@
   (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
         apikey (:api_key auth)
         opts {:basic-auth   [apikey apikey]
-              :query-params {:uuids (json/write-str collaboration-roots)}
+              :query-params {:uuids (json/write-str (map str collaboration-roots))}
               :accept       :json}]
 
     (let [response @(http/get url opts)]
@@ -92,6 +92,10 @@
       ;; User owns annotations and can read all collaboration roots
       "Annotation" (and (= auth-user-id (:user doc))
                      (every? true? (collect-permissions (get-permissions auth [(:entity doc)]) :read)))
+
+      "Relation" (and (= auth-user-id (:user_id doc))
+                   (not (nil? (some true? (collect-permissions (get-permissions auth [(:source_id doc) (:target_id doc)]) :read)))))
+      ;;:user_id
 
       "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
 
@@ -126,6 +130,8 @@
   (let [auth-user-id (authenticated-user-id auth)]
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
+      "Relation" (= auth-user-id (:user_id doc))
+
       ;; default
       (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
