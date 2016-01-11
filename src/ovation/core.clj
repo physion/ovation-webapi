@@ -78,8 +78,9 @@
                                                :collaboration_roots (parent-collaboration-roots auth parent routes)))
                      auth
                      routes)]
-      (doall (map #(when (= (:type %) "Project")
-                    (teams/create-team {::auth/auth-info auth} (:_id %))) entities))
+      ;; create teams for new Project entities
+      (doall (map #(teams/create-team {::auth/auth-info auth} (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+
       entities)))
 
 (defn create-values
