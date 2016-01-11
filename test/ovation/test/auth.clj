@@ -102,13 +102,13 @@
                                              :user ..other..
                                              :entity ..id..}) => false)
 
-        (fact "denited when :user is authenticated user but cannot read all roots"
+        (fact "denied when :user is authenticated user but cannot read any roots"
           (auth/can? ..auth.. ::auth/create {:type "Annotation"
                                              :user ..user..
                                              :entity ..id..}) => false
           (provided
             (auth/get-permissions ..auth.. [..id..]) => ..permissions..
-            (auth/collect-permissions ..permissions.. :read) => [true false])))
+            (auth/collect-permissions ..permissions.. :read) => [false false])))
 
       (facts "Relations"
         (fact "allowed when :user is authenticated user and can read source and target"
