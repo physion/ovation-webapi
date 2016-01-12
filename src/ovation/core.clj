@@ -110,20 +110,20 @@
 (defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct update-op] :or {irect    false
-                                                         update-op ::auth/update}}]
+  [auth entities routes & {:keys [direct authorize] :or {irect     false
+                                                         authorize true}}] ;;TODO this should be just authorize [true|false]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-    (let [bulk-docs (if direct
-                      entities
-                      (let [ids (map :_id entities)
-                            docs (get-entities auth ids routes)
-                            updated-docs (map (merge-updates entities) docs)]
-                        updated-docs))
-          auth-checked-docs (doall (map (auth/check! auth update-op) bulk-docs))]
+    (let [bulk-docs         (if direct
+                              entities
+                              (let [ids          (map :_id entities)
+                                    docs         (get-entities auth ids routes)
+                                    updated-docs (map (merge-updates entities) docs)]
+                                updated-docs))
+          auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth
         routes))))
