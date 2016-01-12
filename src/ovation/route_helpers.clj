@@ -143,7 +143,7 @@
             entities (core/create-entities auth body routes :parent id)
             child-links (make-child-links* auth id type-name entities routes)
             links (core/create-values auth routes (:links child-links))
-            updates (core/update-entities auth (:updates child-links) routes :update-op ::auth/create)]
+            updates (core/update-entities auth (:updates child-links) routes :authorize false)]
 
         (created {:entities entities
                   :links    links
@@ -249,7 +249,7 @@
         (let [groups (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
           (let [links (core/create-values auth routes (flatten (map :links link-groups)))
-                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :update-op ::auth/create)]
+                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :authorize false)]
             (created {:updates updates
                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
