@@ -143,7 +143,7 @@
             entities (core/create-entities auth body routes :parent id)
             child-links (make-child-links* auth id type-name entities routes)
             links (core/create-values auth routes (:links child-links))
-            updates (core/update-entities auth (:updates child-links) routes)]
+            updates (core/update-entities auth (:updates child-links) routes :update-op ::auth/create)]
 
         (created {:entities entities
                   :links    links
