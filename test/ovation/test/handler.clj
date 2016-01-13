@@ -284,7 +284,7 @@
                                     (core/get-entities auth-info# [(:_id parent#)] ..rt..) => [parent#]
                                     (links/add-links auth-info# [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
                                     (core/create-values auth-info# ..rt.. links#) => links#
-                                    (core/update-entities auth-info# anything ..rt.. :authorize false) => ..updates..
+                                    (core/update-entities auth-info# anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]

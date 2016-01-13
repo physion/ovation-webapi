@@ -42,4 +42,4 @@
         (core/get-entities ..auth.. [..id2..] ..rt..) => (seq [source-entity])
         (core/create-entities ..auth.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
         (core/create-values ..auth.. ..rt.. anything) => ..links..
-        (core/update-entities ..auth.. anything ..rt.. :authorize false) => ..updates..))))
+        (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..))))
