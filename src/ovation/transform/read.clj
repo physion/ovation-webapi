@@ -62,6 +62,7 @@
 (defn add-entity-permissions
   [doc auth]
   (-> doc
+    (assoc-in [:permissions :create] true)
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 

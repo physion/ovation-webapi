@@ -150,7 +150,8 @@
     (let [doc {:owner ..id..}]
       (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
         (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
-                                                                           :delete ..delete..})
+                                                                           :delete ..delete..
+                                                                           :create true})
         (provided
           (auth/can? ..id.. :ovation.auth/update doc) => ..update..
           (auth/can? ..id.. :ovation.auth/delete doc) => ..delete..))))
@@ -159,7 +160,7 @@
                :type "Annotation"}]
       (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
         (tr/add-value-permissions doc ..auth..) => (assoc doc :permissions {:update true
-                                                                          :delete true})
+                                                                            :delete true})
         (provided
           (auth/authenticated-user-id ..auth..) => ..id..)))))
 
