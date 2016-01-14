@@ -113,7 +113,7 @@
                            (assoc :type (s/eq "Activity"))))
 (s/defschema Activity (-> Entity
                         (assoc :type (s/eq "Activity"))))
-(s/defschema ActivityUpdate (-> Entity
+(s/defschema ActivityUpdate (-> EntityUpdate
                               (assoc :type (s/eq "Activity"))))
 
 (s/defschema NewSource (-> NewEntity
