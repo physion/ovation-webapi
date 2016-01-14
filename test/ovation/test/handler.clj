@@ -473,12 +473,10 @@
   (entity-resources-read-tests "Folder")
   (entity-resource-read-tests "Folder")
   (entity-resource-create-tests "Folder")
-  (entity-resources-create-tests "Folder")
   (entity-resource-update-tests "Folder")
   (entity-resource-deletion-tests "Folder"))
 
 (facts "About Files"
-  (entity-resources-create-tests "File")
   (entity-resource-read-tests "File")
   (entity-resources-read-tests "File")
   (entity-resource-update-tests "File")
