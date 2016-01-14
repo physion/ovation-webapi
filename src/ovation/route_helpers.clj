@@ -60,12 +60,19 @@
            (delete-annotations* request# ~annotation-key))))))
 
 
+(defn- typepath
+  [typename]
+  (case (lower-case typename)
+    "activity" "activities"
+    ;;default
+    (lower-case (str typename "s"))))
+
 (defmacro get-resources
   "Get all resources of type (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))
-        type-kw (keyword type-path)]
+        type-path (typepath type-name)
+        type-kw   (keyword type-path)]
     `(GET* "/" request#
        :name ~(keyword (str "all-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
@@ -90,7 +97,7 @@
   "POST to resources of type (e.g. \"Project\")"
   [entity-type schemas]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))
+        type-path (typepath type-name)
         type-kw (keyword type-path)]
     `(POST* "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
