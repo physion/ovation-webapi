@@ -268,8 +268,8 @@
               :files    {:schema File}
               :revisions {:schema Revision}}
 
-   :activity {:inputs  {:schema Entity}
-              :outputs {:schema Entity}
+   :activity {:inputs  {:schema Entity}                     ; should be Revision or Source
+              :outputs {:schema Entity}                     ; should be Revision or Source
               :actions {:schema Revision}}
 
    :folder   {:folders    {:schema Folder}
