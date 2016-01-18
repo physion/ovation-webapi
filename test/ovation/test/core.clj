@@ -9,7 +9,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 (facts "About values"
   (facts "read"
@@ -29,7 +30,7 @@
         (fact "bulk-updates values"
           (core/create-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
           (provided
-            (auth/check! ..user.. ::auth/create) => identity
+            (auth/check! ..auth.. ::auth/create) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "`delete-values`"
@@ -41,7 +42,7 @@
           (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
           (provided
             (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
-            (auth/check! ..user.. ::auth/delete) => identity
+            (auth/check! ..auth.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
 
@@ -124,7 +125,20 @@
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...)))))
+            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...))
+
+        (facts "with Project"
+          (fact "creates team for Projects"
+            (core/create-entities ..auth.. [{:type       "Project"
+                                             :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
+                                                                                                   :_id  ..id..}]
+            (provided
+              (teams/create-team {::auth/auth-info ..auth..} ..id..) => ..team..
+              (tw/to-couch ...owner-id... [{:type       "Project"
+                                            :attributes attributes}]
+                :collaboration_roots []) => [...doc...]
+              (tr/entities-from-couch ...result... ..auth.. ..routes..) => [{:type "Project"
+                                                                             :_id  ..id..}]))))))
 
   (facts "`update-entity`"
     (let [type "some-type"
@@ -151,12 +165,14 @@
                              (couch/bulk-docs ..db.. [update]) => [updated-entity]
                              (tr/entities-from-couch [updated-entity] ..auth.. ..rt..) => [updated-entity]]
           (fact "it updates attributes"
-            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity])
+            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity]
+            (provided
+              (auth/can? ..auth.. ::auth/update anything) => true))
+
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
             (provided
-              (auth/authenticated-user-id ..auth..) => ..other-id..
-              (auth/can? ..other-id.. :auth/update anything) => false)))
+              (auth/can? ..auth.. ::auth/update anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
@@ -169,7 +185,7 @@
           attributes {:label ..label1..}
           new-entity {:type       type
                       :attributes attributes}
-          id (util/make-uuid)
+          id (str (util/make-uuid))
           rev "1"
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
           update (assoc entity :trash_info {:trashing_user ..owner-id...
@@ -179,10 +195,14 @@
                            (auth/authenticated-user-id ..auth..) => ..owner-id..]
 
         (against-background [(core/get-entities ..auth.. [id] ..rt..) => [entity]
-                             (couch/bulk-docs ..db.. [update]) => ..deleted..
+                             (tw/to-couch ..owner-id.. [update]) => ..update-docs..
+                             (couch/bulk-docs ..db.. ..update-docs..) => ..deleted..
+                             (tr/entities-from-couch ..deleted.. ..auth.. ..rt..) => ..result..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entity ..auth.. [id] ..rt..) => ..deleted..)
+            (core/delete-entity ..auth.. [id] ..rt..) => ..result..
+            (provided
+              (auth/can? ..auth.. ::auth/delete anything) => true))
 
           (fact "it fails if entity already trashed"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
@@ -192,8 +212,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
             (provided
-              (auth/authenticated-user-id ..auth..) => ..other-id..
-              (auth/can? ..other-id.. :auth/delete anything) => false)))
+              (auth/can? ..auth.. ::auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
           (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)

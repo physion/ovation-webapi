@@ -5,7 +5,8 @@
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 
 
@@ -71,12 +72,16 @@
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
-    (tr/entities-from-couch (couch/bulk-docs db
-                              (tw/to-couch (auth/authenticated-user-id auth)
-                                entities
-                                :collaboration_roots (parent-collaboration-roots auth parent routes)))
-      auth
-      routes)))
+    (let [entities (tr/entities-from-couch (couch/bulk-docs db
+                                             (tw/to-couch (auth/authenticated-user-id auth)
+                                               entities
+                                               :collaboration_roots (parent-collaboration-roots auth parent routes)))
+                     auth
+                     routes)]
+      ;; create teams for new Project entities
+      (doall (map #(teams/create-team {::auth/auth-info auth} (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+
+      entities)))
 
 (defn create-values
   "POSTs value(s) direct to Couch"
@@ -86,7 +91,7 @@
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
   (let [db (couch/db auth)
-        docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/create) values)]
+        docs (map (auth/check! auth ::auth/create) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
 (defn- merge-updates
@@ -105,19 +110,20 @@
 (defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct] :or [direct false]}]
+  [auth entities routes & {:keys [direct authorize] :or {irect     false
+                                                         authorize true}}] ;;TODO this should be just authorize [true|false]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-    (let [bulk-docs (if direct
-                      entities
-                      (let [ids (map :_id entities)
-                            docs (get-entities auth ids routes)
-                            updated-docs (map (merge-updates entities) docs)]
-                        updated-docs))
-          auth-checked-docs (doall (map (auth/check! (auth/authenticated-user-id auth) :auth/update) bulk-docs))]
+    (let [bulk-docs         (if direct
+                              entities
+                              (let [ids          (map :_id entities)
+                                    docs         (get-entities auth ids routes)
+                                    updated-docs (map (merge-updates entities) docs)]
+                                updated-docs))
+          auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth
         routes))))
@@ -142,8 +148,10 @@
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
-          auth-checked-docs (vec (map (auth/check! user-id :auth/delete) trashed))]
-      (couch/bulk-docs db auth-checked-docs))))
+          auth-checked-docs (vec (map (auth/check! auth ::auth/delete) trashed))]
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+                              auth
+                              routes))))
 
 
 (defn delete-values
@@ -155,5 +163,5 @@
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
     (let [db (couch/db auth)
-          docs (map (auth/check! (auth/authenticated-user-id auth) ::auth/delete) values)]
+          docs (map (auth/check! auth ::auth/delete) values)]
       (tr/values-from-couch (couch/delete-docs db docs) auth routes))))

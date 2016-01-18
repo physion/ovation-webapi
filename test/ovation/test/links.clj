@@ -7,7 +7,6 @@
             [ovation.core :as core]
             [ovation.version :as ver]
             [ovation.constants :as k]
-            [ovation.routes :as r]
             [ovation.transform.read :as tr])
   (:import (java.util UUID)))
 
@@ -26,7 +25,7 @@
                                                                 :inclusive_end true
                                                                 :reduce        false
                                                                 :include_docs  true}) => [doc1]
-                           (auth/can? anything :auth/update anything) => true
+                           (auth/can? anything ::auth/update anything) => true
                            (couch/db ..auth..) => ..db..
                            (tr/couch-to-entity ..auth.. ..rt..) => (fn [doc] doc)]
 
@@ -139,7 +138,6 @@
           (let [rel "some-rel"
                 source {:_id (str (UUID/randomUUID)) :type "Entity" :links {:_collaboration_roots [..roots1..]}}
                 target {:_id target-id :type "File" :links {:_collaboration_roots [..roots2..]}}
-                link-path (util/join-path ["" "api" ver/version "entities" (:_id source) "links" rel])
                 expected (assoc-in source [:links :_collaboration_roots] #{..roots1.. ..roots2..})]
             (:updates (links/add-links ..auth.. [source] rel [target-id] ..rt..)) => (contains expected)
             (provided
@@ -167,22 +165,24 @@
         (fact "removes link"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-links ..auth.. ..rt.. doc ..id.. ..rel.. ..target..) => ..deleted..
+            (links/delete-links ..auth.. ..rt.. doc ..rel.. ..target..) => ..deleted..
             (provided
-              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..)))
+              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..
+              (auth/can? ..auth.. ::auth/update doc) => true)))
 
         (fact "fails if not can? :update source"
-          (links/delete-links ..auth.. ..rt.. ..doc.. ..id.. ..rel.. ..target..) => (throws Exception)
+          (links/delete-links ..auth.. ..rt.. ..doc.. ..rel.. ..target..) => (throws Exception)
           (provided
-            (auth/can? ..id.. :auth/update ..doc..) => false))
+            (auth/can? ..auth.. ::auth/update ..doc..) => false))
 
 
         (fact "updates entity _collaboration_roots"
           (let [source-id (:_id doc)
                 link-id (format "%s--%s-->%s" source-id ..rel.. ..target..)]
-            (links/delete-links ..auth.. ..rt.. doc ..id.. ..rel.. ..target..) => ..deleted..
+            (links/delete-links ..auth.. ..rt.. doc ..rel.. ..target..) => ..deleted..
             (provided
-              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..))))))
+              (core/delete-values ..auth.. [link-id] ..rt..) => ..deleted..
+              (auth/can? ..auth.. ::auth/update doc) => true))))))
 
   (facts "`get-links`"
     (against-background [(couch/get-view ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
@@ -194,4 +194,14 @@
                          (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..values..]
 
       (fact "gets relationship documents"
-        (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..))))
+        (links/get-links ..auth.. ..id.. ..rel.. ..rt..) => ..values..)))
+
+  (facts "`collaboration-roots`"
+    (fact "returns _collaboration_roots"
+      (links/collaboration-roots {:links {:_collaboration_roots [..root..]}}) => [..root..])
+    (fact "returns _id if no roots"
+      (links/collaboration-roots {:_id ..id.. :links {:foo ..foo..}}) => [..id..])
+    (fact "returns _id if empty roots"
+      (links/collaboration-roots {:_id ..id.. :links {:_collaboration_roots []}}) => [..id..])
+    (fact "returns empty if include-self is false"
+      (links/collaboration-roots {:_id ..id.. :links {:_collaboration_roots []}} :include-self false) => [])))

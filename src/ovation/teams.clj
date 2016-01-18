@@ -6,21 +6,20 @@
             [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
-            [ovation.core :as core]
             [ovation.auth :as auth]
             [ovation.constants :as k]))
 
 
 (defn api-key
   [request]
-  (let [auth (:auth/auth-info request)]
+  (let [auth (::auth/auth-info request)]
     (:api_key auth)))
 
-(defn -make-url
+(defn make-url
   [& comps]
   (util/join-path (conj comps config/TEAMS_SERVER)))
 
-(defn -request-opts
+(defn request-opts
   [api-key]
   {:timeout    1000                                          ; ms
    :basic-auth [api-key "X"]
@@ -29,32 +28,30 @@
 
 (defn create-team
   [request team-uuid]
-  (let [opts (-request-opts (api-key request))
-        url (-make-url "teams")
-        body (util/to-json {:team {:uuid team-uuid}})
+
+  (logging/info (str "Creating Team for " team-uuid))
+  (let [opts (request-opts (api-key request))
+        url (make-url "teams")
+        body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]
     (when (not (http-predicates/created? response))
       (throw! response))
     (util/from-json (:body response))))
 
 (defn get-team*
-  [request team-id & {:keys [allow-nil]
-                      :or   {allow-nil false}}]
+  [request team-id]
   (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
-        url (-make-url "teams" team-id)
+        opts (request-opts (api-key request))
+        url (make-url "teams" team-id)
         response @(httpkit.client/get url opts)]
 
     (if-let [team (cond
                     (http-predicates/ok? response) (util/from-json (:body response))
 
-                    (http-predicates/not-found? response) (when (not allow-nil)
-                                                            (not-found! {:errors {:detail "Team not found"}}))
+                    (http-predicates/not-found? response) (create-team request team-id)
                     :else (throw! response))]
 
       (-> team
-        ;(assoc-in [:team :id] (:uuid team))
-        ;(update-in [:team] dissoc :uuid)
         (assoc-in [:team :type] k/TEAM-TYPE)
         (update-in [:team] dissoc :project)
         (update-in [:team] dissoc :organization)
@@ -89,8 +86,8 @@
 (defn put-membership*
   [request team-uuid membership membership-id]                              ;; membership is a TeamMembership
   (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
-        url (-make-url "memberships" membership-id)
+        opts (request-opts (api-key request))
+        url (make-url "memberships" membership-id)
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
     (when (or (nil? role-id)
@@ -106,17 +103,14 @@
 
 (defn post-membership*
   [request team-uuid membership]                            ;; membership is a NewTeamMembership
-  (let [rt (routes/router request)
-        opts (-request-opts (api-key request))
-        url (-make-url "memberships")
-        team (or (get-team* request team-uuid :allow-nil true)
-               (do
-                 (logging/info (str "Creating Team for " team-uuid))
-                 (create-team request team-uuid)))
+  (let [rt      (routes/router request)
+        opts    (request-opts (api-key request))
+        url     (make-url "memberships")
+        team    (get-team* request team-uuid)
         team-id (get-in team [:team :id])
-        role (:role membership)
-        email (:email membership)
-        body {:membership {:team_id team-uuid
+        role    (:role membership)
+        email   (:email membership)
+        body    {:membership {:team_id team-uuid
                            :role_id (:id role)
                            :email   email}}]
 
@@ -132,8 +126,8 @@
 
 (defn delete-membership*
   [request membership-id]
-  (let [opts (-request-opts (api-key request))
-        url (-make-url "memberships" membership-id)]
+  (let [opts (request-opts (api-key request))
+        url (make-url "memberships" membership-id)]
 
     (let [response @(httpkit.client/delete url opts)]
       (when (not (http-predicates/no-content? response))
@@ -141,8 +135,8 @@
 
 (defn get-roles*
   [request]
-  (let [opts (-request-opts (api-key request))
-        url (-make-url "roles")]
+  (let [opts (request-opts (api-key request))
+        url (make-url "roles")]
 
     (let [response @(httpkit.client/get url opts)]
       (when (not (http-predicates/ok? response))

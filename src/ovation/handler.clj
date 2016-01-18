@@ -85,7 +85,7 @@
               :return {:entity Entity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
               :summary "Returns entity with :id"
-              (let [auth (:auth/auth-info request)]
+              (let [auth (::auth/auth-info request)]
                 (if-let [entities (core/get-entities auth [id] (router request))]
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
@@ -105,19 +105,18 @@
               :name :get-relation
               :return {:relationship LinkInfo}
               :summary "Relationship document"
-              (let [auth (:auth/auth-info request)]
+              (let [auth (::auth/auth-info request)]
                 (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
             (DELETE* "/" request
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
-              (let [auth (:auth/auth-info request)
+              (let [auth (::auth/auth-info request)
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
                     (accepted {:relationships (links/delete-links auth (r/router request)
                                                 source
-                                                (auth/authenticated-user-id auth)
                                                 (:_id relationship))}))
                   (not-found {:errors {:detail "Not found"}}))))))
 

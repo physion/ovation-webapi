@@ -4,7 +4,8 @@
             [ring.util.http-predicates :as hp]
             [ring.util.http-response :refer [throw!]]
             [slingshot.slingshot :refer [throw+]]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [clojure.data.json :as json]))
 
 
 
@@ -14,7 +15,8 @@
   "Async get user info for ovation.io API key"
   [authserver apikey]
   (let [url (util/join-path [authserver "api" "v1" "users"])
-        opts {:basic-auth [apikey apikey]}]
+        opts {:basic-auth [apikey apikey]
+              :accept     :json}]
 
     (http/get url opts)))
 
@@ -42,7 +44,8 @@
 (defn authenticate
   "Gets the Cloudant API key and database URL for an Ovation API key."
   [authserver apikey]
-  (auth-info (get-auth authserver apikey)))
+  (-> (auth-info (get-auth authserver apikey))
+      (assoc :server authserver)))
 
 (defn authenticated-user-id
   "The UUID of the authorized user"
@@ -51,28 +54,101 @@
 
 
 ;; Authorization
+(defn get-permissions
+  [auth collaboration-roots]
+  (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
+        apikey (:api_key auth)
+        opts {:basic-auth   [apikey apikey]
+              :query-params {:uuids (json/write-str (map str collaboration-roots))}
+              :accept       :json}]
 
-(defn- can-write?
-  [auth-user-id doc]
+    (let [response @(http/get url opts)]
+      (when (not (hp/ok? response))
+        (logging/error "Unable to retrieve object permissions")
+        (throw! response))
+
+      (-> response
+          :body
+        (util/from-json)))))
+
+
+(defn collect-permissions
+  [permissions perm]
+  (map #(-> % :permissions perm) (:permissions permissions)))
+
+(defn effective-collaboration-roots
+  [doc]
   (case (:type doc)
-    "Annotation" (= auth-user-id (:user doc))
+    "Project" (conj (get-in doc [:links :_collaboration_roots]) (:_id doc))
+
     ;; default
-    (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))))
+    (get-in doc [:links :_collaboration_roots])))
+
+(defn- can-create?
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+
+    (case (:type doc)
+      ;; User owns annotations and can read all collaboration roots
+      "Annotation" (= auth-user-id (:user doc))
+
+      "Relation" (= auth-user-id (:user_id doc))
+
+      "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+
+      ;; default (Entity)
+      (let [collaboration-root-ids (effective-collaboration-roots doc)
+            permissions            (get-permissions auth collaboration-root-ids)]
+
+        (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+          (every? true? (collect-permissions permissions :read)))))))
+
+(defn- can-update?
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+    (case (:type doc)
+      "Annotation" (and (= auth-user-id (:user doc)))
+      "Relation" (= auth-user-id (:user_id doc))
+
+      ;; default (Entity)
+      (let [collaboration-root-ids (effective-collaboration-roots doc)
+            permissions (get-permissions auth collaboration-root-ids)]
+        ;; handle entity with collaboration roots
+        (or
+          ;; user is owner and can read all roots
+          (and (= auth-user-id (:owner doc))
+              (every? true? (collect-permissions permissions :read)))
+
+          ;; user can write any of the roots
+          (not (nil? (some true? (collect-permissions permissions :write)))))))))
+
+
+(defn- can-delete?
+  [auth doc]
+  (let [auth-user-id (authenticated-user-id auth)]
+    (case (:type doc)
+      "Annotation" (= auth-user-id (:user doc))
+      "Relation" (= auth-user-id (:user_id doc))
+
+      ;; default
+      (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
+        (or (every? true? (collect-permissions permissions :write))
+          (= auth-user-id (:owner doc)))))))
 
 (defn can?
-  [auth-user-id op doc]
+  [auth op doc]
   (case op
-    ::create (can-write? auth-user-id doc)
-    ::update (can-write? auth-user-id doc)
-    ::delete (can-write? auth-user-id doc)
+    :ovation.auth/create (can-create? auth doc)
+    :ovation.auth/update (can-update? auth doc)
+    :ovation.auth/delete (can-delete? auth doc)
     ;;default
-    (not (nil? auth-user-id))))
+    (not (nil? (authenticated-user-id auth)))))
 
 (defn check!
-  ([auth-user-id op]
+  ([auth op]
    (fn [doc]
-     (when-not (can? auth-user-id op doc)
+     (when-not (can? auth op doc)
                (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
      doc))
-  ([auth-user-id op doc]
-   ((check! auth-user-id op) doc)))
+  ([auth op doc]
+   ((check! auth op) doc)))
