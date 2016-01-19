@@ -263,14 +263,15 @@
               :files      {:schema File}
               :activities {:schema Activity}}
 
-   :source   {:children {:schema Source}
-              :parents  {:schema Source}
-              :files    {:schema File}
+   :source   {:children  {:schema Source}
+              :parents   {:schema Source}
+              :files     {:schema File}
               :revisions {:schema Revision}}
 
    :activity {:inputs  {:schema Entity}                     ; should be Revision or Source
               :outputs {:schema Entity}                     ; should be Revision or Source
-              :actions {:schema Revision}}
+              :actions {:schema Revision}
+              :parents {:schema Project}}
 
    :folder   {:folders    {:schema Folder}
               :parents    {:schema Entity}
