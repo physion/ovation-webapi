@@ -74,6 +74,13 @@
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
+(defn typepath
+  [typename]
+  (case (lower-case typename)
+    "activity" "activities"
+    ;;default
+    (lower-case (str typename "s"))))
+
 (facts "About authorization"
   (fact "invalid API key returns 401"
     (let [apikey "12345"
@@ -197,7 +204,7 @@
   "Facts about reading resources"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -221,7 +228,7 @@
   "Facts about reading resource"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -255,7 +262,7 @@
   [entity-type]
 
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -302,12 +309,13 @@
                    (core/create-entities auth-info# [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )))))))
 
+
 (defmacro entity-resources-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
   [entity-type]
 
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -350,7 +358,7 @@
   "Facts about a resource update (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -406,7 +414,7 @@
   "Facts about a resource type (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))]
+        type-path (typepath type-name)]
     `(let [apikey# "--apikey--"
            auth-info# {:user "..user.."}]
 
@@ -465,12 +473,10 @@
   (entity-resources-read-tests "Folder")
   (entity-resource-read-tests "Folder")
   (entity-resource-create-tests "Folder")
-  (entity-resources-create-tests "Folder")
   (entity-resource-update-tests "Folder")
   (entity-resource-deletion-tests "Folder"))
 
 (facts "About Files"
-  (entity-resources-create-tests "File")
   (entity-resource-read-tests "File")
   (entity-resources-read-tests "File")
   (entity-resource-update-tests "File")
@@ -479,10 +485,14 @@
     (let [apikey "---apikey---"
           auth-info {:user "...user..."}]
       (against-background [(auth/authenticate anything apikey) => auth-info]
+        (future-fact "associates created Source")))))
 
-        (future-fact "associates created Source"
-          )))))
+(facts "About Activities"
+  (entity-resources-read-tests "Activity")
 
+  (entity-resource-read-tests "Activity")
+  (entity-resource-update-tests "Activity")
+  (entity-resource-deletion-tests "Activity"))
 
 (facts "About revisions routes"
   (facts "/files/:id/HEAD"
@@ -559,3 +569,7 @@
         (provided
           (auth/authenticate anything apikey) => auth-info
           (teams/get-team* anything id) => {:team team})))))
+
+(facts "About activity user stories"
+  (facts "create project activity")
+  (facts "create folder activity"))
