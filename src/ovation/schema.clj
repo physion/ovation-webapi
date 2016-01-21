@@ -283,6 +283,8 @@
               :parents   {:schema Entity}
               :sources   {:schema Source}}
 
-   :revision {:file {:schema File}}})
+   :revision {:file       {:schema File}
+              :activities {:schema Activity}
+              :origins    {:schema Activity}}})
 
 
