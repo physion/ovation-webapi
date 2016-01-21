@@ -285,6 +285,7 @@
 
    :revision {:file       {:schema File}
               :activities {:schema Activity}
-              :origins    {:schema Activity}}})
+              :origins    {:schema Activity}
+              :procedures {:schema Activity}}})
 
 
