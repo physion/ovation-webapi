@@ -11,13 +11,13 @@
 
 (defn get-head-revisions
   [auth routes file]
-  (let [db (couch/db auth)
+  (let [db      (couch/db auth)
         file-id (:_id file)
-        result (:value (first (:rows (couch/get-view db k/REVISIONS-VIEW {:startkey file-id
-                                                                          :endkey   file-id
-                                                                          :reduce   true
-                                                                          :group    true}))))
-        ids (first result)]
+        result  (:value (first (couch/get-view db k/REVISIONS-VIEW {:startkey file-id
+                                                                    :endkey   file-id
+                                                                    :reduce   true
+                                                                    :group    true})))
+        ids     (first result)]
     (if (nil? ids)
       []
       (core/get-entities auth ids routes))))

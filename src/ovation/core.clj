@@ -95,14 +95,17 @@
     (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
 (defn- merge-updates
-  [updates]
-  (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes (:attributes update)
-                                                                            :rev        (:_rev update)
+  [updates & {:keys [update-collaboration-roots]}]
+
+  (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes           (:attributes update)
+                                                                            :rev                  (:_rev update)
                                                                             :_collaboration_roots (get-in update [:links :_collaboration_roots])}]) updates))]
     (fn [doc]
-      (let [update (updated-attributes (str (:_id doc)))
-            roots (:_collaboration_roots update)
-            updated-roots (if (nil? roots) doc (assoc-in doc [:links :_collaboration_roots] (:_collaboration_roots update)))]
+      (let [update        (updated-attributes (str (:_id doc)))
+            roots         (if update-collaboration-roots (:_collaboration_roots update) (get-in doc [:links :_collaboration_roots]))
+            updated-roots (if (nil? roots)
+                            doc
+                            (assoc-in doc [:links :_collaboration_roots] roots))]
         (assoc updated-roots :attributes (:attributes update)
                              :_rev (:rev update))))))
 
@@ -110,8 +113,9 @@
 (defn update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct authorize] :or {irect     false
-                                                         authorize true}}] ;;TODO this should be just authorize [true|false]
+  [auth entities routes & {:keys [direct authorize update-collaboration-roots] :or {direct                     false
+                                                                                    authorize                  true
+                                                                                    update-collaboration-roots false}}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
@@ -119,10 +123,10 @@
 
     (let [bulk-docs         (if direct
                               entities
-                              (let [ids          (map :_id entities)
-                                    docs         (get-entities auth ids routes)
-                                    updated-docs (map (merge-updates entities) docs)]
-                                updated-docs))
+                              (let [ids      (map :_id entities)
+                                    docs     (get-entities auth ids routes)
+                                    merge-fn (merge-updates entities :update-collaboration-roots update-collaboration-roots)]
+                                (map merge-fn docs)))
           auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth

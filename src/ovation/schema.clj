@@ -109,6 +109,13 @@
 (s/defschema ProjectUpdate (-> EntityUpdate
                                (assoc :type (s/eq "Project"))))
 
+(s/defschema NewActivity (-> NewEntity
+                           (assoc :type (s/eq "Activity"))))
+(s/defschema Activity (-> Entity
+                        (assoc :type (s/eq "Activity"))))
+(s/defschema ActivityUpdate (-> EntityUpdate
+                              (assoc :type (s/eq "Activity"))))
+
 (s/defschema NewSource (-> NewEntity
                            (assoc :type (s/eq "Source"))))
 (s/defschema Source (-> Entity
@@ -229,42 +236,56 @@
 ;; -- Relationships -- ;;
 
 (def EntityChildren                                         ;; relationships to create when posting a child to a parent entity
-  {:project {:folder {:rel         "folders"
-                      :inverse-rel "parents"}
-             :file   {:rel         "files"
-                      :inverse-rel "parents"}}
+  {:project  {:folder   {:rel         "folders"
+                         :inverse-rel "parents"}
+              :file     {:rel         "files"
+                         :inverse-rel "parents"}
+              :activity {:rel         "activities"
+                         :inverse-rel "parents"}}
 
-   :folder  {:folder {:rel         "folders"
-                      :inverse-rel "parents"}
-             :file   {:rel         "files"
-                      :inverse-rel "parents"}}
+   :folder   {:folder   {:rel         "folders"
+                         :inverse-rel "parents"}
+              :file     {:rel         "files"
+                         :inverse-rel "parents"}
+              :activity {:rel         "activities"
+                         :inverse-rel "parents"}}
 
-   :source  {:source {:rel         "children"
-                      :inverse-rel "parents"}}
+   :source   {:source {:rel         "children"
+                       :inverse-rel "parents"}}
 
-   :file    {:revision {:rel         "revisions"
-                        :inverse-rel "file"}
-             :source   {:rel         "sources"
-                        :inverse-rel "files"}}})
+   :file     {:revision {:rel         "revisions"
+                         :inverse-rel "file"}
+              :source   {:rel         "sources"
+                         :inverse-rel "files"}}})
 
 (def EntityRelationships                                    ;; rels to put into entity links at read
-  {:project  {:folders {:schema Folder}
-              :files   {:schema File}}
+  {:project  {:folders    {:schema Folder}
+              :files      {:schema File}
+              :activities {:schema Activity}}
 
-   :source   {:children {:schema Source}
-              :parents  {:schema Source}
-              :files    {:schema File}
+   :source   {:children  {:schema Source}
+              :parents   {:schema Source}
+              :files     {:schema File}
               :revisions {:schema Revision}}
 
-   :folder   {:folders  {:schema Folder}
-              :parents  {:schema Entity}
-              :files    {:schema File}}
+   :activity {:inputs  {:schema Entity}                     ; should be Revision or Source
+              :outputs {:schema Entity}                     ; should be Revision or Source
+              :actions {:schema Revision}
+              :parents {:schema Project}}
+
+   :folder   {:folders    {:schema Folder}
+              :parents    {:schema Entity}
+              :files      {:schema File}
+              :activities {:schema Activity}}
 
    :file     {:revisions {:schema Revision}
               :head      {:schema Revision}
               :parents   {:schema Entity}
               :sources   {:schema Source}}
 
-   :revision {:file {:schema File}}})
+   :revision {:file       {:schema File}
+              :activities {:schema Activity}
+              :origins    {:schema Activity}
+              :procedures {:schema Activity}}})
 
 

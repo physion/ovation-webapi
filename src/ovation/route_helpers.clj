@@ -60,12 +60,19 @@
            (delete-annotations* request# ~annotation-key))))))
 
 
+(defn- typepath
+  [typename]
+  (case (lower-case typename)
+    "activity" "activities"
+    ;;default
+    (lower-case (str typename "s"))))
+
 (defmacro get-resources
   "Get all resources of type (e.g. \"Project\")"
   [entity-type]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))
-        type-kw (keyword type-path)]
+        type-path (typepath type-name)
+        type-kw   (keyword type-path)]
     `(GET* "/" request#
        :name ~(keyword (str "all-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
@@ -90,7 +97,7 @@
   "POST to resources of type (e.g. \"Project\")"
   [entity-type schemas]
   (let [type-name (capitalize entity-type)
-        type-path (lower-case (str type-name "s"))
+        type-path (typepath type-name)
         type-kw (keyword type-path)]
     `(POST* "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
@@ -143,7 +150,7 @@
             entities (core/create-entities auth body routes :parent id)
             child-links (make-child-links* auth id type-name entities routes)
             links (core/create-values auth routes (:links child-links))
-            updates (core/update-entities auth (:updates child-links) routes :authorize false)]
+            updates (core/update-entities auth (:updates child-links) routes :authorize false :update-collaboration-roots true)]
 
         (created {:entities entities
                   :links    links
@@ -249,7 +256,7 @@
         (let [groups (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
           (let [links (core/create-values auth routes (flatten (map :links link-groups)))
-                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :authorize false)]
+                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :authorize false  :update-collaboration-roots true)]
             (created {:updates updates
                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))

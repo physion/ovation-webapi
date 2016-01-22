@@ -151,11 +151,9 @@
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
           update (-> entity
                    (assoc-in [:attributes :label] ..label2..)
-                   (assoc-in [:attributes :foo] ..foo..)
-                   (assoc-in [:links :_collaboration_roots] [..roots..]))
+                   (assoc-in [:attributes :foo] ..foo..))
           updated-entity (-> entity
-                           (assoc :_rev rev2)
-                           (assoc-in [:links :_collaboration_roots] [..roots..]))]
+                           (assoc :_rev rev2))]
       (against-background [(couch/db ..auth..) => ..db..]
         (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
                              (tw/to-couch ..owner-id.. [update]) => [update]
@@ -169,15 +167,26 @@
             (provided
               (auth/can? ..auth.. ::auth/update anything) => true))
 
+          (fact "it updates collaboration roots"
+            (let [update2 (-> update
+                            (assoc-in [:links :_collaboration_roots] [..roots..]))
+                  updated-entity2 (assoc-in updated-entity [:links :_collaboration_roots] [..roots..])]
+              (core/update-entities ..auth.. [update2] ..rt.. :update-collaboration-roots true) => [updated-entity2]
+              (provided
+                (auth/can? ..auth.. ::auth/update anything) => true
+                (tw/to-couch ..owner-id.. [update2]) => [update2]
+                (couch/bulk-docs ..db.. [update2]) => [updated-entity2]
+                (tr/entities-from-couch [updated-entity2] ..auth.. ..rt..) => [updated-entity2])))
+
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
             (provided
-              (auth/can? ..auth.. ::auth/update anything) => false)))
+              (auth/can? ..auth.. ::auth/update anything) => false))
 
-        (fact "it throws unauthorized if entity is a User"
-          (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
-          (provided
-            (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
+          (fact "it throws unauthorized if entity is a User"
+            (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
+            (provided
+              (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")]))))))
 
 
   (facts "`delete-entity`"

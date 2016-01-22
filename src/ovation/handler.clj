@@ -126,7 +126,7 @@
           (post-resources "Project" [NewProject])
           (context* "/:id" [id]
             (get-resource "Project" id)
-            (post-resource "Project" id [NewFolder NewFile])
+            (post-resource "Project" id [NewFolder NewFile NewActivity])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
@@ -150,10 +150,21 @@
               (relationships "Source" id rel))))
 
 
+        (context* "/activities" []
+          :tags ["activities"]
+          (get-resources "Activity")
+          (context* "/:id" [id]
+            (get-resource "Activity" id)
+            (put-resource "Activity" id)
+            (delete-resource "Activity" id)
+
+            (context* "/links/:rel" [rel]
+              (rel-related "Activity" id rel)
+              (relationships "Activity" id rel))))
+
         (context* "/folders" []
           :tags ["folders"]
           (get-resources "Folder")
-          (post-resources "Folder" [NewFolder])
           (context* "/:id" [id]
             (get-resource "Folder" id)
             (post-resource "Folder" id [NewFolder NewFile])
@@ -168,7 +179,6 @@
         (context* "/files" []
           :tags ["files"]
           (get-resources "File")
-          (post-resources "File" [NewFile])
           (context* "/:id" [id]
             (get-resource "File" id)
             (POST* "/" request
