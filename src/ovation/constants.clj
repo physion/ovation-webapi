@@ -11,6 +11,12 @@
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
 
+;; Important rels
+(def ACTIVITIES-REL "activities")
+(def INPUTS-REL "inputs")
+(def OUTPUTS-REL "outputs")
+(def ACTIONS-REL "actions")
+
 ;; Constants from Java API
 (def ENTITIES-BY-TYPE-VIEW "entities_by_type")              ;; NB this **MUST** stay in sync with EntityDao$Views/ENTITIES_BY_TYPE
 (def LINKS-VIEW "links")                                    ;; NB this **MUST** stay in sync with EntityDao$Views/LINKS

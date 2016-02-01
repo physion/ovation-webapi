@@ -1,0 +1,45 @@
+(ns ovation.test.prov
+  (:use midje.sweet)
+  (:require [ovation.prov :as prov]
+            [ovation.constants :as k]
+            [ovation.links :as links]))
+
+(facts "About provenance"
+  (facts "`global`"
+    (fact "generate project provenance"
+      (prov/global ..auth.. ..rt.. [..project..]) => [{:_id     ..ida1..
+                                                       :name    ..namea1..
+                                                       :inputs  [{:_id ..idi1.. :type ..tpi1.. :name ..namei1..}
+                                                                 {:_id ..idi2.. :type ..tpi2.. :name ..namei2..}]
+                                                       :actions [{:_id ..idia1.. :type ..tpia1.. :name ..nameia1..}
+                                                                 {:_id ..idia2.. :type ..tpia2.. :name ..nameia2..}]
+                                                       :outputs [{:_id ..ido1.. :type ..tpo1.. :name ..nameo1..}
+                                                                 {:_id ..ido2.. :type ..tpo2.. :name ..nameo2..}]}
+
+                                                      {:_id     ..ida2..
+                                                       :name    ..namea2..
+                                                       :inputs  [{:_id ..idi3.. :type ..tpi3.. :name ..namei3..}
+                                                                 {:_id ..idi4.. :type ..tpi4.. :name ..namei4..}]
+                                                       :actions [{:_id ..idia3.. :type ..tpia3.. :name ..nameia3..}
+                                                                 {:_id ..idia4.. :type ..tpia4.. :name ..nameia4..}]
+                                                       :outputs [{:_id ..ido3.. :type ..tpo3.. :name ..nameo3..}
+                                                                 {:_id ..ido4.. :type ..tpo4.. :name ..nameo4..}]}]
+      (provided
+        (links/get-link-targets ..auth.. ..project.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..ida1..
+                                                                                   :attributes {:name ..namea1..}}
+                                                                                  {:_id        ..ida2..
+                                                                                   :attributes {:name ..namea2..}}]
+
+        (links/get-link-targets ..auth.. ..ida1.. k/INPUTS-REL ..rt..) => [{:_id ..idi1.. :type ..tpi1.. :attributes {:name ..namei1..}}
+                                                                           {:_id ..idi2.. :type ..tpi2.. :attributes {:name ..namei2..}}]
+        (links/get-link-targets ..auth.. ..ida1.. k/OUTPUTS-REL ..rt..) => [{:_id ..ido1.. :type ..tpo1.. :attributes {:name ..nameo1..}}
+                                                                            {:_id ..ido2.. :type ..tpo2.. :attributes {:name ..nameo2..}}]
+        (links/get-link-targets ..auth.. ..ida1.. k/ACTIONS-REL ..rt..) => [{:_id ..idia1.. :type ..tpia1.. :attributes {:name ..nameia1..}}
+                                                                            {:_id ..idia2.. :type ..tpia2.. :attributes {:name ..nameia2..}}]
+
+        (links/get-link-targets ..auth.. ..ida2.. k/INPUTS-REL ..rt..) => [{:_id ..idi3.. :type ..tpi3.. :attributes {:name ..namei3..}}
+                                                                           {:_id ..idi4.. :type ..tpi4.. :attributes {:name ..namei4..}}]
+        (links/get-link-targets ..auth.. ..ida2.. k/OUTPUTS-REL ..rt..) => [{:_id ..ido3.. :type ..tpo3.. :attributes {:name ..nameo3..}}
+                                                                            {:_id ..ido4.. :type ..tpo4.. :attributes {:name ..nameo4..}}]
+        (links/get-link-targets ..auth.. ..ida2.. k/ACTIONS-REL ..rt..) => [{:_id ..idia3.. :type ..tpia3.. :attributes {:name ..nameia3..}}
+                                                                            {:_id ..idia4.. :type ..tpia4.. :attributes {:name ..nameia4..}}]))))
