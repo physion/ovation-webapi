@@ -266,7 +266,9 @@
    :source   {:children  {:schema Source}
               :parents   {:schema Source}
               :files     {:schema File}
-              :revisions {:schema Revision}}
+              :revisions {:schema Revision}
+              :activities {:schema Activity}
+              :origins    {:schema Activity}}
 
    :activity {:inputs  {:schema Entity}                     ; should be Revision or Source
               :outputs {:schema Entity}                     ; should be Revision or Source
