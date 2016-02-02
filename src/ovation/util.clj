@@ -7,7 +7,8 @@
             [clojure.data.json :as json]
             [clojure.string :as s]
             [clj-time.core :as t]
-            [clj-time.format :as tf]))
+            [clj-time.format :as tf]
+            [clojure.core.async :refer [<!!]]))
 
 (def RELATION_TYPE "Relation")
 
@@ -42,7 +43,7 @@
   [docs]
   (into {} (map (fn [doc] [(:_id doc) doc]) docs)))
 
-(defn get-entity-id
+(defn entity-id
   "The entity ID for a given URI"
   [uri]
   (get (clojure.string/split uri #"/") 3))
@@ -95,4 +96,13 @@
 (defn filter-type
   [entity-type docs]
   (filter #(= entity-type (:type %)) docs))
+
+
+;; Async pop that throws an exception if item returned is throwable
+;; This function comes from David Nolen
+(defn <?? [c]
+  (let [returned (<!! c)]
+    (if (instance? Throwable returned)
+      (throw returned)
+      returned)))
 
