@@ -16,6 +16,7 @@
 (def INPUTS-REL "inputs")
 (def OUTPUTS-REL "outputs")
 (def ACTIONS-REL "actions")
+(def ORIGINS-REL "origins")
 
 ;; Constants from Java API
 (def ENTITIES-BY-TYPE-VIEW "entities_by_type")              ;; NB this **MUST** stay in sync with EntityDao$Views/ENTITIES_BY_TYPE

@@ -2,13 +2,51 @@
   (:use midje.sweet)
   (:require [ovation.prov :as prov]
             [ovation.constants :as k]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [ovation.core :as core]))
 
 (facts "About provenance"
+  ;(facts "`local`"
+  ;  (fact "generates source prvenance"
+  ;    (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id     ..activityid..
+  ;                                                      :name    ..activity..
+  ;                                                      :type    "Activity"
+  ;                                                      :inputs  [{:_id ..source-id.. :type "Source" :name ..name..}]
+  ;                                                      :outputs []
+  ;                                                      :actions []}
+  ;                                                     {:_id     ..originid..
+  ;                                                      :name    ..origin..
+  ;                                                      :type    "Activity"
+  ;                                                      :inputs  []
+  ;                                                      :outputs [{:_id ..source-id.. :type "Source" :name ..name..}]
+  ;                                                      :actions []}]
+  ;    (provided
+  ;      (core/get-entities ..auth.. [..source-id..] ..rt..) => [{:_id        ..source-id..
+  ;                                                               :type       "Source"
+  ;                                                               :attributes {:name ..name..}}]
+  ;      (links/get-link-targets ..auth.. ..source-id.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..activityid..
+  ;                                                                                   :type       "Activity"
+  ;                                                                                   :attributes {:name ..activity..}}]
+  ;      (links/get-link-targets ..auth.. ..source-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
+  ;                                                                                :type       "Activity"
+  ;                                                                                :attributes {:name ..origin..}}]
+  ;      (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => [{:_id        ..source-id..
+  ;                                                                                :type       "Source"
+  ;                                                                                :attributes {:name ..name..}}]
+  ;      (links/get-link-targets ..auth.. ..activityid.. k/OUTPUTS-REL ..rt..) => []
+  ;      (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
+  ;
+  ;      (links/get-link-targets ..auth.. ..originid.. k/INPUTS-REL ..rt..) => []
+  ;      (links/get-link-targets ..auth.. ..originid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..source-id..
+  ;                                                                               :type       "Source"
+  ;                                                                               :attributes {:name ..name..}}]
+  ;      (links/get-link-targets ..auth.. ..originid.. k/ACTIONS-REL ..rt..) => [])))
+
   (facts "`global`"
-    (fact "generate project provenance"
+    (fact "generates project provenance"
       (prov/global ..auth.. ..rt.. [..project..]) => [{:_id     ..ida1..
                                                        :name    ..namea1..
+                                                       :type    "Activity"
                                                        :inputs  [{:_id ..idi1.. :type ..tpi1.. :name ..namei1..}
                                                                  {:_id ..idi2.. :type ..tpi2.. :name ..namei2..}]
                                                        :actions [{:_id ..idia1.. :type ..tpia1.. :name ..nameia1..}
@@ -18,6 +56,7 @@
 
                                                       {:_id     ..ida2..
                                                        :name    ..namea2..
+                                                       :type    "Activity"
                                                        :inputs  [{:_id ..idi3.. :type ..tpi3.. :name ..namei3..}
                                                                  {:_id ..idi4.. :type ..tpi4.. :name ..namei4..}]
                                                        :actions [{:_id ..idia3.. :type ..tpia3.. :name ..nameia3..}
@@ -26,8 +65,10 @@
                                                                  {:_id ..ido4.. :type ..tpo4.. :name ..nameo4..}]}]
       (provided
         (links/get-link-targets ..auth.. ..project.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..ida1..
+                                                                                   :type       "Activity"
                                                                                    :attributes {:name ..namea1..}}
                                                                                   {:_id        ..ida2..
+                                                                                   :type       "Activity"
                                                                                    :attributes {:name ..namea2..}}]
 
         (links/get-link-targets ..auth.. ..ida1.. k/INPUTS-REL ..rt..) => [{:_id ..idi1.. :type ..tpi1.. :attributes {:name ..namei1..}}

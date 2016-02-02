@@ -1,6 +1,7 @@
 (ns ovation.prov
   (:require [ovation.links :as links]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.core :as core]))
 
 (defn- activity-relation-summary
   [f]
@@ -15,18 +16,29 @@
 
 (defn- activity-summary
   [auth rt activity]
-  (let [id (:_id activity)]
+  (let [id (:_id activity)
+        inputs (future (relations auth rt id k/INPUTS-REL))
+        outputs (future (relations auth rt id k/OUTPUTS-REL))
+        actions (future (relations auth rt id k/ACTIONS-REL))]
     {:_id     id
      :name    (get-in activity [:attributes :name])
-     :inputs  (relations auth rt id k/INPUTS-REL)
-     :outputs (relations auth rt id k/OUTPUTS-REL)
-     :actions (relations auth rt id k/ACTIONS-REL)}))
+     :type    (:type activity)
+     :inputs  @inputs
+     :outputs @outputs
+     :actions @actions}))
+
+
+
+;(defn local
+;  [auth rt ids]
+;  [])
+
 
 (defn- project-global
   [auth rt project]
   (let [activities (links/get-link-targets auth project k/ACTIVITIES-REL rt)]
-    (map #(activity-summary auth rt %) activities)))
+    (pmap #(activity-summary auth rt %) activities)))
 
 (defn global
-  [auth rt projects]
-  (mapcat #(project-global auth rt %) projects))
+  [auth rt project-ids]
+  (mapcat #(project-global auth rt %) project-ids))
