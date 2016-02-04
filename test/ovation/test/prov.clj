@@ -6,41 +6,41 @@
             [ovation.core :as core]))
 
 (facts "About provenance"
-  ;(facts "`local`"
-  ;  (fact "generates source prvenance"
-  ;    (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id     ..activityid..
-  ;                                                      :name    ..activity..
-  ;                                                      :type    "Activity"
-  ;                                                      :inputs  [{:_id ..source-id.. :type "Source" :name ..name..}]
-  ;                                                      :outputs []
-  ;                                                      :actions []}
-  ;                                                     {:_id     ..originid..
-  ;                                                      :name    ..origin..
-  ;                                                      :type    "Activity"
-  ;                                                      :inputs  []
-  ;                                                      :outputs [{:_id ..source-id.. :type "Source" :name ..name..}]
-  ;                                                      :actions []}]
-  ;    (provided
-  ;      (core/get-entities ..auth.. [..source-id..] ..rt..) => [{:_id        ..source-id..
-  ;                                                               :type       "Source"
-  ;                                                               :attributes {:name ..name..}}]
-  ;      (links/get-link-targets ..auth.. ..source-id.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..activityid..
-  ;                                                                                   :type       "Activity"
-  ;                                                                                   :attributes {:name ..activity..}}]
-  ;      (links/get-link-targets ..auth.. ..source-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
-  ;                                                                                :type       "Activity"
-  ;                                                                                :attributes {:name ..origin..}}]
-  ;      (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => [{:_id        ..source-id..
-  ;                                                                                :type       "Source"
-  ;                                                                                :attributes {:name ..name..}}]
-  ;      (links/get-link-targets ..auth.. ..activityid.. k/OUTPUTS-REL ..rt..) => []
-  ;      (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
-  ;
-  ;      (links/get-link-targets ..auth.. ..originid.. k/INPUTS-REL ..rt..) => []
-  ;      (links/get-link-targets ..auth.. ..originid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..source-id..
-  ;                                                                               :type       "Source"
-  ;                                                                               :attributes {:name ..name..}}]
-  ;      (links/get-link-targets ..auth.. ..originid.. k/ACTIONS-REL ..rt..) => [])))
+  (facts "`local`"
+    (fact "generates source prvenance"
+      (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id     ..activityid..
+                                                        :name    ..activity..
+                                                        :type    "Activity"
+                                                        :inputs  [{:_id ..source-id.. :type "Source" :name ..name..}]
+                                                        :outputs []
+                                                        :actions []}
+                                                       {:_id     ..originid..
+                                                        :name    ..origin..
+                                                        :type    "Activity"
+                                                        :inputs  []
+                                                        :outputs [{:_id ..source-id.. :type "Source" :name ..name..}]
+                                                        :actions []}]
+      (provided
+        (core/get-entities ..auth.. [..source-id..] ..rt..) => [{:_id        ..source-id..
+                                                                 :type       "Source"
+                                                                 :attributes {:name ..name..}}]
+        (links/get-link-targets ..auth.. ..source-id.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..activityid..
+                                                                                     :type       "Activity"
+                                                                                     :attributes {:name ..activity..}}]
+        (links/get-link-targets ..auth.. ..source-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
+                                                                                  :type       "Activity"
+                                                                                  :attributes {:name ..origin..}}]
+        (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => [{:_id        ..source-id..
+                                                                                  :type       "Source"
+                                                                                  :attributes {:name ..name..}}]
+        (links/get-link-targets ..auth.. ..activityid.. k/OUTPUTS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
+
+        (links/get-link-targets ..auth.. ..originid.. k/INPUTS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..originid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..source-id..
+                                                                                 :type       "Source"
+                                                                                 :attributes {:name ..name..}}]
+        (links/get-link-targets ..auth.. ..originid.. k/ACTIONS-REL ..rt..) => [])))
 
   (facts "`global`"
     (fact "generates project provenance"
