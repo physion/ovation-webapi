@@ -586,7 +586,7 @@
                      :inputs []
                      :outputs []}]
           get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
-      (body-json get) => {:provenance {:provenance expected}}
+      (body-json get) => {:provenance expected}
       (provided
         (auth/authenticate anything apikey) => auth-info
         (prov/local auth-info ..rt.. [id]) => expected
