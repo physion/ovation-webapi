@@ -57,9 +57,9 @@
     []
     (let [desc (entity-summary auth rt entity)
           rels (directional-rels (:type entity) direction)
-          next (mapcat #(links/get-link-targets auth (:_id entity) (name %) rt) rels)]
+          next (apply concat (pmap #(links/get-link-targets auth (:_id entity) (name %) rt) rels))]
 
-      (concat [desc] (map #(local* auth rt direction %) next)))))
+      (concat [desc] (mapcat #(local* auth rt direction %) next)))))
 
 (defn upstream-local
   [auth rt entity]
@@ -71,11 +71,13 @@
 
 (defn local
   [auth rt ids]
-  (let [entities   (core/get-entities auth ids rt)
-        upstream   (apply concat (pmap #(upstream-local auth rt %) entities))
-        downstream (apply concat (pmap #(downstream-local auth rt %) entities))]
+  (let [entities    (core/get-entities auth ids rt)
+        upstream    (apply concat (pmap #(upstream-local auth rt %) entities))
+        downstream  (apply concat (pmap #(downstream-local auth rt %) entities))
+        results     (concat upstream downstream)
+        results-map (into {} (map (fn [s] [(:_id s) s]) results))]
 
-    (concat upstream downstream)))
+    (vals results-map)))
 
 
 (defn- project-global

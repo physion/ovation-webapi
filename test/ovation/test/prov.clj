@@ -11,18 +11,24 @@
 
     (fact "generates source provenance to downstream revisions"
       ;; source -> activity -> rev
-      (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id     ..activityid..
+      (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id        ..source-id..
+                                                        :name       ..name..
+                                                        :type       "Source"
+                                                        :origins    []
+                                                        :activities [{:_id ..activityid.. :name ..activity.. :type "Activity"}]}
+
+                                                       {:_id     ..activityid..
                                                         :name    ..activity..
                                                         :type    "Activity"
                                                         :inputs  [{:_id ..source-id.. :type "Source" :name ..name..}]
-                                                        :outputs [{:_id ..rev-id.. :type "Revision" :name ..rev..}]
+                                                        :outputs [{:_id ..revid.. :type "Revision" :name ..rev..}]
                                                         :actions []}
 
                                                        {:_id       ..revid..
                                                         :name      ..rev..
                                                         :type      "Revision"
-                                                        :origins   [{:_id ..activityid.. :type "Activity :name ..activity"}]
-                                                        :activties []}]
+                                                        :origins   [{:_id ..activityid.. :type "Activity" :name ..activity..}]
+                                                        :activities []}]
 
       (provided
         (core/get-entities ..auth.. [..source-id..] ..rt..) => [{:_id        ..source-id..
@@ -39,7 +45,9 @@
                                                                                    :type       "Revision"
                                                                                    :attributes {:name ..rev..}}]
         (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
-        (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => [{:_id        ..source-id..
+                                                                                  :attributes {:name ..name..}
+                                                                                  :type       "Source"}]
 
         (links/get-link-targets ..auth.. ..revid.. k/ACTIVITIES-REL ..rt..) => []
         (links/get-link-targets ..auth.. ..revid.. k/ORIGINS-REL ..rt..) => [{:_id        ..activityid..
@@ -49,27 +57,40 @@
 
     (fact "generates rev provenance upstream and downstream"
       ;; upstream-source -> origin activity -> rev -> activity -> downstream rev
-      (prov/local ..auth.. ..rt.. [..revid..]) => [{:_id     ..activityid..
-                                                    :name    ..activity..
-                                                    :type    "Activity"
-                                                    :inputs  [{:_id ..source-id.. :type "Source" :name ..name..}]
-                                                    :outputs [{:_id ..downstream-rev-id.. :type "Revision" :name ..downstream-rev..}]
-                                                    :actions []}
-
-                                                   {:_id       ..downstream-revid..
-                                                    :name      ..downstreaml..
+      (prov/local ..auth.. ..rt.. [..revid..]) => [{:_id       ..revid..
+                                                    :name      ..rev..
                                                     :type      "Revision"
-                                                    :origins   [{:_id ..activityid.. :type "Activity" :name ..activity..}]
-                                                    :activties []}
+                                                    :origins   [{:_id ..originid.. :type "Activity" :name ..origin..}]
+                                                    :activities [{:_id ..activityid.. :type "Activity" :name ..activity..}]}
 
                                                    {:_id     ..originid..
                                                     :name    ..origin..
                                                     :type    "Activity"
-                                                    :inputs  [{:_id ..upstream-rev-id.. :type "Revision" :name ..upstreamid..}]
+                                                    :inputs  [{:_id ..upstream-rev-id.. :type "Revision" :name ..upstream-rev..}]
                                                     :outputs [{:_id ..revid.. :type "Revision" :name ..rev..}]
                                                     :actions []}
 
-                                                   {:_id ..upstream-rev-id.. :type "Revision" :name ..upstreamid..}]
+                                                   {:_id ..upstream-rev-id..
+                                                    :type "Revision"
+                                                    :name ..upstream-rev..
+                                                    :origins []
+                                                    :activities [{:_id ..originid.. :name ..origin.. :type "Activity"}]}
+
+
+                                                   {:_id     ..activityid..
+                                                    :name    ..activity..
+                                                    :type    "Activity"
+                                                    :inputs  [{:_id ..revid.. :type "Revision" :name ..rev..}]
+                                                    :outputs [{:_id ..downstream-rev-id.. :type "Revision" :name ..downstream-rev..}]
+                                                    :actions []}
+
+                                                   {:_id       ..downstream-rev-id..
+                                                    :name      ..downstream-rev..
+                                                    :type      "Revision"
+                                                    :origins   [{:_id ..activityid.. :type "Activity" :name ..activity..}]
+                                                    :activities []}
+
+                                                  ]
 
       (provided
         (core/get-entities ..auth.. [..revid..] ..rt..) => [{:_id        ..revid..
@@ -102,9 +123,9 @@
                                                                                            :attributes {:name ..origin..}}]
 
 
-        (links/get-link-targets ..auth.. ..downstream-rev-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
+        (links/get-link-targets ..auth.. ..downstream-rev-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..activityid..
                                                                                           :type       "Activity"
-                                                                                          :attributes {:name ..origin..}}]
+                                                                                          :attributes {:name ..activity..}}]
         (links/get-link-targets ..auth.. ..downstream-rev-id.. k/ACTIVITIES-REL ..rt..) => []
 
 
