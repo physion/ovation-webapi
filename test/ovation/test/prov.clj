@@ -5,8 +5,10 @@
             [ovation.links :as links]
             [ovation.core :as core]))
 
+
 (facts "About provenance"
   (facts "`local`"
+
     (fact "generates source provenance to downstream revisions"
       ;; source -> activity -> rev
       (prov/local ..auth.. ..rt.. [..source-id..]) => [{:_id     ..activityid..
@@ -36,7 +38,14 @@
         (links/get-link-targets ..auth.. ..activityid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..revid..
                                                                                    :type       "Revision"
                                                                                    :attributes {:name ..rev..}}]
-        (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []))
+        (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => []
+
+        (links/get-link-targets ..auth.. ..revid.. k/ACTIVITIES-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..revid.. k/ORIGINS-REL ..rt..) => [{:_id        ..activityid..
+                                                                              :type       "Activity"
+                                                                              :attributes {:name ..activity..}}]
+        ))
 
     (fact "generates rev provenance upstream and downstream"
       ;; upstream-source -> origin activity -> rev -> activity -> downstream rev
@@ -71,29 +80,43 @@
                                                                                  :type       "Activity"
                                                                                  :attributes {:name ..activity..}}]
 
-        (links/get-link-targets ..auth.. ..revid.. k/ORIGINS-REL ..rt..) => [{:_id            ..originid..
-                                                                                  :type       "Activity"
-                                                                                  :attributes {:name ..origin..}}]
+        (links/get-link-targets ..auth.. ..revid.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
+                                                                              :type       "Activity"
+                                                                              :attributes {:name ..origin..}}]
+
 
         (links/get-link-targets ..auth.. ..activityid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..downstream-rev-id..
                                                                                    :type       "Revision"
                                                                                    :attributes {:name ..downstream-rev..}}]
 
         (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..activityid.. k/INPUTS-REL ..rt..) => [{:_id        ..revid..
+                                                                                  :type       "Revision"
+                                                                                  :attributes {:name ..rev..}}]
 
 
 
-        (links/get-link-targets ..auth.. ..revid.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
-                                                                              :type       "Activity"
-                                                                              :attributes {:name ..origin..}}]
+        (links/get-link-targets ..auth.. ..upstream-rev-id.. k/ORIGINS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..upstream-rev-id.. k/ACTIVITIES-REL ..rt..) => [{:_id        ..originid..
+                                                                                           :type       "Activity"
+                                                                                           :attributes {:name ..origin..}}]
 
-        (links/get-link-targets ..auth.. ..originid.. k/INPUTS-REL ..rt..) => [{:_id        ..upstream-rev-di..
+
+        (links/get-link-targets ..auth.. ..downstream-rev-id.. k/ORIGINS-REL ..rt..) => [{:_id        ..originid..
+                                                                                          :type       "Activity"
+                                                                                          :attributes {:name ..origin..}}]
+        (links/get-link-targets ..auth.. ..downstream-rev-id.. k/ACTIVITIES-REL ..rt..) => []
+
+
+        (links/get-link-targets ..auth.. ..originid.. k/INPUTS-REL ..rt..) => [{:_id        ..upstream-rev-id..
                                                                                 :type       "Revision"
                                                                                 :attributes {:name ..upstream-rev..}}]
 
-        (links/get-link-targets ..auth.. ..activityid.. k/ACTIONS-REL ..rt..) => []
-
-        )))
+        (links/get-link-targets ..auth.. ..originid.. k/ACTIONS-REL ..rt..) => []
+        (links/get-link-targets ..auth.. ..originid.. k/OUTPUTS-REL ..rt..) => [{:_id        ..revid..
+                                                                                 :type       "Revision"
+                                                                                 :attributes {:name ..rev..}}]))
+    )
 
 
   (facts "`global`"

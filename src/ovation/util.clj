@@ -8,7 +8,7 @@
             [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.core.async :refer [<!!]]))
+            [clojure.core.async :refer [<!!] :as async]))
 
 (def RELATION_TYPE "Relation")
 
@@ -98,11 +98,26 @@
   (filter #(= entity-type (:type %)) docs))
 
 
-;; Async pop that throws an exception if item returned is throwable
-;; This function comes from David Nolen
-(defn <?? [c]
+;; Async utilities
+
+(defn ncpus []
+  (.availableProcessors (Runtime/getRuntime)))
+
+(defn <??
+  "Async pop that throws an exception if item returned is throwable
+   This function comes from David Nolen"
+  [c]
   (let [returned (<!! c)]
     (if (instance? Throwable returned)
       (throw returned)
       returned)))
+
+(def default-parallelism (+ (ncpus) 1))
+
+(defn pipeline
+  [in xf & {:keys [parallelism buffer] :or {parallelism default-parallelism
+                                            buffer      16}}]
+  (let [out (async/chan (async/buffer buffer))]
+    (async/pipeline parallelism out xf in)
+    out))
 
