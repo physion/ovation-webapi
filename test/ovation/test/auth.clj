@@ -1,6 +1,7 @@
 (ns ovation.test.auth
   (:use midje.sweet)
   (:require [ovation.auth :as auth]
+            [ovation.teams :as teams]
             [org.httpkit.fake :refer [with-fake-http]]
             [clojure.data.codec.base64 :as b64]
             [ovation.util :as util]
@@ -87,6 +88,77 @@
       ...auth... =contains=> {:uuid ...id...})))
 
 (facts "About `can?`"
+  (facts ":read"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+                         (auth/teams ..auth..) => [..team1.. ..team2..]]
+      (facts "entities"
+        (fact "allowed when user is owner"
+          (auth/can? ..auth.. ::auth/read {:type "Project"
+                                           :owner ..user..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true)
+
+        (fact "not allowed when not owner or team member"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+
+        (fact "not allowed when not owner"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots []}}) => false))
+
+      (facts "annotations"
+        (fact "not allowed when not owner"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots []}}) => false)
+        (fact "not allowed when none of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+        (fact "allowed when user is :user"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..user..
+                                           :entity ..id..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true))
+      (facts "relationships"
+        (fact "not allowed when user is not :user"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..other..}) => false)
+        (fact "not allowed when user is not user or team member"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..other..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+        (fact "allowed when user is :user"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true))))
+
   (facts ":create"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
       (facts "Annotations"

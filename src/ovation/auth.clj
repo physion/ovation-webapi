@@ -76,6 +76,11 @@
   [permissions perm]
   (map #(-> % :permissions perm) (:permissions permissions)))
 
+(defn teams
+  [auth]
+  "Get all teams to which the authenticated user belongs"
+  [])
+
 (defn effective-collaboration-roots
   [doc]
   (case (:type doc)
@@ -135,14 +140,34 @@
         (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
+(defn- can-read?
+  [auth doc]
+  (let [authenticated-users (authenticated-user-id auth)
+        authenticated-teams (teams auth)
+        owner               (case (:type doc)
+                              "Annotation" (:user doc)
+                              "Relation" (:user_id doc)
+                              ;; default
+                              (:owner doc)
+                              )
+        roots               (get-in doc [:links :_collaboration_roots])]
+
+    ;; authenticated user is owner or is a member of a team in _collaboration_roots
+    (not (nil? (or (= owner authenticated-users)
+                 (some (set roots) authenticated-teams))))))
+
+
 (defn can?
   [auth op doc]
   (case op
     :ovation.auth/create (can-create? auth doc)
     :ovation.auth/update (can-update? auth doc)
     :ovation.auth/delete (can-delete? auth doc)
+    :ovation.auth/read (can-read? auth doc)
+
     ;;default
-    (not (nil? (authenticated-user-id auth)))))
+    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})
+    ))
 
 (defn check!
   ([auth op]
