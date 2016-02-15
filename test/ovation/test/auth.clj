@@ -87,6 +87,10 @@
     (provided
       ...auth... =contains=> {:uuid ...id...})))
 
+(facts "About authenticated teams"
+  (fact "pulls team list from future"
+    (auth/teams {:authenticated-teams (future (do ..teams..))}) => ..teams..))
+
 (facts "About `can?`"
   (facts ":read"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..

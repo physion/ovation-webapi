@@ -79,7 +79,7 @@
 (defn teams
   [auth]
   "Get all teams to which the authenticated user belongs"
-  [])
+  @(:authenticated-teams auth))
 
 (defn effective-collaboration-roots
   [doc]
