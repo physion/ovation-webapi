@@ -4,11 +4,21 @@
             [ovation.teams :as teams]
             [ovation.routes :as routes]
             [org.httpkit.fake :refer [with-fake-http]]
-            [ovation.util :as util]
-            [ovation.config :as config])
+            [ovation.util :as util :refer [<??]]
+            [ovation.config :as config]
+            )
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About Teams API"
+  (facts "teams"
+    (let [teams-url (util/join-path [config/TEAMS_SERVER "teams"])
+          teams     ["uuid1" "uuid2"]]
+      (with-fake-http [{:url teams-url :method :get} {:status 200
+                                                      :body   (util/to-json {:teams teams})}]
+
+        (fact "calls /teams"
+          (<?? (teams/teams ..apikey..)) => teams))))
+
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                          ..request.. =contains=> {::auth/auth-info ..auth..}
