@@ -1,7 +1,7 @@
 (ns ovation.couch
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
-            [clojure.core.async :refer [>!!]]
+            [clojure.core.async :refer [>!! go >!]]
             [slingshot.slingshot :refer [throw+]]))
 
 (def design-doc "api")
@@ -27,7 +27,7 @@
 
 (defn all-docs
   "Gets all documents with given document IDs"
-  [db ids]
+  [db ids user teams]
   (cl/with-db db
     (map :doc (cl/all-documents {:reduce false :include_docs true} {:keys ids}))))
 
@@ -59,7 +59,7 @@
     :since <db-seq>"
   [db c & {:as opts}]
   (let [changes-agent (cl/change-agent db opts)]
-    (add-watch changes-agent :update (fn [key ref old new] (>!! c new)))
+    (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
 (defn delete-docs

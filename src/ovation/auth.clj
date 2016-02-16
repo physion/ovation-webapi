@@ -77,8 +77,8 @@
   (map #(-> % :permissions perm) (:permissions permissions)))
 
 (defn teams
-  [auth]
   "Get all teams to which the authenticated user belongs"
+  [auth]
   (-> @(::authenticated-teams auth)
     :body
     util/from-json

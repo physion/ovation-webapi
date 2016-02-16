@@ -27,8 +27,8 @@
    :headers    {"Content-Type" "application/json; charset=utf-8"}})
 
 (defn teams
-  [api-token]
   "Gets all teams for authenticated user as a future: {:body json<{:teams [id1, id2]}>}"
+  [api-token]
   (let [opts (request-opts api-token)
         url  (make-url "teams")]
     (httpkit.client/get url opts)))
