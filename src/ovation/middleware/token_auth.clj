@@ -1,7 +1,8 @@
 (ns ovation.middleware.token-auth
   "HTTP token authorization and authenticated user info middleware for ovation.io"
   (:require [ovation.auth :as auth]
-            [clojure.string :refer [lower-case]]))
+            [clojure.string :refer [lower-case]]
+            [ovation.teams :as teams]))
 
 ;; Original code from https://github.com/jstewart/ring-token-authentication/blob/master/src/ring/middleware/token_authentication.clj
 ;; Used under the EPL 1.0 license
@@ -19,7 +20,8 @@
     (-> request
       (assoc ::auth/auth-info
              (and token auth))
-      (assoc ::auth/api-key token))))
+      (assoc ::auth/api-key token)
+      (assoc ::auth/authenticated-teams (teams/teams token)))))
 
 (defn token-authentication-failure
   "Returns a 401 unauthorized, along with body text that indicates the same.

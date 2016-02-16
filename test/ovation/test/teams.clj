@@ -17,7 +17,10 @@
                                                       :body   (util/to-json {:teams teams})}]
 
         (fact "calls /teams"
-          (<?? (teams/teams ..apikey..)) => teams))))
+          (-> @(teams/teams ..apikey..)
+            :body
+            util/from-json
+            :teams) => teams))))
 
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..

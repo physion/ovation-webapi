@@ -1,6 +1,6 @@
 (ns ovation.auth
   (:require [org.httpkit.client :as http]
-            [ovation.util :as util]
+            [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
             [ring.util.http-response :refer [throw!]]
             [slingshot.slingshot :refer [throw+]]
@@ -9,7 +9,7 @@
 
 
 
-;; Authentication
+;; Authentication — this should be replaced with buddy.auth
 
 (defn get-auth
   "Async get user info for ovation.io API key"
@@ -79,7 +79,10 @@
 (defn teams
   [auth]
   "Get all teams to which the authenticated user belongs"
-  @(:authenticated-teams auth))
+  (-> @(::authenticated-teams auth)
+    :body
+    util/from-json
+    :teams))
 
 (defn effective-collaboration-roots
   [doc]
@@ -142,7 +145,7 @@
 
 (defn- can-read?
   [auth doc]
-  (let [authenticated-users (authenticated-user-id auth)
+  (let [authenticated-user  (authenticated-user-id auth)
         authenticated-teams (teams auth)
         owner               (case (:type doc)
                               "Annotation" (:user doc)
@@ -153,7 +156,7 @@
         roots               (get-in doc [:links :_collaboration_roots])]
 
     ;; authenticated user is owner or is a member of a team in _collaboration_roots
-    (not (nil? (or (= owner authenticated-users)
+    (not (nil? (or (= owner authenticated-user)
                  (some (set roots) authenticated-teams))))))
 
 
