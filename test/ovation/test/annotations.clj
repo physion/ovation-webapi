@@ -40,7 +40,7 @@
         ;                                                    (keyword id2) {(keyword user1) [a3]
         ;                                                                   (keyword user2) [a4]}}
         (provided
-          (couch/get-view ..db.. "annotation_docs" {:keys         [[id1 ..type..]
+          (couch/get-view ..auth.. ..db.. "annotation_docs" {:keys         [[id1 ..type..]
                                                                    [id2 ..type..]]
                                                     :include_docs true
                                                     :reduce       false}) => (seq [a1 a2 a3 a4])))))

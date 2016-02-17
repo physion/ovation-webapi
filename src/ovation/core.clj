@@ -21,9 +21,9 @@
   "Gets all entities of the given type"
   [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
-    (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
-                                                    :reduce       false
-                                                    :include_docs true})
+    (-> (couch/get-view auth db k/ENTITIES-BY-TYPE-VIEW {:key          resource
+                                                         :reduce       false
+                                                         :include_docs true})
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
