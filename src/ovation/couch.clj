@@ -1,12 +1,14 @@
 (ns ovation.couch
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
-            [clojure.core.async :as async :refer [chan >!! go >! close!]]
+            [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
             [slingshot.slingshot :refer [throw+]]
             [ovation.auth :as auth]
             [ovation.util :refer [<??]]))
 
 (def design-doc "api")
+
+(def ncpu (.availableProcessors (Runtime/getRuntime)))
 
 (defn db
   "Database URL from authorization info"
@@ -23,18 +25,18 @@
   [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
   (cl/with-db db
-    (let [docs (chan 10 (distinct))]                     ;;TODO buffer size?
+    (let [docs (chan ncpu (distinct))]
 
       ;; Run queries
       (if prefix-teams
-        (loop [roots (conj (auth/teams auth) (auth/authenticated-user-id auth))]
+        (go-loop [roots (conj (auth/teams auth) (auth/authenticated-user-id auth))]
           (if (empty? roots)
             (close! docs)
             (if-let [prefix (first roots)]
               (let [prefixed-ops (-> opts
                                    (assoc :startkey (cons prefix (:startkey opts)))
                                    (assoc :endkey (cons prefix (:endkey opts))))]
-                (async/onto-chan docs (cl/get-view design-doc view prefixed-ops) false)
+                (async/onto-chan docs (<! (async/thread (cl/get-view design-doc view prefixed-ops))) false)
                 (recur (rest roots))))))
         (async/onto-chan docs (cl/get-view design-doc view opts)))
 
