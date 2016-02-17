@@ -17,6 +17,17 @@
     (assoc :username (:cloudant_key auth)
            :password (:cloudant_password auth))))
 
+
+(defn prefix-keys
+  [opts prefix]
+  (cond
+    (contains? opts :key) (assoc opts :key (cons prefix (if (sequential? (:key opts)) (:key opts) [(:key opts)])))
+    (contains? opts :keys) (assoc opts :keys (vec (map #(cons prefix (if (sequential? %) % [%])) (:keys opts))))
+    :else (-> opts
+            (assoc :startkey (cons prefix (:startkey opts)))
+            (assoc :endkey (cons prefix (:endkey opts))))))
+
+
 (defn get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
   each of owner and team ids, prepending to the start and end keys taking unique results.
@@ -25,24 +36,21 @@
   [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
   (cl/with-db db
-    (let [docs (chan ncpu (distinct))]
+    (let [docs (chan (* 2 ncpu) (distinct))]
 
-      ;; Run queries
+      ;; Run queries, placing all results onto the docs channel
       (if prefix-teams
         (go-loop [roots (conj (auth/teams auth) (auth/authenticated-user-id auth))]
           (if (empty? roots)
             (close! docs)
             (if-let [prefix (first roots)]
-              (let [prefixed-ops (-> opts
-                                   (assoc :startkey (cons prefix (:startkey opts)))
-                                   (assoc :endkey (cons prefix (:endkey opts))))]
-                (async/onto-chan docs (<! (async/thread (cl/get-view design-doc view prefixed-ops))) false)
-                (recur (rest roots))))))
+              (do (async/onto-chan docs (<! (async/thread (cl/get-view design-doc view (prefix-keys opts prefix)))) false)
+                  (recur (rest roots))))))
         (async/onto-chan docs (cl/get-view design-doc view opts)))
 
-      ;; Transform to a sequence of results
-      (let [results (chan 10)]
-        (async/pipeline 10 results (if (:include_docs opts)
+      ;; Transform docs to a sequence of results and return a seq from the channel
+      (let [results (chan (* 2 ncpu))]
+        (async/pipeline ncpu results (if (:include_docs opts)
                                      (comp (map :doc) (filter #(not (nil? %))))
                                      (map identity)) docs)
         (<?? (async/into '() results))))))
