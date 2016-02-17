@@ -1,8 +1,10 @@
 (ns ovation.couch
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
-            [clojure.core.async :refer [>!! go >!]]
-            [slingshot.slingshot :refer [throw+]]))
+            [clojure.core.async :as async :refer [chan >!! go >! close!]]
+            [slingshot.slingshot :refer [throw+]]
+            [ovation.auth :as auth]
+            [ovation.util :refer [<??]]))
 
 (def design-doc "api")
 
@@ -14,20 +16,38 @@
            :password (:cloudant_password auth))))
 
 (defn get-view
-  "Gets the output of a view, passing opts to clutch/get-view.
+  "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
+  each of owner and team ids, prepending to the start and end keys taking unique results.
+
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
-  [db view opts]
+  [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
+
   (cl/with-db db
-    (let [result (cl/get-view design-doc view opts)]
-      (if (:include_docs opts)
-        (->> result
-          (map :doc)
-          (filter #(not (nil? %))))
-        result))))
+    (let [docs (chan 10 (distinct))]                     ;;TODO buffer size?
+
+      ;; Run queries
+      (if prefix-teams
+        (loop [roots (conj (auth/teams auth) (auth/authenticated-user-id auth))]
+          (if (empty? roots)
+            (close! docs)
+            (if-let [prefix (first roots)]
+              (let [prefixed-ops (-> opts
+                                   (assoc :startkey (cons prefix (:startkey opts)))
+                                   (assoc :endkey (cons prefix (:endkey opts))))]
+                (async/onto-chan docs (cl/get-view design-doc view prefixed-ops) false)
+                (recur (rest roots))))))
+        (async/onto-chan docs (cl/get-view design-doc view opts)))
+
+      ;; Transform to a sequence of results
+      (let [results (chan 10)]
+        (async/pipeline 10 results (if (:include_docs opts)
+                                     (comp (map :doc) (filter #(not (nil? %))))
+                                     (map identity)) docs)
+        (<?? (async/into '() results))))))
 
 (defn all-docs
   "Gets all documents with given document IDs"
-  [db ids user teams]
+  [auth db ids]
   (cl/with-db db
     (map :doc (cl/all-documents {:reduce false :include_docs true} {:keys ids}))))
 
