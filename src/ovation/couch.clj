@@ -5,7 +5,8 @@
             [slingshot.slingshot :refer [throw+]]
             [ovation.auth :as auth]
             [ovation.util :refer [<??]]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.config :as config]))
 
 (def design-doc "api")
 
@@ -14,9 +15,9 @@
 (defn db
   "Database URL from authorization info"
   [auth]
-  (-> (url/url (:cloudant_db_url auth))
-    (assoc :username (:cloudant_key auth)
-           :password (:cloudant_password auth))))
+  (-> (url/url (config/config "CLOUDANT_DB_URL"))
+    (assoc :username (config/config "CLOUDANT_USERNAME")
+           :password (config/config "CLOUDANT_PASSWORD"))))
 
 
 (defn prefix-keys

@@ -5,7 +5,8 @@
             [clojure.core.async :refer [chan <!!]]
             [com.ashafa.clutch :as cl]
             [ovation.auth :as auth]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.config :as config]))
 
 (facts "About `db`"
   (fact "it constructs database URL"
@@ -14,11 +15,12 @@
           password "db-pass"]
 
       (couch/db ...auth...) => (-> (url/url dburl)
-                                 (assoc :username username :password password))
+                                 (assoc :username username
+                                        :password password))
       (provided
-        ...auth... =contains=> {:cloudant_key      username
-                                :cloudant_password password
-                                :cloudant_db_url   dburl}))))
+        (config/config "CLOUDANT_DB_URL") => dburl
+        (config/config "CLOUDANT_USERNAME") => username
+        (config/config "CLOUDANT_PASSWORD") => password))))
 
 
 (facts "About `get-view`"
