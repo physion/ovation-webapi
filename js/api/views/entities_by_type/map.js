@@ -4,6 +4,9 @@ function(doc) {
     if (doc.type) {
         if(doc.owner) {
             emit([doc.owner, doc.type], null);
+            if(doc.type === "Project") {
+                emit([doc._id, doc._id], null);
+            }
         }
 
         if(doc.user) {
