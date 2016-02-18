@@ -4,7 +4,8 @@
             [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
             [slingshot.slingshot :refer [throw+]]
             [ovation.auth :as auth]
-            [ovation.util :refer [<??]]))
+            [ovation.util :refer [<??]]
+            [ovation.constants :as k]))
 
 (def design-doc "api")
 
@@ -40,7 +41,7 @@
 
       ;; Run queries, placing all results onto the docs channel
       (if prefix-teams
-        (go-loop [roots (conj (auth/teams auth) (auth/authenticated-user-id auth))]
+        (go-loop [roots (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))]
           (if (empty? roots)
             (close! docs)
             (if-let [prefix (first roots)]
@@ -58,8 +59,8 @@
 (defn all-docs
   "Gets all documents with given document IDs"
   [auth db ids]
-  (cl/with-db db
-    (map :doc (cl/all-documents {:reduce false :include_docs true} {:keys ids}))))
+  (get-view auth db k/ALL-DOCS-VIEW {:keys         ids
+                                     :include_docs true}))
 
 (defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."

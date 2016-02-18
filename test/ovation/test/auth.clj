@@ -97,7 +97,7 @@
 (facts "About `can?`"
   (facts ":read"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
-                         (auth/teams ..auth..) => [..team1.. ..team2..]]
+                         (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]]
       (facts "entities"
         (fact "allowed when user is owner"
           (auth/can? ..auth.. ::auth/read {:type "Project"

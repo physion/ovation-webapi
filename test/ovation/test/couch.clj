@@ -4,7 +4,8 @@
             [ovation.couch :as couch]
             [clojure.core.async :refer [chan <!!]]
             [com.ashafa.clutch :as cl]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ovation.constants :as k]))
 
 (facts "About `db`"
   (fact "it constructs database URL"
@@ -39,7 +40,7 @@
                                                 :endkey       [..team.. ..end..]
                                                 :include_docs true}) => [{:doc ...result...} {:doc ..other..}]
       (auth/authenticated-user-id ..auth..) => ..user..
-      (auth/teams ..auth..) => [..team..]))
+      (auth/authenticated-teams ..auth..) => [..team..]))
 
   (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
     (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
@@ -55,9 +56,10 @@
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"
-    (couch/all-docs ..auth.. "dburl" ...ids...) => [...doc...]
+    (couch/all-docs ..auth.. "dburl" ...ids...) => [..doc..]
     (provided
-      (cl/all-documents {:reduce false :include_docs true} {:keys ...ids...}) => [{:doc ...doc...}])))
+      (couch/get-view ..auth.. "dburl" k/ALL-DOCS-VIEW {:keys ...ids...
+                                                        :include_docs true}) => [..doc..])))
 
 
 (facts "About `bulk-docs`"

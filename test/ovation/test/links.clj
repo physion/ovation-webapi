@@ -27,6 +27,8 @@
                                                                 :include_docs  true}) => [doc1]
                            (auth/can? anything ::auth/update anything) => true
                            (couch/db ..auth..) => ..db..
+                           (auth/authenticated-teams ..auth..) => []
+                           (auth/can? anything ::auth/read anything  :teams anything) => true
                            (tr/couch-to-entity ..auth.. ..rt..) => (fn [doc] doc)]
 
         (fact "gets entity rel targets"

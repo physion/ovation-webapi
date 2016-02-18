@@ -21,7 +21,7 @@
       (assoc ::auth/auth-info
              (and token auth))
       (assoc ::auth/api-key token)
-      (assoc ::auth/authenticated-teams (teams/teams token)))))
+      (assoc ::auth/authenticated-teams (and auth (teams/teams token))))))
 
 (defn token-authentication-failure
   "Returns a 401 unauthorized, along with body text that indicates the same.

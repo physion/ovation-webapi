@@ -90,7 +90,10 @@
 (defn entities-from-couch
   "Transform couchdb documents."
   [docs auth router]
-  (map (couch-to-entity auth router) docs))
+  (let [teams (auth/authenticated-teams auth)]
+    (->> docs
+      (map (couch-to-entity auth router))
+      (filter #(auth/can? auth ::auth/read % :teams teams)))))
 
 (defn add-value-permissions
   [doc auth]
@@ -108,7 +111,7 @@
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (-> doc
                                (add-self-link router)
-                               ;(add-value-permissions :user_id (auth/authenticated-user-id auth))
+                               ;(add-value-permissions auth)
                                )
         ;; default
         (add-value-permissions doc auth)))))
@@ -116,4 +119,7 @@
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs auth router]
-  (map (couch-to-value auth router) docs))
+  (let [teams (auth/authenticated-teams auth)]
+    (->> docs
+      (map (couch-to-value auth router))
+      (filter #(auth/can? auth ::auth/read % :teams teams)))))
