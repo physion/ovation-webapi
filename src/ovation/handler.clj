@@ -14,17 +14,24 @@
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.token-auth :refer [wrap-token-auth]]
+            [ovation.middleware.auth :refer [wrap-jwt wrap-authenticated-teams]]
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
-            [ovation.prov :as prov]))
+            [ovation.prov :as prov]
+            [buddy.auth.backends.token :refer (jws-backend)]
+            [buddy.auth.middleware :refer (wrap-authentication)]
+            [buddy.auth :refer [authenticated?]]
+            [buddy.auth.accessrules :refer [wrap-access-rules]]))
+
 
 (ovation.logging/setup!)
 
+(def rules [{:pattern #"^/api.*"
+             :handler authenticated?}])
 
 ;;; --- Routes --- ;;;
 (defapi app
@@ -35,10 +42,16 @@
                   :access-control-allow-methods [:get :put :post :delete :options]
                   :access-control-allow-headers [:accept :content-type :authorization :origin])
 
-                ;; Require authorization (via header token auth) for all paths starting with /api
-                (wrap-token-auth
-                  :authserver config/AUTH_SERVER
-                  :required-auth-url-prefix #{"/api"})
+                (wrap-authentication (jws-backend {:secret config/JWT_SECRET
+                                                   :token-name "Bearer"}))
+                (wrap-access-rules {:rules rules
+                                    :on-error auth/throw-unauthorized})
+
+                (wrap-authenticated-teams)
+
+                ;(wrap-jwt
+                ;  :wraper (wrap-authentication (jws-backend {:secret config/JWT_SECRET}))
+                ;  :required-auth-url-prefix #{"/api"})
 
 
                 (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
@@ -86,7 +99,7 @@
               :return {:entity Entity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
               :summary "Returns entity with :id"
-              (let [auth (::auth/auth-info request)]
+              (let [auth (auth/identity request)]
                 (if-let [entities (core/get-entities auth [id] (router request))]
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
@@ -106,13 +119,13 @@
               :name :get-relation
               :return {:relationship LinkInfo}
               :summary "Relationship document"
-              (let [auth (::auth/auth-info request)]
+              (let [auth (auth/identity request)]
                 (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
             (DELETE* "/" request
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
-              (let [auth (::auth/auth-info request)
+              (let [auth (auth/identity request)
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
@@ -229,7 +242,7 @@
                                      :name s/Str
                                      s/Keyword [{:_id s/Uuid :name s/Str :type s/Str}]}]}
               :summary "Local provenance for a single entity"
-              (let [auth   (::auth/auth-info request)
+              (let [auth   (auth/identity request)
                     rt     (router request)
                     result (prov/local auth rt [id])]
                 (ok {:provenance result})))))

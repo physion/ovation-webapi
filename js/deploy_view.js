@@ -1,28 +1,31 @@
 // Load the Cloudant library.
 var Cloudant = require('cloudant');
 var compile = require('couchdb-compile');
+var fs = require('fs');
+
 
 
 function update_view(cloudant, db_name, compiled_view_doc) {
     var db = cloudant.db.use(db_name);
-
+    console.log("Updating " + db_name);
     db.get(compiled_view_doc._id, function (err, body) {
         if (err) {
             db.insert(compiled_view_doc, function (err, body) {
                 if (err) {
                     console.log('Unable to insert ' + compiled_view_doc._id + ': ' + err.message);
+                } else {
+                    console.log('Inserted ' + db_name + '/' + compiled_view_doc._id);
                 }
-
-                console.log('Inserted ' + db_name + '/' + compiled_view_doc._id);
             });
         } else {
             compiled_view_doc._rev = body._rev;
             db.insert(compiled_view_doc, function (err, body) {
                 if (err) {
                     console.log('Unable to insert ' + compiled_view_doc._id + ': ' + err.message);
+                } else {
+                    console.log('Inserted ' + db_name + '/' + compiled_view_doc._id);
                 }
 
-                console.log('Inserted ' + db_name + '/' + compiled_view_doc._id);
             });
         }
     });
@@ -34,6 +37,16 @@ compile(process.argv[2], function(err, compiled_view_doc) {
     if(err) {
         return console.log('Unable to compile view document: ' + err.message);
     }
+
+    console.log(compiled_view_doc);
+    fs.writeFile("view.js", JSON.stringify(compiled_view_doc), function(err) {
+        if(err) {
+            console.log(err);
+        } else {
+            console.log("Saved compiled view file to 'view.js'");
+        }
+
+    });
 
     var cloudant_user = process.env.CLOUDANT_USER;
     var cloudant_password = process.env.CLOUDANT_PASSWORD;
@@ -52,11 +65,11 @@ compile(process.argv[2], function(err, compiled_view_doc) {
                     return console.log('Failed to list databases: ' + err.message);
                 }
 
-                allDbs.forEach(function (db) {
-                    if (db.substring(0, 3) == 'db-') {
-                        update_view(cloudant, db, compiled_view_doc);
-                    }
-                })
+                //allDbs.forEach(function (db) {
+                //    if (db.substring(0, 3) == 'db-') {
+                //        update_view(cloudant, db, compiled_view_doc);
+                //    }
+                //})
             });
         }
     });
