@@ -3,7 +3,10 @@
   (:require [cemerick.url :as url]
             [ovation.couch :as couch]
             [clojure.core.async :refer [chan <!!]]
-            [com.ashafa.clutch :as cl]))
+            [com.ashafa.clutch :as cl]
+            [ovation.auth :as auth]
+            [ovation.constants :as k]
+            [ovation.config :as config]))
 
 (facts "About `db`"
   (fact "it constructs database URL"
@@ -12,35 +15,53 @@
           password "db-pass"]
 
       (couch/db ...auth...) => (-> (url/url dburl)
-                                 (assoc :username username :password password))
+                                 (assoc :username username
+                                        :password password))
       (provided
-        ...auth... =contains=> {:cloudant_key      username
-                                :cloudant_password password
-                                :cloudant_db_url   dburl}))))
+        (config/config "CLOUDANT_DB_URL") => dburl
+        (config/config "CLOUDANT_USERNAME") => username
+        (config/config "CLOUDANT_PASSWORD") => password))))
 
 
 (facts "About `get-view`"
   (fact "it returns CouchDB view result docs when include_docs=true"
-    (couch/get-view "db" ...view... ...opts...) => [...result...]
+    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
     (provided
       (cl/get-view couch/design-doc ...view... ...opts...) => [{:doc ...result...}]
       ...opts... =contains=> {:include_docs true}))
+
+  (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
+    (couch/get-view ..auth.. "db" ...view... {:startkey     [..start..]
+                                              :endkey       [..end..]
+                                              :include_docs true}) => [..other.. ...result...]
+    (provided
+      (cl/get-view couch/design-doc ...view... {:startkey     [..user.. ..start..]
+                                                :endkey       [..user.. ..end..]
+                                                :include_docs true}) => [{:doc ...result...}]
+      (cl/get-view couch/design-doc ...view... {:startkey     [..team.. ..start..]
+                                                :endkey       [..team.. ..end..]
+                                                :include_docs true}) => [{:doc ...result...} {:doc ..other..}]
+      (auth/authenticated-user-id ..auth..) => ..user..
+      (auth/authenticated-teams ..auth..) => [..team..]))
+
   (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
-    (couch/get-view "db" ...view... ...opts...) => [...result...]
+    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
     (provided
       (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
       ...opts... =contains=> {}))
+
   (fact "it returns CouchDB view result directly when include_docs=false"
-    (couch/get-view "db" ...view... ...opts...) => [...result...]
+    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
     (provided
       (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
       ...opts... =contains=> {:include_docs false})))
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"
-    (couch/all-docs "dburl" ...ids...) => [...doc...]
+    (couch/all-docs ..auth.. "dburl" ...ids...) => [..doc..]
     (provided
-      (cl/all-documents {:reduce false :include_docs true} {:keys ...ids...}) => [{:doc ...doc...}])))
+      (couch/get-view ..auth.. "dburl" k/ALL-DOCS-VIEW {:keys ...ids...
+                                                        :include_docs true}) => [..doc..])))
 
 
 (facts "About `bulk-docs`"

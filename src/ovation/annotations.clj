@@ -16,7 +16,7 @@
               :include_docs true
               :reduce       false}]
 
-    (couch/get-view db k/ANNOTATIONS-VIEW opts)))
+    (couch/get-view auth db k/ANNOTATIONS-VIEW opts)))
 
 
 ;; WRITE

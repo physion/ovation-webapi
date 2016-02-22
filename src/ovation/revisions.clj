@@ -13,10 +13,10 @@
   [auth routes file]
   (let [db      (couch/db auth)
         file-id (:_id file)
-        result  (:value (first (couch/get-view db k/REVISIONS-VIEW {:startkey file-id
-                                                                    :endkey   file-id
-                                                                    :reduce   true
-                                                                    :group    true})))
+        result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
+                                                                         :endkey   file-id
+                                                                         :reduce   true
+                                                                         :group    true})))
         ids     (first result)]
     (if (nil? ids)
       []

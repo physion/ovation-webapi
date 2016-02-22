@@ -7,13 +7,14 @@
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.auth :as auth]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [clojure.core.async :refer [chan >!!]]
+            [slingshot.support :refer [get-throwable]]))
 
 
 (defn api-key
   [request]
-  (let [auth (::auth/auth-info request)]
-    (:api_key auth)))
+  (::auth/api-key request))
 
 (defn make-url
   [& comps]
@@ -25,6 +26,12 @@
    :basic-auth [api-key "X"]
    :headers    {"Content-Type" "application/json; charset=utf-8"}})
 
+(defn teams
+  "Gets all teams for authenticated user as a future: {:body json<{:teams [id1, id2]}>}"
+  [api-token]
+  (let [opts (request-opts api-token)
+        url  (make-url "teams")]
+    (httpkit.client/get url opts)))
 
 (defn create-team
   [request team-uuid]
