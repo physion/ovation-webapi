@@ -33,7 +33,7 @@
   "Gets entities by ID"
   [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)
-        docs (filter :_id (couch/all-docs db ids))]
+        docs (filter :_id (couch/all-docs auth db ids))]
     (-> docs
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
@@ -42,7 +42,7 @@
   "Get values by ID"
   [auth ids & {:keys [routes]}]
   (let [db (couch/db auth)
-        docs (couch/all-docs db ids)]
+        docs (couch/all-docs auth db ids)]
     (if routes
       (tr/values-from-couch docs auth routes)
       docs)))

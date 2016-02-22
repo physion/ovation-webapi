@@ -21,10 +21,10 @@
   (util/join-path (conj comps config/TEAMS_SERVER)))
 
 (defn request-opts
-  [api-key]
-  {:timeout    1000                                          ; ms
-   :basic-auth [api-key "X"]
-   :headers    {"Content-Type" "application/json; charset=utf-8"}})
+  [token]
+  {:timeout     10000                                          ; ms
+   :oauth-token token
+   :headers     {"Content-Type" "application/json; charset=utf-8"}})
 
 (defn teams
   "Gets all teams for authenticated user as a future: {:body json<{:teams [id1, id2]}>}"

@@ -7,7 +7,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [clojure.data.json :as json]
-            [buddy.auth]))
+            [buddy.auth]
+            [ovation.config :as config]))
 
 
 
@@ -16,15 +17,18 @@
   [request]
   (buddy.auth/authenticated? request))
 
-(defn identity
-  "Gets the authenticated identity for request or throws a 401"
-  [request]
-  (:identity request))
-
 (defn token
   [request]
-  (let [auth (get-in request [:headers "authorization"])]
+  (if-let [auth (get-in request [:headers "authorization"])]
     (last (re-find #"^Bearer (.*)$" auth))))
+
+(defn identity
+  "Gets the authenticated identity for request. Assoc's bearer token as ::token "
+  [request]
+  (let [id (:identity request)]
+    (if (map? id)
+      (assoc id ::token (token request))
+      id)))
 
 (defn throw-unauthorized
   "A default response constructor for an unathorized request."
@@ -43,9 +47,8 @@
 ;; Authorization
 (defn get-permissions
   [auth collaboration-roots]
-  (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
-        apikey (:api_key auth)
-        opts {:basic-auth   [apikey apikey]
+  (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
+        opts {:oauth-token   (::token auth)
               :query-params {:uuids (json/write-str (map str collaboration-roots))}
               :accept       :json}]
 
@@ -68,10 +71,10 @@
   [auth]
   (let [resp @(::authenticated-teams auth)]
     (if resp
-      (-> resp
-        :body
-        util/from-json
-        :teams)
+      (map :uuid (-> resp
+                   :body
+                   util/from-json
+                   :teams))
       [])))
 
 (defn effective-collaboration-roots

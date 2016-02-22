@@ -20,7 +20,7 @@
         (fact "gets values"
           (core/get-values ..auth.. [..id..]) => [..doc..]
           (provided
-            (couch/all-docs ..db.. [..id..]) => [..doc..])))))
+            (couch/all-docs ..auth.. ..db.. [..id..]) => [..doc..])))))
   (facts "write"
     (facts "`create-values`"
       (against-background [(couch/db ..auth..) => ..db..
@@ -41,7 +41,7 @@
         (fact "calls delete-docs"
           (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
           (provided
-            (couch/all-docs ..db.. [..id..]) => [{:type "Annotation"}]
+            (couch/all-docs ..auth.. ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..auth.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
@@ -78,7 +78,7 @@
         (core/get-entities ...auth... [...id...] ..rt..) => ...result...
         (provided
           (couch/db ...auth...) => ...db...
-          (couch/all-docs ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
+          (couch/all-docs ...auth.. ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
           (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ...entities...
           (core/filter-trashed ...entities... false) => ...result...))))
 
