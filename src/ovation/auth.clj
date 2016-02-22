@@ -19,13 +19,16 @@
 
 (defn token
   [request]
-  (let [auth (get-in request [:headers "authorization"])]
+  (if-let [auth (get-in request [:headers "authorization"])]
     (last (re-find #"^Bearer (.*)$" auth))))
 
 (defn identity
   "Gets the authenticated identity for request. Assoc's bearer token as ::token "
   [request]
-  (assoc (:identity request) ::token (token request)))
+  (let [id (:identity request)]
+    (if (map? id)
+      (assoc id ::token (token request))
+      id)))
 
 (defn throw-unauthorized
   "A default response constructor for an unathorized request."

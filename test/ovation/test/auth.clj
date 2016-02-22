@@ -6,7 +6,8 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [clojure.data.codec.base64 :as b64]
             [ovation.util :as util]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [ovation.config :as config])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -248,13 +249,13 @@
 
 (facts "About `get-permissions`"
        (fact "gets permissions from auth server"
-             (let [uuids [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+             (let [uuids    [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
                    expected {:permissions [{:uuid        (first uuids)
                                             :permissions {}}
                                            {:uuid        (last uuids)
                                             :permissions {}}]}
-                   server "https://some.ovation.io"
-                   auth {:server server}]
+                   server   config/AUTH_SERVER
+                   auth     {:server server}]
                (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str expected)
                                                                                                         :status 200}]
                  (auth/get-permissions auth uuids) => expected))))
