@@ -23,7 +23,8 @@
 
 (defn token
   [request]
-  (:api_token (identity request)))
+  (let [auth (get-in request [:headers "authorization"])]
+    (last (re-find #"^Bearer (.*)$" auth))))
 
 (defn throw-unauthorized
   "A default response constructor for an unathorized request."
@@ -64,11 +65,14 @@
 
 (defn authenticated-teams
   "Get all teams to which the authenticated user belongs"
-  [request]
-  (-> @(::authenticated-teams request)
-    :body
-    util/from-json
-    :teams))
+  [auth]
+  (let [resp @(::authenticated-teams auth)]
+    (if resp
+      (-> resp
+        :body
+        util/from-json
+        :teams)
+      [])))
 
 (defn effective-collaboration-roots
   [doc]
