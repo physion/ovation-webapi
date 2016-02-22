@@ -569,7 +569,6 @@
         (body-json get) => {:team team}
         (provided
           (teams/teams anything) => TEAMS
-          (auth/identity anything) => ..auth..
           (teams/get-team* anything id) => {:team team})))))
 
 (facts "About activity user stories"
