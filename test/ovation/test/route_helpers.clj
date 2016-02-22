@@ -11,7 +11,7 @@
   (fact "returns HEAD revisions for file"
     (r/get-head-revisions* ..req.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
     (provided
-      ..req.. =contains=> {::auth/auth-info ..auth..}
+      ..req.. =contains=> {:identity ..auth..}
       ..file.. =contains=> {:type "File"}
       (routes/router ..req..) => ..rt..
       (core/get-entities ..auth.. [..id..] ..rt..) => (seq [..file..])
@@ -20,7 +20,7 @@
   (fact "+throws not-found if file is not found"
     (r/get-head-revisions* ..req.. ..id..) => (throws ExceptionInfo)
     (provided
-      ..req.. =contains=> {::auth/auth-info ..auth..}
+      ..req.. =contains=> {:identity ..auth..}
       (routes/router ..req..) => ..rt..
       (core/get-entities ..auth.. [..id..] ..rt..) => [])))
 
@@ -35,7 +35,7 @@
                                                                                   :links    ..links..
                                                                                   :updates  ..updates..}
       (provided
-        ..req.. =contains=> {::auth/auth-info ..auth..}
+        ..req.. =contains=> {:identity ..auth..}
 
         (routes/router ..req..) => ..rt..
         (core/get-entities ..auth.. [..fileid..] ..rt..) => (seq [file-entity])

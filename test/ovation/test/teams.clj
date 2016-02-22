@@ -24,7 +24,7 @@
 
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
+                         ..request.. =contains=> {:identity ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
       (let [team-id (str (util/make-uuid))
@@ -119,7 +119,7 @@
 
   (facts "post-memberhsip*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
+                         ..request.. =contains=> {:identity ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
       (let [team-uuid (str (util/make-uuid))
@@ -155,7 +155,7 @@
 
   (facts "create-team"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
+                         ..request.. =contains=> {:identity ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..
                          (routes/named-route ..rt.. :post-teams {}) => teams-url]
@@ -174,7 +174,7 @@
 
   (facts "put-membership*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
+                         ..request.. =contains=> {:identity ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
       (fact "throws 422 if mid is not specified"
@@ -182,7 +182,7 @@
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
+                         ..request.. =contains=> {:identity ..auth..}
                          ..auth.. =contains=> {:api_key ..apikey..}
                          (routes/router ..request..) => ..rt..]
       (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])
