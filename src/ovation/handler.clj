@@ -20,7 +20,8 @@
             [ovation.auth :as auth]
             [schema.core :as s]
             [ovation.teams :as teams]
-            [new-reliquary.ring :refer [wrap-newrelic-transaction]]))
+            [new-reliquary.ring :refer [wrap-newrelic-transaction]]
+            [ovation.prov :as prov]))
 
 (ovation.logging/setup!)
 
@@ -217,6 +218,21 @@
               (rel-related "Revision" id rel)
               (relationships "Revision" id rel))))
 
+
+        (context* "/prov" []
+          :tags ["provenance"]
+          (context* "/:id" [id]
+            (GET* "/" request
+              :name :entity-provenance
+              :return {:provenance [{:_id s/Uuid
+                                     :type s/Str
+                                     :name s/Str
+                                     s/Keyword [{:_id s/Uuid :name s/Str :type s/Str}]}]}
+              :summary "Local provenance for a single entity"
+              (let [auth   (::auth/auth-info request)
+                    rt     (router request)
+                    result (prov/local auth rt [id])]
+                (ok {:provenance result})))))
 
         (context* "/users" []
           :tags ["users"]

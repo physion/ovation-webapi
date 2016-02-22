@@ -16,7 +16,8 @@
             [ovation.routes :as r]
             [ovation.constants :as k]
             [ovation.revisions :as revisions]
-            [ovation.teams :as teams])
+            [ovation.teams :as teams]
+            [ovation.prov :as prov])
   (:import (java.util UUID)))
 
 (defn sling-throwable
@@ -573,3 +574,20 @@
 (facts "About activity user stories"
   (facts "create project activity")
   (facts "create folder activity"))
+
+(facts "About provenance"
+  (fact "/prov/:id returns local provenance"
+    (let [apikey "--apikey--"
+          auth-info {:user "..user.."}
+          id (str (UUID/randomUUID))
+          expected [{:_id id
+                     :type "Activity"
+                     :name "Something"
+                     :inputs []
+                     :outputs []}]
+          get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
+      (body-json get) => {:provenance expected}
+      (provided
+        (auth/authenticate anything apikey) => auth-info
+        (prov/local auth-info ..rt.. [id]) => expected
+        (r/router anything) => ..rt..))))
