@@ -14,6 +14,7 @@
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
                  [ring-logger "0.7.5"]
+                 [buddy/buddy-auth "0.9.0"]
 
 
                  ;; HTTP and CouchDB

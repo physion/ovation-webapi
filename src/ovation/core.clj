@@ -79,7 +79,7 @@
                      auth
                      routes)]
       ;; create teams for new Project entities
-      (doall (map #(teams/create-team {::auth/auth-info auth} (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+      (doall (map #(teams/create-team {:identity auth} (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
       entities)))
 

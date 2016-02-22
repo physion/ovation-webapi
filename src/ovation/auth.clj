@@ -1,51 +1,37 @@
 (ns ovation.auth
+  (:refer-clojure :exclude [identity])
   (:require [org.httpkit.client :as http]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw!]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden!]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [buddy.auth]))
 
 
 
 ;; Authentication — this should be replaced with buddy.auth
+(defn authenticated?
+  [request]
+  (buddy.auth/authenticated? request))
 
-(defn get-auth
-  "Async get user info for ovation.io API key"
-  [authserver apikey]
-  (let [url (util/join-path [authserver "api" "v1" "users"])
-        opts {:basic-auth [apikey apikey]
-              :accept     :json}]
+(defn identity
+  "Gets the authenticated identity for request or throws a 401"
+  [request]
+  (:identity request))
 
-    (http/get url opts)))
+(defn token
+  [request]
+  (:api_token (identity request)))
 
-(defn check-auth
-  "Slinghsots authorization failure if not status OK."
-  [auth]
+(defn throw-unauthorized
+  "A default response constructor for an unathorized request."
+  [request value]
+  (if (authenticated? request)
+    (forbidden! "Permission denied")
+    (unauthorized! "Unauthorized")))
 
-  (when (not (hp/ok? auth))
-    (logging/info "Authentication failed")
-    (throw! auth))
-
-  (logging/info "Authentication succeeded")
-  auth)
-
-(defn auth-info
-  "Converts authorize result to map"
-  [auth]
-
-  (let [response @auth]
-    (-> response
-      (check-auth)
-      (:body)
-      (util/from-json))))
-
-(defn authenticate
-  "Gets the Cloudant API key and database URL for an Ovation API key."
-  [authserver apikey]
-  (-> (auth-info (get-auth authserver apikey))
-      (assoc :server authserver)))
 
 (defn authenticated-user-id
   "The UUID of the authorized user"
@@ -78,8 +64,8 @@
 
 (defn authenticated-teams
   "Get all teams to which the authenticated user belongs"
-  [auth]
-  (-> @(::authenticated-teams auth)
+  [request]
+  (-> @(::authenticated-teams request)
     :body
     util/from-json
     :teams))
