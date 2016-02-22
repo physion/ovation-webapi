@@ -68,10 +68,10 @@
   [auth]
   (let [resp @(::authenticated-teams auth)]
     (if resp
-      (-> resp
-        :body
-        util/from-json
-        :teams)
+      (map :uuid (-> resp
+                   :body
+                   util/from-json
+                   :teams))
       [])))
 
 (defn effective-collaboration-roots
