@@ -268,6 +268,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
        (against-background [(teams/teams anything) => TEAMS
+                            (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
@@ -321,6 +322,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/teams anything) => TEAMS
+                            (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "create"

@@ -12,7 +12,9 @@
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [ovation.revisions :as revisions]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 (defn get-annotations*
   [request id annotation-key]
@@ -86,7 +88,11 @@
   (let [auth (auth/identity request)]
     (if (every? #(= type-name (:type %)) entities)
       (try+
-        (created {type-kw (core/create-entities auth entities (r/router request))})
+        (let [entities (core/create-entities auth entities (r/router request))]
+          ;; create teams for new Project entities
+          (doall (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+
+          (created {type-kw entities}))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
