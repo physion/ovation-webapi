@@ -14,13 +14,3 @@
         (assoc-in [:identity ::auth/authenticated-teams] (teams/teams (auth/token request)))
         (handler))
       (handler request))))
-
-
-(defn wrap-jwt
-  "Wrap the response with JWT token authentication"
-  [handler & {:keys [wraper required-auth-url-prefix]}]
-  (fn [request]
-    (if (and required-auth-url-prefix
-          (not (empty? (filter #(.startsWith (lower-case (:uri request)) (lower-case %)) required-auth-url-prefix))))
-      (wraper request)
-      (handler request))))

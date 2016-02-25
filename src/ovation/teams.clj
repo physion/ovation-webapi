@@ -12,9 +12,9 @@
             [slingshot.support :refer [get-throwable]]))
 
 
-(defn api-key
+(defn auth-token
   [request]
-  (::auth/api-key request))
+  (auth/token request))
 
 (defn make-url
   [& comps]
@@ -37,7 +37,7 @@
   [request team-uuid]
 
   (logging/info (str "Creating Team for " team-uuid))
-  (let [opts (request-opts (api-key request))
+  (let [opts (request-opts (auth-token request))
         url (make-url "teams")
         body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]
@@ -48,7 +48,7 @@
 (defn get-team*
   [request team-id]
   (let [rt (routes/router request)
-        opts (request-opts (api-key request))
+        opts (request-opts (auth-token request))
         url (make-url "teams" team-id)
         response @(httpkit.client/get url opts)]
 
@@ -93,7 +93,7 @@
 (defn put-membership*
   [request team-uuid membership membership-id]                              ;; membership is a TeamMembership
   (let [rt (routes/router request)
-        opts (request-opts (api-key request))
+        opts (request-opts (auth-token request))
         url (make-url "memberships" membership-id)
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
@@ -111,7 +111,7 @@
 (defn post-membership*
   [request team-uuid membership]                            ;; membership is a NewTeamMembership
   (let [rt      (routes/router request)
-        opts    (request-opts (api-key request))
+        opts    (request-opts (auth-token request))
         url     (make-url "memberships")
         team    (get-team* request team-uuid)
         team-id (get-in team [:team :id])
@@ -133,7 +133,7 @@
 
 (defn delete-membership*
   [request membership-id]
-  (let [opts (request-opts (api-key request))
+  (let [opts (request-opts (auth-token request))
         url (make-url "memberships" membership-id)]
 
     (let [response @(httpkit.client/delete url opts)]
@@ -142,7 +142,7 @@
 
 (defn get-roles*
   [request]
-  (let [opts (request-opts (api-key request))
+  (let [opts (request-opts (auth-token request))
         url (make-url "roles")]
 
     (let [response @(httpkit.client/get url opts)]

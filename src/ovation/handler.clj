@@ -14,7 +14,7 @@
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-jwt wrap-authenticated-teams]]
+            [ovation.middleware.auth :refer [wrap-authenticated-teams]]
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
@@ -48,10 +48,6 @@
                                     :on-error auth/throw-unauthorized})
 
                 (wrap-authenticated-teams)
-
-                ;(wrap-jwt
-                ;  :wraper (wrap-authentication (jws-backend {:secret config/JWT_SECRET}))
-                ;  :required-auth-url-prefix #{"/api"})
 
 
                 (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?

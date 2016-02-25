@@ -133,7 +133,6 @@
                                              :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
                                                                                                    :_id  ..id..}]
             (provided
-              (teams/create-team {:identity ..auth..} ..id..) => ..team..
               (tw/to-couch ...owner-id... [{:type       "Project"
                                             :attributes attributes}]
                 :collaboration_roots []) => [...doc...]
