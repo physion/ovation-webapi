@@ -38,24 +38,28 @@
   [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
   (cl/with-db db
-    (let [docs (chan (* 2 ncpu) (distinct))]
+    (let [docs (chan 1 (if (:include_docs opts)
+                         (comp
+                           (map :doc)
+                           (distinct))
+                         (distinct)))]
 
       ;; Run queries, placing all results onto the docs channel
       (if prefix-teams
-        (go-loop [roots (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))]
-          (if (empty? roots)
-            (close! docs)
-            (if-let [prefix (first roots)]
-              (do (async/onto-chan docs (<! (async/thread (cl/get-view design-doc view (prefix-keys opts prefix)))) false)
-                  (recur (rest roots))))))
-        (async/onto-chan docs (cl/get-view design-doc view opts)))
+        (let [results (loop [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
+                             result-channels nil]
+                        (if-let [prefix (first roots)]
+                          (let [c (chan)]
+                            (async/thread
+                              (let [r (cl/get-view design-doc view (prefix-keys opts prefix))]
+                                (async/onto-chan c r)))
+                            (recur (rest roots) (conj result-channels c)))
+                          (async/merge result-channels)))]
+          (async/pipe results docs))
 
-      ;; Transform docs to a sequence of results and return a seq from the channel
-      (let [results (chan (* 2 ncpu))]
-        (async/pipeline ncpu results (if (:include_docs opts)
-                                     (comp (map :doc) (filter #(not (nil? %))))
-                                     (map identity)) docs)
-        (<?? (async/into '() results))))))
+        (async/onto-chan docs (cl/get-view design-doc view opts) true))
+
+      (<?? (async/into '() docs)))))
 
 (defn all-docs
   "Gets all documents with given document IDs"

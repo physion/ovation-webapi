@@ -14,7 +14,7 @@
           username "db-user"
           password "db-pass"]
 
-      (couch/db ...auth...) => (-> (url/url dburl)
+      (couch/db ..auth..) => (-> (url/url dburl)
                                  (assoc :username username
                                         :password password))
       (provided
@@ -25,51 +25,51 @@
 
 (facts "About `get-view`"
   (fact "it returns CouchDB view result docs when include_docs=true"
-    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
+    (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => [{:doc ...result...}]
-      ...opts... =contains=> {:include_docs true}))
+      (cl/get-view couch/design-doc ..view.. ..opts..) => [{:doc ..result..}]
+      ..opts.. =contains=> {:include_docs true}))
 
   (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
-    (couch/get-view ..auth.. "db" ...view... {:startkey     [..start..]
+    (couch/get-view ..auth.. "db" ..view.. {:startkey     [..start..]
                                               :endkey       [..end..]
-                                              :include_docs true}) => [..other.. ...result...]
+                                              :include_docs true}) => [..other.. ..result..]
     (provided
-      (cl/get-view couch/design-doc ...view... {:startkey     [..user.. ..start..]
+      (cl/get-view couch/design-doc ..view.. {:startkey     [..user.. ..start..]
                                                 :endkey       [..user.. ..end..]
-                                                :include_docs true}) => [{:doc ...result...}]
-      (cl/get-view couch/design-doc ...view... {:startkey     [..team.. ..start..]
+                                                :include_docs true}) => [{:doc ..result..}]
+      (cl/get-view couch/design-doc ..view.. {:startkey     [..team.. ..start..]
                                                 :endkey       [..team.. ..end..]
-                                                :include_docs true}) => [{:doc ...result...} {:doc ..other..}]
+                                                :include_docs true}) => [{:doc ..result..} {:doc ..other..}]
       (auth/authenticated-user-id ..auth..) => ..user..
       (auth/authenticated-teams ..auth..) => [..team..]))
 
   (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
-    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
+    (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
-      ...opts... =contains=> {}))
+      (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+      ..opts.. =contains=> {}))
 
   (fact "it returns CouchDB view result directly when include_docs=false"
-    (couch/get-view ..auth.. "db" ...view... ...opts... :prefix-teams false) => [...result...]
+    (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
     (provided
-      (cl/get-view couch/design-doc ...view... ...opts...) => [...result...]
-      ...opts... =contains=> {:include_docs false})))
+      (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+      ..opts.. =contains=> {:include_docs false})))
 
 (facts "About `all-docs`"
   (fact "it gets docs from _all_docs"
-    (couch/all-docs ..auth.. "dburl" ...ids...) => [..doc..]
+    (couch/all-docs ..auth.. "dburl" ..ids..) => [..doc..]
     (provided
-      (couch/get-view ..auth.. "dburl" k/ALL-DOCS-VIEW {:keys ...ids...
+      (couch/get-view ..auth.. "dburl" k/ALL-DOCS-VIEW {:keys ..ids..
                                                         :include_docs true}) => [..doc..])))
 
 
 (facts "About `bulk-docs`"
   (fact "it POSTs bulk-update"
-    (couch/bulk-docs "dburl" ...docs...) => ...result...
+    (couch/bulk-docs "dburl" ..docs..) => ..result..
     (provided
-      (cl/bulk-update ...docs...) => ...revs...
-      (couch/merge-updates ...docs... ...revs...) => ...result...)))
+      (cl/bulk-update ..docs..) => ..revs..
+      (couch/merge-updates ..docs.. ..revs..) => ..result..)))
 
 (facts "About `delete-docs`"
   (fact "it POSTs bulk-update"

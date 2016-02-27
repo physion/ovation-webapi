@@ -67,15 +67,10 @@
   (map #(-> % :permissions perm) (:permissions permissions)))
 
 (defn authenticated-teams
-  "Get all teams to which the authenticated user belongs"
+  "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
-  (let [resp @(::authenticated-teams auth)]
-    (if resp
-      (map :uuid (-> resp
-                   :body
-                   util/from-json
-                   :teams))
-      [])))
+  (if-let [ateams (::authenticated-teams auth)]
+    (deref ateams 1000 [])))
 
 (defn effective-collaboration-roots
   [doc]
