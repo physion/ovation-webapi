@@ -9,7 +9,8 @@
             [ovation.auth :as auth]
             [ovation.constants :as k]
             [clojure.core.async :refer [chan >!!]]
-            [slingshot.support :refer [get-throwable]]))
+            [slingshot.support :refer [get-throwable]]
+            [ring.util.http-predicates :as hp]))
 
 
 (defn auth-token
@@ -26,12 +27,17 @@
    :oauth-token token
    :headers     {"Content-Type" "application/json; charset=utf-8"}})
 
-(defn teams
-  "Gets all teams for authenticated user as a future: {:body json<{:teams [id1, id2]}>}"
+(defn get-teams
+  "Gets all teams for authenticated user as a future: [id1 id2]"
   [api-token]
   (let [opts (request-opts api-token)
         url  (make-url "teams")]
-    (httpkit.client/get url opts)))
+    (future (let [resp @(httpkit.client/get url opts)]
+              (if (hp/ok? resp)
+                (map :uuid (-> resp
+                             :body
+                             util/from-json
+                             :teams)))))))
 
 (defn create-team
   [request team-uuid]

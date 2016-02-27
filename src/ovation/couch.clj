@@ -51,7 +51,7 @@
                         (if-let [prefix (first roots)]
                           (let [c (chan)]
                             (async/thread
-                              (async/onto-chan c (cl/get-view design-doc view (prefix-keys opts prefix)))) ;;TODO on thread
+                              (async/onto-chan c (cl/get-view design-doc view (prefix-keys opts prefix))))
                             (recur (rest roots) (conj result-channels c)))
                           (async/merge result-channels)))]
           (async/pipe results docs))

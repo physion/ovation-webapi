@@ -128,7 +128,7 @@
 
 (facts "About annotations"
   (let [apikey TOKEN]
-    (against-background [(teams/teams anything) => TEAMS
+    (against-background [(teams/get-teams anything) => TEAMS
                          (auth/identity anything) => ..auth..]
       (facts "GET /entities/:id/annotations/:type"
         (let [id   (str (util/make-uuid))
@@ -173,7 +173,7 @@
                             :type            "Annotation"
                             :annotation_type "tags"
                             :annotation      {:tag "--tag--"}}]]
-        (against-background [(teams/teams anything) => TEAMS
+        (against-background [(teams/get-teams anything) => TEAMS
                              (auth/identity anything) => ..auth..
                              (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
           (fact "deletes annotations"
@@ -184,7 +184,7 @@
 
 (facts "About /entities"
   (let [apikey TOKEN]
-    (against-background [(teams/teams anything) => TEAMS
+    (against-background [(teams/get-teams anything) => TEAMS
                          (auth/identity anything) => ..auth..]
 
       (facts "read"
@@ -210,7 +210,7 @@
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
@@ -234,7 +234,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
 
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
@@ -267,7 +267,7 @@
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
@@ -321,7 +321,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
 
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
@@ -365,7 +365,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
 
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
@@ -421,7 +421,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
 
-       (against-background [(teams/teams anything) => TEAMS
+       (against-background [(teams/get-teams anything) => TEAMS
                             (auth/identity anything) => ..auth..]
 
          (facts ~(util/join-path ["" type-path])
@@ -487,7 +487,7 @@
   (entity-resource-deletion-tests "File")
   (facts "related Sources"
     (let [apikey TOKEN]
-      (against-background [(teams/teams anything) => TEAMS
+      (against-background [(teams/get-teams anything) => TEAMS
                            (auth/identity anything) => ..auth..]
         (future-fact "associates created Source")))))
 
@@ -523,7 +523,7 @@
               get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
           (body-json get) => {:revisions revs}
           (provided
-            (teams/teams anything) => TEAMS
+            (teams/get-teams anything) => TEAMS
             (auth/identity anything) => ..auth..
             (core/get-entities ..auth.. [id] ..rt..) => [doc]
             (r/router anything) => ..rt..
@@ -570,7 +570,7 @@
                                         :memberships "--membership--url--"}}]
         (body-json get) => {:team team}
         (provided
-          (teams/teams anything) => TEAMS
+          (teams/get-teams anything) => TEAMS
           (teams/get-team* anything id) => {:team team})))))
 
 (facts "About activity user stories"
@@ -589,7 +589,7 @@
           get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
       (body-json get) => {:provenance expected}
       (provided
-        (teams/teams anything) => TEAMS
+        (teams/get-teams anything) => TEAMS
         (auth/identity anything) => ..auth..
         (prov/local ..auth.. ..rt.. [id]) => expected
         (r/router anything) => ..rt..))))

@@ -70,13 +70,7 @@
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
-    (let [resp (deref ateams 1000 {})]
-      (if (hp/ok? resp)
-        (case (-> resp :headers :content-type)
-          "application/json" (map :uuid (-> resp
-                                          :body
-                                          util/from-json
-                                          :teams)))))))
+    (deref ateams 1000 {})))
 
 (defn effective-collaboration-roots
   [doc]
