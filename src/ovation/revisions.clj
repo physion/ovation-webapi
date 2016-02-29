@@ -7,7 +7,7 @@
             [ovation.config :as config]
             [ovation.util :as util]
             [org.httpkit.client :as http]
-            [clojure.walk :as walk]))
+            [ovation.auth :as auth]))
 
 (defn get-head-revisions
   [auth routes file]
@@ -59,9 +59,9 @@
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:basic-auth [(:api_key auth) "X"]
-                                                   :body       (util/to-json body)
-                                                   :headers    {"Content-Type" "application/json"}})]
+          resp (http/post config/RESOURCES_SERVER {:oauth-token (::auth/token auth)
+                                                   :body        (util/to-json body)
+                                                   :headers     {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 

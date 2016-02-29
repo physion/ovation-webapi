@@ -57,8 +57,10 @@
                           (async/merge result-channels)))]
           (async/pipe results docs))
 
+        ;; Make single call, placing results onto docs channel
         (async/onto-chan docs (cl/get-view design-doc view opts) true))
 
+      ;; Pull docs into a list
       (<?? (async/into '() docs)))))
 
 (defn all-docs
