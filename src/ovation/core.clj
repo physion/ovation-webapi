@@ -32,9 +32,8 @@
 (defn get-entities
   "Gets entities by ID"
   [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
-  (let [db (couch/db auth)
-        docs (filter :_id (couch/all-docs auth db ids))]
-    (-> docs
+  (let [db (couch/db auth)]
+    (-> (couch/all-docs auth db ids)
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
