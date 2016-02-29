@@ -70,7 +70,7 @@
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
-    (deref ateams 1000 [])))
+    (deref ateams 5000 [])))
 
 (defn effective-collaboration-roots
   [doc]
@@ -140,7 +140,7 @@
                               "Relation" (:user_id doc)
                               ;; default
                               (:owner doc))
-        roots               (get-in doc [:links :_collaboration_roots])]
+        roots               (effective-collaboration-roots doc)]
 
     ;; authenticated user is owner or is a member of a team in _collaboration_roots
     (not (nil? (or (= owner authenticated-user)
@@ -150,10 +150,10 @@
 (defn can?
   [auth op doc & {:keys [teams] :or {:teams nil}}]
   (case op
-    :ovation.auth/create (can-create? auth doc)
-    :ovation.auth/update (can-update? auth doc)
-    :ovation.auth/delete (can-delete? auth doc)
-    :ovation.auth/read (can-read? auth doc teams)
+    ::create (can-create? auth doc)
+    ::update (can-update? auth doc)
+    ::delete (can-delete? auth doc)
+    ::read (can-read? auth doc teams)
 
     ;;default
     (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})
