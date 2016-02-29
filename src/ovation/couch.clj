@@ -20,14 +20,18 @@
            :password (config/config "CLOUDANT_PASSWORD"))))
 
 
+(defn- key-seq
+  [key]
+  (if (sequential? key) key [key]))
+
 (defn prefix-keys
   [opts prefix]
   (cond
-    (contains? opts :key) (assoc opts :key (cons prefix (if (sequential? (:key opts)) (:key opts) [(:key opts)])))
-    (contains? opts :keys) (assoc opts :keys (vec (map #(cons prefix (if (sequential? %) % [%])) (:keys opts))))
+    (contains? opts :key) (assoc opts :key (cons prefix (key-seq (:key opts))))
+    (contains? opts :keys) (assoc opts :keys (vec (map #(cons prefix (key-seq %)) (:keys opts))))
     :else (-> opts
-            (assoc :startkey (cons prefix (:startkey opts)))
-            (assoc :endkey (cons prefix (:endkey opts))))))
+            (assoc :startkey (cons prefix (key-seq (:startkey opts))))
+            (assoc :endkey (cons prefix (key-seq (:endkey opts)))))))
 
 
 (defn get-view
