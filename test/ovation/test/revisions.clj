@@ -126,9 +126,9 @@
         (fact "creates a Rails Resource"
           (let [revid "revid"]
             (with-fake-http [config/RESOURCES_SERVER {:status 201
-                                                      :body   (util/to-json {:public_url "url"
-                                                                             :aws        "aws"
-                                                                             :url        "post"})}]
+                                                      :body   (util/to-json {:resource {:public_url "url"
+                                                                                        :aws        "aws"
+                                                                                        :url        "post"}})}]
               (rev/make-resource ..auth.. {:_id        revid
                                            :attributes {}}) => {:revision {:_id        revid
                                                                            :attributes {:url "url"}}

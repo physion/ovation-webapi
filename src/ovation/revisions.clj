@@ -65,7 +65,7 @@
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
-      (let [result (util/from-json (:body @resp))
+      (let [result   (:resource (util/from-json (:body @resp)))
             url (:public_url result)
             aws (:aws result)
             post-url (:url result)]
