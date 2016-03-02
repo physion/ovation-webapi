@@ -31,13 +31,13 @@
   "Gets all teams for authenticated user as a future: [id1 id2]"
   [api-token]
   (let [opts (request-opts api-token)
-        url  (make-url "teams")]
+        url  (make-url "team_uuids")]
     (future (let [resp @(httpkit.client/get url opts)]
               (if (hp/ok? resp)
-                (map :uuid (-> resp
-                             :body
-                             util/from-json
-                             :teams)))))))
+                (-> resp
+                  :body
+                  util/from-json
+                  :team_uuids))))))
 
 (defn create-team
   [request team-uuid]

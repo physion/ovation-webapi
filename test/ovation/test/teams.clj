@@ -11,13 +11,13 @@
 
 (facts "About Teams API"
   (facts "teams"
-    (let [teams-url (util/join-path [config/TEAMS_SERVER "teams"])
-          teams     [{:uuid "uuid1"} {:uuid "uuid2"}]]
+    (let [teams-url (util/join-path [config/TEAMS_SERVER "team_uuids"])
+          teams     ["uuid1" "uuid2"]]
       (with-fake-http [{:url teams-url :method :get} {:status 200
-                                                      :body   (util/to-json {:teams teams})}]
+                                                      :body   (util/to-json {:team_uuids teams})}]
 
         (fact "calls /teams"
-          @(teams/get-teams ..apikey..) => ["uuid1" "uuid2"]))))
+          @(teams/get-teams ..apikey..) => teams))))
 
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..

@@ -52,6 +52,7 @@
               :query-params {:uuids (json/write-str (map str collaboration-roots))}
               :accept       :json}]
 
+    (println "get-permissions")
     (let [response @(http/get url opts)]
       (when (not (hp/ok? response))
         (logging/error "Unable to retrieve object permissions")
@@ -70,7 +71,7 @@
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
-    (deref ateams 5000 [])))
+    (deref ateams 500 [])))
 
 (defn effective-collaboration-roots
   [doc]
