@@ -64,7 +64,7 @@
 
 (defn get-permissions
   [auth collaboration-roots]
-  (let [permissions @(::authenticated-permissions auth)
+  (let [permissions (deref (::authenticated-permissions auth) 500 [])
         root-set (set collaboration-roots)]
     (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
