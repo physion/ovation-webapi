@@ -70,6 +70,10 @@
                                               [ring-serve "0.1.2"]]
                                :plugins      [[lein-midje "3.2"]
                                               [lein-ring "0.9.7"]]}
+             :jmx             {:jvm-opts ["-Dcom.sun.management.jmxremote"
+                                          "-Dcom.sun.management.jmxremote.ssl=false"
+                                          "-Dcom.sun.management.jmxremote.authenticate=false"
+                                          "-Dcom.sun.management.jmxremote.port=43210"]}
              :ci              {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                      :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
 

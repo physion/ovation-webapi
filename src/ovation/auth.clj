@@ -45,32 +45,39 @@
 
 
 ;; Authorization
-(defn get-permissions
-  [auth collaboration-roots]
+(defn permissions
+  [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
-        opts {:oauth-token   (::token auth)
-              :query-params {:uuids (json/write-str (map str collaboration-roots))}
+        opts {:oauth-token   token
               :accept       :json}]
 
-    (let [response @(http/get url opts)]
-      (when (not (hp/ok? response))
-        (logging/error "Unable to retrieve object permissions")
-        (throw! response))
+    (future (let [response @(http/get url opts)]
+              (when (not (hp/ok? response))
+                (logging/error "Unable to retrieve object permissions")
+                (throw! response))
 
-      (-> response
-          :body
-        (util/from-json)))))
+              (-> response
+                :body
+                (util/from-json)
+                :permissions)))))
+
+
+(defn get-permissions
+  [auth collaboration-roots]
+  (let [permissions (deref (::authenticated-permissions auth) 500 [])
+        root-set (set collaboration-roots)]
+    (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
 
 (defn collect-permissions
   [permissions perm]
-  (map #(-> % :permissions perm) (:permissions permissions)))
+  (map #(-> % :permissions perm) permissions))
 
 (defn authenticated-teams
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
-    (deref ateams 5000 [])))
+    (deref ateams 500 [])))
 
 (defn effective-collaboration-roots
   [doc]

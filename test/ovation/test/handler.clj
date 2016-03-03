@@ -30,6 +30,9 @@
 (def TEAMS (promise))
 (deliver TEAMS [])
 
+(def PERMISSIONS (promise))
+(deliver PERMISSIONS {})
+
 
 (defn sling-throwable
   [exception-map]
@@ -129,6 +132,7 @@
 (facts "About annotations"
   (let [apikey TOKEN]
     (against-background [(teams/get-teams anything) => TEAMS
+                         (auth/permissions anything) => PERMISSIONS
                          (auth/identity anything) => ..auth..]
       (facts "GET /entities/:id/annotations/:type"
         (let [id   (str (util/make-uuid))
@@ -174,6 +178,7 @@
                             :annotation_type "tags"
                             :annotation      {:tag "--tag--"}}]]
         (against-background [(teams/get-teams anything) => TEAMS
+                             (auth/permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
                              (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
           (fact "deletes annotations"
@@ -185,6 +190,7 @@
 (facts "About /entities"
   (let [apikey TOKEN]
     (against-background [(teams/get-teams anything) => TEAMS
+                         (auth/permissions anything) => PERMISSIONS
                          (auth/identity anything) => ..auth..]
 
       (facts "read"
@@ -211,6 +217,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
@@ -235,6 +242,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
@@ -268,6 +276,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
@@ -322,6 +331,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
@@ -366,6 +376,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
@@ -422,6 +433,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..]
 
          (facts ~(util/join-path ["" type-path])
@@ -488,6 +500,7 @@
   (facts "related Sources"
     (let [apikey TOKEN]
       (against-background [(teams/get-teams anything) => TEAMS
+                           (auth/permissions anything) => PERMISSIONS
                            (auth/identity anything) => ..auth..]
         (future-fact "associates created Source")))))
 
@@ -524,6 +537,7 @@
           (body-json get) => {:revisions revs}
           (provided
             (teams/get-teams anything) => TEAMS
+            (auth/permissions anything) => PERMISSIONS
             (auth/identity anything) => ..auth..
             (core/get-entities ..auth.. [id] ..rt..) => [doc]
             (r/router anything) => ..rt..
@@ -571,6 +585,7 @@
         (body-json get) => {:team team}
         (provided
           (teams/get-teams anything) => TEAMS
+          (auth/permissions anything) => PERMISSIONS
           (teams/get-team* anything id) => {:team team})))))
 
 (facts "About activity user stories"
@@ -590,6 +605,7 @@
       (body-json get) => {:provenance expected}
       (provided
         (teams/get-teams anything) => TEAMS
+        (auth/permissions anything) => PERMISSIONS
         (auth/identity anything) => ..auth..
         (prov/local ..auth.. ..rt.. [id]) => expected
         (r/router anything) => ..rt..))))

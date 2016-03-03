@@ -157,18 +157,18 @@
                                              :links {:_collaboration_roots [..root..]}}) => true
           (provided
             (auth/authenticated-user-id ..auth..) => ..user..
-            (auth/get-permissions ..auth.. [..root..]) => {:permissions [{:uuid        ..root..
-                                                                          :permissions {:read true}}]}))
+            (auth/get-permissions ..auth.. [..root..]) => [{:uuid        ..root..
+                                                            :permissions {:read true}}]))
 
         (fact "denies when :owner nil and cannot read all roots"
           (auth/can? ..auth.. ::auth/create {:type  "Entity"
                                              :owner nil
                                              :links {:_collaboration_roots [..root..]}}) => falsey
           (provided
-            (auth/get-permissions ..auth.. [..root..]) => {:permissions [{:uuid        ..root..
-                                                                          :permissions {:read false}}
-                                                                         {:uuid        ..root2..
-                                                                          :permissions {:read true}}]}))
+            (auth/get-permissions ..auth.. [..root..]) => [{:uuid        ..root..
+                                                            :permissions {:read false}}
+                                                           {:uuid        ..root2..
+                                                            :permissions {:read true}}]))
 
 
         (fact "allows when :owner is auth user and can read all roots"
@@ -195,14 +195,14 @@
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
-          (auth/get-permissions ..auth.. ..roots..) => {:permissions [{:uuid        :uuid1
-                                                                       :permissions {:read  true
-                                                                                     :write false
-                                                                                     :admin false}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin false}}]}))))
+          (auth/get-permissions ..auth.. ..roots..) => [{:uuid        :uuid1
+                                                         :permissions {:read  true
+                                                                       :write false
+                                                                       :admin false}}
+                                                        {:uuid        :uuid2
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin false}}]))))
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
       (fact "Annoations require :user match authenticated user"
@@ -223,14 +223,14 @@
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
           (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
-          (auth/get-permissions ..auth.. ..roots..) => {:permissions [{:uuid        :uuid1
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin true}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin false}}]}))
+          (auth/get-permissions ..auth.. ..roots..) => [{:uuid        :uuid1
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin true}}
+                                                        {:uuid        :uuid2
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin false}}]))
 
       (fact "Requires :write on all roots when not owner"
         (auth/can? ..auth.. ::auth/delete {:type  "Entity"
@@ -247,29 +247,43 @@
                                                                                      :write false
                                                                                      :admin true}}]})))))
 
+(facts "About permissions"
+  (fact "gets permissions from auth server"
+    (let [uuids  [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+          body   {:permissions [{:uuid        (first uuids)
+                                 :permissions {}}
+                                {:uuid        (last uuids)
+                                 :permissions {}}]}
+          server config/AUTH_SERVER
+          auth   {:server server}]
+      (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str body)
+                                                                                               :status 200}]
+        @(auth/permissions auth) => (:permissions body)))))
+
 (facts "About `get-permissions`"
-       (fact "gets permissions from auth server"
-             (let [uuids    [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
-                   expected {:permissions [{:uuid        (first uuids)
-                                            :permissions {}}
-                                           {:uuid        (last uuids)
-                                            :permissions {}}]}
-                   server   config/AUTH_SERVER
-                   auth     {:server server}]
-               (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str expected)
-                                                                                                        :status 200}]
-                 (auth/get-permissions auth uuids) => expected))))
+  (fact "gets permissions from future stored in authenticated identity"
+    (let [uuids              [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+          permissions        [{:uuid        (first uuids)
+                               :permissions ..permisions..}
+                              {:uuid        (last uuids)
+                               :permissions ..other-permissions..}]
+          future-permissions (promise)]
+      (deliver future-permissions permissions)
+      (auth/get-permissions ..auth.. [(first uuids)]) => [{:uuid        (first uuids)
+                                                           :permissions ..permisions..}]
+      (provided
+        ..auth.. =contains=> {::auth/authenticated-permissions future-permissions}))))
 
 
 (facts "About `collect-permissions"
   (fact "gets permissions"
-    (auth/collect-permissions {:permissions [{:uuid        :uuid1
-                                              :permissions {:read  false
-                                                            :write false
-                                                            :admin true}}
-                                             {:uuid        :uuid2
-                                              :permissions {:read  true
-                                                            :write true
-                                                            :admin false}}]}
+    (auth/collect-permissions [{:uuid        :uuid1
+                                :permissions {:read  false
+                                              :write false
+                                              :admin true}}
+                               {:uuid        :uuid2
+                                :permissions {:read  true
+                                              :write true
+                                              :admin false}}]
       :read) => [false true]))
 
