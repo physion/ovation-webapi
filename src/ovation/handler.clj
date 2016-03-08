@@ -255,7 +255,9 @@
           (context* "/:id" [id]
             (GET* "/" request
               :name :get-team
-              :return {:team Team}
+              :return {:team Team
+                       :users [TeamUser],
+                       :membership_roles [TeamMembershipRole] }
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
             (context* "/memberships" []
