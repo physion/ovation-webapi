@@ -52,7 +52,7 @@
                                                       :role_id 21
                                                       :user_id "3"
                                                       :membership_role_ids [1,2,3]
-                                                      :links   {:membership_roles ""}}]}}
+                                                      :links   {:self ""}}]}}
             expected {:team {:id                  "1"
                              :type                "Team"
                              :name                team-id
@@ -77,9 +77,7 @@
                                                     :type    "Membership"
                                                     :user_id "3"
                                                     :membership_role_ids [1,2,3]
-                                                    :links   {:membership_roles ""}}]
-                             :links               {:self        ..self-url..
-                                                   :memberships ..membership-url..}}}]
+                                                    :links   {:self ""}}]}}]
 
         (fact "should return existing team"
           (with-fake-http [team-url {:status 200
