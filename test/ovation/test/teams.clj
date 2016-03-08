@@ -50,14 +50,8 @@
                                                       :type    "Membership"
                                                       :added   "2015-02-01"
                                                       :role_id 21
-                                                      :user    {
-                                                                :id    "3"
-                                                                :type  "User"
-                                                                :uuid  user-id
-                                                                :name  "Bob"
-                                                                :email "bob@example.com"
-                                                                :links {:roles "..."}
-                                                                }
+                                                      :user_id "3"
+                                                      :membership_role_ids [1,2,3]
                                                       :links   {:membership_roles ""}}]}}
             expected {:team {:id                  "1"
                              :type                "Team"
@@ -65,7 +59,7 @@
                              :uuid                team-id
                              :roles               []
                              :pending_memberships [{
-                                                    :id        "232",
+                                                    :id        "232"
                                                     :role_name "Administrator'"
                                                     :email     "newmember@example.com"
                                                     :type      "PendingMembership"
@@ -81,14 +75,8 @@
                                                     :added   "2015-02-01"
                                                     :role_id 21
                                                     :type    "Membership"
-                                                    :user    {
-                                                              :id    "3"
-                                                              :type  "User"
-                                                              :uuid  user-id
-                                                              :name  "Bob"
-                                                              :email "bob@example.com"
-                                                              :links {:roles "..."}
-                                                              }
+                                                    :user_id "3"
+                                                    :membership_role_ids [1,2,3]
                                                     :links   {:membership_roles ""}}]
                              :links               {:self        ..self-url..
                                                    :memberships ..membership-url..}}}]
