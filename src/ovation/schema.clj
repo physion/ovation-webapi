@@ -188,10 +188,10 @@
 
 
 (s/defschema PendingTeamMembership
-  {:id        (s/either s/Str s/Int)
-   :role_name s/Str
-   :email     s/Str
-   :type      s/Str
+  {:id      (s/either s/Str s/Int)
+   :role_id s/Int
+   :email   s/Str
+   :type    s/Str
    })
 
 (s/defschema TeamRole
