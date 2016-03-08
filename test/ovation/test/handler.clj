@@ -547,46 +547,45 @@
   (facts "GET /teams/:id"
     (fact "returns team"
       (let [apikey TOKEN
-            id (str (util/make-uuid))
-            get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
-            team {:id                  "1"
-                  :type                "Team"
-                  :name                id
-                  :uuid                id
-                  :roles               []
-                  :pending_memberships [{
-                                         :id        "232",
-                                         :role_name "Administrator'",
-                                         :email     "newmember@example.com"
-                                         :type      "PendingMembership"
-                                         },
-                                        {
-                                         :id        "2323",
-                                         :role_name "Member",
-                                         :email     "newmember@example.com"
-                                         :type      "PendingMembership"
-                                         }]
-                  :memberships         [{:id      "3232"
-                                         :team_id 1
-                                         :added   "2015-02-01"
-                                         :role_id 21
-                                         :type    "Membership"
-                                         :user    {
-                                                   :id    "3"
-                                                   :type  "User"
-                                                   :uuid  (str (util/make-uuid))
-                                                   :name  "Bob"
-                                                   :email "bob@example.com"
-                                                   :links {:roles "..."}
-                                                   }
-                                         :links   {:membership_roles ""}}]
-                  :links               {:self        "--url--"
-                                        :memberships "--membership--url--"}}]
-        (body-json get) => {:team team}
+            id     (str (util/make-uuid))
+            get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
+            team   {:id                  "1"
+                    :type                "Team"
+                    :name                id
+                    :uuid                id
+                    :roles               []
+                    :pending_memberships [{
+                                           :id      "232",
+                                           :role_id 1,
+                                           :email   "newmember@example.com"
+                                           :type    "PendingMembership"
+                                           },
+                                          {
+                                           :id      "2323",
+                                           :role_id 2,
+                                           :email   "newmember@example.com"
+                                           :type    "PendingMembership"
+                                           }]
+                    :memberships         [{:id                  1774,
+                                           :team_id             573,
+                                           :added               "2016-02-01T21:00:00.000Z",
+                                           :role_id             53,
+                                           :type                "Membership",
+                                           :user_id             8,
+                                           :membership_role_ids [
+                                                                 1526
+                                                                 ]}]
+                    :links               {:self        "--url--"
+                                          :memberships "--membership--url--"}}]
+        (body-json get) => {:team team
+                            :users []
+                            :membership_roles []}
         (provided
           (teams/get-teams anything) => TEAMS
           (auth/permissions anything) => PERMISSIONS
-          (teams/get-team* anything id) => {:team team})))))
+          (teams/get-team* anything id) => {:team             team
+                                            :users            []
+                                            :membership_roles []})))))
 
 (facts "About activity user stories"
   (facts "create project activity")
