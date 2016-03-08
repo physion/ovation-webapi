@@ -177,23 +177,6 @@
 
 ;; -- Teams -- ;;
 
-(s/defschema TeamMembership
-  {:id                  (s/either s/Str s/Int)
-   :team_id             (s/either s/Str s/Int)
-   :type                s/Str
-   :added               s/Str
-   :role_id             (s/either s/Str s/Int)
-   :user_id             s/Int
-   :membership_role_ids [s/Int]})
-
-
-(s/defschema PendingTeamMembership
-  {:id        (s/either s/Str s/Int)
-   :role_name s/Str
-   :email     s/Str
-   :type      s/Str
-   })
-
 (s/defschema TeamRole
   {:id              (s/either s/Str s/Int)
    :organization_id (s/either s/Str s/Int)
@@ -202,6 +185,25 @@
 
 (s/defschema NewTeamRole
   (dissoc TeamRole :links))
+
+(s/defschema TeamMembership
+  {:id                  (s/either s/Str s/Int)
+   :team_id             (s/either s/Str s/Int)
+   :type                s/Str
+   :added               s/Str
+   :role                TeamRole
+   :email               s/Str
+   :user_id             s/Int
+   :membership_role_ids [s/Int]})
+
+
+(s/defschema PendingTeamMembership
+  {:id        (s/either s/Str s/Int)
+   :role      TeamRole
+   :added     s/Str
+   :email     s/Str
+   :type      s/Str
+   })
 
 (s/defschema NewTeamMembership
   {:email s/Str
