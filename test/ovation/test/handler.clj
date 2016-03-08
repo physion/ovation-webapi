@@ -547,36 +547,36 @@
   (facts "GET /teams/:id"
     (fact "returns team"
       (let [apikey TOKEN
-            id     (str (util/make-uuid))
-            get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
-            team   {:id                  "1"
-                    :type                "Team"
-                    :name                id
-                    :uuid                id
-                    :roles               []
-                    :pending_memberships [{
-                                           :id      "232",
-                                           :role_id 1,
-                                           :email   "newmember@example.com"
-                                           :type    "PendingMembership"
-                                           },
-                                          {
-                                           :id      "2323",
-                                           :role_id 2,
-                                           :email   "newmember@example.com"
-                                           :type    "PendingMembership"
-                                           }]
-                    :memberships         [{:id                  1774,
-                                           :team_id             573,
-                                           :added               "2016-02-01T21:00:00.000Z",
-                                           :role_id             53,
-                                           :type                "Membership",
-                                           :user_id             8,
-                                           :membership_role_ids [
-                                                                 1526
-                                                                 ]}]
-                    :links               {:self        "--url--"
-                                          :memberships "--membership--url--"}}]
+            id (str (util/make-uuid))
+            get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
+            team {:id                  "1"
+                  :type                "Team"
+                  :name                id
+                  :uuid                id
+                  :roles               []
+                  :pending_memberships [{
+                                         :id        "232",
+                                         :role_name "Administrator'",
+                                         :email     "newmember@example.com"
+                                         :type      "PendingMembership"
+                                         },
+                                        {
+                                         :id        "2323",
+                                         :role_name "Member",
+                                         :email     "newmember@example.com"
+                                         :type      "PendingMembership"
+                                         }]
+                  :memberships         [{:id                  1774,
+                                         :team_id             573,
+                                         :added               "2016-02-01T21:00:00.000Z",
+                                         :role_id             53,
+                                         :type                "Membership",
+                                         :user_id             8,
+                                         :membership_role_ids [
+                                                               1526
+                                                               ]}]
+                  :links               {:self        "--url--"
+                                        :memberships "--membership--url--"}}]
         (body-json get) => {:team team
                             :users []
                             :membership_roles []}
