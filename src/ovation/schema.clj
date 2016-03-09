@@ -194,7 +194,8 @@
    :role                TeamRole
    :email               s/Str
    :user_id             s/Int
-   :membership_role_ids [s/Int]})
+   :membership_role_ids [s/Int]
+   :links           {:self s/Keyword}})
 
 
 (s/defschema PendingTeamMembership

@@ -591,7 +591,8 @@
                                          :user_id             8,
                                          :membership_role_ids [
                                                                1526
-                                                               ]}]
+                                                               ]
+                                         :links {:self "--self--"}}]
                   :links               {:self        "--url--"
                                         :memberships "--membership--url--"}}]
         (body-json get) => {:team team

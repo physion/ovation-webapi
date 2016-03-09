@@ -93,6 +93,8 @@
                         (get-in result [:membership :id]))]
     (if (:membership result)
       (-> result
+        (dissoc :users)
+        (dissoc :membership_roles)
         (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))
       result)))
 
