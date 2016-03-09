@@ -50,8 +50,7 @@
                                                       :added   "2015-02-01"
                                                       :role_id 21
                                                       :user_id "3"
-                                                      :membership_role_ids [1,2,3]
-                                                      :links   {:self ""}}]}}
+                                                      :membership_role_ids [1,2,3]}]}}
             expected {:team {:id                  "1"
                              :type                "Team"
                              :name                team-id
@@ -76,7 +75,7 @@
                                                     :type                "Membership"
                                                     :user_id             "3"
                                                     :membership_role_ids [1,2,3]
-                                                    :links               {:self ""}}]
+                                                    :links               {:self ..membership-url..}}]
                              :links               {:self        ..self-url..
                                                    :memberships ..membership-url..}}}]
 
@@ -87,7 +86,8 @@
             (teams/get-team* ..request.. team-id) => expected
             (provided
               (routes/named-route ..rt.. :get-team {:id team-id}) => ..self-url..
-              (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..)))
+              (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..
+              (routes/named-route ..rt.. :put-membership {:id team-id :mid "3"}) => ..membership-url..)))
 
         (fact "should create new team when it doesn't exist yet"
           (with-fake-http [team-url {:status 404}]

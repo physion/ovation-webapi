@@ -51,6 +51,19 @@
       (throw! response))
     (util/from-json (:body response))))
 
+
+(defn -membership-result
+  [team-uuid rt response]
+  (let [result (util/from-json (:body response))
+        membership-id (or (get-in result [:pending_membership :id])
+                        (get-in result [:membership :id]))]
+    (if (:membership result)
+      (-> result
+        (dissoc :users)
+        (dissoc :membership_roles)
+        (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))
+      result)))
+
 (defn get-team*
   [request team-id]
   (let [rt (routes/router request)
@@ -64,39 +77,18 @@
                     (http-predicates/not-found? response) (create-team request team-id)
                     :else (throw! response))]
 
-      (-> team
-        (assoc-in [:team :type] k/TEAM-TYPE)
-        (update-in [:team] dissoc :project)
-        (update-in [:team] dissoc :organization)
-        (update-in [:team] dissoc :project_id)
-        (update-in [:team] dissoc :organization_id)
-        (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
-                                  :memberships (routes/named-route rt :post-memberships {:id team-id})})))))
+      (let [memberships (get-in team [:team :memberships])
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route rt :put-membership {:id team-id :mid (:id %)})) memberships)]
+        (-> team
+          (assoc-in [:team :type] k/TEAM-TYPE)
+          (update-in [:team] dissoc :project)
+          (update-in [:team] dissoc :organization)
+          (update-in [:team] dissoc :project_id)
+          (update-in [:team] dissoc :organization_id)
+          (assoc-in [:team :memberships] linked-memberships)
+          (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
+                                    :memberships (routes/named-route rt :post-memberships {:id team-id})}))))))
 
-
-
-;{:id    s/Int,
-; :team_id s/Int,
-; :added s/Str
-; :role_id s/Int,
-; :user {:id s/Int
-;        :uuid s/Uuid
-;        :name s/Str
-;        :email s/Str
-;        :links {s/Keyword s/Str}}
-; :links {s/Keyword s/Str}}
-
-(defn -membership-result
-  [team-uuid rt response]
-  (let [result (util/from-json (:body response))
-        membership-id (or (get-in result [:pending_membership :id])
-                        (get-in result [:membership :id]))]
-    (if (:membership result)
-      (-> result
-        (dissoc :users)
-        (dissoc :membership_roles)
-        (assoc-in [:membership :links :self] (routes/named-route rt :put-membership {:id team-uuid :mid membership-id})))
-      result)))
 
 (defn put-membership*
   [request team-uuid membership membership-id]                              ;; membership is a TeamMembership
