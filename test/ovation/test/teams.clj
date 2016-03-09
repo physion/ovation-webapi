@@ -24,7 +24,6 @@
                          ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..]
       (let [team-id (str (util/make-uuid))
-            user-id (str (util/make-uuid))
             team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])
             rails-team {:team {:id                  "1"
                                :type                "Team"
@@ -70,14 +69,16 @@
                                                     :email     "newmember@example.com"
                                                     :type      "PendingMembership"
                                                     }]
-                             :memberships         [{:id      "3"
-                                                    :team_id 1
-                                                    :added   "2015-02-01"
-                                                    :role_id 21
-                                                    :type    "Membership"
-                                                    :user_id "3"
+                             :memberships         [{:id                  "3"
+                                                    :team_id             1
+                                                    :added               "2015-02-01"
+                                                    :role_id             21
+                                                    :type                "Membership"
+                                                    :user_id             "3"
                                                     :membership_role_ids [1,2,3]
-                                                    :links   {:self ""}}]}}]
+                                                    :links               {:self ""}}]
+                             :links               {:self        ..self-url..
+                                                   :memberships ..membership-url..}}}]
 
         (fact "should return existing team"
           (with-fake-http [team-url {:status 200
