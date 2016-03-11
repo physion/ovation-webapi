@@ -7,16 +7,16 @@
             [ovation.config :as config]
             [ovation.util :as util]
             [org.httpkit.client :as http]
-            [clojure.walk :as walk]))
+            [ovation.auth :as auth]))
 
 (defn get-head-revisions
   [auth routes file]
   (let [db      (couch/db auth)
         file-id (:_id file)
-        result  (:value (first (couch/get-view db k/REVISIONS-VIEW {:startkey file-id
-                                                                    :endkey   file-id
-                                                                    :reduce   true
-                                                                    :group    true})))
+        result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
+                                                                         :endkey   file-id
+                                                                         :reduce   true
+                                                                         :group    true})))
         ids     (first result)]
     (if (nil? ids)
       []
@@ -59,13 +59,13 @@
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:basic-auth [(:api_key auth) "X"]
-                                                   :body       (util/to-json body)
-                                                   :headers    {"Content-Type" "application/json"}})]
+          resp (http/post config/RESOURCES_SERVER {:oauth-token (::auth/token auth)
+                                                   :body        (util/to-json body)
+                                                   :headers     {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
-      (let [result (util/from-json (:body @resp))
+      (let [result   (:resource (util/from-json (:body @resp)))
             url (:public_url result)
             aws (:aws result)
             post-url (:url result)]

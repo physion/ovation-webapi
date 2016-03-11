@@ -1,10 +1,13 @@
 (ns ovation.test.auth
   (:use midje.sweet)
   (:require [ovation.auth :as auth]
+            [ovation.teams :as teams]
+            [clojure.core.async :as async :refer [>!!]]
             [org.httpkit.fake :refer [with-fake-http]]
             [clojure.data.codec.base64 :as b64]
             [ovation.util :as util]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [ovation.config :as config])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -12,81 +15,85 @@
 (defn string-to-base64-string [original]
   (String. (b64/encode (.getBytes original)) "UTF-8"))
 
-(facts "About user authorization"
-  (facts "with valid api key"
-    (fact "gets auth info"
-      (let [apikey  "my-api-key"
-            server  "https://some.ovation.io"
-            auth    (clojure.string/join ":" [apikey apikey])
-            ckey    "cloudant-api-key"
-            curl    "<cloudant db url>"
-            session (util/to-json {:cloudant_key    ckey
-                                   :cloudant_db_url curl})]
-        (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) session] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
-
-          (util/from-json (:body @(auth/get-auth server apikey)))) => {:cloudant_key    ckey
-                                                                       :cloudant_db_url curl}))
-
-    (fact "auth-map returns body"
-      (let [apikey  "my-api-key"
-            server  "https://some.ovation.io"
-            auth    (clojure.string/join ":" [apikey apikey])
-            b64auth (string-to-base64-string auth)
-            ckey    "cloudant-api-key"
-            curl    "<cloudant db url>"
-            session (util/to-json {:cloudant_key    ckey
-                                   :cloudant_db_url curl})]
-        (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:body   session
-                                                                                :status 200}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
-
-          (auth/auth-info (auth/get-auth server apikey))) => {:cloudant_key    ckey
-                                                              :cloudant_db_url curl}))
-
-    (fact "authorize returns authorization info"
-      (let [apikey  "my-api-key"
-            server  "https://some.ovation.io"
-            auth    (clojure.string/join ":" [apikey apikey])
-            b64auth (string-to-base64-string auth)
-            ckey    "cloudant-api-key"
-            curl    "<cloudant db url>"
-            session (util/to-json {:cloudant_key    ckey
-                                   :cloudant_db_url curl})]
-        (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:body   session
-                                                                                :status 200}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
-
-          (auth/authenticate server apikey) => {:cloudant_key    ckey
-                                                :cloudant_db_url curl
-                                                :server          server}))
-
-      ))
-
-  (facts "without valid api key"
-    (fact "check-auth +throws 401"
-      (let [apikey "my-api-key"
-            server "https://some.ovation.io"]
-        (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:status 401}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
-
-          (auth/check-auth (auth/get-auth server apikey)) => (throws ExceptionInfo)))
-      )
-
-    (fact "auth-map +throws 401"
-      (let [apikey "my-api-key"
-            server "https://some.ovation.io"]
-        (with-fake-http [(clojure.string/join "/" [server "api" "v1" "users"]) {:status 401}] ;{:url (clojure.string/join "/" [server "api" "v1" "users"]) :headers {"authorization" b64auth}}
-
-          (auth/auth-info (auth/get-auth server apikey)) => (throws ExceptionInfo))))
-
-    )
-
-  )
-
-(facts "About authorized user"
+(facts "About authentication"
   (fact "`authorized-user-id` returns user UUID"
     (auth/authenticated-user-id ...auth...) => ...id...
     (provided
       ...auth... =contains=> {:uuid ...id...})))
 
+
 (facts "About `can?`"
+  (facts ":read"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+                         (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]]
+      (facts "entities"
+        (fact "allowed when user is owner"
+          (auth/can? ..auth.. ::auth/read {:type "Project"
+                                           :owner ..user..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true)
+
+        (fact "not allowed when not owner or team member"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+
+        (fact "not allowed when not owner"
+          (auth/can? ..auth.. ::auth/read {:type "File"
+                                           :owner ..other..
+                                           :links {:_collaboration_roots []}}) => false))
+
+      (facts "annotations"
+        (fact "not allowed when not owner"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots []}}) => false)
+        (fact "not allowed when none of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+        (fact "allowed when user is :user"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..user..
+                                           :entity ..id..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Annotation"
+                                           :user ..other..
+                                           :entity ..id..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true))
+      (facts "relationships"
+        (fact "not allowed when user is not :user"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..other..}) => false)
+        (fact "not allowed when user is not user or team member"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..other..
+                                           :links {:_collaboration_roots [..team3..]}}) => false)
+        (fact "allowed when user is :user"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..}) => true)
+        (fact "allowed when one of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..
+                                           :links {:_collaboration_roots [..team1.. ..team3..]}}) => true)
+        (fact "allowed when all of authenticated user's teams in collaboration roots"
+          (auth/can? ..auth.. ::auth/read {:type "Relation"
+                                           :user_id ..user..
+                                           :links {:_collaboration_roots [..team1.. ..team2..]}}) => true))))
+
   (facts ":create"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
       (facts "Annotations"
@@ -150,18 +157,18 @@
                                              :links {:_collaboration_roots [..root..]}}) => true
           (provided
             (auth/authenticated-user-id ..auth..) => ..user..
-            (auth/get-permissions ..auth.. [..root..]) => {:permissions [{:uuid        ..root..
-                                                                          :permissions {:read true}}]}))
+            (auth/get-permissions ..auth.. [..root..]) => [{:uuid        ..root..
+                                                            :permissions {:read true}}]))
 
         (fact "denies when :owner nil and cannot read all roots"
           (auth/can? ..auth.. ::auth/create {:type  "Entity"
                                              :owner nil
                                              :links {:_collaboration_roots [..root..]}}) => falsey
           (provided
-            (auth/get-permissions ..auth.. [..root..]) => {:permissions [{:uuid        ..root..
-                                                                          :permissions {:read false}}
-                                                                         {:uuid        ..root2..
-                                                                          :permissions {:read true}}]}))
+            (auth/get-permissions ..auth.. [..root..]) => [{:uuid        ..root..
+                                                            :permissions {:read false}}
+                                                           {:uuid        ..root2..
+                                                            :permissions {:read true}}]))
 
 
         (fact "allows when :owner is auth user and can read all roots"
@@ -188,14 +195,14 @@
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
-          (auth/get-permissions ..auth.. ..roots..) => {:permissions [{:uuid        :uuid1
-                                                                       :permissions {:read  true
-                                                                                     :write false
-                                                                                     :admin false}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin false}}]}))))
+          (auth/get-permissions ..auth.. ..roots..) => [{:uuid        :uuid1
+                                                         :permissions {:read  true
+                                                                       :write false
+                                                                       :admin false}}
+                                                        {:uuid        :uuid2
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin false}}]))))
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
       (fact "Annoations require :user match authenticated user"
@@ -216,14 +223,14 @@
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
           (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
-          (auth/get-permissions ..auth.. ..roots..) => {:permissions [{:uuid        :uuid1
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin true}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write true
-                                                                                     :admin false}}]}))
+          (auth/get-permissions ..auth.. ..roots..) => [{:uuid        :uuid1
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin true}}
+                                                        {:uuid        :uuid2
+                                                         :permissions {:read  true
+                                                                       :write true
+                                                                       :admin false}}]))
 
       (fact "Requires :write on all roots when not owner"
         (auth/can? ..auth.. ::auth/delete {:type  "Entity"
@@ -240,29 +247,43 @@
                                                                                      :write false
                                                                                      :admin true}}]})))))
 
+(facts "About permissions"
+  (fact "gets permissions from auth server"
+    (let [uuids  [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+          body   {:permissions [{:uuid        (first uuids)
+                                 :permissions {}}
+                                {:uuid        (last uuids)
+                                 :permissions {}}]}
+          server config/AUTH_SERVER
+          auth   {:server server}]
+      (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str body)
+                                                                                               :status 200}]
+        @(auth/permissions auth) => (:permissions body)))))
+
 (facts "About `get-permissions`"
-       (fact "gets permissions from auth server"
-             (let [uuids [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
-                   expected {:permissions [{:uuid        (first uuids)
-                                            :permissions {}}
-                                           {:uuid        (last uuids)
-                                            :permissions {}}]}
-                   server "https://some.ovation.io"
-                   auth {:server server}]
-               (with-fake-http [{:url (util/join-path [server "api" "v2" "permissions"]) :method :get} {:body   (json/write-str expected)
-                                                                                                        :status 200}]
-                 (auth/get-permissions auth uuids) => expected))))
+  (fact "gets permissions from future stored in authenticated identity"
+    (let [uuids              [(str (UUID/randomUUID)) (str (UUID/randomUUID))]
+          permissions        [{:uuid        (first uuids)
+                               :permissions ..permisions..}
+                              {:uuid        (last uuids)
+                               :permissions ..other-permissions..}]
+          future-permissions (promise)]
+      (deliver future-permissions permissions)
+      (auth/get-permissions ..auth.. [(first uuids)]) => [{:uuid        (first uuids)
+                                                           :permissions ..permisions..}]
+      (provided
+        ..auth.. =contains=> {::auth/authenticated-permissions future-permissions}))))
 
 
 (facts "About `collect-permissions"
   (fact "gets permissions"
-    (auth/collect-permissions {:permissions [{:uuid        :uuid1
-                                              :permissions {:read  false
-                                                            :write false
-                                                            :admin true}}
-                                             {:uuid        :uuid2
-                                              :permissions {:read  true
-                                                            :write true
-                                                            :admin false}}]}
+    (auth/collect-permissions [{:uuid        :uuid1
+                                :permissions {:read  false
+                                              :write false
+                                              :admin true}}
+                               {:uuid        :uuid2
+                                :permissions {:read  true
+                                              :write true
+                                              :admin false}}]
       :read) => [false true]))
 

@@ -1,51 +1,42 @@
 (ns ovation.auth
+  (:refer-clojure :exclude [identity])
   (:require [org.httpkit.client :as http]
-            [ovation.util :as util]
+            [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw!]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden!]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [buddy.auth]
+            [ovation.config :as config]))
 
 
 
-;; Authentication
+;; Authentication — this should be replaced with buddy.auth
+(defn authenticated?
+  [request]
+  (buddy.auth/authenticated? request))
 
-(defn get-auth
-  "Async get user info for ovation.io API key"
-  [authserver apikey]
-  (let [url (util/join-path [authserver "api" "v1" "users"])
-        opts {:basic-auth [apikey apikey]
-              :accept     :json}]
+(defn token
+  [request]
+  (if-let [auth (get-in request [:headers "authorization"])]
+    (last (re-find #"^Bearer (.*)$" auth))))
 
-    (http/get url opts)))
+(defn identity
+  "Gets the authenticated identity for request. Assoc's bearer token as ::token "
+  [request]
+  (let [id (:identity request)]
+    (if (map? id)
+      (assoc id ::token (token request))
+      id)))
 
-(defn check-auth
-  "Slinghsots authorization failure if not status OK."
-  [auth]
+(defn throw-unauthorized
+  "A default response constructor for an unathorized request."
+  [request value]
+  (if (authenticated? request)
+    (forbidden! "Permission denied")
+    (unauthorized! "Unauthorized")))
 
-  (when (not (hp/ok? auth))
-    (logging/info "Authentication failed")
-    (throw! auth))
-
-  (logging/info "Authentication succeeded")
-  auth)
-
-(defn auth-info
-  "Converts authorize result to map"
-  [auth]
-
-  (let [response @auth]
-    (-> response
-      (check-auth)
-      (:body)
-      (util/from-json))))
-
-(defn authenticate
-  "Gets the Cloudant API key and database URL for an Ovation API key."
-  [authserver apikey]
-  (-> (auth-info (get-auth authserver apikey))
-      (assoc :server authserver)))
 
 (defn authenticated-user-id
   "The UUID of the authorized user"
@@ -54,27 +45,39 @@
 
 
 ;; Authorization
-(defn get-permissions
-  [auth collaboration-roots]
-  (let [url (util/join-path [(:server auth) "api" "v2" "permissions"])
-        apikey (:api_key auth)
-        opts {:basic-auth   [apikey apikey]
-              :query-params {:uuids (json/write-str (map str collaboration-roots))}
+(defn permissions
+  [token]
+  (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
+        opts {:oauth-token   token
               :accept       :json}]
 
-    (let [response @(http/get url opts)]
-      (when (not (hp/ok? response))
-        (logging/error "Unable to retrieve object permissions")
-        (throw! response))
+    (future (let [response @(http/get url opts)]
+              (when (not (hp/ok? response))
+                (logging/error "Unable to retrieve object permissions")
+                (throw! response))
 
-      (-> response
-          :body
-        (util/from-json)))))
+              (-> response
+                :body
+                (util/from-json)
+                :permissions)))))
+
+
+(defn get-permissions
+  [auth collaboration-roots]
+  (let [permissions (deref (::authenticated-permissions auth) 500 [])
+        root-set (set collaboration-roots)]
+    (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
 
 (defn collect-permissions
   [permissions perm]
-  (map #(-> % :permissions perm) (:permissions permissions)))
+  (map #(-> % :permissions perm) permissions))
+
+(defn authenticated-teams
+  "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
+  [auth]
+  (if-let [ateams (::authenticated-teams auth)]
+    (deref ateams 500 [])))
 
 (defn effective-collaboration-roots
   [doc]
@@ -135,14 +138,33 @@
         (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
+(defn- can-read?
+  [auth doc cached-teams]
+  (let [authenticated-user  (authenticated-user-id auth)
+        authenticated-teams (or cached-teams (authenticated-teams auth)) ;(or teams (authenticated-teams auth))
+        owner               (case (:type doc)
+                              "Annotation" (:user doc)
+                              "Relation" (:user_id doc)
+                              ;; default
+                              (:owner doc))
+        roots               (effective-collaboration-roots doc)]
+
+    ;; authenticated user is owner or is a member of a team in _collaboration_roots
+    (not (nil? (or (= owner authenticated-user)
+                 (some (set roots) authenticated-teams))))))
+
+
 (defn can?
-  [auth op doc]
+  [auth op doc & {:keys [teams] :or {:teams nil}}]
   (case op
-    :ovation.auth/create (can-create? auth doc)
-    :ovation.auth/update (can-update? auth doc)
-    :ovation.auth/delete (can-delete? auth doc)
+    ::create (can-create? auth doc)
+    ::update (can-update? auth doc)
+    ::delete (can-delete? auth doc)
+    ::read (can-read? auth doc teams)
+
     ;;default
-    (not (nil? (authenticated-user-id auth)))))
+    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})
+    ))
 
 (defn check!
   ([auth op]

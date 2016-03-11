@@ -12,23 +12,25 @@
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [ovation.revisions :as revisions]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [ovation.constants :as k]
+            [ovation.teams :as teams]))
 
 (defn get-annotations*
   [request id annotation-key]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         annotations (annotations/get-annotations auth [id] annotation-key)]
     (ok {(keyword annotation-key) annotations})))
 
 (defn post-annotations*
   [request id annotation-key annotations]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         annotations-kw (keyword annotation-key)]
     (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
 
 (defn delete-annotations*
   [request annotation-key]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         annotation-id (-> request :route-params :annotation-id)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
@@ -77,16 +79,20 @@
        :name ~(keyword (str "all-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :summary (str "Gets all top-level " ~type-path)
-       (let [auth# (::auth/auth-info request#)
+       (let [auth# (auth/identity request#)
              entities# (core/of-type auth# ~type-name (r/router request#))]
          (ok {~type-kw entities#})))))
 
 (defn post-resources*
   [request type-name type-kw entities]
-  (let [auth (::auth/auth-info request)]
+  (let [auth (auth/identity request)]
     (if (every? #(= type-name (:type %)) entities)
       (try+
-        (created {type-kw (core/create-entities auth entities (r/router request))})
+        (let [entities (core/create-entities auth entities (r/router request))]
+          ;; create teams for new Project entities
+          (doall (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+
+          (created {type-kw entities}))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
@@ -113,7 +119,7 @@
        :name ~(keyword (str "get-" (lower-case type-name)))
        :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
-       (let [auth# (::auth/auth-info request#)]
+       (let [auth# (auth/identity request#)]
          (if-let [entities# (core/get-entities auth# [~id] (r/router request#))]
            (if-let [projects# (seq (filter #(= ~type-name (:type %)) entities#))]
              (ok {~single-type-kw (first projects#)})
@@ -143,7 +149,7 @@
 
 (defn post-resource*
   [request type-name id body]
-  (let [auth (::auth/auth-info request)]
+  (let [auth (auth/identity request)]
     (try+
       (let [
             routes (r/router request)
@@ -179,7 +185,7 @@
     (if-not (= id (str entity-id))
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
-        (let [auth (::auth/auth-info request)
+        (let [auth (auth/identity request)
               entity (first (core/update-entities auth [updates] (r/router request)))]
           (ok {type-kw entity}))
 
@@ -216,14 +222,14 @@
        :return {:entities [TrashedEntity]}
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
-         (let [auth# (::auth/auth-info request#)]
+         (let [auth# (auth/identity request#)]
            (accepted {:entities (core/delete-entity auth# [~id] (r/router request#))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
 (defn rel-related*
   [request id rel routes]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         related (links/get-link-targets auth id (lower-case rel) routes)]
   (ok {(keyword rel) related})))
 
@@ -239,7 +245,7 @@
 
 (defn get-relationships*
   [request id rel]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         rels (links/get-links auth id rel (r/router request))]
     (ok {:links rels})))
 
@@ -247,7 +253,7 @@
 (defn post-relationships*
   [request id new-links rel]
   (try+
-    (let [auth (::auth/auth-info request)
+    (let [auth (auth/identity request)
           source (first (core/get-entities auth [id] (r/router request)))
           routes (r/router request)]
       (when source
@@ -285,7 +291,7 @@
 
 (defn post-revisions*
   [request id revisions]
-  (let [auth (::auth/auth-info request)]
+  (let [auth (auth/identity request)]
     (try+
       (let [routes (r/router request)
             parent (first (core/get-entities auth [id] routes))
@@ -305,7 +311,7 @@
 
 (defn get-head-revisions*
   [request id]
-  (let [auth (::auth/auth-info request)
+  (let [auth (auth/identity request)
         routes (r/router request)
         file (first (core/get-entities auth [id] routes))]
 

@@ -164,3 +164,11 @@
         (provided
           (auth/authenticated-user-id ..auth..) => ..id..)))))
 
+(facts "About entities-from-couch"
+  (fact "removes unauthorized documents"
+    (tr/entities-from-couch [..doc.. ..bad..] ..auth.. ..rt..) => [..doc..]
+    (provided
+      (tr/couch-to-entity ..auth.. ..rt..) => (fn [doc] doc)
+      (auth/authenticated-teams ..auth..) => ..teams..
+      (auth/can? ..auth.. ::auth/read ..doc.. :teams ..teams..) => true
+      (auth/can? ..auth.. ::auth/read ..bad.. :teams ..teams..) => false)))

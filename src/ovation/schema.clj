@@ -176,27 +176,6 @@
                       (assoc :type (s/eq "User"))))
 
 ;; -- Teams -- ;;
-(s/defschema TeamMembership
-  {:id    (s/either s/Str s/Int),
-   :team_id (s/either s/Str s/Int),
-   :type  s/Str
-   :added s/Str
-   :role_id (s/either s/Str s/Int),
-   :user {:id (s/either s/Str s/Int)
-          :type s/Str
-          :uuid s/Uuid
-          :name s/Str
-          :email s/Str
-          :links {s/Keyword s/Str}}
-   :links {s/Keyword s/Str}})
-
-
-(s/defschema PendingTeamMembership
-  {:id        (s/either s/Str s/Int)
-   :role_name s/Str
-   :email     s/Str
-   :type      s/Str
-   })
 
 (s/defschema TeamRole
   {:id              (s/either s/Str s/Int)
@@ -207,9 +186,44 @@
 (s/defschema NewTeamRole
   (dissoc TeamRole :links))
 
+(s/defschema TeamMembership
+  {:id                  (s/either s/Str s/Int)
+   :team_id             (s/either s/Str s/Int)
+   :type                s/Str
+   :added               s/Str
+   :role                TeamRole
+   :email               s/Str
+   :user_id             s/Int
+   :membership_role_ids [s/Int]
+   :links           {:self s/Keyword}})
+
+
+(s/defschema PendingTeamMembership
+  {:id        (s/either s/Str s/Int)
+   :role      TeamRole
+   :added     s/Str
+   :email     s/Str
+   :type      s/Str
+   })
+
 (s/defschema NewTeamMembership
   {:email s/Str
    :role  NewTeamRole})
+
+(s/defschema TeamUser
+  {
+   :id    s/Int
+   :uuid  s/Uuid
+   :name  s/Str
+   :email s/Str
+   :links {:roles s/Str}
+   :type  (s/eq "User")
+   })
+
+(s/defschema TeamMembershipRole
+  {:id            s/Int
+   :membership_id s/Int
+   :role_id       s/Int})
 
 (s/defschema Team
   {:id                  (s/either s/Str s/Int)

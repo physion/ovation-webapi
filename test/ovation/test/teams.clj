@@ -4,18 +4,26 @@
             [ovation.teams :as teams]
             [ovation.routes :as routes]
             [org.httpkit.fake :refer [with-fake-http]]
-            [ovation.util :as util]
-            [ovation.config :as config])
+            [ovation.util :as util :refer [<??]]
+            [ovation.config :as config]
+            )
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About Teams API"
+  (facts "teams"
+    (let [teams-url (util/join-path [config/TEAMS_SERVER "team_uuids"])
+          teams     ["uuid1" "uuid2"]]
+      (with-fake-http [{:url teams-url :method :get} {:status 200
+                                                      :body   (util/to-json {:team_uuids teams})}]
+
+        (fact "calls /teams"
+          @(teams/get-teams ..apikey..) => teams))))
+
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}
+                         ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..]
       (let [team-id (str (util/make-uuid))
-            user-id (str (util/make-uuid))
             team-url (util/join-path [config/TEAMS_SERVER "teams" team-id])
             rails-team {:team {:id                  "1"
                                :type                "Team"
@@ -41,22 +49,15 @@
                                                       :type    "Membership"
                                                       :added   "2015-02-01"
                                                       :role_id 21
-                                                      :user    {
-                                                                :id    "3"
-                                                                :type  "User"
-                                                                :uuid  user-id
-                                                                :name  "Bob"
-                                                                :email "bob@example.com"
-                                                                :links {:roles "..."}
-                                                                }
-                                                      :links   {:membership_roles ""}}]}}
+                                                      :user_id "3"
+                                                      :membership_role_ids [1,2,3]}]}}
             expected {:team {:id                  "1"
                              :type                "Team"
                              :name                team-id
                              :uuid                team-id
                              :roles               []
                              :pending_memberships [{
-                                                    :id        "232",
+                                                    :id        "232"
                                                     :role_name "Administrator'"
                                                     :email     "newmember@example.com"
                                                     :type      "PendingMembership"
@@ -67,20 +68,14 @@
                                                     :email     "newmember@example.com"
                                                     :type      "PendingMembership"
                                                     }]
-                             :memberships         [{:id      "3"
-                                                    :team_id 1
-                                                    :added   "2015-02-01"
-                                                    :role_id 21
-                                                    :type    "Membership"
-                                                    :user    {
-                                                              :id    "3"
-                                                              :type  "User"
-                                                              :uuid  user-id
-                                                              :name  "Bob"
-                                                              :email "bob@example.com"
-                                                              :links {:roles "..."}
-                                                              }
-                                                    :links   {:membership_roles ""}}]
+                             :memberships         [{:id                  "3"
+                                                    :team_id             1
+                                                    :added               "2015-02-01"
+                                                    :role_id             21
+                                                    :type                "Membership"
+                                                    :user_id             "3"
+                                                    :membership_role_ids [1,2,3]
+                                                    :links               {:self ..membership-url..}}]
                              :links               {:self        ..self-url..
                                                    :memberships ..membership-url..}}}]
 
@@ -91,7 +86,8 @@
             (teams/get-team* ..request.. team-id) => expected
             (provided
               (routes/named-route ..rt.. :get-team {:id team-id}) => ..self-url..
-              (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..)))
+              (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..
+              (routes/named-route ..rt.. :put-membership {:id team-id :mid "3"}) => ..membership-url..)))
 
         (fact "should create new team when it doesn't exist yet"
           (with-fake-http [team-url {:status 404}]
@@ -106,8 +102,7 @@
 
   (facts "post-memberhsip*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}
+                         ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..]
       (let [team-uuid (str (util/make-uuid))
             team-id "1"
@@ -142,8 +137,7 @@
 
   (facts "create-team"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}
+                         ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..
                          (routes/named-route ..rt.. :post-teams {}) => teams-url]
       (let [team-id (str (util/make-uuid))
@@ -161,16 +155,14 @@
 
   (facts "put-membership*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}
+                         ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..]
       (fact "throws 422 if mid is not specified"
         (teams/put-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {::auth/auth-info ..auth..}
-                         ..auth.. =contains=> {:api_key ..apikey..}
+                         ..request.. =contains=> {:identity ..auth..}
                          (routes/router ..request..) => ..rt..]
       (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])
             roles [{:id              "2323",

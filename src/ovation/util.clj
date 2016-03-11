@@ -7,7 +7,8 @@
             [clojure.data.json :as json]
             [clojure.string :as s]
             [clj-time.core :as t]
-            [clj-time.format :as tf]))
+            [clj-time.format :as tf]
+            [clojure.core.async :refer [<!!] :as async]))
 
 (def RELATION_TYPE "Relation")
 
@@ -42,7 +43,7 @@
   [docs]
   (into {} (map (fn [doc] [(:_id doc) doc]) docs)))
 
-(defn get-entity-id
+(defn entity-id
   "The entity ID for a given URI"
   [uri]
   (get (clojure.string/split uri #"/") 3))
@@ -95,4 +96,28 @@
 (defn filter-type
   [entity-type docs]
   (filter #(= entity-type (:type %)) docs))
+
+
+;; Async utilities
+
+(defn ncpus []
+  (.availableProcessors (Runtime/getRuntime)))
+
+(defn <??
+  "Async pop that throws an exception if item returned is throwable
+   This function comes from David Nolen"
+  [c]
+  (let [returned (<!! c)]
+    (if (instance? Throwable returned)
+      (throw returned)
+      returned)))
+
+(def default-parallelism (+ (ncpus) 1))
+
+(defn pipeline
+  [in xf & {:keys [parallelism buffer] :or {parallelism default-parallelism
+                                            buffer      16}}]
+  (let [out (async/chan (async/buffer buffer))]
+    (async/pipeline parallelism out xf in)
+    out))
 

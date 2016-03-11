@@ -15,18 +15,20 @@
     (let [doc1 {:attributes {:label ..label1..}}
           doc2 {:attributes {:label ..label2..}}
           doc3 {:attributes {}}]
-      (against-background [(couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
+      (against-background [(couch/get-view ..auth.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
                                                                 :endkey        [..id.. ..rel..]
                                                                 :inclusive_end true
                                                                 :reduce        false
                                                                 :include_docs  true}) => [doc1 doc2 doc3]
-                           (couch/get-view ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
+                           (couch/get-view ..auth.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
                                                                 :endkey        [..id.. ..rel.. ..name..]
                                                                 :inclusive_end true
                                                                 :reduce        false
                                                                 :include_docs  true}) => [doc1]
                            (auth/can? anything ::auth/update anything) => true
                            (couch/db ..auth..) => ..db..
+                           (auth/authenticated-teams ..auth..) => []
+                           (auth/can? anything ::auth/read anything  :teams anything) => true
                            (tr/couch-to-entity ..auth.. ..rt..) => (fn [doc] doc)]
 
         (fact "gets entity rel targets"
@@ -185,7 +187,7 @@
               (auth/can? ..auth.. ::auth/update doc) => true))))))
 
   (facts "`get-links`"
-    (against-background [(couch/get-view ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
+    (against-background [(couch/get-view ..auth.. ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
                                                                   :endkey        [..id.. ..rel..]
                                                                   :inclusive_end true
                                                                   :reduce        false

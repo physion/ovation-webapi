@@ -16,8 +16,23 @@
             [ovation.routes :as r]
             [ovation.constants :as k]
             [ovation.revisions :as revisions]
-            [ovation.teams :as teams])
+            [ovation.teams :as teams]
+            [ovation.prov :as prov]
+            [ovation.config :as config]
+            [buddy.sign.jws :as jws])
   (:import (java.util UUID)))
+
+(def id {:uuid (UUID/randomUUID)})
+(jws/sign id (config/config "JWT_SECRET"))
+
+(def TOKEN (jws/sign id (config/config "JWT_SECRET")))
+
+(def TEAMS (promise))
+(deliver TEAMS [])
+
+(def PERMISSIONS (promise))
+(deliver PERMISSIONS {})
+
 
 (defn sling-throwable
   [exception-map]
@@ -84,29 +99,22 @@
 (facts "About authorization"
   (fact "invalid API key returns 401"
     (let [apikey "12345"
-          get (mock-req (mock/request :get "/api/v1/entities/123") apikey)
-          auth-response (promise)
-          _ (deliver auth-response {:status 401})]
-      (:status (app get)) => 401
-      (provided
-        (auth/get-auth anything apikey) => auth-response))))
+          get (mock-req (mock/request :get "/api/v1/entities/123") apikey)]
+      (:status (app get)) => 401)))
 
 
 (facts "About doc route"
-  (let [apikey "..apikey.."
-        auth-response (promise)
-        _ (deliver auth-response {:status 200 :body "{\"user\": \"..user..\"}"})]
-    (against-background [(auth/get-auth anything apikey) => auth-response]
-      (fact "HEAD / => 302"
-        (let [response (app (mock-req (mock/request :head "/") apikey))]
-          (:status response) => 302))
-      (fact "GET / redirects"
-        (let [response (app (mock-req (mock/request :get "/") apikey))]
-          (:status response) => 302
-          (-> response (:headers) (get "Location")) => "/index.html"))
-      (fact "HEAD /index.html returns 200"
-        (let [response (app (mock-req (mock/request :head "/index.html") apikey))]
-          (:status response) => 200))))
+  (let [apikey TOKEN]
+    (fact "HEAD / => 302"
+      (let [response (app (mock-req (mock/request :head "/") apikey))]
+        (:status response) => 302))
+    (fact "GET / redirects"
+      (let [response (app (mock-req (mock/request :get "/") apikey))]
+        (:status response) => 302
+        (-> response (:headers) (get "Location")) => "/index.html"))
+    (fact "HEAD /index.html returns 200"
+      (let [response (app (mock-req (mock/request :head "/index.html") apikey))]
+        (:status response) => 200)))
   )
 
 (facts "About Swagger API"
@@ -114,22 +122,20 @@
     (compojure.api.swagger/validate app) =not=> nil))
 
 (facts "About invalid routes"
-  (let [apikey "..apikey.."
-        auth-response (promise)
-        _ (deliver auth-response {:status 200 :body "{\"user\": \"..user..\"}"})]
-    (against-background [(auth/get-auth anything apikey) => auth-response]
-      (fact "invalid path =>  404"
-        (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
-          response => nil?)))))
+  (let [apikey TOKEN]
+    (fact "invalid path =>  404"
+      (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
+        response => nil?))))
 
 
 
 (facts "About annotations"
-  (let [apikey "--apikey--"
-        auth-info {:user "..user.."}]
-    (against-background [(auth/authenticate anything apikey) => auth-info]
+  (let [apikey TOKEN]
+    (against-background [(teams/get-teams anything) => TEAMS
+                         (auth/permissions anything) => PERMISSIONS
+                         (auth/identity anything) => ..auth..]
       (facts "GET /entities/:id/annotations/:type"
-        (let [id (str (util/make-uuid))
+        (let [id   (str (util/make-uuid))
               tags [{:_id             (str (util/make-uuid))
                      :_rev            "1"
                      :entity          id
@@ -137,7 +143,7 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/get-annotations auth-info [id] "tags") => tags]
+          (against-background [(annotations/get-annotations ..auth.. [id] "tags") => tags]
             (fact "returns annotations by entity and user"
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (get* app path apikey)]
@@ -145,7 +151,7 @@
                 body => {:tags tags})))))
 
       (facts "POST /entities/:id/annotations/:type"
-        (let [id (str (util/make-uuid))
+        (let [id   (str (util/make-uuid))
               post {:tags [{:tag "--tag--"}]}
               tags [{:_id             (str (util/make-uuid))
                      :_rev            "1"
@@ -154,34 +160,38 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/create-annotations auth-info anything [id] "tags" (:tags post)) => tags]
+          (against-background [(annotations/create-annotations ..auth.. anything [id] "tags" (:tags post)) => tags]
             (fact "creates annotations"
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (post* app path apikey post)]
                 status => 201
-                body => {:tags tags})))))
+                body => {:tags tags}))))))
 
-      (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
-        (let [id (str (util/make-uuid))
-              annotation-id (str (util/make-uuid))
-              tags [{:_id             annotation-id
-                     :_rev            "1"
-                     :entity          id
-                     :user            (str (util/make-uuid))
-                     :type            "Annotation"
-                     :annotation_type "tags"
-                     :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/delete-annotations auth-info [annotation-id] anything) => tags]
-            (fact "deletes annotations"
-              (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
-                    {:keys [status body]} (delete* app path apikey)]
-                status => 202
-                body => {:tags tags}))))))))
+    (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
+      (let [id            (str (util/make-uuid))
+            annotation-id (str (util/make-uuid))
+            tags          [{:_id             annotation-id
+                            :_rev            "1"
+                            :entity          id
+                            :user            (str (util/make-uuid))
+                            :type            "Annotation"
+                            :annotation_type "tags"
+                            :annotation      {:tag "--tag--"}}]]
+        (against-background [(teams/get-teams anything) => TEAMS
+                             (auth/permissions anything) => PERMISSIONS
+                             (auth/identity anything) => ..auth..
+                             (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
+          (fact "deletes annotations"
+            (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
+                  {:keys [status body]} (delete* app path apikey)]
+              status => 202
+              body => {:tags tags})))))))
 
 (facts "About /entities"
-  (let [apikey "--apikey--"
-        auth-info {:user "..user.."}]
-    (against-background [(auth/authenticate anything apikey) => auth-info]
+  (let [apikey TOKEN]
+    (against-background [(teams/get-teams anything) => TEAMS
+                         (auth/permissions anything) => PERMISSIONS
+                         (auth/identity anything) => ..auth..]
 
       (facts "read"
         (let [id (str (UUID/randomUUID))
@@ -193,7 +203,7 @@
                    :relationships {}
                    :attributes {}}]
 
-          (against-background [(core/get-entities auth-info [id] ..rt..) => [doc]
+          (against-background [(core/get-entities ..auth.. [id] ..rt..) => [doc]
                                (r/router anything) => ..rt..]
             (fact "GET /entities/:id returns status 200"
               (:status (app get)) => 200)
@@ -205,10 +215,10 @@
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
-
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+    `(let [apikey# TOKEN]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
              (let [id# (str (UUID/randomUUID))
@@ -219,7 +229,7 @@
                             :links      {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type auth-info# ~type-name ..rt..) => [entity#]
+                 (against-background [(core/of-type ..auth.. ~type-name ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all " type-path)
                      (body-json get-req#) => {~(keyword type-path) [entity#]}))))))))))
@@ -229,10 +239,11 @@
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
+    `(let [apikey# TOKEN]
 
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [id# (str (UUID/randomUUID))
@@ -243,7 +254,7 @@
                             :links      {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities auth-info# [id#] ..rt..) => [entity#]
+                 (against-background [(core/get-entities ..auth.. [id#] ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
@@ -255,7 +266,7 @@
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (app get-req#)) => 404
                        (provided
-                         (core/get-entities auth-info# [id#] ..rt..) => [source#]))))))))))))
+                         (core/get-entities ..auth.. [id#] ..rt..) => [source#]))))))))))))
 
 (defmacro entity-resource-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
@@ -263,10 +274,11 @@
 
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
-
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+    `(let [apikey# TOKEN]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (teams/create-team anything anything) => {:team ..team..}
+                            (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [source-type# ~(util/entity-type-name-keyword type-name)
@@ -287,11 +299,11 @@
                    links# [{:type "Relation" :foo "bar"}]
                    ]
 
-               (against-background [(core/create-entities auth-info# [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
-                                    (core/get-entities auth-info# [(:_id parent#)] ..rt..) => [parent#]
-                                    (links/add-links auth-info# [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
-                                    (core/create-values auth-info# ..rt.. links#) => links#
-                                    (core/update-entities auth-info# anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
+               (against-background [(core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
+                                    (core/get-entities ..auth.. [(:_id parent#)] ..rt..) => [parent#]
+                                    (links/add-links ..auth.. [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
+                                    (core/create-values ..auth.. ..rt.. links#) => links#
+                                    (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
@@ -306,7 +318,7 @@
                  (:status (app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities auth-info# [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
+                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
                )))))))
 
 
@@ -316,10 +328,12 @@
 
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
+    `(let [apikey# TOKEN]
 
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (teams/create-team anything anything) => {:team ..team..}
+                            (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "create"
              (let [new-entity# {:type ~(capitalize type-name) :attributes {:foo "bar"}}
@@ -331,7 +345,7 @@
                    request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-               (against-background [(core/create-entities auth-info# [new-entity#] ..rt..) => [entity#]
+               (against-background [(core/create-entities ..auth.. [new-entity#] ..rt..) => [entity#]
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
@@ -351,7 +365,7 @@
                  (:status (app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities auth-info# [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..auth.. [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-update-tests
@@ -359,10 +373,11 @@
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
+    `(let [apikey# TOKEN]
 
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (auth/identity anything) => ..auth..]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
              (let [id# (UUID/randomUUID)
@@ -383,7 +398,7 @@
                    request# (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
                                                          (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
-               (against-background [(core/update-entities auth-info# [update#] ..rt..) => [updated-entity#]
+               (against-background [(core/update-entities ..auth.. [update#] ..rt..) => [updated-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 200"
                    (let [response# (app (request# id#))]
@@ -401,13 +416,13 @@
                ;    (let [response# (app (request# id#))]
                ;      (:status response#) => 409
                ;      (provided
-               ;        (core/update-entities auth-info# [update#] ..rt..) =throws=> (sling-throwable {:status 409})))))
+               ;        (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:status 409})))))
 
                (fact "fails if not can? :update"
                  (:status (app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/update-entities auth-info# [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-deletion-tests
@@ -415,10 +430,11 @@
   [entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
-    `(let [apikey# "--apikey--"
-           auth-info# {:user "..user.."}]
+    `(let [apikey# TOKEN]
 
-       (against-background [(auth/authenticate anything apikey#) => auth-info#]
+       (against-background [(teams/get-teams anything) => TEAMS
+                            (auth/permissions anything) => PERMISSIONS
+                            (auth/identity anything) => ..auth..]
 
          (facts ~(util/join-path ["" type-path])
            (facts "delete"
@@ -434,7 +450,7 @@
                                                                 :trash_root ""})
                    request# (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
 
-               (against-background [(core/delete-entity auth-info# [(str id#)] ..rt..) => [deleted-entity#]
+               (against-background [(core/delete-entity ..auth.. [(str id#)] ..rt..) => [deleted-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (app (request# id#))]
@@ -447,7 +463,7 @@
                  (:status (app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/delete-entity auth-info# [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/delete-entity ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 
@@ -482,9 +498,10 @@
   (entity-resource-update-tests "File")
   (entity-resource-deletion-tests "File")
   (facts "related Sources"
-    (let [apikey "---apikey---"
-          auth-info {:user "...user..."}]
-      (against-background [(auth/authenticate anything apikey) => auth-info]
+    (let [apikey TOKEN]
+      (against-background [(teams/get-teams anything) => TEAMS
+                           (auth/permissions anything) => PERMISSIONS
+                           (auth/identity anything) => ..auth..]
         (future-fact "associates created Source")))))
 
 (facts "About Activities"
@@ -498,8 +515,7 @@
   (facts "/files/:id/HEAD"
     (let []
       (fact "returns HEAD revisions"
-        (let [apikey "--apikey--"
-              auth-info {:user "..user.."}
+        (let [apikey TOKEN
               id (str (UUID/randomUUID))
               doc {:_id           id
                    :_rev          "123"
@@ -520,16 +536,17 @@
               get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
           (body-json get) => {:revisions revs}
           (provided
-            (auth/authenticate anything apikey) => auth-info
-            (core/get-entities auth-info [id] ..rt..) => [doc]
+            (teams/get-teams anything) => TEAMS
+            (auth/permissions anything) => PERMISSIONS
+            (auth/identity anything) => ..auth..
+            (core/get-entities ..auth.. [id] ..rt..) => [doc]
             (r/router anything) => ..rt..
-            (revisions/get-head-revisions auth-info ..rt.. doc) => revs))))))
+            (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs))))))
 
 (facts "About Teams API"
   (facts "GET /teams/:id"
     (fact "returns team"
-      (let [apikey "--apikey--"
-            auth-info {:user "..user.."}
+      (let [apikey TOKEN
             id (str (util/make-uuid))
             get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
             team {:id                  "1"
@@ -539,37 +556,73 @@
                   :roles               []
                   :pending_memberships [{
                                          :id        "232",
-                                         :role_name "Administrator'",
-                                         :email     "newmember@example.com"
-                                         :type      "PendingMembership"
-                                         },
+                                         :role      {
+                                                      :id 184,
+                                                      :organization_id 63,
+                                                      :name "Member",
+                                                      :links {:permissions "/api/v1/permissions?role_id=184" }
+                                                     },
+                                         :added     "2016-02-01T21:00:00.000Z",
+                                         :email     "newmember@example.com",
+                                         :type      "PendingMembership"},
                                         {
                                          :id        "2323",
-                                         :role_name "Member",
-                                         :email     "newmember@example.com"
+                                         :role      {
+                                                     :id 184,
+                                                     :organization_id 63,
+                                                     :name "Member",
+                                                     :links {:permissions "/api/v1/permissions?role_id=184" }
+                                                     },
+                                         :added     "2016-02-01T21:00:00.000Z",
+                                         :email     "newmember@example.com",
                                          :type      "PendingMembership"
                                          }]
-                  :memberships         [{:id      "3232"
-                                         :team_id 1
-                                         :added   "2015-02-01"
-                                         :role_id 21
-                                         :type    "Membership"
-                                         :user    {
-                                                   :id    "3"
-                                                   :type  "User"
-                                                   :uuid  (str (util/make-uuid))
-                                                   :name  "Bob"
-                                                   :email "bob@example.com"
-                                                   :links {:roles "..."}
-                                                   }
-                                         :links   {:membership_roles ""}}]
+                  :memberships         [{:id                  1774,
+                                         :team_id             573,
+                                         :added               "2016-02-01T21:00:00.000Z",
+                                         :email     "existingmember@example.com",
+                                         :role      {
+                                                     :id 184,
+                                                     :organization_id 63,
+                                                     :name "Member",
+                                                     :links {:permissions "/api/v1/permissions?role_id=184" }
+                                                     },
+                                         :type                "Membership",
+                                         :user_id             8,
+                                         :membership_role_ids [
+                                                               1526
+                                                               ]
+                                         :links {:self "--self--"}}]
                   :links               {:self        "--url--"
                                         :memberships "--membership--url--"}}]
-        (body-json get) => {:team team}
+        (body-json get) => {:team team
+                            :users []
+                            :membership_roles []}
         (provided
-          (auth/authenticate anything apikey) => auth-info
-          (teams/get-team* anything id) => {:team team})))))
+          (teams/get-teams anything) => TEAMS
+          (auth/permissions anything) => PERMISSIONS
+          (teams/get-team* anything id) => {:team             team
+                                            :users            []
+                                            :membership_roles []})))))
 
 (facts "About activity user stories"
   (facts "create project activity")
   (facts "create folder activity"))
+
+(facts "About provenance"
+  (fact "/prov/:id returns local provenance"
+    (let [apikey TOKEN
+          id (str (UUID/randomUUID))
+          expected [{:_id id
+                     :type "Activity"
+                     :name "Something"
+                     :inputs []
+                     :outputs []}]
+          get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
+      (body-json get) => {:provenance expected}
+      (provided
+        (teams/get-teams anything) => TEAMS
+        (auth/permissions anything) => PERMISSIONS
+        (auth/identity anything) => ..auth..
+        (prov/local ..auth.. ..rt.. [id]) => expected
+        (r/router anything) => ..rt..))))

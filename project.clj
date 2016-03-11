@@ -3,7 +3,7 @@
   :url "http://ovation.io"
 
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.2.371"]
+                 [org.clojure/core.async "0.2.374"]
 
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
@@ -14,6 +14,7 @@
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
                  [ring-logger "0.7.5"]
+                 [buddy/buddy-auth "0.9.0"]
 
 
                  ;; HTTP and CouchDB
@@ -22,7 +23,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.22.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.26.1"]
                  [yleisradio/new-reliquary "1.0.0"]
 
 
@@ -69,6 +70,10 @@
                                               [ring-serve "0.1.2"]]
                                :plugins      [[lein-midje "3.2"]
                                               [lein-ring "0.9.7"]]}
+             :jmx             {:jvm-opts ["-Dcom.sun.management.jmxremote"
+                                          "-Dcom.sun.management.jmxremote.ssl=false"
+                                          "-Dcom.sun.management.jmxremote.authenticate=false"
+                                          "-Dcom.sun.management.jmxremote.port=43210"]}
              :ci              {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
                                      :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
 

@@ -21,9 +21,9 @@
   "Gets all entities of the given type"
   [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
-    (-> (couch/get-view db k/ENTITIES-BY-TYPE-VIEW {:key          resource
-                                                    :reduce       false
-                                                    :include_docs true})
+    (-> (couch/get-view auth db k/ENTITIES-BY-TYPE-VIEW {:key          resource
+                                                         :reduce       false
+                                                         :include_docs true})
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
@@ -32,9 +32,8 @@
 (defn get-entities
   "Gets entities by ID"
   [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
-  (let [db (couch/db auth)
-        docs (filter :_id (couch/all-docs db ids))]
-    (-> docs
+  (let [db (couch/db auth)]
+    (-> (couch/all-docs auth db ids)
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
@@ -42,7 +41,7 @@
   "Get values by ID"
   [auth ids & {:keys [routes]}]
   (let [db (couch/db auth)
-        docs (couch/all-docs db ids)]
+        docs (couch/all-docs auth db ids)]
     (if routes
       (tr/values-from-couch docs auth routes)
       docs)))
@@ -78,9 +77,6 @@
                                                :collaboration_roots (parent-collaboration-roots auth parent routes)))
                      auth
                      routes)]
-      ;; create teams for new Project entities
-      (doall (map #(teams/create-team {::auth/auth-info auth} (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
-
       entities)))
 
 (defn create-values
