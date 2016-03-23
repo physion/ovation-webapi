@@ -543,28 +543,30 @@
           (r/router anything) => ..rt..
           (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs)))))
 
-(facts "/files/move"
+(facts "/move"
   (fact "moves file"
     (let [apikey TOKEN
           id     (str (util/make-uuid))
-          body   {:source      "src"
-                  :destination "dest"}
+          body   {:source      (str (util/make-uuid))
+                  :destination (str (util/make-uuid))}
           post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "files" id "move"]))
-                             (mock/body (json-post-body body))) apikey)]
-      (body-json post) => ..result..
+                             (mock/body (json-post-body body))) apikey)
+          expected {:something "awesome"}]
+      (body-json post) => expected
       (provided
-        (rh/move-file* anything id body) => ..result..)))
+        (rh/move-file* anything id body) => expected)))
 
   (future-fact "moves folder"
     (let [apikey TOKEN
           id     (str (util/make-uuid))
-          body   {:source      "src"
-                  :destination "dest"}
+          body   {:source      (str (util/make-uuid))
+                  :destination (str (util/make-uuid))}
           post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "folders" id "move"]))
-                             (mock/body (json-post-body body))) apikey)]
-      (body-json post) => ..result..
+                             (mock/body (json-post-body body))) apikey)
+          expected {:something "awesome"}]
+      (body-json post) => expected
       (provided
-        (rh/move-file* anything id body) => ..result..))))
+        (rh/move-file* anything id body) => expected))))
 
 (facts "About Teams API"
   (facts "GET /teams/:id"

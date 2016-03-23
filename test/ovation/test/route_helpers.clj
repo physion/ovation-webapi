@@ -54,7 +54,7 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (:status (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..})) => 422
+      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -70,7 +70,7 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (:status (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..})) => 422
+      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -86,7 +86,7 @@
           dest {:type "Whoa"
                 :_id  ..dest..}]
 
-      (:status (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..})) => 422
+      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -101,10 +101,8 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:body    {:links   ..created-links..
-                                                                                            :updates ..updated-entities..}
-                                                                                  :headers {}
-                                                                                  :status  201}
+      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links   ..created-links..
+                                                                                  :updates ..updated-entities..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -113,7 +111,7 @@
         (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file])
         (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links   ..links..
                                                                                              :updates ..updates..}
-        (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => []
+        (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => ..deleted..
         (core/create-values ..auth.. ..rt.. ..links..) => ..created-links...
         (core/update-entities ..auth.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))
 

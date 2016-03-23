@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity!]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -318,9 +318,6 @@
     (when (nil? file)
       (not-found! {:errors {:detail "File not found"}}))
 
-    ;(when-not (= "File" (:type file))
-    ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
-
     (ok {:revisions (revisions/get-head-revisions auth routes file)})))
 
 (defn- rel
@@ -342,15 +339,15 @@
 
     (if (and
           (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
-          (= k/FOLDER-TYPE (:type (first src)))
-          (= k/FOLDER-TYPE (:type (first dest))))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
 
       (let [added (links/add-links auth dest (rel (first dest) entity) id routes :inverse-rel (inverse-rel (first dest) entity))
             _ (links/delete-links auth routes src (rel (first src) entity) id)
             links (future (core/create-values auth routes (:links added)))
             updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
 
-        (created {:updates @updates
-                  :links   @links}))
+         {:updates @updates
+                   :links   @links})
 
-      (unprocessable-entity {:errors {:detail "Unexpected entity type"}}))))
+      (unprocessable-entity! {:errors {:detail "Unexpected entity type"}}))))
