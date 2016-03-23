@@ -64,6 +64,7 @@
           (routes/router ..req..) => ..rt..
           (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
           (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+          (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file])
           (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links ..links..
                                                                                                :updates ..updates..}
           (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => []
