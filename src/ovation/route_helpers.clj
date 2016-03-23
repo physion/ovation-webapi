@@ -163,8 +163,8 @@
                   :updates updates}))
 
       (catch [:type :ovation.auth/unauthorized] err
-        (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
-  )
+        (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
+
 
 (defmacro post-resource
   [entity-type id schemas]
@@ -231,7 +231,7 @@
   [request id rel routes]
   (let [auth (auth/identity request)
         related (links/get-link-targets auth id (lower-case rel) routes)]
-  (ok {(keyword rel) related})))
+   (ok {(keyword rel) related})))
 
 
 (defmacro rel-related
@@ -322,3 +322,19 @@
     ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
 
     (ok {:revisions (revisions/get-head-revisions auth routes file)})))
+
+(defn move-file*
+  [request id info]
+  (let [routes (r/router request)
+        auth (auth/identity request)
+        src (core/get-entities auth [(:source info)] routes)
+        dest (core/get-entities auth [(:destination info)] routes)
+        rel (get-in EntityChildren [:folder :file :rel])
+        inv (get-in EntityChildren [:folder :file :inverse-rel])
+        added (links/add-links auth dest rel id routes :inverse-rel inv)
+        _ (links/delete-links auth routes src rel id)
+        links (future (core/create-values auth routes (:links added)))
+        updates (future (core/update-entities auth (:updates added) routes :authorize false  :update-collaboration-roots true))]
+
+    (created {:updates @updates
+              :links   @links})))

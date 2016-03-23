@@ -4,7 +4,8 @@
             [ovation.routes :as routes]
             [ovation.core :as core]
             [ovation.revisions :as revisions]
-            [ovation.auth :as auth])
+            [ovation.auth :as auth]
+            [ovation.links :as links])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About get-head-revisions*"
@@ -43,3 +44,29 @@
         (core/create-entities ..auth.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
         (core/create-values ..auth.. ..rt.. anything) => ..links..
         (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..))))
+
+(facts "About move-file*"
+  (facts "from folder"
+    (facts "adds relationships"
+      (let [src  {:type "Folder"
+                  :_id  ..src..}
+            file {:type "File"
+                  :_id  ..file..}
+            dest {:type "Folder"
+                  :_id  ..dest..}]
+
+        (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:body {:links ..created-links..
+                                                                                           :updates ..updated-entities..}
+                                                                                    :headers {}
+                                                                                    :status 201}
+        (provided
+          ..req.. =contains=> {:identity ..auth..}
+          (routes/router ..req..) => ..rt..
+          (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
+          (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+          (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links ..links..
+                                                                                               :updates ..updates..}
+          (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => []
+          (core/create-values ..auth.. ..rt.. ..links..) => ..created-links...
+          (core/update-entities ..auth.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..)))))
+

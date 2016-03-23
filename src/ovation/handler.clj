@@ -59,8 +59,8 @@
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
-                (wrap-newrelic-transaction)
-                ]
+                (wrap-newrelic-transaction)]
+
 
     (swagger-ui)
     (swagger-docs
@@ -257,7 +257,7 @@
               :name :get-team
               :return {:team Team
                        :users [TeamUser],
-                       :membership_roles [TeamMembershipRole] }
+                       :membership_roles [TeamMembershipRole]}
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
             (context* "/memberships" []

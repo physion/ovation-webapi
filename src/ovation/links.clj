@@ -93,8 +93,8 @@
       (= target-type :source) [source (add-roots target source-roots)]
 
       :else
-      nil
-      )))
+      nil)))
+
 
 (defn- update-collaboration-roots
   "Update source and all target collaboration roots.
@@ -128,8 +128,8 @@
           (rest cross)))
 
       {:sources (vals sources-updates)
-       :targets (vals targets-updates)})
-    ))
+       :targets (vals targets-updates)})))
+
 
 (defn make-links
   [authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]

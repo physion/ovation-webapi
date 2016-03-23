@@ -114,8 +114,8 @@
         (-> response (:headers) (get "Location")) => "/index.html"))
     (fact "HEAD /index.html returns 200"
       (let [response (app (mock-req (mock/request :head "/index.html") apikey))]
-        (:status response) => 200)))
-  )
+        (:status response) => 200))))
+
 
 (facts "About Swagger API"
   (fact "is valid"
@@ -296,8 +296,8 @@
 
                    request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path (:_id parent#)]))
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))
-                   links# [{:type "Relation" :foo "bar"}]
-                   ]
+                   links# [{:type "Relation" :foo "bar"}]]
+
 
                (against-background [(core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
                                     (core/get-entities ..auth.. [(:_id parent#)] ..rt..) => [parent#]
@@ -318,8 +318,8 @@
                  (:status (app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized})))
-               )))))))
+                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+
 
 
 (defmacro entity-resources-create-tests
@@ -352,8 +352,8 @@
                      (:status (app post#)) => 201))
                  (fact ~(str "POST / inserts new top-level " type-name)
                    (let [post# (request#)]
-                     (body-json post#) => {~(keyword type-path) [entity#]}))
-                 )
+                     (body-json post#) => {~(keyword type-path) [entity#]})))
+
 
                (let [bad-entities# [{:type "Other" :attributes {:foo "bar"}}]
                      bad-request# (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
@@ -513,35 +513,38 @@
 
 (facts "About revisions routes"
   (facts "/files/:id/HEAD"
-    (let []
-      (fact "returns HEAD revisions"
-        (let [apikey TOKEN
-              id (str (UUID/randomUUID))
-              doc {:_id           id
-                   :_rev          "123"
-                   :type          k/FILE-TYPE
-                   :links         {:self "self"}
-                   :relationships {}
-                   :attributes    {}}
-              revs [{:_id           id
+    (fact "returns HEAD revisions"
+      (let [apikey TOKEN
+            id     (str (UUID/randomUUID))
+            doc    {:_id           id
+                    :_rev          "123"
+                    :type          k/FILE-TYPE
+                    :links         {:self "self"}
+                    :relationships {}
+                    :attributes    {}}
+            revs   [{:_id           id
                      :_rev          "123"
                      :type          k/REVISION-TYPE
                      :links         {:self "self"}
                      :relationships {}
-                     :attributes    {:content_type             ""
-                                     :name                     ""
-                                     :url                      ""
-                                     :previous                 [(str (util/make-uuid))]
-                                     :file_id                  (str (util/make-uuid))}}]
-              get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
-          (body-json get) => {:revisions revs}
-          (provided
-            (teams/get-teams anything) => TEAMS
-            (auth/permissions anything) => PERMISSIONS
-            (auth/identity anything) => ..auth..
-            (core/get-entities ..auth.. [id] ..rt..) => [doc]
-            (r/router anything) => ..rt..
-            (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs))))))
+                     :attributes    {:content_type ""
+                                     :name         ""
+                                     :url          ""
+                                     :previous     [(str (util/make-uuid))]
+                                     :file_id      (str (util/make-uuid))}}]
+            get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
+        (body-json get) => {:revisions revs}
+        (provided
+          (teams/get-teams anything) => TEAMS
+          (auth/permissions anything) => PERMISSIONS
+          (auth/identity anything) => ..auth..
+          (core/get-entities ..auth.. [id] ..rt..) => [doc]
+          (r/router anything) => ..rt..
+          (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs)))))
+
+(facts "/files/move"
+  (future-fact "moves file")
+  (future-fact "moves folder"))
 
 (facts "About Teams API"
   (facts "GET /teams/:id"
@@ -560,8 +563,8 @@
                                                       :id 184,
                                                       :organization_id 63,
                                                       :name "Member",
-                                                      :links {:permissions "/api/v1/permissions?role_id=184" }
-                                                     },
+                                                      :links {:permissions "/api/v1/permissions?role_id=184"}}
+                                                    ,
                                          :added     "2016-02-01T21:00:00.000Z",
                                          :email     "newmember@example.com",
                                          :type      "PendingMembership"},
@@ -571,12 +574,12 @@
                                                      :id 184,
                                                      :organization_id 63,
                                                      :name "Member",
-                                                     :links {:permissions "/api/v1/permissions?role_id=184" }
-                                                     },
+                                                     :links {:permissions "/api/v1/permissions?role_id=184"}}
+                                                    ,
                                          :added     "2016-02-01T21:00:00.000Z",
                                          :email     "newmember@example.com",
-                                         :type      "PendingMembership"
-                                         }]
+                                         :type      "PendingMembership"}]
+
                   :memberships         [{:id                  1774,
                                          :team_id             573,
                                          :added               "2016-02-01T21:00:00.000Z",
@@ -585,13 +588,13 @@
                                                      :id 184,
                                                      :organization_id 63,
                                                      :name "Member",
-                                                     :links {:permissions "/api/v1/permissions?role_id=184" }
-                                                     },
+                                                     :links {:permissions "/api/v1/permissions?role_id=184"}}
+                                                    ,
                                          :type                "Membership",
                                          :user_id             8,
                                          :membership_role_ids [
-                                                               1526
-                                                               ]
+                                                               1526]
+
                                          :links {:self "--self--"}}]
                   :links               {:self        "--url--"
                                         :memberships "--membership--url--"}}]

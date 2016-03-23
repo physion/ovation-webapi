@@ -68,8 +68,8 @@
                        (s/optional-key :attributes)  {s/Keyword s/Any}
 
                        :links                        {(s/optional-key :_collaboration_roots) [s/Str]
-                                                      (s/optional-key :self)                 s/Str}
-                       })
+                                                      (s/optional-key :self)                 s/Str}})
+
 
 
 ;; -- ENTITIES -- ;;
@@ -87,8 +87,8 @@
                       (s/optional-key :owner) s/Uuid
                       :relationships {s/Keyword {
                                                  :self    s/Str
-                                                 :related s/Str}
-                                      }
+                                                 :related s/Str}}
+
                       :links {:self                                  s/Str
                               (s/optional-key :heads)                s/Str
                               (s/optional-key :tags)                 s/Str
@@ -203,8 +203,8 @@
    :role      TeamRole
    :added     s/Str
    :email     s/Str
-   :type      s/Str
-   })
+   :type      s/Str})
+
 
 (s/defschema NewTeamMembership
   {:email s/Str
@@ -217,8 +217,8 @@
    :name  s/Str
    :email s/Str
    :links {:roles s/Str}
-   :type  (s/eq "User")
-   })
+   :type  (s/eq "User")})
+
 
 (s/defschema TeamMembershipRole
   {:id            s/Int
@@ -242,8 +242,8 @@
 
 (s/defschema TrashInfoMap {(keyword k/TRASHING-USER) s/Str  ;; URI
                            (keyword k/TRASHING-DATE) s/Str  ;; ISO DateTime
-                           (keyword k/TRASH-ROOT)    s/Str  ;; URI
-                           })
+                           (keyword k/TRASH-ROOT)    s/Str})  ;; URI
+
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
 
