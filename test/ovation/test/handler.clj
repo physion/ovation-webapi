@@ -556,7 +556,7 @@
       (provided
         (rh/move-file* anything id body) => expected)))
 
-  (future-fact "moves folder"
+  (fact "moves folder"
     (let [apikey TOKEN
           id     (str (util/make-uuid))
           body   {:source      (str (util/make-uuid))
