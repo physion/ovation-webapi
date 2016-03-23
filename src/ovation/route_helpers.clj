@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -334,16 +334,23 @@
 (defn move-file*
   [request id info]
   (let [routes (r/router request)
-        auth (auth/identity request)
+        auth   (auth/identity request)
 
-        src (core/get-entities auth [(:source info)] routes)
-        dest (core/get-entities auth [(:destination info)] routes)
-        entity (core/get-entities auth [id] routes)
+        src    (core/get-entities auth [(:source info)] routes)
+        dest   (core/get-entities auth [(:destination info)] routes)
+        entity (first (core/get-entities auth [id] routes))]
 
-        added (links/add-links auth dest (rel (first dest) (first entity)) id routes :inverse-rel (inverse-rel (first dest) (first entity)))
-        _ (links/delete-links auth routes src (rel (first src) (first entity)) id)
-        links (future (core/create-values auth routes (:links added)))
-        updates (future (core/update-entities auth (:updates added) routes :authorize false  :update-collaboration-roots true))]
+    (if (and
+          (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
+          (= k/FOLDER-TYPE (:type (first src)))
+          (= k/FOLDER-TYPE (:type (first dest))))
 
-    (created {:updates @updates
-              :links   @links})))
+      (let [added (links/add-links auth dest (rel (first dest) entity) id routes :inverse-rel (inverse-rel (first dest) entity))
+            _ (links/delete-links auth routes src (rel (first src) entity) id)
+            links (future (core/create-values auth routes (:links added)))
+            updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
+
+        (created {:updates @updates
+                  :links   @links}))
+
+      (unprocessable-entity {:errors {:detail "Unexpected entity type"}}))))
