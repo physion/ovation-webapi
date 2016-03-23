@@ -19,6 +19,7 @@
             [ovation.teams :as teams]
             [ovation.prov :as prov]
             [ovation.config :as config]
+            [ovation.route-helpers :as rh]
             [buddy.sign.jws :as jws])
   (:import (java.util UUID)))
 
@@ -543,8 +544,27 @@
           (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs)))))
 
 (facts "/files/move"
-  (future-fact "moves file")
-  (future-fact "moves folder"))
+  (fact "moves file"
+    (let [apikey TOKEN
+          id     (str (util/make-uuid))
+          body   {:source      "src"
+                  :destination "dest"}
+          post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "files" id "move"]))
+                             (mock/body (json-post-body body))) apikey)]
+      (body-json post) => ..result..
+      (provided
+        (rh/move-file* anything id body) => ..result..)))
+
+  (future-fact "moves folder"
+    (let [apikey TOKEN
+          id     (str (util/make-uuid))
+          body   {:source      "src"
+                  :destination "dest"}
+          post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "folders" id "move"]))
+                             (mock/body (json-post-body body))) apikey)]
+      (body-json post) => ..result..
+      (provided
+        (rh/move-file* anything id body) => ..result..))))
 
 (facts "About Teams API"
   (facts "GET /teams/:id"
