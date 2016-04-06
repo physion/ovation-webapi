@@ -178,10 +178,10 @@
 ;; -- Teams -- ;;
 
 (s/defschema TeamRole
-  {:id              (s/either s/Str s/Int)
-   :organization_id (s/either s/Str s/Int)
-   :name            s/Str
-   :links           {s/Keyword s/Str}})
+  {:id                     (s/either s/Str s/Int)
+   :organization_id        (s/either s/Str s/Int)
+   :name                   s/Str
+   (s/optional-key :links) {s/Keyword s/Str}})
 
 (s/defschema NewTeamRole
   (dissoc TeamRole :links))
