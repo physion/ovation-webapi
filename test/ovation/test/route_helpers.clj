@@ -54,7 +54,7 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -70,7 +70,7 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -86,7 +86,7 @@
           dest {:type "Whoa"
                 :_id  ..dest..}]
 
-      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -101,8 +101,8 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (r/move-file* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links   ..created-links..
-                                                                                  :updates ..updated-entities..}
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links ..created-links..
+                                                                                  :updates   ..updated-entities..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..

@@ -554,7 +554,7 @@
           expected {:something "awesome"}]
       (body-json post) => expected
       (provided
-        (rh/move-file* anything id body) => expected)))
+        (rh/move-contents* anything id body) => expected)))
 
   (fact "moves folder"
     (let [apikey TOKEN
@@ -566,7 +566,7 @@
           expected {:something "awesome"}]
       (body-json post) => expected
       (provided
-        (rh/move-file* anything id body) => expected))))
+        (rh/move-contents* anything id body) => expected))))
 
 (facts "About Teams API"
   (facts "GET /teams/:id"

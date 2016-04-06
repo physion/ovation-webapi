@@ -10,7 +10,7 @@
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-file*]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -187,7 +187,7 @@
               :summary "Move folder from source folder to destination folder"
               :body [info {:source s/Str
                            :destination s/Str}]
-              (created (move-file* request id info)))
+              (created (move-contents* request id info)))
 
             (context* "/links/:rel" [rel]
               (rel-related "Folder" id rel)
@@ -213,7 +213,7 @@
               :summary "Move file from source folder to destination folder"
               :body [info {:source s/Str
                            :destination s/Str}]
-              (created (move-file* request id info)))
+              (created (move-contents* request id info)))
 
             (GET* "/heads" request
               :name :file-head-revisions

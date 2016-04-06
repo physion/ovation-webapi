@@ -328,7 +328,7 @@
   [src dest]
   (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :inverse-rel]))
 
-(defn move-file*
+(defn move-contents*
   [request id info]
   (let [routes (r/router request)
         auth   (auth/identity request)
