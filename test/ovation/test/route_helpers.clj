@@ -102,7 +102,7 @@
                 :_id  ..dest..}]
 
       (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links ..created-links..
-                                                                                  :updates   ..updated-entities..}
+                                                                                      :updates   ..updated-entities..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
@@ -111,7 +111,7 @@
         (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file])
         (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links   ..links..
                                                                                              :updates ..updates..}
-        (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => ..deleted..
+        (links/delete-links ..auth.. ..rt.. src "files" ..file..) => ..deleted..
         (core/create-values ..auth.. ..rt.. ..links..) => ..created-links...
         (core/update-entities ..auth.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))
 
