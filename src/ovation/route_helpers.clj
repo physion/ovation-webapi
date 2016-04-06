@@ -342,13 +342,15 @@
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
 
-      (let [added (links/add-links auth dest (rel (first dest) entity) id routes :inverse-rel (inverse-rel (first dest) entity))
+      (let [added (links/add-links auth dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
             links (future (core/create-values auth routes (:links added)))
             updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
 
         (do
           (links/delete-links auth routes (first src) (rel (first src) entity) id)
-          {:updates @updates
-                   :links   @links}))
+
+          {(util/entity-type-keyword entity)    entity
+           :updates @updates
+           :links   @links}))
 
       (unprocessable-entity! {:errors {:detail "Unexpected entity type"}}))))

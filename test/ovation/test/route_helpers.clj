@@ -93,6 +93,7 @@
         (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
         (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
         (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file]))))
+
   (fact "adds relationships"
     (let [src  {:type "Folder"
                 :_id  ..src..}
@@ -101,7 +102,8 @@
           dest {:type "Folder"
                 :_id  ..dest..}]
 
-      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links ..created-links..
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:file file
+                                                                                      :links ..created-links..
                                                                                       :updates   ..updated-entities..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
@@ -109,8 +111,8 @@
         (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
         (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
         (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file])
-        (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links   ..links..
-                                                                                             :updates ..updates..}
+        (links/add-links ..auth.. [dest] "files" [..file..] ..rt.. :inverse-rel "parents") => {:links   ..links..
+                                                                                               :updates ..updates..}
         (links/delete-links ..auth.. ..rt.. src "files" ..file..) => ..deleted..
         (core/create-values ..auth.. ..rt.. ..links..) => ..created-links...
         (core/update-entities ..auth.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))

@@ -182,7 +182,8 @@
             (delete-resource "Folder" id)
             (POST* "/move" request
               :name :move-folder
-              :return {:links [{s/Keyword s/Any}]
+              :return {s/Keyword (s/either File Folder)
+                       :links [{s/Keyword s/Any}]
                        :updates [{s/Keyword s/Any}]}
               :summary "Move folder from source folder to destination folder"
               :body [info {:source s/Str
@@ -208,7 +209,8 @@
 
             (POST* "/move" request
               :name :move-file
-              :return {:links [{s/Keyword s/Any}]
+              :return {s/Keyword (s/either File Folder)
+                       :links [{s/Keyword s/Any}]
                        :updates [{s/Keyword s/Any}]}
               :summary "Move file from source folder to destination folder"
               :body [info {:source s/Str
