@@ -118,8 +118,8 @@
         role    (:role membership)
         email   (:email membership)
         body    {:membership {:team_id team-uuid
-                           :role_id (:id role)
-                           :email   email}}]
+                              :role_id (:id role)
+                              :email   email}}]
 
     (when (or (nil? team-id) (nil? role) (nil? email))
       (unprocessable-entity!))

@@ -4,7 +4,8 @@
             [ovation.routes :as routes]
             [ovation.core :as core]
             [ovation.revisions :as revisions]
-            [ovation.auth :as auth])
+            [ovation.auth :as auth]
+            [ovation.links :as links])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About get-head-revisions*"
@@ -43,3 +44,74 @@
         (core/create-entities ..auth.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
         (core/create-values ..auth.. ..rt.. anything) => ..links..
         (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..))))
+
+(facts "About move-file*"
+  (fact "fails if entity not file or folder"
+    (let [src  {:type "Folder"
+                :_id  ..src..}
+          file {:type "Whoa"
+                :_id  ..file..}
+          dest {:type "Folder"
+                :_id  ..dest..}]
+
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (provided
+        ..req.. =contains=> {:identity ..auth..}
+        (routes/router ..req..) => ..rt..
+        (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file]))))
+
+  (fact "fails if src not a folder"
+    (let [src  {:type "Whoa"
+                :_id  ..src..}
+          file {:type "File"
+                :_id  ..file..}
+          dest {:type "Folder"
+                :_id  ..dest..}]
+
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (provided
+        ..req.. =contains=> {:identity ..auth..}
+        (routes/router ..req..) => ..rt..
+        (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file]))))
+
+  (fact "fails if dest not a folder"
+    (let [src  {:type "Folder"
+                :_id  ..src..}
+          file {:type "File"
+                :_id  ..file..}
+          dest {:type "Whoa"
+                :_id  ..dest..}]
+
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (provided
+        ..req.. =contains=> {:identity ..auth..}
+        (routes/router ..req..) => ..rt..
+        (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file]))))
+  (fact "adds relationships"
+    (let [src  {:type "Folder"
+                :_id  ..src..}
+          file {:type "File"
+                :_id  ..file..}
+          dest {:type "Folder"
+                :_id  ..dest..}]
+
+      (r/move-contents* ..req.. ..file.. {:source ..src.. :destination ..dest..}) => {:links ..created-links..
+                                                                                  :updates   ..updated-entities..}
+      (provided
+        ..req.. =contains=> {:identity ..auth..}
+        (routes/router ..req..) => ..rt..
+        (core/get-entities ..auth.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. [..file..] ..rt..) => (seq [file])
+        (links/add-links ..auth.. [dest] "files" ..file.. ..rt.. :inverse-rel "parents") => {:links   ..links..
+                                                                                             :updates ..updates..}
+        (links/delete-links ..auth.. ..rt.. [src] "files" ..file..) => ..deleted..
+        (core/create-values ..auth.. ..rt.. ..links..) => ..created-links...
+        (core/update-entities ..auth.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))
+

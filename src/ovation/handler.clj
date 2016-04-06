@@ -10,7 +10,7 @@
             [ovation.schema :refer :all]
             [ovation.logging]
             [ovation.routes :refer [router]]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions*]]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -59,8 +59,8 @@
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
-                (wrap-newrelic-transaction)
-                ]
+                (wrap-newrelic-transaction)]
+
 
     (swagger-ui)
     (swagger-docs
@@ -180,6 +180,14 @@
             (post-resource "Folder" id [NewFolder NewFile])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
+            (POST* "/move" request
+              :name :move-folder
+              :return {:links [{s/Keyword s/Any}]
+                       :updates [{s/Keyword s/Any}]}
+              :summary "Move folder from source folder to destination folder"
+              :body [info {:source s/Str
+                           :destination s/Str}]
+              (created (move-contents* request id info)))
 
             (context* "/links/:rel" [rel]
               (rel-related "Folder" id rel)
@@ -197,6 +205,16 @@
               :body   [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id (:entities revisions))))
+
+            (POST* "/move" request
+              :name :move-file
+              :return {:links [{s/Keyword s/Any}]
+                       :updates [{s/Keyword s/Any}]}
+              :summary "Move file from source folder to destination folder"
+              :body [info {:source s/Str
+                           :destination s/Str}]
+              (created (move-contents* request id info)))
+
             (GET* "/heads" request
               :name :file-head-revisions
               :return {:revisions [Revision]}
@@ -222,7 +240,6 @@
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))
-
             (context* "/links/:rel" [rel]
               (rel-related "Revision" id rel)
               (relationships "Revision" id rel))))
@@ -257,7 +274,7 @@
               :name :get-team
               :return {:team Team
                        :users [TeamUser],
-                       :membership_roles [TeamMembershipRole] }
+                       :membership_roles [TeamMembershipRole]}
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
             (context* "/memberships" []

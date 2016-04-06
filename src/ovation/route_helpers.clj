@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity!]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -163,8 +163,8 @@
                   :updates updates}))
 
       (catch [:type :ovation.auth/unauthorized] err
-        (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
-  )
+        (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
+
 
 (defmacro post-resource
   [entity-type id schemas]
@@ -231,7 +231,7 @@
   [request id rel routes]
   (let [auth (auth/identity request)
         related (links/get-link-targets auth id (lower-case rel) routes)]
-  (ok {(keyword rel) related})))
+   (ok {(keyword rel) related})))
 
 
 (defmacro rel-related
@@ -318,7 +318,36 @@
     (when (nil? file)
       (not-found! {:errors {:detail "File not found"}}))
 
-    ;(when-not (= "File" (:type file))
-    ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
-
     (ok {:revisions (revisions/get-head-revisions auth routes file)})))
+
+(defn- rel
+  [src dest]
+  (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :rel]))
+
+(defn inverse-rel
+  [src dest]
+  (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :inverse-rel]))
+
+(defn move-contents*
+  [request id info]
+  (let [routes (r/router request)
+        auth   (auth/identity request)
+
+        src    (core/get-entities auth [(:source info)] routes)
+        dest   (core/get-entities auth [(:destination info)] routes)
+        entity (first (core/get-entities auth [id] routes))]
+
+    (if (and
+          (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
+
+      (let [added (links/add-links auth dest (rel (first dest) entity) id routes :inverse-rel (inverse-rel (first dest) entity))
+            _ (links/delete-links auth routes src (rel (first src) entity) id)
+            links (future (core/create-values auth routes (:links added)))
+            updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
+
+         {:updates @updates
+                   :links   @links})
+
+      (unprocessable-entity! {:errors {:detail "Unexpected entity type"}}))))
