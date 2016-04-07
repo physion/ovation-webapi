@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# TODO install catalyze-cli
-wget --quiet --output-document=- https://github.com/catalyzeio/cli/releases/download/3.1.5/catalyze_3.1.5_amd64.deb | dpkg --install -
+# Install catalyze-cli
+wget https://github.com/catalyzeio/cli/releases/download/3.1.5/catalyze_3.1.5_linux_amd64.tar.gz
+tar xzvf catalyze_3.1.5_linux_amd64.tar.gz
 
 # Associate catalyze environment
-catalyze associate $CATALYZE_ENVIRONMENT app --username $CATALYZE_USER  --password $CATALYZE_PASSWORD
+catalyze_3.1.5_linux_amd64/catalyze associate $CATALYZE_ENVIRONMENT app --username $CATALYZE_USER  --password $CATALYZE_PASSWORD
 
-git push catalyze master
+git push catalyze ${CI_COMMIT_ID}:master
