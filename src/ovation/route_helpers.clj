@@ -33,33 +33,33 @@
   (let [auth (auth/identity request)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
-(defmacro annotation
+(defn annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
 
   (let [annotation-kw (keyword annotation-key)]
-    `(context ~(str "/" annotation-key) []
-       :tags [~annotation-key]
-       (GET "/" request#
-         :name ~(keyword (str "get-" (lower-case annotation-key)))
-         :return {~annotation-kw [~annotation-schema]}
-         :summary ~(str "Returns all " annotation-description " annotations associated with entity :id")
-         (get-annotations* request# ~id ~annotation-key))
+    (context (str "/" annotation-key) []
+       :tags [annotation-key]
+       (GET "/" request
+         :name (keyword (str "get-" (lower-case annotation-key)))
+         :return {annotation-kw [annotation-schema]}
+         :summary (str "Returns all " annotation-description " annotations associated with entity :id")
+         (get-annotations* request id annotation-key))
 
-       (POST "/" request#
-         :name ~(keyword (str "create-" (lower-case annotation-key)))
-         :return {(keyword ~annotation-key) [~annotation-schema]}
-         :body [new-annotations# {(keyword ~annotation-key) [~record-schema]}]
-         :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
-         (post-annotations* request# ~id ~annotation-key ((keyword ~annotation-key) new-annotations#)))
+       (POST "/" request
+         :name (keyword (str "create-" (lower-case annotation-key)))
+         :return {(keyword annotation-key) [annotation-schema]}
+         :body [new-annotations {(keyword annotation-key) [record-schema]}]
+         :summary (str "Adds a new " annotation-description " annotation to entity :id")
+         (post-annotations* request id annotation-key ((keyword annotation-key) new-annotations)))
 
        (context "/:annotation-id" []
-         :path-params [annotation-id# :- s/Str]
-         (DELETE "/" request#
-           :name ~(keyword (str "delete-" (lower-case annotation-key)))
+         :path-params [annotation-id :- s/Str]
+         (DELETE "/" request
+           :name (keyword (str "delete-" (lower-case annotation-key)))
            :return [s/Str]
-           :summary ~(str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-           (delete-annotations* request# annotation-id# ~annotation-key))))))
+           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
+           (delete-annotations* request annotation-id annotation-key))))))
 
 
 (defn- typepath
