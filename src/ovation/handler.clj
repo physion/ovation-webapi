@@ -36,7 +36,7 @@
 ;;; --- Routes --- ;;;
 (defapi app
 
-  (middlewares [
+  (compojure.api.sweet/middlewares []
                 (wrap-cors
                   :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
@@ -59,7 +59,7 @@
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
-                (wrap-newrelic-transaction)]
+                (wrap-newrelic-transaction)
 
 
     (swagger-ui)
