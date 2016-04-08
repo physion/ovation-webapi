@@ -35,62 +35,58 @@
 
 ;;; --- Routes --- ;;;
 (defapi app
+  {:swagger {:info {
+                    :version        "2.0.0"
+                    :title          "Ovation"
+                    :description    "Ovation Web API"
+                    :contact        {:name "Ovation"
+                                     :url  "https://ovation.io"}
+                    :termsOfService "https://ovation.io/terms_of_service"}
+             :tags [{:name "entities" :description "Generic entity operations"}
+                    {:name "projects" :description "Projects"}
+                    {:name "folders" :description "Folders"}
+                    {:name "files" :description "Files"}
+                    {:name "protocols" :description "Protocols"}
+                    {:name "sources" :description "Sources"}
+                    {:name "users" :description "Users"}
+                    {:name "analyses" :description "Analysis Records"}
+                    {:name "annotations" :description "Per-user annotations"}
+                    {:name "links" :description "Relationships between entities"}
+                    {:name "provenance" :description "Provenance graph"}]}}
 
-  (compojure.api.sweet/middlewares []
-                (wrap-cors
+  (middleware [[wrap-cors
                   :access-control-allow-origin #".+"        ;; Allow from any origin
                   :access-control-allow-methods [:get :put :post :delete :options]
-                  :access-control-allow-headers [:accept :content-type :authorization :origin])
+                :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
-                (wrap-authentication (jws-backend {:secret config/JWT_SECRET
-                                                   :token-name "Bearer"}))
-                (wrap-access-rules {:rules rules
-                                    :on-error auth/throw-unauthorized})
+               [wrap-authentication (jws-backend {:secret     config/JWT_SECRET
+                                                  :token-name "Bearer"})]
+               [wrap-access-rules {:rules    rules
+                                   :on-error auth/throw-unauthorized}]
 
-                (wrap-authenticated-teams)
-
-
-                (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
-                                   :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
-                                   :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
-                                   :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
-                                   :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
-                                   :exceptions false})
-
-                (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
-
-                (wrap-newrelic-transaction)
+               [wrap-authenticated-teams]
 
 
-    (swagger-ui)
-    (swagger-docs
-      {:info {
-              :version        "2.0.0"
-              :title          "Ovation"
-              :description    "Ovation Web API"
-              :contact        {:name "Ovation"
-                               :url  "https://ovation.io"}
-              :termsOfService "https://ovation.io/terms_of_service"}}
-      :tags [{:name "entities" :description "Generic entity operations"}
-             {:name "projects" :description "Projects"}
-             {:name "folders" :description "Folders"}
-             {:name "files" :description "Files"}
-             {:name "protocols" :description "Protocols"}
-             {:name "sources" :description "Sources"}
-             {:name "users" :description "Users"}
-             {:name "analyses" :description "Analysis Records"}
-             {:name "annotations" :description "Per-user annotations"}
-             {:name "links" :description "Relationships between entities"}
-             {:name "provenance" :description "Provenance graph"}])
+               [wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
+                                  :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
+                                  :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
+                                  :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
+                                  :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
+                                  :exceptions false}]
+
+               [wrap-raygun-handler (System/getenv "RAYGUN_API_KEY")]
+
+               [wrap-newrelic-transaction]]
 
 
-    (context* "/api" []
-      (context* "/v1" []
-        (context* "/entities" []
+
+    (context "/api" []
+      (context "/v1" []
+        (context "/entities" []
           :tags ["entities"]
-          (context* "/:id" [id]
+          (context "/:id" id
 
-            (GET* "/" request
+            (GET "/" request
               :name :get-entity
               :return {:entity Entity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
@@ -100,7 +96,7 @@
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
 
-            (context* "/annotations" []
+            (context "/annotations" []
               :tags ["annotations"]
               :name :annotations
               (annotation id "keywords" "tags" TagRecord TagAnnotation)
@@ -108,16 +104,16 @@
               (annotation id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
               (annotation id "notes" "notes" NoteRecord NoteAnnotation))))
 
-        (context* "/relationships" []
+        (context "/relationships" []
           :tags ["links"]
-          (context* "/:id" [id]
-            (GET* "/" request
+          (context "/:id" id
+            (GET "/" request
               :name :get-relation
               :return {:relationship LinkInfo}
               :summary "Relationship document"
               (let [auth (auth/identity request)]
                 (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
-            (DELETE* "/" request
+            (DELETE "/" request
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
@@ -130,57 +126,57 @@
                                                 (:_id relationship))}))
                   (not-found {:errors {:detail "Not found"}}))))))
 
-        (context* "/projects" []
+        (context "/projects" []
           :tags ["projects"]
           (get-resources "Project")
           (post-resources "Project" [NewProject])
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "Project" id)
             (post-resource "Project" id [NewFolder NewFile NewActivity])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "Project" id rel)
               (relationships "Project" id rel))))
 
 
-        (context* "/sources" []
+        (context "/sources" []
           :tags ["sources"]
           (get-resources "Source")
           (post-resources "Source" [NewSource])
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "Source" id)
             (post-resource "Source" id [NewSource])
             (put-resource "Source" id)
             (delete-resource "Source" id)
 
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "Source" id rel)
               (relationships "Source" id rel))))
 
 
-        (context* "/activities" []
+        (context "/activities" []
           :tags ["activities"]
           (get-resources "Activity")
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "Activity" id)
             (put-resource "Activity" id)
             (delete-resource "Activity" id)
 
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "Activity" id rel)
               (relationships "Activity" id rel))))
 
-        (context* "/folders" []
+        (context "/folders" []
           :tags ["folders"]
           (get-resources "Folder")
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "Folder" id)
             (post-resource "Folder" id [NewFolder NewFile])
             (put-resource "Folder" id)
             (delete-resource "Folder" id)
-            (POST* "/move" request
+            (POST "/move" request
               :name :move-folder
               :return {s/Keyword (s/either File Folder)
                        :links [{s/Keyword s/Any}]
@@ -190,24 +186,24 @@
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "Folder" id rel)
               (relationships "Folder" id rel))))
 
 
-        (context* "/files" []
+        (context "/files" []
           :tags ["files"]
           (get-resources "File")
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "File" id)
-            (POST* "/" request
+            (POST "/" request
               :name :create-file-entity
               :return CreateRevisionResponse
               :body   [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id (:entities revisions))))
 
-            (POST* "/move" request
+            (POST "/move" request
               :name :move-file
               :return {s/Keyword (s/either File Folder)
                        :links [{s/Keyword s/Any}]
@@ -217,7 +213,7 @@
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
-            (GET* "/heads" request
+            (GET "/heads" request
               :name :file-head-revisions
               :return {:revisions [Revision]}
               :summary "Gets the HEAD revision(s) for this file"
@@ -225,32 +221,32 @@
             (put-resource "File" id)
             (delete-resource "File" id)
 
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "File" id rel)
               (relationships "File" id rel))))
 
 
-        (context* "/revisions" []
+        (context "/revisions" []
           :tags ["files"]
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "Revision" id)
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
-            (POST* "/" request
+            (POST "/" request
               :name :create-revision-entity
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))
-            (context* "/links/:rel" [rel]
+            (context "/links/:rel" rel
               (rel-related "Revision" id rel)
               (relationships "Revision" id rel))))
 
 
-        (context* "/prov" []
+        (context "/prov" []
           :tags ["provenance"]
-          (context* "/:id" [id]
-            (GET* "/" request
+          (context "/:id" id
+            (GET "/" request
               :name :entity-provenance
               :return {:provenance [{:_id s/Uuid
                                      :type s/Str
@@ -262,46 +258,46 @@
                     result (prov/local auth rt [id])]
                 (ok {:provenance result})))))
 
-        (context* "/users" []
+        (context "/users" []
           :tags ["users"]
           (get-resources "User")
-          (context* "/:id" [id]
+          (context "/:id" id
             (get-resource "User" id)))
 
-        (context* "/teams" []
+        (context "/teams" []
           :tags ["teams"]
 
-          (context* "/:id" [id]
-            (GET* "/" request
+          (context "/:id" id
+            (GET "/" request
               :name :get-team
               :return {:team Team
                        :users [TeamUser],
                        :membership_roles [TeamMembershipRole]}
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
-            (context* "/memberships" []
-              (POST* "/" request
+            (context "/memberships" []
+              (POST "/" request
                 :name :post-memberships
                 :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
                 :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
                 :body [body {:membership NewTeamMembership}]
                 (created (teams/post-membership* request id (:membership body))))
-              (context* "/:mid" [mid]
-                (PUT* "/" request
+              (context "/:mid" mid
+                (PUT "/" request
                   :name :put-membership
                   :return {:membership TeamMembership}
                   :body [body {:membership NewTeamMembership}]
                   (ok (teams/put-membership* request id (:membership body) mid)))
 
-                (DELETE* "/" request
+                (DELETE "/" request
                   :name :delete-membership
                   (teams/delete-membership* request mid)
                   (no-content))))))
 
-        (context* "/roles" []
+        (context "/roles" []
           :tags ["teams"]
 
-          (GET* "/" request
+          (GET "/" request
             :name :all-roles
             :return {:roles [TeamRole]}
             :summary "Gets all team Roles for the current Organization"
