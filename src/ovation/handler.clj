@@ -55,8 +55,8 @@
                     {:name "provenance" :description "Provenance graph"}]}}
 
   (middleware [[wrap-cors
-                  :access-control-allow-origin #".+"        ;; Allow from any origin
-                  :access-control-allow-methods [:get :put :post :delete :options]
+                :access-control-allow-origin #".+"        ;; Allow from any origin
+                :access-control-allow-methods [:get :put :post :delete :options]
                 :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
                [wrap-authentication (jws-backend {:secret     config/JWT_SECRET
@@ -64,7 +64,7 @@
                [wrap-access-rules {:rules    rules
                                    :on-error auth/throw-unauthorized}]
 
-               [wrap-authenticated-teams]
+               wrap-authenticated-teams
 
 
                [wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
@@ -76,7 +76,7 @@
 
                [wrap-raygun-handler (System/getenv "RAYGUN_API_KEY")]
 
-               [wrap-newrelic-transaction]]
+               wrap-newrelic-transaction]
 
 
 
@@ -84,8 +84,8 @@
       (context "/v1" []
         (context "/entities" []
           :tags ["entities"]
-          (context "/:id" id
-
+          (context "/:id" []
+            :path-params [id :- s/Str]
             (GET "/" request
               :name :get-entity
               :return {:entity Entity}
@@ -106,7 +106,8 @@
 
         (context "/relationships" []
           :tags ["links"]
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
             (GET "/" request
               :name :get-relation
               :return {:relationship LinkInfo}
@@ -130,13 +131,17 @@
           :tags ["projects"]
           (get-resources "Project")
           (post-resources "Project" [NewProject])
-          (context "/:id" id
+          (context "/:id"  []
+            :path-params [id :- s/Str]
+
             (get-resource "Project" id)
             (post-resource "Project" id [NewFolder NewFile NewActivity])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "Project" id rel)
               (relationships "Project" id rel))))
 
@@ -145,13 +150,17 @@
           :tags ["sources"]
           (get-resources "Source")
           (post-resources "Source" [NewSource])
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (get-resource "Source" id)
             (post-resource "Source" id [NewSource])
             (put-resource "Source" id)
             (delete-resource "Source" id)
 
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "Source" id rel)
               (relationships "Source" id rel))))
 
@@ -159,19 +168,25 @@
         (context "/activities" []
           :tags ["activities"]
           (get-resources "Activity")
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (get-resource "Activity" id)
             (put-resource "Activity" id)
             (delete-resource "Activity" id)
 
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "Activity" id rel)
               (relationships "Activity" id rel))))
 
         (context "/folders" []
           :tags ["folders"]
           (get-resources "Folder")
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (get-resource "Folder" id)
             (post-resource "Folder" id [NewFolder NewFile])
             (put-resource "Folder" id)
@@ -186,7 +201,9 @@
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "Folder" id rel)
               (relationships "Folder" id rel))))
 
@@ -194,7 +211,9 @@
         (context "/files" []
           :tags ["files"]
           (get-resources "File")
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (get-resource "File" id)
             (POST "/" request
               :name :create-file-entity
@@ -221,14 +240,18 @@
             (put-resource "File" id)
             (delete-resource "File" id)
 
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "File" id rel)
               (relationships "File" id rel))))
 
 
         (context "/revisions" []
           :tags ["files"]
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (get-resource "Revision" id)
             (put-resource "Revision" id)
             (delete-resource "Revision" id)
@@ -238,14 +261,18 @@
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))
-            (context "/links/:rel" rel
+            (context "/links/:rel" []
+              :path-params [rel :- s/Str]
+
               (rel-related "Revision" id rel)
               (relationships "Revision" id rel))))
 
 
         (context "/prov" []
           :tags ["provenance"]
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (GET "/" request
               :name :entity-provenance
               :return {:provenance [{:_id s/Uuid
@@ -267,7 +294,9 @@
         (context "/teams" []
           :tags ["teams"]
 
-          (context "/:id" id
+          (context "/:id" []
+            :path-params [id :- s/Str]
+
             (GET "/" request
               :name :get-team
               :return {:team Team
@@ -282,7 +311,9 @@
                 :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
                 :body [body {:membership NewTeamMembership}]
                 (created (teams/post-membership* request id (:membership body))))
-              (context "/:mid" mid
+              (context "/:mid" []
+                :path-params [mid :- s/Str]
+
                 (PUT "/" request
                   :name :put-membership
                   :return {:membership TeamMembership}
