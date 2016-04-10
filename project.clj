@@ -13,7 +13,6 @@
                  [metosin/ring-swagger-ui "2.1.3"]
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
-                 [ring-logger "0.7.5"]
                  [buddy/buddy-auth "0.9.0"]
 
 
@@ -30,6 +29,7 @@
                  ;; Logging
                  [com.taoensso/timbre "4.3.1"]
                  [potemkin "0.4.3"]
+                 [ring-logger-timbre "0.7.5"]
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]]

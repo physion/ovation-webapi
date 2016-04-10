@@ -24,7 +24,8 @@
             [buddy.auth.backends.token :refer (jws-backend)]
             [buddy.auth.middleware :refer (wrap-authentication)]
             [buddy.auth :refer [authenticated?]]
-            [buddy.auth.accessrules :refer [wrap-access-rules]]))
+            [buddy.auth.accessrules :refer [wrap-access-rules]]
+            [ring.logger.timbre :as logger.timbre]))
 
 
 (ovation.logging/setup!)
@@ -48,13 +49,7 @@
 
                 (wrap-authenticated-teams)
 
-
-                (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
-                                   :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
-                                   :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
-                                   :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
-                                   :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
-                                   :exceptions false})
+                (logger.timbre/wrap-with-logger)
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
