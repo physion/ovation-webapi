@@ -37,9 +37,9 @@
 (defmethod request-details :identity-printer
   ; "Adds audit details to request"
   [{:keys [logger] :as options} req]
-  (ovation.logging/info logger (str "[AUTDIT] " (merge {:identity (get-in req [:identity :uuid])}
-                                                  (select-keys req [:request-method
-                                                                    :uri])))))
+  (ovation.logging/info (merge {:identity (get-in req [:identity :uuid])}
+                          (select-keys req [:request-method
+                                            :uri]))))
 
 ;;; --- Routes --- ;;;
 (defapi app
