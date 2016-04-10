@@ -13,7 +13,7 @@
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-authenticated-teams wrap-log-identity]]
+            [ovation.middleware.auth :refer [wrap-authenticated-teams]]
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
@@ -25,13 +25,21 @@
             [buddy.auth.middleware :refer (wrap-authentication)]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
-            [ring.logger.timbre :as logger.timbre]))
+            [ring.logger.timbre :as logger.timbre]
+            [ring.logger.messages :as logger.messages :refer [request-details]]))
 
 
 (ovation.logging/setup!)
 
 (def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
+
+(defmethod request-details :identity-printer
+  ; "Adds audit details to request"
+  [{:keys [logger] :as options} req]
+  (ovation.logging/info logger (str "[AUTDIT] " (merge {:identity (get-in req [:identity :uuid])}
+                                                  (select-keys req [:request-method
+                                                                    :uri])))))
 
 ;;; --- Routes --- ;;;
 (defapi app
@@ -49,9 +57,7 @@
 
                 (wrap-authenticated-teams)
 
-                (logger.timbre/wrap-with-logger)
-
-                (wrap-log-identity)
+                (logger.timbre/wrap-with-logger {:printer :identity-printer})
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 

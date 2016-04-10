@@ -16,11 +16,3 @@
         (assoc-in [:identity ::auth/authenticated-permissions] (auth/permissions (auth/token request)))
         (handler))
       (handler request))))
-
-(defn wrap-log-identity
-  [handler]
-  (fn [request]
-    (if-let [user (get-in request [:identity :uuid])]
-      (do
-         (logging/info (format "[AUDIT] User %s" user))
-         (handler request)))))
