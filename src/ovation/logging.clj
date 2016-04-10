@@ -69,6 +69,7 @@
                      (catch java.io.IOException _
                        nil)))}))
 
+
 (defn logging-config
   []
   (if-let [host config/LOGGING_HOST]

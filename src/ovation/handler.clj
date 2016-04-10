@@ -13,7 +13,7 @@
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-authenticated-teams]]
+            [ovation.middleware.auth :refer [wrap-authenticated-teams wrap-log-identity]]
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
@@ -50,6 +50,8 @@
                 (wrap-authenticated-teams)
 
                 (logger.timbre/wrap-with-logger)
+
+                (wrap-log-identity)
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
