@@ -36,24 +36,26 @@
 
 ;;; --- Routes --- ;;;
 (defapi app
-  {:swagger {:info {
-                    :version        "2.0.0"
-                    :title          "Ovation"
-                    :description    "Ovation Web API"
-                    :contact        {:name "Ovation"
-                                     :url  "https://ovation.io"}
-                    :termsOfService "https://ovation.io/terms_of_service"}
-             :tags [{:name "entities" :description "Generic entity operations"}
-                    {:name "projects" :description "Projects"}
-                    {:name "folders" :description "Folders"}
-                    {:name "files" :description "Files"}
-                    {:name "protocols" :description "Protocols"}
-                    {:name "sources" :description "Sources"}
-                    {:name "users" :description "Users"}
-                    {:name "analyses" :description "Analysis Records"}
-                    {:name "annotations" :description "Per-user annotations"}
-                    {:name "links" :description "Relationships between entities"}
-                    {:name "provenance" :description "Provenance graph"}]}}
+  {:swagger {:ui   "/"
+             :spec "/swagger.json"
+             :data {:info {
+                           :version        "2.0.0"
+                           :title          "Ovation"
+                           :description    "Ovation Web API"
+                           :contact        {:name "Ovation"
+                                            :url  "https://ovation.io"}
+                           :termsOfService "https://ovation.io/terms_of_service"}
+                    :tags [{:name "entities" :description "Generic entity operations"}
+                           {:name "projects" :description "Projects"}
+                           {:name "folders" :description "Folders"}
+                           {:name "files" :description "Files"}
+                           {:name "protocols" :description "Protocols"}
+                           {:name "sources" :description "Sources"}
+                           {:name "users" :description "Users"}
+                           {:name "analyses" :description "Analysis Records"}
+                           {:name "annotations" :description "Per-user annotations"}
+                           {:name "links" :description "Relationships between entities"}
+                           {:name "provenance" :description "Provenance graph"}]}}}
 
   (middleware [[wrap-cors
                 :access-control-allow-origin #".+"        ;; Allow from any origin
