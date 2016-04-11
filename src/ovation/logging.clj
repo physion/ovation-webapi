@@ -4,8 +4,7 @@
             [ovation.config :as config]
             [cheshire.core :as cheshire]
             [clj-time.coerce :as time-coerce]
-            [clj-time.format :as time-format]
-            [ring.logger.messages :refer [request-details]])
+            [clj-time.format :as time-format])
   (:import [java.net Socket InetAddress]
            [java.io PrintWriter]))
 
@@ -14,11 +13,7 @@
    log debug info warn error fatal])
 
 
-(defmethod request-details :identity-printer
-  [{:keys [logger] :as options} req]
-  (ovation.logging/info "[AUDIT]" (merge {:identity (get-in req [:identity :uuid])}
-                                    (select-keys req [:request-method
-                                                      :uri]))))
+
 
 
 ;; Adapted from taoensso.timbre.appenders.3rd-party.server-socket
