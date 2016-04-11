@@ -8,10 +8,9 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
-            [ovation.logging]
+            [ovation.logging :as logging]
             [ovation.routes :refer [router]]
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
-            [clojure.tools.logging :as logging]
             [ovation.config :as config]
             [ovation.core :as core]
             [ovation.middleware.auth :refer [wrap-authenticated-teams]]
@@ -25,7 +24,8 @@
             [buddy.auth.backends.token :refer (jws-backend)]
             [buddy.auth.middleware :refer (wrap-authentication)]
             [buddy.auth :refer [authenticated?]]
-            [buddy.auth.accessrules :refer [wrap-access-rules]]))
+            [buddy.auth.accessrules :refer [wrap-access-rules]]
+            [ring.logger.timbre :as logger.timbre]))
 
 
 (ovation.logging/setup!)
@@ -49,13 +49,7 @@
 
                 (wrap-authenticated-teams)
 
-
-                (wrap-with-logger {;;TODO can we make the middleware conditional rather than testing for each logging call?
-                                   :info       (fn [x] (when config/LOGGING_HOST (logging/info x)))
-                                   :debug      (fn [x] (when config/LOGGING_HOST (logging/debug x)))
-                                   :error      (fn [x] (when config/LOGGING_HOST (logging/error x)))
-                                   :warn       (fn [x] (when config/LOGGING_HOST (logging/warn x)))
-                                   :exceptions false})
+                (logger.timbre/wrap-with-logger {:printer :identity-printer})
 
                 (wrap-raygun-handler (System/getenv "RAYGUN_API_KEY"))
 
