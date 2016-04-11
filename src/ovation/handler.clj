@@ -17,6 +17,7 @@
             [ovation.links :as links]
             [ovation.routes :as r]
             [ovation.auth :as auth]
+            [ovation.audit]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
