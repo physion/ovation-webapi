@@ -28,14 +28,9 @@
 
 
                  ;; Logging
-                 [org.clojure/tools.logging "0.3.1"]
-                 [clj-logging-config "1.9.12"]
-                 [org.slf4j/slf4j-api "1.7.12"]
-                 [org.slf4j/slf4j-log4j12 "1.7.12"]
-                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
-                                                    javax.jms/jms
-                                                    com.sun.jmdk/jmxtools
-                                                    com.sun.jmx/jmxri]]
+                 [com.taoensso/timbre "4.3.1"]
+                 [potemkin "0.4.3"]
+                 [ring-logger-timbre "0.7.5"]
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]]
