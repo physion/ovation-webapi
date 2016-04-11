@@ -27,7 +27,7 @@
     <script type="text/javascript">
         $(function () {
             //var url = API_CONF.url;
-            var url = window.location.search.match(/url=([^&]+)/);
+            var url = window.API_CONF['url']; //window.location.search.match(/url=([^&]+)/);
             if (url && url.length > 1) {
                 url = decodeURIComponent(url[1]);
             } else {
