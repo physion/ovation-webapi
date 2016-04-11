@@ -25,21 +25,13 @@
             [buddy.auth.middleware :refer (wrap-authentication)]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
-            [ring.logger.timbre :as logger.timbre]
-            [ring.logger.messages :as logger.messages :refer [request-details]]))
+            [ring.logger.timbre :as logger.timbre]))
 
 
 (ovation.logging/setup!)
 
 (def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
-
-(defmethod request-details :identity-printer
-  ; "Adds audit details to request"
-  [{:keys [logger] :as options} req]
-  (ovation.logging/info (merge {:identity (get-in req [:identity :uuid])}
-                          (select-keys req [:request-method
-                                            :uri]))))
 
 ;;; --- Routes --- ;;;
 (defapi app
