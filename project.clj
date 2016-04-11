@@ -9,11 +9,12 @@
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "0.23.1"]
-                 [metosin/ring-swagger-ui "2.1.3"]
+                 [metosin/compojure-api "1.0.2"]
+                 [metosin/ring-swagger-ui "2.1.4-0"]
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
-                 [buddy/buddy-auth "0.9.0"]
+                 [ring-logger "0.7.6"]
+                 [buddy/buddy-auth "0.11.0"]
 
 
                  ;; HTTP and CouchDB
