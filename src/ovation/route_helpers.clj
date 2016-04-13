@@ -94,8 +94,8 @@
 
           (created {type-kw entities}))
 
-        (catch [:type :ovation.auth/unauthorized] _
-          (unauthorized {:errors {:detail "Not authorized"}})))
+        (catch [:type :ovation.auth/forbidden] _
+          (forbidden {:errors {:detail "Not authorized"}})))
 
       (bad-request {:errors {:detail (str "Entities must be of \"type\" " type-name)}}))))
 
@@ -162,8 +162,8 @@
                   :links    links
                   :updates updates}))
 
-      (catch [:type :ovation.auth/unauthorized] err
-        (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
+      (catch [:type :ovation.auth/forbidden] err
+        (forbidden {:errors {:detail "Not authorized to create new entities"}})))))
 
 
 (defmacro post-resource
@@ -189,8 +189,8 @@
               entity (first (core/update-entities auth [updates] (r/router request)))]
           (ok {type-kw entity}))
 
-        (catch [:type :ovation.auth/unauthorized] _
-          (unauthorized {:errors {:detail "Unauthorized"}}))
+        (catch [:type :ovation.auth/forbidden] _
+          (forbidden {:errors {:detail "Unauthorized"}}))
         (catch [:type :ovation.couch/conflict] err
           (conflict {:errors {:detail "Document update conflict"
                               :id     (:id err)}}))
@@ -224,8 +224,8 @@
        (try+
          (let [auth# (auth/identity request#)]
            (accepted {:entities (core/delete-entity auth# [~id] (r/router request#))}))
-         (catch [:type :ovation.auth/unauthorized] err#
-           (unauthorized {}))))))
+         (catch [:type :ovation.auth/forbidden] err#
+           (forbidden {}))))))
 
 (defn rel-related*
   [request id rel routes]
@@ -266,8 +266,8 @@
             (created {:updates updates
                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
-    (catch [:type :ovation.auth/unauthorized] {:keys [message]}
-      (unauthorized {:errors {:detail message}}))
+    (catch [:type :ovation.auth/forbidden] {:keys [message]}
+      (forbidden {:errors {:detail message}}))
     (catch [:type :ovation.links/target-not-found] {:keys [message]}
       (bad-request {:errors {:detail message}}))))
 

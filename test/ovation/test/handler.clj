@@ -315,11 +315,11 @@
                                            :links    links#
                                            :updates {}})))
 
-               (fact "POST /:id returns 401 if not can? :create"
-                 (:status (app (request#))) => 401
+               (fact "POST /:id returns 403 if not can? :create"
+                 (:status (app (request#))) => 403
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/forbidden}))))))))))
 
 
 
@@ -362,11 +362,11 @@
                  (fact "POST / returns 400 if type does not match"
                    (:status (app (bad-request#))) => 400))
 
-               (fact "POST / returns 401 if not can? :create"
-                 (:status (app (request#))) => 401
+               (fact "POST / returns 403 if not can? :create"
+                 (:status (app (request#))) => 403
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..auth.. [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/forbidden}))))))))))
 
 
 (defmacro entity-resource-update-tests
@@ -420,10 +420,10 @@
                ;        (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:status 409})))))
 
                (fact "fails if not can? :update"
-                 (:status (app (request# id#))) => 401
+                 (:status (app (request# id#))) => 403
                  (provided
                    (r/router anything) => ..rt..
-                   (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/forbidden}))))))))))
 
 
 (defmacro entity-resource-deletion-tests
@@ -460,11 +460,11 @@
                    (let [delete-request# (request# id#)]
                      (body-json delete-request#)) => {:entities [deleted-entity#]}))
 
-               (fact "returns 401 if not can? :delete"
-                 (:status (app (request# id#))) => 401
+               (fact "returns 403 if not can? :delete"
+                 (:status (app (request# id#))) => 403
                  (provided
                    (r/router anything) => ..rt..
-                   (core/delete-entity ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/delete-entity ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/forbidden}))))))))))
 
 
 

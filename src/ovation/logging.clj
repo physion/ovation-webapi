@@ -79,7 +79,8 @@
       {:level     :info
        :appenders {:timbre (timbre-json-appender host port)}})
     {:level     :info
-     :appenders {:println (timbre/println-appender {:stream :auto})}}))
+     :appenders {:println (timbre/println-appender {:stream :auto})}
+     }))
 
 (defn setup! []
   (timbre/set-config! (logging-config)))
