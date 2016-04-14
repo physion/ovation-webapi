@@ -5,7 +5,7 @@ wget https://github.com/catalyzeio/cli/releases/download/3.1.5/catalyze_3.1.5_li
 tar xzvf catalyze_3.1.5_linux_amd64.tar.gz
 
 # Associate catalyze environment
-catalyze_3.1.5_linux_amd64/catalyze associate $CATALYZE_ENVIRONMENT app --username $CATALYZE_USER  --password $CATALYZE_PASSWORD
+catalyze_3.1.5_linux_amd64/catalyze  --username=$CATALYZE_USER  --password=$CATALYZE_PASSWORD associate $CATALYZE_ENVIRONMENT app
 
 # Deploy
 git fetch --unshallow || true
