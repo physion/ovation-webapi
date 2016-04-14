@@ -1,5 +1,5 @@
 (defproject ovation-webapi "1.0.0-SNAPSHOT"
-  :min-lein-version "2.5.3"
+  :min-lein-version "2.5.0"
   :description "Ovation REST API"
   :url "http://ovation.io"
 
@@ -16,6 +16,7 @@
                  [thegreatape/ring-raygun "0.1.0"]
                  [ring-logger "0.7.6"]
                  [buddy/buddy-auth "0.11.0"]
+                 [ring/ring-jetty-adapter "1.4.0"]
 
 
                  ;; HTTP and CouchDB
