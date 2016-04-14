@@ -44,16 +44,16 @@
                                             :url  "https://ovation.io"}
                            :termsOfService "https://services.ovation.io/terms_of_service"}
                     :tags [{:name "entities" :description "Generic entity operations"}
-                           {:name "projects" :description "Projects"}
-                           {:name "folders" :description "Folders"}
-                           {:name "files" :description "Files"}
-                           {:name "protocols" :description "Protocols"}
-                           {:name "sources" :description "Sources"}
-                           {:name "users" :description "Users"}
-                           {:name "analyses" :description "Analysis Records"}
+                           {:name "activities" :description "Describe relationships between inputs and outputs of a procedure"}
+                           {:name "projects" :description "Manage Projects"}
+                           {:name "folders" :description "Mange Folders"}
+                           {:name "files" :description "Manage Files"}
+                           {:name "sources" :description "Manage Sources, the subject of measurements"}
+                           {:name "users" :description "Get information about Users"}
                            {:name "annotations" :description "Per-user annotations"}
                            {:name "links" :description "Relationships between entities"}
-                           {:name "provenance" :description "Provenance graph"}]}}}
+                           {:name "provenance" :description "Provenance graph"}
+                           {:names "teams" :description "Manage collaborations"}]}}}
 
   (middleware [[wrap-cors
                 :access-control-allow-origin #".+"        ;; Allow from any origin

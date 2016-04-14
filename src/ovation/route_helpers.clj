@@ -39,7 +39,7 @@
 
   (let [annotation-kw (keyword annotation-key)]
     (context (str "/" annotation-key) []
-       :tags [annotation-key]
+       :tags ["annotations"]
        (GET "/" request
          :name (keyword (str "get-" (lower-case annotation-key)))
          :return {annotation-kw [annotation-schema]}
