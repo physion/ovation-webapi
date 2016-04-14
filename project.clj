@@ -41,6 +41,8 @@
 
   :ring {:handler ovation.handler/app}
 
+  :main ovation.main
+
   :resource-paths ["resources"]
 
   ;; For New Relic, we need to bundle newrelic.yml and newrelic.jar
