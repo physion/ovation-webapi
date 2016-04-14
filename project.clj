@@ -1,4 +1,5 @@
 (defproject ovation-webapi "1.0.0-SNAPSHOT"
+  :min-lein-version "2.5.3"
   :description "Ovation REST API"
   :url "http://ovation.io"
 
