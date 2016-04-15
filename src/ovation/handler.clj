@@ -53,7 +53,7 @@
                            {:name "annotations" :description "Per-user annotations"}
                            {:name "links" :description "Relationships between entities"}
                            {:name "provenance" :description "Provenance graph"}
-                           {:names "teams" :description "Manage collaborations"}]}}}
+                           {:name "teams" :description "Manage collaborations"}]}}}
 
   (middleware [[wrap-cors
                 :access-control-allow-origin #".+"        ;; Allow from any origin
