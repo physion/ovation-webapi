@@ -8,7 +8,7 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
-            [ovation.logging :as logging]
+            [ovation.logging]
             [ovation.routes :refer [router]]
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
