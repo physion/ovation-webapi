@@ -1,11 +1,11 @@
 #!/bin/bash
 
-CATALYZE_CLI=catalyze_3.1.5_linux_amd64
 CATALYZE_VERISON=3.1.5
+CATALYZE_CLI=catalyze_$CATALYZE_VERISON_linux_amd64
 
 if [ ! -d "$CATALYZE_CLI" ]; then
     # Install catalyze-cli
-    wget https://github.com/catalyzeio/cli/releases/download/$CATALYZE_VERSION/$CATALYZE_CLI.tar.gz
+    wget https://github.com/catalyzeio/cli/releases/download/$CATALYZE_VERISON/$CATALYZE_CLI.tar.gz
     tar xzvf $CATALYZE_CLI.tar.gz
 fi
 
