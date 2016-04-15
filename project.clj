@@ -1,4 +1,5 @@
 (defproject ovation-webapi "1.0.0-SNAPSHOT"
+  :min-lein-version "2.5.0"
   :description "Ovation REST API"
   :url "http://ovation.io"
 
@@ -9,12 +10,13 @@
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "0.23.1"]
-                 [metosin/ring-swagger-ui "2.1.3"]
+                 [metosin/compojure-api "1.0.2"]
+                 [metosin/ring-swagger-ui "2.1.4-0"]
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
-                 [ring-logger "0.7.5"]
-                 [buddy/buddy-auth "0.9.0"]
+                 [ring-logger "0.7.6"]
+                 [buddy/buddy-auth "0.12.0"]
+                 [ring/ring-jetty-adapter "1.4.0"]
 
 
                  ;; HTTP and CouchDB
@@ -23,27 +25,24 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.26.1"]
+                 [com.newrelic.agent.java/newrelic-agent "3.27.0"]
                  [yleisradio/new-reliquary "1.0.0"]
 
 
                  ;; Logging
-                 [org.clojure/tools.logging "0.3.1"]
-                 [clj-logging-config "1.9.12"]
-                 [org.slf4j/slf4j-api "1.7.12"]
-                 [org.slf4j/slf4j-log4j12 "1.7.12"]
-                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
-                                                    javax.jms/jms
-                                                    com.sun.jmdk/jmxtools
-                                                    com.sun.jmx/jmxri]]
+                 [com.taoensso/timbre "4.3.1"]
+                 [potemkin "0.4.3"]
+                 [ring-logger-timbre "0.7.5"]
 
                  ;; Other
-                 [org.clojure/data.json "0.2.6"]
-                 ]
+                 [org.clojure/data.json "0.2.6"]]
+
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation.handler/app}
+
+  :main ovation.main
 
   :resource-paths ["resources"]
 

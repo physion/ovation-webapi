@@ -3,7 +3,7 @@
             [ovation.util :as util]
             [ovation.config :as config]
             [org.httpkit.client :as httpkit.client]
-            [clojure.tools.logging :as logging]
+            [ovation.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.auth :as auth]
@@ -118,8 +118,8 @@
         role    (:role membership)
         email   (:email membership)
         body    {:membership {:team_id team-uuid
-                           :role_id (:id role)
-                           :email   email}}]
+                              :role_id (:id role)
+                              :email   email}}]
 
     (when (or (nil? team-id) (nil? role) (nil? email))
       (unprocessable-entity!))

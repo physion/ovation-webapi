@@ -163,8 +163,8 @@
     ::read (can-read? auth doc teams)
 
     ;;default
-    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})
-    ))
+    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})))
+
 
 (defn check!
   ([auth op]

@@ -5,6 +5,7 @@
 (def ANNOTATION-TYPE "Annotation")
 (def REVISION-TYPE "Revision")
 (def FILE-TYPE "File")
+(def FOLDER-TYPE "Folder")
 (def RELATION-TYPE util/RELATION_TYPE)
 (def TEAM-TYPE "Team")
 (def PROJECT-TYPE "Project")

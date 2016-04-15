@@ -5,8 +5,7 @@
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
-            [ovation.constants :as k]
-            [ovation.teams :as teams]))
+            [ovation.constants :as k]))
 
 
 

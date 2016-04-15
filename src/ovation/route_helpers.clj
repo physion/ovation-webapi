@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ovation.annotations :as annotations]
             [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden]]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity!]]
             [ovation.core :as core]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize upper-case join]]
@@ -29,37 +29,37 @@
     (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
 
 (defn delete-annotations*
-  [request annotation-key]
-  (let [auth (auth/identity request)
-        annotation-id (-> request :route-params :annotation-id)]
+  [request annotation-id annotation-key]
+  (let [auth (auth/identity request)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
-(defmacro annotation
+(defn annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
 
   (let [annotation-kw (keyword annotation-key)]
-    `(context* ~(str "/" annotation-key) []
-       :tags [~annotation-key]
-       (GET* "/" request#
-         :name ~(keyword (str "get-" (lower-case annotation-key)))
-         :return {~annotation-kw [~annotation-schema]}
-         :summary ~(str "Returns all " annotation-description " annotations associated with entity :id")
-         (get-annotations* request# ~id ~annotation-key))
+    (context (str "/" annotation-key) []
+       :tags ["annotations"]
+       (GET "/" request
+         :name (keyword (str "get-" (lower-case annotation-key)))
+         :return {annotation-kw [annotation-schema]}
+         :summary (str "Returns all " annotation-description " annotations associated with entity :id")
+         (get-annotations* request id annotation-key))
 
-       (POST* "/" request#
-         :name ~(keyword (str "create-" (lower-case annotation-key)))
-         :return {(keyword ~annotation-key) [~annotation-schema]}
-         :body [new-annotations# {(keyword ~annotation-key) [~record-schema]}]
-         :summary ~(str "Adds a new " annotation-description " annotation to entity :id")
-         (post-annotations* request# ~id ~annotation-key ((keyword ~annotation-key) new-annotations#)))
+       (POST "/" request
+         :name (keyword (str "create-" (lower-case annotation-key)))
+         :return {(keyword annotation-key) [annotation-schema]}
+         :body [new-annotations {(keyword annotation-key) [record-schema]}]
+         :summary (str "Adds a new " annotation-description " annotation to entity :id")
+         (post-annotations* request id annotation-key ((keyword annotation-key) new-annotations)))
 
-       (context* "/:annotation-id" [aid#]
-         (DELETE* "/" request#
-           :name ~(keyword (str "delete-" (lower-case annotation-key)))
+       (context "/:annotation-id" []
+         :path-params [annotation-id :- s/Str]
+         (DELETE "/" request
+           :name (keyword (str "delete-" (lower-case annotation-key)))
            :return [s/Str]
-           :summary ~(str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-           (delete-annotations* request# ~annotation-key))))))
+           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
+           (delete-annotations* request annotation-id annotation-key))))))
 
 
 (defn- typepath
@@ -75,7 +75,7 @@
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
         type-kw   (keyword type-path)]
-    `(GET* "/" request#
+    `(GET "/" request#
        :name ~(keyword (str "all-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :summary (str "Gets all top-level " ~type-path)
@@ -105,7 +105,7 @@
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
         type-kw (keyword type-path)]
-    `(POST* "/" request#
+    `(POST "/" request#
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
@@ -115,7 +115,7 @@
   [entity-type id]
   (let [type-name (capitalize entity-type)
         single-type-kw (keyword (lower-case type-name))]
-    `(GET* "/" request#
+    `(GET "/" request#
        :name ~(keyword (str "get-" (lower-case type-name)))
        :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
@@ -163,13 +163,13 @@
                   :updates updates}))
 
       (catch [:type :ovation.auth/unauthorized] err
-        (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
-  )
+        (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
+
 
 (defmacro post-resource
   [entity-type id schemas]
   (let [type-name (capitalize entity-type)]
-    `(POST* "/" request#
+    `(POST "/" request#
        :name ~(keyword (format "create-%s-entity" (lower-case type-name)))
        :return {:entities [(apply s/either ~schemas)]
                 :links    [LinkInfo]
@@ -206,7 +206,7 @@
   (let [type-name (capitalize entity-type)
         update-type (format "%sUpdate" type-name)
         type-kw (util/entity-type-name-keyword type-name)]
-    `(PUT* "/" request#
+    `(PUT "/" request#
        :name ~(keyword (str "update-" (lower-case type-name)))
        :return {~type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :body [updates# {~type-kw ~(clojure.core/symbol "ovation.schema" update-type)}]
@@ -217,7 +217,7 @@
   [entity-type id]
   (let [type-name (capitalize entity-type)]
 
-    `(DELETE* "/" request#
+    `(DELETE "/" request#
        :name ~(keyword (str "delete-" (lower-case type-name)))
        :return {:entities [TrashedEntity]}
        :summary ~(str "Deletes (trashes) " type-name " with :id")
@@ -231,13 +231,13 @@
   [request id rel routes]
   (let [auth (auth/identity request)
         related (links/get-link-targets auth id (lower-case rel) routes)]
-  (ok {(keyword rel) related})))
+   (ok {(keyword rel) related})))
 
 
 (defmacro rel-related
   [entity-type id rel]
   (let [type-name (capitalize entity-type)]
-    `(GET* "/" request#
+    `(GET "/" request#
        :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
        :return {s/Keyword [Entity]}
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
@@ -274,14 +274,14 @@
 (defmacro relationships
   [entity-type id rel]
   (let [type-name (capitalize entity-type)]
-    `(context* "/relationships" []
-       (GET* "/" request#
+    `(context "/relationships" []
+       (GET "/" request#
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
          (get-relationships* request# ~id ~rel))
 
-       (POST* "/" request#
+       (POST "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))
          :return {:links   [LinkInfo]
                   :updates [Entity]}
@@ -318,7 +318,39 @@
     (when (nil? file)
       (not-found! {:errors {:detail "File not found"}}))
 
-    ;(when-not (= "File" (:type file))
-    ;  (bad-request! {:errors {:detail "Entity is not a File"}}))
-
     (ok {:revisions (revisions/get-head-revisions auth routes file)})))
+
+(defn- rel
+  [src dest]
+  (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :rel]))
+
+(defn inverse-rel
+  [src dest]
+  (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :inverse-rel]))
+
+(defn move-contents*
+  [request id info]
+  (let [routes (r/router request)
+        auth   (auth/identity request)
+
+        src    (core/get-entities auth [(:source info)] routes)
+        dest   (core/get-entities auth [(:destination info)] routes)
+        entity (first (core/get-entities auth [id] routes))]
+
+    (if (and
+          (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
+          (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
+
+      (let [added (links/add-links auth dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
+            links (future (core/create-values auth routes (:links added)))
+            updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
+
+        (do
+          (links/delete-links auth routes (first src) (rel (first src) entity) id)
+
+          {(util/entity-type-keyword entity)    entity
+           :updates @updates
+           :links   @links}))
+
+      (unprocessable-entity! {:errors {:detail "Unexpected entity type"}}))))
