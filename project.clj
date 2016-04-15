@@ -15,7 +15,7 @@
                  [ring-cors "0.1.7"]
                  [thegreatape/ring-raygun "0.1.0"]
                  [ring-logger "0.7.6"]
-                 [buddy/buddy-auth "0.11.0"]
+                 [buddy/buddy-auth "0.12.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
 
 
@@ -25,7 +25,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.26.1"]
+                 [com.newrelic.agent.java/newrelic-agent "3.27.0"]
                  [yleisradio/new-reliquary "1.0.0"]
 
 
