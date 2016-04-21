@@ -90,6 +90,17 @@
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
+(defn put*
+  [app path apikey body]
+  (let [post (mock-req (-> (mock/request :put path)
+                         (mock/body (json-post-body body))) apikey)
+        response (app post)
+        reader (clojure.java.io/reader (:body response))
+        body (json/read reader)]
+
+    {:status (:status response)
+     :body   (walk/keywordize-keys body)}))
+
 (defn typepath
   [typename]
   (case (lower-case typename)
@@ -166,6 +177,23 @@
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (post* app path apikey post)]
                 status => 201
+                body => {:tags tags})))))
+
+      (facts "PUT /entities/:id/annotations/:type"
+        (let [id   (str (util/make-uuid))
+              post {:tags [{:tag "--tag--"}]}
+              tags [{:_id             (str (util/make-uuid))
+                     :_rev            "1"
+                     :entity          id
+                     :user            (str (util/make-uuid))
+                     :type            "Annotation"
+                     :annotation_type "tags"
+                     :annotation      {:tag "--tag--"}}]]
+          (against-background [(annotations/create-annotations ..auth.. anything [id] "tags" (:tags post)) => tags]
+            (fact "creates annotations"
+              (let [path (str "/api/v1/entities/" id "/annotations/tags")
+                    {:keys [status body]} (put* app path apikey post)]
+                status => 200
                 body => {:tags tags}))))))
 
     (facts "DELETE /entities/:id/annotations/:type/:annotation-id"

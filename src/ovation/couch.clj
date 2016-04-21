@@ -83,8 +83,8 @@
              "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:_id %)})
              "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:_id %)})
              "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
-             %
-             ))
+             %))
+
       docs)))
 
 (defn bulk-docs

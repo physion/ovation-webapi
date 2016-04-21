@@ -93,6 +93,11 @@
   []
   (tf/unparse (tf/formatters :date-hour-minute-second-ms) (t/now)))
 
+(defn iso-short-now
+  "Gets the short ISO dat time string for (t/now)"
+  []
+  (tf/unparse (tf/formatters :date-time) (t/now)))
+
 (defn filter-type
   [entity-type docs]
   (filter #(= entity-type (:type %)) docs))
