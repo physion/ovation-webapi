@@ -33,10 +33,13 @@
   (let [auth (auth/identity request)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
-(defn put-annotations*
-  [request annotations-key annotations]
+(defn put-annotation*
+  [request annotation-key annotation-id annotation]
   (let [auth (auth/identity request)]
-    (ok {(keyword annotations-key) (annotations/update-annotations auth (r/router request) annotations)})))
+    (when-not (= (str (:_id annotation)) (str annotation-id))
+      (bad-request! {:errors {:_id "Annotation _id does not match"}}))
+
+    (ok {(keyword annotation-key) (first (annotations/update-annotations auth (r/router request) [annotation]))})))
 
 
 (defn annotation
@@ -60,20 +63,21 @@
          (post-annotations* request id annotation-key ((keyword annotation-key) new-annotations)))
 
       ;(if (= annotation-kw :notes))
-      (PUT "/" request
-        :name (keyword (str "update-" (lower-case annotation-key)))
-        :return {(keyword annotation-key) [annotation-schema]}
-        :body [updates {(keyword annotation-key) [annotation-schema]}]
-        :summary (str "Updates a " annotation-description " annotation to entity :id. Currently annotation must be a Note")
-        (put-annotations* request annotation-key ((keyword annotation-key) updates)))
-
       (context "/:annotation-id" []
         :path-params [annotation-id :- s/Str]
         (DELETE "/" request
           :name (keyword (str "delete-" (lower-case annotation-key)))
           :return [s/Str]
           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-          (delete-annotations* request annotation-id annotation-key))))))
+          (delete-annotations* request annotation-id annotation-key))
+
+        (if (= annotation-kw :notes)
+          (PUT "/" request
+            :name (keyword (str "update-" (lower-case annotation-key)))
+            :return {:note annotation-schema}
+            :body [update {:note annotation-schema}]
+            :summary (str "Updates a " annotation-description " annotation to entity :id.")
+            (put-annotation* request "note" annotation-id (:note update))))))))
 
 
 
