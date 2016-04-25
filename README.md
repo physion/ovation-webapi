@@ -32,7 +32,7 @@ To start a web server for the application, run:
 
 Or from a REPL:
 
-    (use 'ring.util.serve)
+    (use 'ring.server.standalone)
     (require 'ovation.handler)
     (serve ovation.handler/app)
 
