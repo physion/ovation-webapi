@@ -53,7 +53,7 @@
 (defn update-annotations
   [auth rt annotations]
 
-  (when-not (every? (fn [doc] (= (auth/authenticated-user-id auth) (:user doc))) annotations)
+  (when-not (every? (fn [doc] (= (str (auth/authenticated-user-id auth)) (str (:user doc)))) annotations)
     (forbidden! "Update of an other user's annotations is forbidden"))
 
   (when-not (every? #{k/NOTES} (map :annotation_type annotations))
