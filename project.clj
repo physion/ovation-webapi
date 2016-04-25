@@ -66,7 +66,7 @@
                                               [ring-mock "0.1.5"]
                                               [midje "1.8.1"]
                                               [http-kit.fake "0.2.2"]
-                                              [ring-serve "0.1.2"]]
+                                              [ring-server "0.4.0"]]
                                :plugins      [[lein-midje "3.2"]
                                               [lein-ring "0.9.7"]]}
              :jmx             {:jvm-opts ["-Dcom.sun.management.jmxremote"

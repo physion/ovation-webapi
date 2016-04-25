@@ -5,7 +5,8 @@
             [ovation.core :as core]
             [ovation.links :as links]
             [ovation.constants :as k]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [ring.util.http-response :refer [unprocessable-entity! forbidden!]]))
 
 
 ;; READ
@@ -48,3 +49,26 @@
 (defn delete-annotations
   [auth annotation-ids routes]
   (core/delete-values auth annotation-ids routes))
+
+(defn update-annotations
+  [auth rt annotations]
+
+  (when-not (every? (fn [doc] (= (str (auth/authenticated-user-id auth)) (str (:user doc)))) annotations)
+    (forbidden! "Update of an other user's annotations is forbidden"))
+
+  (when-not (every? #{k/NOTES} (map :annotation_type annotations))
+    (unprocessable-entity! (str "Cannot update non-Note Annotations")))
+
+  (let [existing (util/into-id-map (core/get-values auth (map :_id annotations) :routes rt))
+        updates  (map (fn [update]
+                        (if-let [current (get existing (:_id update))]
+                          (assoc current :annotation (:annotation update))
+                          update)) annotations)
+        time     (util/iso-short-now)
+        edited   (map #(assoc % :edited_at time) updates)]
+
+    (core/update-values auth rt edited)))
+
+
+
+

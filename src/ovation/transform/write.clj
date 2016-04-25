@@ -45,7 +45,7 @@
 (defn doc-to-couch
   [owner-id collaboration-roots doc]
   (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
-    (let [time (f/unparse (f/formatters :date-time) (t/now))
+    (let [time (util/iso-short-now)
           roots (or collaboration-roots (get-in doc [:links :_collaboration_roots] []))]
       (-> doc
         ensure-id

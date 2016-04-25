@@ -78,16 +78,26 @@
                      routes)]
       entities)))
 
-(defn create-values
-  "POSTs value(s) direct to Couch"
-  [auth routes values]
-
+(defn- write-values
+  [auth routes values op]
   (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
   (let [db (couch/db auth)
-        docs (map (auth/check! auth ::auth/create) values)]
+        docs (map (auth/check! auth op) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
+
+(defn create-values
+  "POSTs value(s) direct to Couch"
+  [auth routes values]
+
+  (write-values auth routes values ::auth/create))
+
+(defn update-values
+  "PUTs value(s) direct to Couch"
+  [auth routes values]
+
+  (write-values auth routes values ::auth/update))
 
 (defn- merge-updates
   [updates & {:keys [update-collaboration-roots]}]

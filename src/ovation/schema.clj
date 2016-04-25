@@ -38,7 +38,8 @@
 (s/defschema NoteRecord {:text      s/Str
                          :timestamp s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type (s/eq k/NOTES)
-                                                  :annotation      NoteRecord}))
+                                                  :annotation      NoteRecord
+                                                  (s/optional-key :edited_at) s/Str}))
 
 (s/defschema TimelineEventRecord {:name                 s/Str
                                   :notes                s/Str
