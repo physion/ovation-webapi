@@ -36,12 +36,14 @@
 
 ;;; --- Routes --- ;;;
 (defapi app
-  {:swagger {:data {:info {
+  {:swagger {:ui "/"
+             :spec "/swagger.json"
+             :data {:info {
                            :version        "2.0.0"
                            :title          "Ovation"
-                           :description    "Ovation Web API"
+                           :description    "Ovation REST API. Read an introduction <a href=\"https://github.com/physion/ovation-webapi\">here</a>."
                            :contact        {:name "Ovation"
-                                            :url  "https://ovation.io"}
+                                            :url  "https://www.ovation.io"}
                            :termsOfService "https://services.ovation.io/terms_of_service"}
                     :tags [{:name "entities" :description "Generic entity operations"}
                            {:name "activities" :description "Describe relationships between inputs and outputs of a procedure"}
