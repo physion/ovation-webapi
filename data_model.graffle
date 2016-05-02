@@ -46,14 +46,14 @@
 	<key>Creator</key>
 	<string>Barry Wark</string>
 	<key>DisplayScale</key>
-	<string>1 0/72 in = 1 0/72 in</string>
+	<string>1 0/72 in = 1.0000 in</string>
 	<key>GraphDocumentVersion</key>
 	<integer>8</integer>
 	<key>GraphicsList</key>
 	<array>
 		<dict>
 			<key>Bounds</key>
-			<string>{{485.57282686233521, 46}, {42, 22}}</string>
+			<string>{{486.07282686233521, 46}, {41, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -106,14 +106,14 @@
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs18 \cf0 children}</string>
+\f0\fs18 \cf0 parents}</string>
 			</dict>
 			<key>Wrap</key>
 			<string>NO</string>
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{489.16019630432129, 98}, {41, 22}}</string>
+			<string>{{488.66019630432129, 98}, {42, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -166,7 +166,7 @@
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\fs18 \cf0 parents}</string>
+\f0\fs18 \cf0 children}</string>
 			</dict>
 			<key>Wrap</key>
 			<string>NO</string>
@@ -811,7 +811,7 @@
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{212, 67.325555575676844}, {38, 22}}</string>
+			<string>{{212, 75.86775045451941}, {38, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -837,7 +837,7 @@
 				<key>ID</key>
 				<integer>65</integer>
 				<key>Position</key>
-				<real>0.82033044099807739</real>
+				<real>0.87409895658493042</real>
 				<key>RotationType</key>
 				<integer>0</integer>
 			</dict>
@@ -871,7 +871,7 @@
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{152.56275939941406, 35}, {41, 22}}</string>
+			<string>{{148.32576239109039, 35}, {41, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -897,7 +897,7 @@
 				<key>ID</key>
 				<integer>65</integer>
 				<key>Position</key>
-				<real>0.25217387080192566</real>
+				<real>0.22550418972969055</real>
 				<key>RotationType</key>
 				<integer>0</integer>
 			</dict>
@@ -1307,7 +1307,7 @@
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{258.5, 297.78293457627296}, {35, 22}}</string>
+			<string>{{258.5, 296.0880212187767}, {35, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -1333,7 +1333,7 @@
 				<key>ID</key>
 				<integer>52</integer>
 				<key>Position</key>
-				<real>0.10267405956983566</real>
+				<real>0.11209870874881744</real>
 				<key>RotationType</key>
 				<integer>0</integer>
 			</dict>
@@ -1367,7 +1367,7 @@
 		</dict>
 		<dict>
 			<key>Bounds</key>
-			<string>{{364, 266.44838635320082}, {46, 22}}</string>
+			<string>{{364, 268.99075165265674}, {46, 22}}</string>
 			<key>Class</key>
 			<string>ShapedGraphic</string>
 			<key>FitText</key>
@@ -1393,7 +1393,7 @@
 				<key>ID</key>
 				<integer>52</integer>
 				<key>Position</key>
-				<real>0.89413106441497803</real>
+				<real>0.87999409437179565</real>
 				<key>RotationType</key>
 				<integer>0</integer>
 			</dict>
@@ -2141,7 +2141,7 @@ description}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2016-04-26 21:40:08 +0000</string>
+	<string>2016-04-27 15:57:07 +0000</string>
 	<key>Modifier</key>
 	<string>Barry Wark</string>
 	<key>NotesVisible</key>
@@ -2222,7 +2222,7 @@ description}</string>
 			</dict>
 		</array>
 		<key>Frame</key>
-		<string>{{28, 132}, {710, 875}}</string>
+		<string>{{37, 0}, {1058, 1007}}</string>
 		<key>ListView</key>
 		<true/>
 		<key>OutlineWidth</key>
@@ -2236,15 +2236,15 @@ description}</string>
 		<key>SidebarWidth</key>
 		<integer>120</integer>
 		<key>VisibleRegion</key>
-		<string>{{0, 0}, {575, 733}}</string>
+		<string>{{-103.00000000000001, 0}, {782.2034246001715, 733.05088004241429}}</string>
 		<key>Zoom</key>
-		<real>1</real>
+		<real>1.1799999475479126</real>
 		<key>ZoomValues</key>
 		<array>
 			<array>
 				<string>Canvas 1</string>
-				<real>1</real>
-				<real>1</real>
+				<real>1.1799999475479126</real>
+				<real>0.0</real>
 			</array>
 		</array>
 	</dict>
