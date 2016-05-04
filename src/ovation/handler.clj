@@ -34,14 +34,19 @@
 (def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
 
+(def DESCRIPTION "<p>Ovation REST API.</p>
+                 <figure><img src=\"static/data_model.png\" alt=\"Ovation data model\"></figure>")
+
 ;;; --- Routes --- ;;;
 (defapi app
-  {:swagger {:data {:info {
+  {:swagger {:ui "/"
+             :spec "/swagger.json"
+             :data {:info {
                            :version        "2.0.0"
                            :title          "Ovation"
-                           :description    "Ovation Web API"
+                           :description    DESCRIPTION
                            :contact        {:name "Ovation"
-                                            :url  "https://ovation.io"}
+                                            :url  "https://www.ovation.io"}
                            :termsOfService "https://services.ovation.io/terms_of_service"}
                     :tags [{:name "entities" :description "Generic entity operations"}
                            {:name "activities" :description "Describe relationships between inputs and outputs of a procedure"}
@@ -328,3 +333,4 @@
             :return {:roles [TeamRole]}
             :summary "Gets all team Roles for the current Organization"
             (ok (teams/get-roles* request))))))))
+

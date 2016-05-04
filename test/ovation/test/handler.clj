@@ -20,7 +20,8 @@
             [ovation.prov :as prov]
             [ovation.config :as config]
             [ovation.route-helpers :as rh]
-            [buddy.sign.jws :as jws])
+            [buddy.sign.jws :as jws]
+            [ovation.constants :as c])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
@@ -82,6 +83,17 @@
 (defn post*
   [app path apikey body]
   (let [post (mock-req (-> (mock/request :post path)
+                         (mock/body (json-post-body body))) apikey)
+        response (app post)
+        reader (clojure.java.io/reader (:body response))
+        body (json/read reader)]
+
+    {:status (:status response)
+     :body   (walk/keywordize-keys body)}))
+
+(defn put*
+  [app path apikey body]
+  (let [post (mock-req (-> (mock/request :put path)
                          (mock/body (json-post-body body))) apikey)
         response (app post)
         reader (clojure.java.io/reader (:body response))
@@ -166,7 +178,26 @@
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (post* app path apikey post)]
                 status => 201
-                body => {:tags tags}))))))
+                body => {:tags tags})))))
+
+      (facts "PUT /entities/:id/annotations/:type"
+        (let [entity-id (util/make-uuid)
+              note-id   (util/make-uuid)
+              user-id   (util/make-uuid)
+              update    {:_id             (str note-id)
+                         :_rev            "1"
+                         :entity          (str entity-id)
+                         :user            (str user-id)
+                         :type            "Annotation"
+                         :annotation_type c/NOTES
+                         :annotation      {:text      "--note--"
+                                           :timestamp (util/iso-short-now)}}]
+          (against-background [(annotations/update-annotation ..auth.. anything (str note-id) (:annotation update)) => update]
+            (fact "updates annotation"
+              (let [path (str "/api/v1/entities/" entity-id "/annotations/notes/" note-id)
+                    {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
+                status => 200
+                body => {:note update}))))))
 
     (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
       (let [id            (str (util/make-uuid))

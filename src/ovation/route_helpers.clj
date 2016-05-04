@@ -33,6 +33,13 @@
   (let [auth (auth/identity request)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
+(defn put-annotation*
+  [request annotation-key annotation-id annotation]
+
+  (let [auth (auth/identity request)]
+    (ok {(keyword annotation-key) (annotations/update-annotation auth (r/router request) annotation-id annotation)})))
+
+
 (defn annotation
   "Creates an annotation type endpoint"
   [id annotation-description annotation-key record-schema annotation-schema]
@@ -53,13 +60,23 @@
          :summary (str "Adds a new " annotation-description " annotation to entity :id")
          (post-annotations* request id annotation-key ((keyword annotation-key) new-annotations)))
 
-       (context "/:annotation-id" []
-         :path-params [annotation-id :- s/Str]
-         (DELETE "/" request
-           :name (keyword (str "delete-" (lower-case annotation-key)))
-           :return [s/Str]
-           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-           (delete-annotations* request annotation-id annotation-key))))))
+      ;(if (= annotation-kw :notes))
+      (context "/:annotation-id" []
+        :path-params [annotation-id :- s/Str]
+        (DELETE "/" request
+          :name (keyword (str "delete-" (lower-case annotation-key)))
+          :return [s/Str]
+          :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
+          (delete-annotations* request annotation-id annotation-key))
+
+        (if (= annotation-kw :notes)
+          (PUT "/" request
+            :name (keyword (str "update-" (lower-case annotation-key)))
+            :return {:note annotation-schema}
+            :body [update {:note record-schema}]
+            :summary (str "Updates a " annotation-description " annotation to entity :id.")
+            (put-annotation* request "note" annotation-id (:note update))))))))
+
 
 
 (defn- typepath

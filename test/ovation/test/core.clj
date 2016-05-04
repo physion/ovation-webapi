@@ -44,6 +44,17 @@
             (couch/all-docs ..auth.. ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..auth.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
+            (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
+    (facts "update-values"
+      (against-background [(couch/db ..auth..) => ..db..
+                           (auth/authenticated-user-id ..auth..) => ..user..]
+        (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\" or \"Relation\""
+          (core/update-values ..auth.. ..rt.. [{:type "Project"}]) => (throws Exception))
+        (fact "bulk-updates values"
+          (core/update-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
+          (provided
+            (auth/check! ..auth.. ::auth/update) => identity
+            (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))))
 
 
