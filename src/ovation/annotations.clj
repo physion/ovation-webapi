@@ -50,24 +50,23 @@
   [auth annotation-ids routes]
   (core/delete-values auth annotation-ids routes))
 
-(defn update-annotations
-  [auth rt annotations]
+(defn update-annotation
+  [auth rt id annotation]
 
-  (when-not (every? (fn [doc] (= (str (auth/authenticated-user-id auth)) (str (:user doc)))) annotations)
-    (forbidden! "Update of an other user's annotations is forbidden"))
+  (let [existing (first (core/get-values auth [id] :routes rt))]
 
-  (when-not (every? #{k/NOTES} (map :annotation_type annotations))
-    (unprocessable-entity! (str "Cannot update non-Note Annotations")))
+    (when-not (= (str (auth/authenticated-user-id auth)) (str (:user existing)))
+      (forbidden! "Update of an other user's annotations is forbidden"))
 
-  (let [existing (util/into-id-map (core/get-values auth (map :_id annotations) :routes rt))
-        updates  (map (fn [update]
-                        (if-let [current (get existing (:_id update))]
-                          (assoc current :annotation (:annotation update))
-                          update)) annotations)
-        time     (util/iso-short-now)
-        edited   (map #(assoc % :edited_at time) updates)]
+    (when-not #{k/NOTES} (:annotation_type existing)
+      (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (core/update-values auth rt edited)))
+    (let [time     (util/iso-short-now)
+          update  (-> existing
+                    (assoc :annotation annotation)
+                    (assoc :edited_at time))]
+
+      (first (core/update-values auth rt [update])))))
 
 
 

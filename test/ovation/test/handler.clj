@@ -192,10 +192,10 @@
                          :annotation_type c/NOTES
                          :annotation      {:text      "--note--"
                                            :timestamp (util/iso-short-now)}}]
-          (against-background [(annotations/update-annotations ..auth.. anything anything) => [update]]
+          (against-background [(annotations/update-annotation ..auth.. anything (str note-id) (:annotation update)) => update]
             (fact "updates annotation"
               (let [path (str "/api/v1/entities/" entity-id "/annotations/notes/" note-id)
-                    {:keys [status body]} (put* app path apikey {:note update})]
+                    {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
                 status => 200
                 body => {:note update}))))))
 

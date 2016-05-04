@@ -84,7 +84,7 @@
                                                                      :links {:_collaboration_roots [..root2..]}}]
           (core/create-values ..auth.. ..rt.. expected) => ..result..))))
 
-  (facts "About update-annotations"
+  (facts "About update-annotation"
     (facts "authorized user"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
 
@@ -94,16 +94,8 @@
                          :user            ..user..
                          :annotation_type c/NOTES
                          :type            c/ANNOTATION-TYPE
-                         :annotation      {:note ..new..}}
-
-                note    {:_id             ..uuid..
-                         :entity          ..entity..
-                         :user            ..user..
-                         :annotation_type c/NOTES
-                         :type            c/ANNOTATION-TYPE
-                         :annotation      {:note ..new..}
-                         :foo             :bar}]
-            (a/update-annotations ..auth.. ..rt.. [note]) => ..result..
+                         :annotation      {:note ..old..}}]
+            (a/update-annotation ..auth.. ..rt.. ..uuid.. {:note ..new..}) => ..result..
             (provided
               (util/iso-short-now) => ..time..
               (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
@@ -113,7 +105,7 @@
                                                     :annotation_type c/NOTES
                                                     :type            c/ANNOTATION-TYPE
                                                     :annotation      {:note ..new..}
-                                                    :edited_at       ..time..}]) => ..result..)))
+                                                    :edited_at       ..time..}]) => [..result..])))
 
 
         (fact "raises 422 for non-note annotation"
@@ -123,7 +115,9 @@
                      :annotation_type c/TAGS
                      :type            c/ANNOTATION-TYPE
                      :annotation      {:tag ..tag..}}]
-            (a/update-annotations ..auth.. ..rt.. [tag]) => (throws ExceptionInfo)))))
+            (a/update-annotation ..auth.. ..rt.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
+            (provided
+              (core/get-values ..auth.. [..uuid..] :routes ..rt..) => tag)))))
 
     (facts "unauthorized user"
       (against-background [(auth/authenticated-user-id ..auth..) => ..other..]
@@ -134,7 +128,9 @@
                      :annotation_type c/TAGS
                      :type            c/ANNOTATION-TYPE
                      :annotation      {:tag ..tag..}}]
-            (a/update-annotations ..auth.. ..rt.. [tag]) => (throws ExceptionInfo))))))
+            (a/update-annotation ..auth.. ..rt.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
+            (provided
+              (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [tag]))))))
 
   (facts "About `delete-annotations`"
     (fact "calls `delete-values"
