@@ -35,11 +35,9 @@
 
 (defn put-annotation*
   [request annotation-key annotation-id annotation]
-  (let [auth (auth/identity request)]
-    (when-not (= (str (:_id annotation)) (str annotation-id))
-      (bad-request! {:errors {:_id "Annotation _id does not match"}}))
 
-    (ok {(keyword annotation-key) (first (annotations/update-annotations auth (r/router request) [annotation]))})))
+  (let [auth (auth/identity request)]
+    (ok {(keyword annotation-key) (annotations/update-annotation auth (r/router request) annotation-id annotation)})))
 
 
 (defn annotation
@@ -75,7 +73,7 @@
           (PUT "/" request
             :name (keyword (str "update-" (lower-case annotation-key)))
             :return {:note annotation-schema}
-            :body [update {:note annotation-schema}]
+            :body [update {:note record-schema}]
             :summary (str "Updates a " annotation-description " annotation to entity :id.")
             (put-annotation* request "note" annotation-id (:note update))))))))
 
