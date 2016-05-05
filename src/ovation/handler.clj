@@ -83,7 +83,8 @@
                wrap-newrelic-transaction]
 
 
-    static-resources
+    (undocumented
+      static-resources)
 
     (context "/api" []
       (context "/v1" []
