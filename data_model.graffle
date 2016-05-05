@@ -99,18 +99,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -171,18 +159,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -287,18 +263,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -359,18 +323,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -472,18 +424,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -544,18 +484,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -661,18 +589,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -778,18 +694,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -850,18 +754,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -965,18 +857,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1037,18 +917,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1154,18 +1022,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1226,18 +1082,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1344,18 +1188,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1416,18 +1248,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1533,18 +1353,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1605,18 +1413,6 @@
 			<string>Rectangle</string>
 			<key>Style</key>
 			<dict>
-				<key>fill</key>
-				<dict>
-					<key>Color</key>
-					<dict>
-						<key>b</key>
-						<string>0.964706</string>
-						<key>g</key>
-						<string>0.964706</string>
-						<key>r</key>
-						<string>0.964706</string>
-					</dict>
-				</dict>
 				<key>shadow</key>
 				<dict>
 					<key>Draws</key>
@@ -1704,15 +1500,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -1749,15 +1536,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -1824,15 +1602,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -1869,15 +1638,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -1944,15 +1704,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2000,15 +1751,6 @@
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2078,15 +1820,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2123,15 +1856,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2198,15 +1922,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2243,15 +1958,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2318,15 +2024,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2363,15 +2060,6 @@ version}</string>
 					<dict>
 						<key>fill</key>
 						<dict>
-							<key>Color</key>
-							<dict>
-								<key>b</key>
-								<string>0.964706</string>
-								<key>g</key>
-								<string>0.964706</string>
-								<key>r</key>
-								<string>0.964706</string>
-							</dict>
 							<key>GradientCenter</key>
 							<string>{-0.29411799999999999, -0.264706}</string>
 						</dict>
@@ -2465,7 +2153,7 @@ description}</string>
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2016-05-05 02:24:01 +0000</string>
+	<string>2016-04-27 15:57:07 +0000</string>
 	<key>Modifier</key>
 	<string>Barry Wark</string>
 	<key>NotesVisible</key>
