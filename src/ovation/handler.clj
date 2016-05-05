@@ -1,6 +1,7 @@
 (ns ovation.handler
   (:require [compojure.api.sweet :refer :all]
             [compojure.api.routes :refer [path-for*]]
+            [compojure.route :as route]
             [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.logger :refer [wrap-with-logger]]
@@ -35,9 +36,12 @@
              :handler authenticated?}])
 
 (def DESCRIPTION "<p>Ovation REST API.</p>
-                 <figure><img src=\"static/data_model.png\" alt=\"Ovation data model\"></figure>")
+                 <figure><img src=\"/public/data_model.png\" alt=\"Ovation data model\"></figure>")
 
 ;;; --- Routes --- ;;;
+(defroutes static-resources
+  (route/resources "/public"))
+
 (defapi app
   {:swagger {:ui "/"
              :spec "/swagger.json"
@@ -49,7 +53,7 @@
                                             :url  "https://www.ovation.io"}
                            :termsOfService "https://services.ovation.io/terms_of_service"}
                     :tags [{:name "entities" :description "Generic entity operations"}
-                           {:name "activities" :description "Describe relationships between inputs and outputs of a procedure"}
+                           {:name "activities" :description "Describe inputs and outputs of a procedure"}
                            {:name "projects" :description "Manage Projects"}
                            {:name "folders" :description "Mange Folders"}
                            {:name "files" :description "Manage Files"}
@@ -79,6 +83,8 @@
                wrap-newrelic-transaction]
 
 
+    (undocumented
+      static-resources)
 
     (context "/api" []
       (context "/v1" []

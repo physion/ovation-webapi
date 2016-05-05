@@ -21,6 +21,18 @@
 		<integer>2</integer>
 		<key>Style</key>
 		<dict>
+			<key>fill</key>
+			<dict>
+				<key>Color</key>
+				<dict>
+					<key>b</key>
+					<string>0.964706</string>
+					<key>g</key>
+					<string>0.964706</string>
+					<key>r</key>
+					<string>0.964706</string>
+				</dict>
+			</dict>
 			<key>shadow</key>
 			<dict>
 				<key>Draws</key>
