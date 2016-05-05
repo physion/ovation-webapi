@@ -53,7 +53,7 @@
                                             :url  "https://www.ovation.io"}
                            :termsOfService "https://services.ovation.io/terms_of_service"}
                     :tags [{:name "entities" :description "Generic entity operations"}
-                           {:name "activities" :description "Describe relationships between inputs and outputs of a procedure"}
+                           {:name "activities" :description "Describe inputs and outputs of a procedure"}
                            {:name "projects" :description "Manage Projects"}
                            {:name "folders" :description "Mange Folders"}
                            {:name "files" :description "Manage Files"}
