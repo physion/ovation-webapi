@@ -25,7 +25,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.27.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.28.0"]
                  [yleisradio/new-reliquary "1.0.0"]
 
 
@@ -37,6 +37,8 @@
                  ;; Other
                  [org.clojure/data.json "0.2.6"]]
 
+
+  :java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
