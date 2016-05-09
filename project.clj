@@ -38,8 +38,6 @@
                  [org.clojure/data.json "0.2.6"]]
 
 
-  :java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
-
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation.handler/app}
@@ -55,17 +53,19 @@
                     :environments [{:name "webapi-development"
                                     :env  {"OVATION_IO_HOST_URI" "https://services-staging.ovation.io"}}]}}
 
-  :profiles {:dev {:dependencies        [[javax.servlet/servlet-api "2.5"
-                                              [ring-mock "0.1.5"]
-                                              [midje "1.8.1"]
-                                              [http-kit.fake "0.2.2"]
-                                              [ring-server "0.4.0"]]]
-                               :plugins [[lein-midje "3.2"
-                                              [lein-ring "0.9.7"]]]}
-             :jmx {:jvm-opts ["-Dcom.sun.management.jmxremote"
-                                          "-Dcom.sun.management.jmxremote.ssl=false"
-                                          "-Dcom.sun.management.jmxremote.authenticate=false"
-                                          "-Dcom.sun.management.jmxremote.port=43210"]}
-             :ci  {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                         :secret-key ~(System/getenv "AWS_SECRET_KEY")}}})
+  :profiles {:dev        {:dependencies [[javax.servlet/servlet-api "2.5"
+                                          [ring-mock "0.1.5"]
+                                          [midje "1.8.1"]
+                                          [http-kit.fake "0.2.2"]
+                                          [ring-server "0.4.0"]]]
+                          :plugins      [[lein-midje "3.2"
+                                          [lein-ring "0.9.7"]]]}
+             :production {:java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
+                          :jvm-opts    ["-Dnewrelic.config.file=/app/newrelic/newrelic.yml"]}
+             :jmx        {:jvm-opts ["-Dcom.sun.management.jmxremote"
+                                     "-Dcom.sun.management.jmxremote.ssl=false"
+                                     "-Dcom.sun.management.jmxremote.authenticate=false"
+                                     "-Dcom.sun.management.jmxremote.port=43210"]}
+             :ci         {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
+                                :secret-key ~(System/getenv "AWS_SECRET_KEY")}}})
 
