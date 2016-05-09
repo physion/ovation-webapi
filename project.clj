@@ -38,6 +38,8 @@
                  [org.clojure/data.json "0.2.6"]]
 
 
+  :java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
+
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation.handler/app}
