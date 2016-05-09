@@ -58,8 +58,8 @@
                                           [midje "1.8.1"]
                                           [http-kit.fake "0.2.2"]
                                           [ring-server "0.4.0"]]]
-                          :plugins      [[lein-midje "3.2"
-                                          [lein-ring "0.9.7"]]]}
+                          :plugins      [[lein-midje "3.2"]
+                                         [lein-ring "0.9.7"]]}
              :production {:java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
                           :jvm-opts    ["-Dnewrelic.config.file=/app/newrelic/newrelic.yml"]}
              :jmx        {:jvm-opts ["-Dcom.sun.management.jmxremote"
