@@ -38,8 +38,6 @@
                  [org.clojure/data.json "0.2.6"]]
 
 
-  :java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
-
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
   :ring {:handler ovation.handler/app}
@@ -48,35 +46,28 @@
 
   :resource-paths ["resources"]
 
-  ;; For New Relic, we need to bundle newrelic.yml and newrelic.jar
+  ;; For EB .ebextensions
   :war-resources-path "war-resources"
 
   :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
                     :environments [{:name "webapi-development"
-                                    :env  {"OVATION_IO_HOST_URI" "https://dev.ovation.io"}}
+                                    :env  {"OVATION_IO_HOST_URI" "https://services-staging.ovation.io"}}]}}
 
-                                   {:name "webapi-production"
-                                    :env  {"OVATION_IO_HOST_URI" "https://services.ovation.io"}}
+  :profiles {:dev      {:dependencies [[ring-mock "0.1.5"]
+                                       [midje "1.8.3"]
+                                       [http-kit.fake "0.2.2"]
+                                       [ring-server "0.4.0"]]
+                        :plugins      [[lein-midje "3.2"]
+                                       [lein-ring "0.9.7"]]}
 
-                                   {:name "webapi-clinical"
-                                    :env {"OVATION_IO_HOST_URI" "https://clinical.ovation.io"}}]}}
+             :newrelic {:java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
+                        :jvm-opts    ["-Dnewrelic.config.file=/app/newrelic/newrelic.yml"]}
 
-  :profiles {
-             :ovation-web-api {:ring         {:handler ovation.handler/app}
-                               :reload-paths ["src"]}
-             :dev             {:dependencies [[javax.servlet/servlet-api "2.5"]
-                                              [ring-mock "0.1.5"]
-                                              [midje "1.8.1"]
-                                              [http-kit.fake "0.2.2"]
-                                              [ring-server "0.4.0"]]
-                               :plugins      [[lein-midje "3.2"]
-                                              [lein-ring "0.9.7"]]}
-             :jmx             {:jvm-opts ["-Dcom.sun.management.jmxremote"
-                                          "-Dcom.sun.management.jmxremote.ssl=false"
-                                          "-Dcom.sun.management.jmxremote.authenticate=false"
-                                          "-Dcom.sun.management.jmxremote.port=43210"]}
-             :ci              {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                                     :secret-key ~(System/getenv "AWS_SECRET_KEY")}}}
+             :jmx      {:jvm-opts ["-Dcom.sun.management.jmxremote"
+                                   "-Dcom.sun.management.jmxremote.ssl=false"
+                                   "-Dcom.sun.management.jmxremote.authenticate=false"
+                                   "-Dcom.sun.management.jmxremote.port=43210"]}
 
-  :aliases {"server" ["with-profile" "ovation-web-api" "ring" "server"]})
+             :ci       {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
+                              :secret-key ~(System/getenv "AWS_SECRET_KEY")}}})
 
