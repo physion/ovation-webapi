@@ -33,8 +33,7 @@
 
 (ovation.logging/setup!)
 
-(def rules [{:pattern "/services/token/refresh"
-             :handler authenticated?}
+(def rules [
             {:pattern #"^/api.*"
              :handler authenticated?}])
 
@@ -65,7 +64,8 @@
                            {:name "annotations" :description "Per-user annotations"}
                            {:name "links" :description "Relationships between entities"}
                            {:name "provenance" :description "Provenance graph"}
-                           {:name "teams" :description "Manage collaborations"}]}}}
+                           {:name "teams" :description "Manage collaborations"}
+                           {:name "tokens" :description "Authentication"}]}}}
 
 
   (middleware [[wrap-cors
@@ -92,13 +92,14 @@
 
     (context "/services" []
       (context "/token" []
-        (POST "/"
+        :tags ["tokens"]
+        (POST "/" request
           :name :get-token
           :return {:token s/Str}
           :summary "Gets an authorization token"
           :body [body {:email s/Str
                        :password s/Str}]
-          (ok (tokens/get-token (:email body) (:password body))))
+          (tokens/get-token (:email body) (:password body)))
 
         (GET "/refresh" request
           :name :refresh-token
