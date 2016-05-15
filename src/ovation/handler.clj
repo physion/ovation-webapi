@@ -19,12 +19,13 @@
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [ovation.audit]
+            [ovation.tokens :as tokens]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
             [ovation.prov :as prov]
-            [buddy.auth.backends.token :refer (jws-backend)]
-            [buddy.auth.middleware :refer (wrap-authentication)]
+            [buddy.auth.backends.token :refer [jws-backend]]
+            [buddy.auth.middleware :refer [wrap-authentication]]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger.timbre :as logger.timbre]))
@@ -32,7 +33,9 @@
 
 (ovation.logging/setup!)
 
-(def rules [{:pattern #"^/api.*"
+(def rules [{:pattern #"^/services/token/refresh$"
+             :handler authenticated?}
+            {:pattern #"^/api.*"
              :handler authenticated?}])
 
 (def DESCRIPTION "<p>Ovation REST API.</p>
@@ -62,7 +65,9 @@
                            {:name "annotations" :description "Per-user annotations"}
                            {:name "links" :description "Relationships between entities"}
                            {:name "provenance" :description "Provenance graph"}
-                           {:name "teams" :description "Manage collaborations"}]}}}
+                           {:name "teams" :description "Manage collaborations"}
+                           {:name "auth" :description "Authentication"}]}}}
+
 
   (middleware [[wrap-cors
                 :access-control-allow-origin #".+"        ;; Allow from any origin
@@ -85,6 +90,23 @@
 
     (undocumented
       static-resources)
+
+    (context "/services" []
+      (context "/token" []
+        :tags ["auth"]
+        (POST "/" request
+          :name :get-token
+          :return {:token s/Str}
+          :summary "Gets an authorization token"
+          :body [body {:email s/Str
+                       :password s/Str}]
+          (tokens/get-token (:email body) (:password body)))
+
+        (GET "/refresh" request
+          :name :refresh-token
+          :return {:token s/Str}
+          :summary "Gets a refreshed authorization token"
+          (tokens/refresh-token request))))
 
     (context "/api" []
       (context "/v1" []
