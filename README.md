@@ -13,6 +13,35 @@ You will need
 
 [1]: https://github.com/technomancy/leiningen
 
+## Usage
+
+### Authentication
+Calls to the Ovation API are authenticated by Bearer token:
+
+ ```
+ Authorization: Bearer <api key>
+ ```
+
+You can get your API key from the `services.ovation.io/api/v1/sessions` service by POSTing your Ovation username and password:
+
+```
+POST /api/v1/sessions HTTP/1.1
+Content-Type: application/json; charset=utf-8
+Host: services.ovation.io
+
+{"email": <email>, "password": <password>}
+```
+
+The response contains your API authorization token:
+```
+HTTP/1.1 200 OK
+Cache-Control: max-age=0, private, must-revalidate
+Content-Type: application/json; charset=utf-8
+
+{"token": api_key}
+```
+
+
 ## Testing
 
 To test from the command line, run:
