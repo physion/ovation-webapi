@@ -188,22 +188,25 @@
   (dissoc TeamRole :links))
 
 (s/defschema TeamMembership
-  {:id                  (s/either s/Str s/Int)
-   :team_id             (s/either s/Str s/Int)
-   :type                s/Str
-   :added               s/Str
-   :role                TeamRole
-   :email               s/Str
-   :user_id             s/Int
-   :membership_role_ids [s/Int]
-   :links           {:self s/Keyword}})
+  {:id                          (s/either s/Str s/Int)
+   :team_id                     (s/either s/Str s/Int)
+   :type                        s/Str
+   :added                       s/Str
+   :role                        TeamRole
+   (s/optional-key :email)      s/Str
+   (s/optional-key :first_name) s/Str
+   (s/optional-key :last_name)  s/Str
+   :user_id                     s/Int
+   :membership_role_ids         [s/Int]
+   :links                       {:self s/Keyword}})
 
 
 (s/defschema PendingTeamMembership
   {:id        (s/either s/Str s/Int)
    :role      TeamRole
    :added     s/Str
-   :email     s/Str
+   (s/optional-key :email)      s/Str
+   (s/optional-key :name) s/Str
    :type      s/Str})
 
 
