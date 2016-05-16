@@ -25,10 +25,10 @@
     (if api-key
       (try+
         (handler request)
-        (catch Object e
+        (catch Exception e
           (doto (RaygunClient. api-key)
             (.SetUser (auth/authenticated-user-id (auth/identity request)))
-            (.Send nil [] (raygun-params request)))
+            (.Send (ex-info "[REDACTED]" {:stack-trace (:stack-trace  &throw-context)}) [] (raygun-params request)))
           (throw+ e)))
 
       (handler request))))
