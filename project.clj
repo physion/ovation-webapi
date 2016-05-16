@@ -13,7 +13,6 @@
                  [metosin/compojure-api "1.0.2"]
                  [metosin/ring-swagger-ui "2.1.4-0"]
                  [ring-cors "0.1.7"]
-                 [thegreatape/ring-raygun "0.1.0"]
                  [ring-logger "0.7.6"]
                  [buddy/buddy-auth "0.12.0"]
                  [ring/ring-jetty-adapter "1.4.0"]

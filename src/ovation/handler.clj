@@ -5,7 +5,7 @@
             [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.logger :refer [wrap-with-logger]]
-            [ring.middleware.raygun :refer [wrap-raygun-handler]]
+            [ovation.middleware.raygun :refer [wrap-raygun-handler]]
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
