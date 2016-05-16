@@ -75,7 +75,7 @@
                     (http-predicates/ok? response) (util/from-json (:body response))
 
                     (http-predicates/not-found? response) (create-team request team-id)
-                    :else (throw! response))]
+                    :else (throw! (dissoc response :headers)))]
 
       (let [memberships (get-in team [:team :memberships])
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route rt :put-membership {:id team-id :mid (:id %)})) memberships)]
@@ -103,7 +103,7 @@
 
     (let [response @(httpkit.client/put url (assoc opts :body (util/to-json body)))]
       (when (not (http-predicates/ok? response))
-        (throw! response))
+        (throw! (dissoc response :headers)))
 
       (membership-result team-uuid rt response))))
 
@@ -126,7 +126,7 @@
 
     (let [response @(httpkit.client/post url (assoc opts :body (util/to-json body)))]
       (when (not (http-predicates/created? response))
-        (throw! response))
+        (throw! (dissoc response :headers)))
 
       (membership-result team-uuid rt response))))
 

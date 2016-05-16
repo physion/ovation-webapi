@@ -1,8 +1,5 @@
 (ns ovation.middleware.raygun
-  (:require [slingshot.slingshot :refer [try+ throw+]]
-            [ovation.auth :as auth])
-  (:import [com.mindscapehq.raygun4java.core RaygunClient]
-           (clojure.lang ExceptionInfo)))
+  (:require [slingshot.slingshot :refer [try+ throw+]]))
 
 ;; Forked from the https://github.com/thegreatape/ring-raygun project under the EPL
 
@@ -26,9 +23,8 @@
       (try+
         (handler request)
         (catch Exception e
-          (doto (RaygunClient. api-key)
-            (.SetUser (auth/authenticated-user-id (auth/identity request)))
-            (.Send (ex-info "[REDACTED]" {:stack-trace (:stack-trace  &throw-context)}) [] (raygun-params request)))
+          (.Send (com.mindscapehq.raygun4java.core.RaygunClient. api-key) (ex-info "[REDACTED]" {}) [] (raygun-params request))
+
           (throw+ e)))
 
       (handler request))))
