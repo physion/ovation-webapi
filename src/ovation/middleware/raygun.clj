@@ -1,5 +1,6 @@
 (ns ovation.middleware.raygun
-  (:require [slingshot.slingshot :refer [try+ throw+]])
+  (:require [slingshot.slingshot :refer [try+ throw+]]
+            [ovation.auth :as auth])
   (:import [com.mindscapehq.raygun4java.core RaygunClient]
            (clojure.lang ExceptionInfo)))
 
@@ -24,10 +25,10 @@
     (if api-key
       (try+
         (handler request)
-        (catch [:type :ring.util.http-response/response] e
-          (let [ex (-> e
-                     (assoc-in [:response :opts :body] "REDACTED")
-                     (assoc-in [:response :body] "REDACTED"))
-                (.Send (RaygunClient. api-key) ex [] (raygun-params request))
-                (throw+ e)])))
+        (catch Object e
+          (doto (RaygunClient. api-key)
+            (.SetUser (auth/authenticated-user-id (auth/identity request)))
+            (.Send nil [] (raygun-params request)))
+          (throw+ e)))
+
       (handler request))))

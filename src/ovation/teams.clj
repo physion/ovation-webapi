@@ -52,7 +52,7 @@
     (util/from-json (:body response))))
 
 
-(defn -membership-result
+(defn- membership-result
   [team-uuid rt response]
   (let [result (util/from-json (:body response))
         membership-id (or (get-in result [:pending_membership :id])
@@ -105,7 +105,7 @@
       (when (not (http-predicates/ok? response))
         (throw! response))
 
-      (-membership-result team-uuid rt response))))
+      (membership-result team-uuid rt response))))
 
 
 (defn post-membership*
@@ -128,7 +128,7 @@
       (when (not (http-predicates/created? response))
         (throw! response))
 
-      (-membership-result team-uuid rt response))))
+      (membership-result team-uuid rt response))))
 
 
 (defn delete-membership*

@@ -27,6 +27,9 @@
                  [com.newrelic.agent.java/newrelic-agent "3.28.0"]
                  [yleisradio/new-reliquary "1.0.0"]
 
+                 ;; Raygun
+                 [com.mindscapehq/core "1.6.0"]
+
 
                  ;; Logging
                  [com.taoensso/timbre "4.3.1"]

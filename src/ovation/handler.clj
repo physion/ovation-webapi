@@ -338,7 +338,8 @@
                 :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
                 :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
                 :body [body {:membership NewTeamMembership}]
-                (created (teams/post-membership* request id (:membership body))))
+                (let [membership (teams/post-membership* request id (:membership body))]
+                  (created membership)))
               (context "/:mid" []
                 :path-params [mid :- s/Str]
 
