@@ -22,12 +22,12 @@ Calls to the Ovation API are authenticated by Bearer token:
  Authorization: Bearer <api key>
  ```
 
-You can get your API key from the `services.ovation.io/api/v1/sessions` service by POSTing your Ovation username and password:
+You can get your API key from the `api.ovation.io/services/token` service by POSTing your Ovation username and password:
 
 ```
-POST /api/v1/sessions HTTP/1.1
+POST /services/token HTTP/1.1
 Content-Type: application/json; charset=utf-8
-Host: services.ovation.io
+Host: api.ovation.io
 
 {"email": <email>, "password": <password>}
 ```
