@@ -313,11 +313,11 @@
                     result (prov/local auth rt [id])]
                 (ok {:provenance result})))))
 
-        (context "/users" []
-          :tags ["users"]
-          (get-resources "User")
-          (context "/:id" id
-            (get-resource "User" id)))
+        ;(context "/users" []
+        ;  :tags ["users"]
+        ;  (get-resources "User")
+        ;  (context "/:id" id
+        ;    (get-resource "User" id)))
 
         (context "/teams" []
           :tags ["teams"]
