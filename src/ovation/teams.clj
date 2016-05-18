@@ -99,8 +99,7 @@
         opts (request-opts (auth-token request))
         url (make-url url-path membership-id)
         role-id (get-in membership [:role :id])
-        body-key (if pending? :pending_membership :membership)
-        body {body-key {:role_id role-id}}]
+        body {:membership {:role_id role-id}}]
     (when (or (nil? role-id)
             (nil? membership-id))
       (unprocessable-entity!))
