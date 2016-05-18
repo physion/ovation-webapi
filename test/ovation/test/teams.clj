@@ -5,8 +5,8 @@
             [ovation.routes :as routes]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util :refer [<??]]
-            [ovation.config :as config]
-            )
+            [ovation.config :as config])
+
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "About Teams API"
@@ -37,13 +37,13 @@
                                                       :type      "PendingMembership"
                                                       :role_name "Administrator'"
                                                       :email     "newmember@example.com"
-                                                      },
+                                                      ,}
                                                      {
                                                       :id        "2323"
                                                       :type      "PendingMembership"
                                                       :role_name "Member"
-                                                      :email     "newmember@example.com"
-                                                      }]
+                                                      :email     "newmember@example.com"}]
+
                                :memberships         [{:id      "3"
                                                       :team_id 1
                                                       :type    "Membership"
@@ -61,13 +61,13 @@
                                                     :role_name "Administrator'"
                                                     :email     "newmember@example.com"
                                                     :type      "PendingMembership"
-                                                    },
+                                                    ,}
                                                    {
                                                     :id        "2323"
                                                     :role_name "Member"
                                                     :email     "newmember@example.com"
-                                                    :type      "PendingMembership"
-                                                    }]
+                                                    :type      "PendingMembership"}]
+
                              :memberships         [{:id                  "3"
                                                     :team_id             1
                                                     :added               "2015-02-01"
@@ -159,6 +159,13 @@
                          (routes/router ..request..) => ..rt..]
       (fact "throws 422 if mid is not specified"
         (teams/put-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
+
+  (facts "put-pending-membership*"
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
+                         ..request.. =contains=> {:identity ..auth..}
+                         (routes/router ..request..) => ..rt..]
+      (fact "throws 422 if mid is not specified"
+        (teams/put-pending-membership* ..request.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..

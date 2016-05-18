@@ -330,8 +330,8 @@
               (POST "/" request
                 :name :post-memberships
                 :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
-                :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
-                :body [body {:membership NewTeamMembership}]
+                :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
+                :body [body {:membership NewTeamMembershipRole}]
                 (let [membership (teams/post-membership* request id (:membership body))]
                   (created membership)))
               (context "/:mid" []
@@ -339,13 +339,31 @@
 
                 (PUT "/" request
                   :name :put-membership
+                  :summary "Updates an existing membership by setting its role."
                   :return {:membership TeamMembership}
-                  :body [body {:membership NewTeamMembership}]
+                  :body [body {:membership NewTeamMembershipRole}]
                   (ok (teams/put-membership* request id (:membership body) mid)))
 
                 (DELETE "/" request
                   :name :delete-membership
+                  :summary "Deletes a team membership, removing the team member."
                   (teams/delete-membership* request mid)
+                  (no-content))))
+            (context "/pending" []
+              (context "/:mid" []
+                :path-params [mid :- s/Str]
+
+                (PUT "/" request
+                  :name :put-pending-membership
+                  :summary "Updates a pending membership by setting its role."
+                  :return {:membership PendingTeamMembership}
+                  :body [body {:membership NewTeamMembershipRole}]
+                  (ok (teams/put-pending-membership* request id (:membership body) mid)))
+
+                (DELETE "/" request
+                  :name :delete-pending-membership
+                  :summary "Deletes a pending membership. Upon signup, the user will no longer become a team member."
+                  (teams/delete-pending-membership* request mid)
                   (no-content))))))
 
         (context "/roles" []

@@ -184,9 +184,6 @@
    :name                   s/Str
    (s/optional-key :links) {s/Keyword s/Str}})
 
-(s/defschema NewTeamRole
-  (dissoc TeamRole :links))
-
 (s/defschema TeamMembership
   {:id                     (s/either s/Str s/Int)
    :team_id                (s/either s/Str s/Int)
@@ -208,8 +205,10 @@
    (s/optional-key :name) s/Str
    :type      s/Str})
 
+(s/defschema NewTeamRole
+  (dissoc TeamRole :links))
 
-(s/defschema NewTeamMembership
+(s/defschema NewTeamMembershipRole
   {:email s/Str
    :role  NewTeamRole})
 
