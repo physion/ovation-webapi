@@ -36,7 +36,12 @@
 
 
 (defn send-mention-notification
-  [user-id entity-id text])
+  [user-id entity-id text]
+  (let [body    {}
+        options {:body    (util/write-json-body body)
+                 :headers {"Content-Type" "application/json"}}
+        url     ""]
+    (org.httpkit.client/post url options)))
 
 
 (defn notify
