@@ -38,6 +38,7 @@
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]]
+                 ;[clj-tagsoup/clj-tagsoup "0.3.0"]]
 
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]

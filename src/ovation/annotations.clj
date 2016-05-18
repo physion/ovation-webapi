@@ -6,7 +6,8 @@
             [ovation.links :as links]
             [ovation.constants :as k]
             [ovation.util :as util]
-            [ring.util.http-response :refer [unprocessable-entity! forbidden!]]))
+            [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
+            [ovation.constants :as c]))
 
 
 ;; READ
@@ -21,6 +22,32 @@
 
 
 ;; WRITE
+(defn- note-text
+  [record]
+  (get-in record [:annotation :note]))
+
+(defn mentions
+  "Finds all notified users in note record"
+  [note]
+  (let [text (note-text note)
+        matches (re-seq #"<user-mention id=([^>]+)>([^<]*)</user-mention>" text)]
+    (map (fn [match] {:uuid (second match)
+                      :name (last match)}) matches)))
+
+
+(defn send-mention-notification
+  [user-id entity-id text])
+
+
+(defn notify
+  [record]
+  (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
+    (let [text (note-text record)
+          user-ids (map :uuid (mentions record))
+          notifications (doall (map (fn [u] (send-mention-notification u (:entity record) text)) user-ids))]
+      record)
+    record))
+
 (defn- make-annotation
   [user-id entity t record]
 
@@ -44,7 +71,7 @@
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (core/create-values auth routes docs)))
+    (notify (core/create-values auth routes docs))))
 
 (defn delete-annotations
   [auth annotation-ids routes]
@@ -66,7 +93,7 @@
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (core/update-values auth rt [update])))))
+      (first (notify (core/update-values auth rt [update]))))))
 
 
 
