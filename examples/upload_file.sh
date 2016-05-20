@@ -11,7 +11,7 @@ curl -X GET --header 'Accept: application/json'
 
 ## To upload a file, we need to create a File, then upload a Revision
 
-### Create a new File belonging to the Project by POSTing to the Project resource. You must supply the file name.
+### Create a new File belonging to the Project by POSTing to the Project resource. You must supply the file name. You'll need the _id attribute of the returned object as $FILE_ID for the next step.
 curl -X POST --header 'Content-Type: application/json'
              --header 'Accept: application/json'
              --header "Authorization: Bearer $TOKEN"
@@ -24,6 +24,8 @@ curl -X POST --header 'Content-Type: application/json'
                   ]
                 }' "https://api.ovation.io/api/v1/projects/$PROJECT_ID"
 
+
+FILE_ID=..parse file ID from response..
 
 ### Create a new Revision by POSTing to the File resource. You must supply the content (MIME) type of the revision as well as a name. The return contains a pre-signed URL where you can POST the file contents
 curl -X POST --header 'Content-Type: application/json'
@@ -39,7 +41,7 @@ curl -X POST --header 'Content-Type: application/json'
                       }
                     }
                   ]
-                }' 'https://api.ovation.io/api/v1/files/afad9a02-7ad5-4793-ad4e-2a200197b334'
+                }' "https://api.ovation.io/api/v1/files/$FILE_ID"
 
 
 ### The response contains an "aws" attribute like
