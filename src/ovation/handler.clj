@@ -38,8 +38,20 @@
             {:pattern #"^/api.*"
              :handler authenticated?}])
 
-(def DESCRIPTION "<p>Ovation REST API.</p>
-                 <figure><img src=\"/public/data_model.png\" alt=\"Ovation data model\"></figure>")
+(def DESCRIPTION "<figure><img src=\"/public/data_model.png\" alt=\"Ovation data model\"></figure>
+                 <h2>Authentication</h2>
+                   <ol>
+                     <li>Retrieve an API key at <a href=\"#!/auth/post_services_token\">/services/token</a></li>
+                     <li>Paste the returned token into the \"API token\" field at the top-right of this page</li>
+                   </ol>
+                 <h2>Getting started</h2>
+                   <ul>
+                     <li>Projects and Sources are \"top-level\" entities in the Ovation data model. All other entities (Folders,
+                     Files, Revisions, and Activities) belong to at least one Project.</li>
+                     <li>Files track individual Revisions (versions) of the file and always have at least one \"HEAD\" Revision,
+                     the most recent version.</li>
+                     <li>Use the data model figure above to follow relationships.</li>
+                   </ul>")
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
