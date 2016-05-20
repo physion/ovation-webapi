@@ -104,9 +104,9 @@
             (nil? membership-id))
       (unprocessable-entity!))
 
-    (let [response @(httpkit.client/put url (assoc opts :body (util/to-json body)))]
+    (let [response (dissoc @(httpkit.client/put url (assoc opts :body (util/to-json body))) :headers)]
       (when (not (http-predicates/ok? response))
-        (throw! (dissoc response :headers)))
+        (throw! response))
 
       (membership-result team-uuid rt response))))
 
@@ -147,7 +147,7 @@
         opts (request-opts (auth-token request))
         url (make-url url-path membership-id)]
 
-    (let [response @(httpkit.client/delete url opts)]
+    (let [response (dissoc @(httpkit.client/delete url opts) :headers)]
       (when (not (http-predicates/no-content? response))
         (throw! response)))))
 
@@ -158,7 +158,7 @@
 
 (defn delete-pending-membership*
   [request membership-id]
-  (delete-membership request membership-id false))
+  (delete-membership request membership-id true))
 
 (defn get-roles*
   [request]
