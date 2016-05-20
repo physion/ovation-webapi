@@ -103,6 +103,10 @@
   (filter #(= entity-type (:type %)) docs))
 
 
+(defn write-json-body
+  [body]
+  (json/write-str (walk/stringify-keys body)))
+
 ;; Async utilities
 
 (defn ncpus []
@@ -125,4 +129,5 @@
   (let [out (async/chan (async/buffer buffer))]
     (async/pipeline parallelism out xf in)
     out))
+
 

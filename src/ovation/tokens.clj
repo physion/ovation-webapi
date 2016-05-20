@@ -8,13 +8,10 @@
 
 (def auth-service-url (util/join-path [config/AUTH_SERVER "api" "v1" "sessions"]))
 
-(defn- write-json-body
-  [body]
-  (json/write-str (walk/stringify-keys body)))
 
 (defn post-json
   [url body]
-  (let [body     (write-json-body body)
+  (let [body     (util/write-json-body body)
         options  {:body    body
                   :headers {"Content-Type" "application/json"}}
 
