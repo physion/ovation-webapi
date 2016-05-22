@@ -38,8 +38,20 @@
             {:pattern #"^/api.*"
              :handler authenticated?}])
 
-(def DESCRIPTION "<p>Ovation REST API.</p>
-                 <figure><img src=\"/public/data_model.png\" alt=\"Ovation data model\"></figure>")
+(def DESCRIPTION "<figure><img src=\"/public/data_model.png\" alt=\"Ovation data model\"></figure>
+                 <h2>Authentication</h2>
+                   <ol>
+                     <li>Retrieve an API key at <a href=\"#!/auth/post_services_token\">/services/token</a></li>
+                     <li>Paste the returned token into the \"API token\" field at the top-right of this page</li>
+                   </ol>
+                 <h2>Getting started</h2>
+                   <ul>
+                     <li>Projects and Sources are \"top-level\" entities in the Ovation data model. All other entities (Folders,
+                     Files, Revisions, and Activities) belong to at least one Project.</li>
+                     <li>Files track individual Revisions (versions) of the file and always have at least one \"HEAD\" Revision,
+                     the most recent version.</li>
+                     <li>Use the data model figure above to follow relationships.</li>
+                   </ul>")
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
@@ -330,8 +342,8 @@
               (POST "/" request
                 :name :post-memberships
                 :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
-                :summary "Creates a new team Membership. Returns the created :membership. May return a :pending_membership if the user is not already an Ovation user."
-                :body [body {:membership NewTeamMembership}]
+                :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
+                :body [body {:membership NewTeamMembershipRole}]
                 (let [membership (teams/post-membership* request id (:membership body))]
                   (created membership)))
               (context "/:mid" []
@@ -339,13 +351,31 @@
 
                 (PUT "/" request
                   :name :put-membership
+                  :summary "Updates an existing membership by setting its role."
                   :return {:membership TeamMembership}
-                  :body [body {:membership NewTeamMembership}]
+                  :body [body {:membership NewTeamMembershipRole}]
                   (ok (teams/put-membership* request id (:membership body) mid)))
 
                 (DELETE "/" request
                   :name :delete-membership
+                  :summary "Deletes a team membership, removing the team member."
                   (teams/delete-membership* request mid)
+                  (no-content))))
+            (context "/pending" []
+              (context "/:mid" []
+                :path-params [mid :- s/Str]
+
+                (PUT "/" request
+                  :name :put-pending-membership
+                  :summary "Updates a pending membership by setting its role."
+                  :return {:membership PendingTeamMembership}
+                  :body [body {:membership NewTeamMembershipRole}]
+                  (ok (teams/put-pending-membership* request id (:membership body) mid)))
+
+                (DELETE "/" request
+                  :name :delete-pending-membership
+                  :summary "Deletes a pending membership. Upon signup, the user will no longer become a team member."
+                  (teams/delete-pending-membership* request mid)
                   (no-content))))))
 
         (context "/roles" []
