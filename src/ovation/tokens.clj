@@ -2,9 +2,11 @@
   (:require [org.httpkit.client :as http]
             [ovation.config :as config]
             [ovation.util :as util]
-            [clojure.data.json :as json]
-            [clojure.walk :as walk]
-            [ovation.auth :as auth]))
+            [slingshot.slingshot :refer [throw+]]
+            [ring.util.http-response :refer [throw!]]
+            [ovation.auth :as auth]
+            [ring.util.http-predicates :as hp]
+            [ovation.logging :as logging]))
 
 (def auth-service-url (util/join-path [config/AUTH_SERVER "api" "v1" "sessions"]))
 
@@ -16,16 +18,17 @@
                   :headers {"Content-Type" "application/json"}}
 
 
-        response (http/post url options)]
+        response @(http/post url options)]
 
-       (-> @response
+    (when (not (hp/ok? response))
+      (logging/error "Unable to retrieve object permissions")
+      (throw! (dissoc response :headers)))
+
+    (-> response
          (dissoc :opts)
          (dissoc :headers)
-         (assoc :status (int (:status @response)))
-         (assoc :body (walk/keywordize-keys (json/read-str (:body @response)))))))
-
-
-
+         (assoc :status (int (:status response)))
+         (assoc :body (util/from-json (:body response))))))
 
 
 (defn get-token
