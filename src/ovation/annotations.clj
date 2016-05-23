@@ -50,10 +50,11 @@
   (let [body    (mention-notification-body user-id entity-id note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"
-                           "Authorization" (str "Bearer " (::auth/token auth))}}
+                           "Authorization" (auth/make-bearer auth)}}
         url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "v1" "notifications"])]
     (ovation.logging/info (str "Sending mention notification: " user-id))
-    (org.httpkit.client/post url options)))
+    (let [resp (org.httpkit.client/post url options)]
+      resp)))
 
 
 (defn notify

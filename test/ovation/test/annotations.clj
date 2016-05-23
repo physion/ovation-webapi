@@ -74,7 +74,7 @@
                        :annotation      {:tag ..tag..}
                        :links           {:_collaboration_roots [..root2..]}}]]
 
-        (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => ..result..
+        (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => [..result..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
@@ -82,7 +82,8 @@
                                                                      :links {:_collaboration_roots [..root1..]}}
                                                                     {:_id   ..id2..
                                                                      :links {:_collaboration_roots [..root2..]}}]
-          (core/create-values ..auth.. ..rt.. expected) => ..result..))))
+          (core/create-values ..auth.. ..rt.. expected) => [..result..]
+          (a/notify ..auth.. ..result..) => ..result..))))
 
   (facts "About update-annotation"
     (facts "authorized user"

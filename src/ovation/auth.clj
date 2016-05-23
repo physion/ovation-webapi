@@ -22,6 +22,11 @@
   (if-let [auth (get-in request [:headers "authorization"])]
     (last (re-find #"^Bearer (.*)$" auth))))
 
+(defn make-bearer
+  "Generates a Bearer token for the authenticated identity"
+  [auth]
+  (str "Bearer " (::token auth)))
+
 (defn identity
   "Gets the authenticated identity for request. Assoc's bearer token as ::token "
   [request]

@@ -20,8 +20,8 @@
             server        config/NOTIFICATIONS_SERVER
             text          "some text"
             body          {:notification {:url (util/join-path [entity-id annotation-id])}}]
-        (with-fake-http [{:url (util/join-path [server "api" "common" "v1" "notifications"]) :method :post} {:body   (json/write-str body)}
-                                                                                                        :status 201]
+        (with-fake-http [{:url (util/join-path [server "api" "common" "v1" "notifications"]) :method :post} {:body   (json/write-str body)
+                                                                                                             :status 201}]
           (:status @(a/send-mention-notification ..auth.. user-id entity-id annotation-id text)) => 201)))
     (fact "sets :url"
       (let [entity-id     (str (util/make-uuid))
