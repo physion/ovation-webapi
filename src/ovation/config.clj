@@ -6,6 +6,8 @@
 
 (def TEAMS_SERVER (or (System/getenv "TEAMS_SERVER") (System/getProperty "TEAMS_SERVER")))
 
+(def NOTIFICATIONS_SERVER (or (System/getenv "NOTIFICATIONS_SERVER") (System/getProperty "NOTIFICATIONS_SERVER")))
+
 (def LOGGING_HOST (or (System/getenv "LOGGING_HOST") (System/getProperty "LOGGING_HOST")))
 (def LOGGING_PORT (or (System/getenv "LOGGING_PORT") (System/getProperty "LOGGING_PORT")))
 (def LOGGING_NAME (or (System/getenv "LOGGING_NAME") (System/getProperty "LOGGING_NAME")))
