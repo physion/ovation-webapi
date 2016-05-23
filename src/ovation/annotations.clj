@@ -25,13 +25,13 @@
 ;; WRITE
 (defn- note-text
   [record]
-  (get-in record [:annotation :note]))
+  (get-in record [:annotation :text]))
 
 (defn mentions
   "Finds all notified users in note record"
   [note]
   (let [text (note-text note)
-        matches (re-seq #"<user-mention uuid=([^>]+)>([^<]*)</user-mention>" text)]
+        matches (re-seq #"<user-mention uuid=\"([^>]+)\">([^<]*)</user-mention>" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
 
@@ -51,6 +51,7 @@
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"}}
         url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "notifications"])]
+    (ovation.logging/info (str "Sending mention notification: " user-id))
     (org.httpkit.client/post url options)))
 
 
@@ -86,7 +87,7 @@
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (notify (core/create-values auth routes docs))))
+    (map notify (core/create-values auth routes docs))))
 
 (defn delete-annotations
   [auth annotation-ids routes]
