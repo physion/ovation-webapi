@@ -30,14 +30,18 @@
   "Finds all notified users in note record"
   [note]
   (let [text (note-text note)
-        matches (re-seq #"<user-mention id=([^>]+)>([^<]*)</user-mention>" text)]
+        matches (re-seq #"<user-mention uuid=([^>]+)>([^<]*)</user-mention>" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
 
 
 (defn send-mention-notification
   [user-id entity-id text]
-  (let [body    {}
+  (let [body    {:user_id user-id
+                 :url entity-id
+                 :body text}
+
+        _ (println body)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"}}
         url     ""]
@@ -48,8 +52,8 @@
   [record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
-          user-ids (map :uuid (mentions record))
-          notifications (doall (map (fn [u] (send-mention-notification u (:entity record) text)) user-ids))]
+          user-ids (map :uuid (mentions record))]
+      (doall (map (fn [u] (send-mention-notification u (:entity record) text)) user-ids))
       record)
     record))
 

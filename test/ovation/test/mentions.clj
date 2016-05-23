@@ -55,16 +55,16 @@
   (facts "notify"
     (fact "sends notification"
       (let [note {:type c/ANNOTATION-TYPE
-                  :entity ..entity..
+                  :entity (str (util/make-uuid))
                   :annotation_type c/NOTES
-                  :annotation {:note ..text..}}]
+                  :annotation {:note "text"}}]
         (a/notify note) => note
         (provided
-          (a/mentions note) => [{:name ..name.. :uuid ..user-id..}]))))
+          (a/mentions note) => [{:name ..name.. :uuid (str (util/make-uuid))}]))))
 
   (facts "notified-users"
     (fact "finds notified users"
-      (let [text "<user-mention id=1>Barry</user-mention> foo bar baz <user-mention id=2>Rens</user-mention>"]
+      (let [text "<user-mention uuid=1>Barry</user-mention> foo bar baz <user-mention uuid=2>Rens</user-mention>"]
         (a/mentions {:type                  c/ANNOTATION-TYPE
                            :entity          ..entity..
                            :annotation_type c/NOTES
