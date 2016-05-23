@@ -46,21 +46,22 @@
 
 
 (defn send-mention-notification
-  [user-id entity-id note-id text]
+  [auth user-id entity-id note-id text]
   (let [body    (mention-notification-body user-id entity-id note-id text)
         options {:body    (util/write-json-body body)
-                 :headers {"Content-Type" "application/json"}}
-        url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "notifications"])]
+                 :headers {"Content-Type" "application/json"
+                           "Authorization" (str "Bearer " (::auth/token auth))}}
+        url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "v1" "notifications"])]
     (ovation.logging/info (str "Sending mention notification: " user-id))
     (org.httpkit.client/post url options)))
 
 
 (defn notify
-  [record]
+  [auth record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
           user-ids (map :uuid (mentions record))]
-      (doall (map (fn [u] (send-mention-notification u (:entity record) (:_id record) text)) user-ids))
+      (doall (map (fn [u] (send-mention-notification auth u (:entity record) (:_id record) text)) user-ids))
       record)
     record))
 
@@ -87,7 +88,7 @@
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map notify (core/create-values auth routes docs))))
+    (map (fn [doc] (notify auth doc)) (core/create-values auth routes docs))))
 
 (defn delete-annotations
   [auth annotation-ids routes]
@@ -109,7 +110,7 @@
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (notify (core/update-values auth rt [update]))))))
+      (first (map (fn [doc] (notify auth doc)) (core/update-values auth rt [update]))))))
 
 
 

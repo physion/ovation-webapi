@@ -20,9 +20,9 @@
             server        config/NOTIFICATIONS_SERVER
             text          "some text"
             body          {:notification {:url (util/join-path [entity-id annotation-id])}}]
-        (with-fake-http [{:url (util/join-path [server "api" "common" "notifications"]) :method :post} {:body   (json/write-str body)
-                                                                                                        :status 201}]
-          (:status @(a/send-mention-notification user-id entity-id annotation-id text)) => 201)))
+        (with-fake-http [{:url (util/join-path [server "api" "common" "v1" "notifications"]) :method :post} {:body   (json/write-str body)}
+                                                                                                        :status 201]
+          (:status @(a/send-mention-notification ..auth.. user-id entity-id annotation-id text)) => 201)))
     (fact "sets :url"
       (let [entity-id     (str (util/make-uuid))
             annotation-id (str (util/make-uuid))
@@ -50,7 +50,7 @@
           (core/get-entities ..auth.. [..id1..] ..rt..) => [{:_id   ..id1..
                                                              :links {:_collaboration_roots [..root1..]}}]
           (core/create-values ..auth.. ..rt.. expected) => [..result..]
-          (a/notify ..result..) => ..notified..))))
+          (a/notify ..auth.. ..result..) => ..notified..))))
 
   (facts "update-annotations"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
@@ -74,7 +74,7 @@
                                                   :type            c/ANNOTATION-TYPE
                                                   :annotation      {:text ..new..}
                                                   :edited_at       ..time..}]) => [..result..]
-            (a/notify [..result..]) => [..notified..])))))
+            (a/notify ..auth.. ..result..) => ..notified..)))))
 
 
   (facts "notify"
@@ -83,7 +83,7 @@
                   :entity (str (util/make-uuid))
                   :annotation_type c/NOTES
                   :annotation {:text "text"}}]
-        (a/notify note) => note
+        (a/notify ..auth.. note) => note
         (provided
           (a/mentions note) => [{:name ..name.. :uuid (str (util/make-uuid))}]))))
 
