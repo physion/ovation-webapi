@@ -38,3 +38,6 @@
 (def TAGS "tags")                                           ;; NB this **MUST** staty in sync with AnnotationKeys
 (def NOTES "notes")                                         ;; NB this **MUST** staty in sync with AnnotationKeys
 (def TIMELINE_EVENTS "timeline_events")                     ;; NB this **MUST** staty in sync with AnnotationKeys
+
+;; Notifications
+(def MENTION_NOTIFICATION "mention")

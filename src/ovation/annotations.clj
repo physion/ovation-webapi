@@ -7,7 +7,8 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
-            [ovation.constants :as c]))
+            [ovation.constants :as c]
+            [ovation.config :as config]))
 
 
 ;; READ
@@ -35,16 +36,21 @@
                       :name (last match)}) matches)))
 
 
-(defn send-mention-notification
-  [user-id entity-id text]
-  (let [body    {:user_id user-id
-                 :url entity-id
-                 :body text}
+(defn mention-notification-body
+  [user-id entity-id note-id text]
 
-        _ (println body)
+  {:user_id user-id
+   :url (util/join-path [entity-id note-id])
+   :notification_type k/MENTION_NOTIFICATION
+   :body text})
+
+
+(defn send-mention-notification
+  [user-id entity-id note-id text]
+  (let [body    (mention-notification-body user-id entity-id note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"}}
-        url     ""]
+        url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "notifications"])]
     (org.httpkit.client/post url options)))
 
 
@@ -53,7 +59,7 @@
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
           user-ids (map :uuid (mentions record))]
-      (doall (map (fn [u] (send-mention-notification u (:entity record) text)) user-ids))
+      (doall (map (fn [u] (send-mention-notification u (:entity record) (:_id record) text)) user-ids))
       record)
     record))
 
