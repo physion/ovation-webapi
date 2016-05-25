@@ -37,7 +37,8 @@
                  [ring-logger-timbre "0.7.5"]
 
                  ;; Other
-                 [org.clojure/data.json "0.2.6"]]
+                 [org.clojure/data.json "0.2.6"]
+                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "r239"]]
                  ;[clj-tagsoup/clj-tagsoup "0.3.0"]]
 
 

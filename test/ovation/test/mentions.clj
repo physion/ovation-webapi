@@ -12,6 +12,12 @@
 
 
 (facts "About @-mention notification"
+  (facts "html sanitization"
+    (fact "sanitizes html"
+      (a/note-text {:annotation {:text "<body>something</body>"}}) => "something")
+    (fact "allows <user-mention>"
+      (a/note-text {:annotation {:text "<user-mention uuid=\"1\">something</user-mention>"}}) => "<user-mention uuid=\"1\">something</user-mention>"))
+
   (facts "send-mention-notification"
     (fact "POSTs notification"
       (let [entity-id     (str (util/make-uuid))

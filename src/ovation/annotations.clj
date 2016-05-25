@@ -6,6 +6,7 @@
             [ovation.links :as links]
             [ovation.constants :as k]
             [ovation.util :as util]
+            [ovation.html :as html]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
             [ovation.config :as config]))
@@ -23,9 +24,9 @@
 
 
 ;; WRITE
-(defn- note-text
+(defn note-text
   [record]
-  (get-in record [:annotation :text]))
+  (html/sanitize-html (get-in record [:annotation :text])))
 
 (defn mentions
   "Finds all notified users in note record"
