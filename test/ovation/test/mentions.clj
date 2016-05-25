@@ -12,11 +12,8 @@
 
 
 (facts "About @-mention notification"
-  (facts "html sanitization"
-    (fact "sanitizes html"
-      (a/note-text {:annotation {:text "<body>something</body>"}}) => "something")
-    (fact "allows <user-mention>"
-      (a/note-text {:annotation {:text "<user-mention uuid=\"1\">something</user-mention>"}}) => "<user-mention uuid=\"1\">something</user-mention>"))
+  (fact "escapes html"
+    (a/note-text {:annotation {:text "<body>something</body>"}}) => "&lt;body&gt;something&lt;/body&gt;")
 
   (facts "send-mention-notification"
     (fact "POSTs notification"
@@ -95,8 +92,8 @@
 
   (facts "notified-users"
     (fact "finds notified users"
-      (let [text "<user-mention uuid=\"1\">Barry</user-mention> foo bar baz <user-mention uuid=\"2\">Rens</user-mention>"]
+      (let [text "{{user-mention uuid=1}}Barry{{/user-mention}} foo bar baz {{user-mention uuid=2222-3333}}Rens{{/user-mention}}"]
         (a/mentions {:type            c/ANNOTATION-TYPE
                      :entity          ..entity..
                      :annotation_type c/NOTES
-                     :annotation      {:text text}}) => [{:name "Barry", :uuid "1"} {:name "Rens", :uuid "2"}]))))
+                     :annotation      {:text text}}) => [{:name "Barry", :uuid "1"} {:name "Rens", :uuid "2222-3333"}]))))

@@ -1,16 +1,6 @@
 (ns ovation.html)
 
 
-;private static String apply(HtmlPolicyBuilder b, String src) {}
-;StringBuilder sb = new StringBuilder();
-;HtmlSanitizer.Policy policy = b.build(HtmlStreamRenderer.create(sb,))
-;new Handler<String>() {
-;                       public void handle(String x) { fail(x)}}; }
-;                                                     ;
-;HtmlSanitizer.sanitize(src, policy);
-;return sb.toString();
-
-
 (defn apply-policy
   [policy-builder s]
   (let [sb (StringBuilder.)
@@ -21,7 +11,7 @@
        (org.owasp.html.HtmlSanitizer/sanitize s, policy)
        (.toString sb)))
 
-(defn sanitize-html
+(defn sanitize-note-html
   "HTML-sanitizes text, permitting <span>/<user-mention> tags and attributes"
   [s]
   (let [policy (-> (org.owasp.html.HtmlPolicyBuilder.)
@@ -32,3 +22,14 @@
                   (.onElements (into-array ["span"])))]
 
     (apply-policy policy s)))
+
+
+(defn escape-html
+  "Change special characters into HTML character entities."
+  [text]
+  (.. ^String text
+    (replace "&"  "&amp;")
+    (replace "<"  "&lt;")
+    (replace ">"  "&gt;")
+    (replace "\"" "&quot;")
+    (replace "'" "&apos;")))

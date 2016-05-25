@@ -26,13 +26,13 @@
 ;; WRITE
 (defn note-text
   [record]
-  (html/sanitize-html (get-in record [:annotation :text])))
+  (html/escape-html (get-in record [:annotation :text])))
 
 (defn mentions
   "Finds all notified users in note record"
   [note]
   (let [text (note-text note)
-        matches (re-seq #"<user-mention uuid=\"([^>]+)\">([^<]*)</user-mention>" text)]
+        matches (re-seq #"\{\{user-mention uuid=([^}]+)\}\}([^{]*)\{\{/user-mention\}\}" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
 
