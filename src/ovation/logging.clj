@@ -20,7 +20,7 @@
 (defn connect
   [host port]
   (let [addr (InetAddress/getByName host)
-        sock (Socket. addr (int port))]
+        sock (Socket. addr (java.lang.Integer/parseInt port))]
     [sock
      (PrintWriter. (.getOutputStream sock))]))
 
@@ -85,10 +85,9 @@
 (defn logging-config
   []
   (if-let [host config/LOGGING_HOST]
-    (when-let [port config/LOGGING_PORT]
+    (let [port config/LOGGING_PORT]
       {:level     :info
-       :appenders {:timbre (logstash-appender host port)
-                   :println (timbre/println-appender {:stream :auto})}})
+       :appenders {:timbre (logstash-appender host port)}})
     {:level     :error
      :appenders {:println (timbre/println-appender {:stream :auto})}}))
 
