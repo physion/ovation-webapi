@@ -19,3 +19,4 @@
   (or (System/getenv name) (System/getProperty name)))
 
 (def JWT_SECRET (config "JWT_SECRET"))
+(def NOTIFICATIONS_SERVER (config "NOTIFICATIONS_SERVER"))

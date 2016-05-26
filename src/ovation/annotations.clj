@@ -6,8 +6,10 @@
             [ovation.links :as links]
             [ovation.constants :as k]
             [ovation.util :as util]
+            [ovation.html :as html]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
-            [ovation.constants :as c]))
+            [ovation.constants :as c]
+            [ovation.config :as config]))
 
 
 ;; READ
@@ -22,29 +24,46 @@
 
 
 ;; WRITE
-(defn- note-text
+(defn note-text
   [record]
-  (get-in record [:annotation :note]))
+  (html/escape-html (get-in record [:annotation :text])))
 
 (defn mentions
   "Finds all notified users in note record"
   [note]
   (let [text (note-text note)
-        matches (re-seq #"<user-mention id=([^>]+)>([^<]*)</user-mention>" text)]
+        matches (re-seq #"\{\{user-mention uuid=([^}]+)\}\}([^{]*)\{\{/user-mention\}\}" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
 
 
+(defn mention-notification-body
+  [user-id entity-id note-id text]
+
+  {:user_id user-id
+   :url (util/join-path [entity-id note-id])
+   :notification_type k/MENTION_NOTIFICATION
+   :body text})
+
+
 (defn send-mention-notification
-  [user-id entity-id text])
+  [auth user-id entity-id note-id text]
+  (let [body    (mention-notification-body user-id entity-id note-id text)
+        options {:body    (util/write-json-body body)
+                 :headers {"Content-Type" "application/json"
+                           "Authorization" (auth/make-bearer auth)}}
+        url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "v1" "notifications"])]
+    (ovation.logging/info (str "Sending mention notification: " user-id))
+    (let [resp (org.httpkit.client/post url options)]
+      resp)))
 
 
 (defn notify
-  [record]
+  [auth record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
-          user-ids (map :uuid (mentions record))
-          notifications (doall (map (fn [u] (send-mention-notification u (:entity record) text)) user-ids))]
+          user-ids (map :uuid (mentions record))]
+      (doall (map (fn [u] (send-mention-notification auth u (:entity record) (:_id record) text)) user-ids))
       record)
     record))
 
@@ -71,7 +90,7 @@
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (notify (core/create-values auth routes docs))))
+    (map (fn [doc] (notify auth doc)) (core/create-values auth routes docs))))
 
 (defn delete-annotations
   [auth annotation-ids routes]
@@ -93,7 +112,7 @@
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (notify (core/update-values auth rt [update]))))))
+      (first (map (fn [doc] (notify auth doc)) (core/update-values auth rt [update]))))))
 
 
 
