@@ -75,11 +75,13 @@
 (defn logging-config
   []
   (if-let [host config/LOGGING_HOST]
-    (let [port config/LOGGING_PORT]
+    (when-let [port config/LOGGING_PORT]
       {:level     :info
-       :appenders {:timbre (timbre-json-appender host port)}})
+       :appenders {:timbre (timbre-json-appender host port)
+                   :println (timbre/println-appender {:stream :auto})}})
     {:level     :info}))
      ;:appenders {:println (timbre/println-appender {:stream :auto})}
+     
 
 (defn setup! []
   (timbre/set-config! (logging-config)))
