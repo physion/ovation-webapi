@@ -87,7 +87,7 @@
   (if-let [host config/LOGGING_HOST]
     (when-let [port config/LOGGING_PORT]
       {:level     :info
-       :appenders {:timbre (timbre-json-appender host port)
+       :appenders {:timbre (logstash-appender host port)
                    :println (timbre/println-appender {:stream :auto})}})
     {:level     :info}))
      ;:appenders {:println (timbre/println-appender {:stream :auto})}
