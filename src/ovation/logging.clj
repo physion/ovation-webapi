@@ -87,8 +87,8 @@
       {:level     :info
        :appenders {:timbre (logstash-appender host port)
                    :println (timbre/println-appender {:stream :auto})}})
-    {:level     :error
-     :appenders {:println (timbre/println-appender {:stream :auto})}}))
+    {:level     :error}))
+     ;:appenders {:println (timbre/println-appender {:stream :auto})}}))
 
 
 (defn setup! []
