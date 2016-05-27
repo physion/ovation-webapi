@@ -9,7 +9,8 @@
             [ovation.html :as html]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [clojure.string :as string]))
 
 
 ;; READ
@@ -37,18 +38,28 @@
                       :name (last match)}) matches)))
 
 
+(defn entity-uri
+  [entity]
+  (let [tp (util/entity-type-name entity)
+        id (:_id entity)
+        path (condp = (:type entity)
+               k/PROJECT-TYPE id
+               (util/join-path [(first (get-in entity [:links :_collaboration_roots])) id]))]
+    (str tp "://" path)))
+
+
 (defn mention-notification-body
-  [user-id entity-id note-id text]
+  [user-id entity note-id text]
 
   {:user_id user-id
-   :url (util/join-path [entity-id note-id])
+   :url (util/join-path [(entity-uri entity) note-id])
    :notification_type k/MENTION_NOTIFICATION
    :body text})
 
 
 (defn send-mention-notification
-  [auth user-id entity-id note-id text]
-  (let [body    (mention-notification-body user-id entity-id note-id text)
+  [auth user-id entity note-id text]
+  (let [body    (mention-notification-body user-id entity note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"
                            "Authorization" (auth/make-bearer auth)}}
@@ -59,11 +70,11 @@
 
 
 (defn notify
-  [auth record]
+  [auth entity record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
           user-ids (map :uuid (mentions record))]
-      (doall (map (fn [u] (send-mention-notification auth u (:entity record) (:_id record) text)) user-ids))
+      (doall (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
       record)
     record))
 
@@ -87,10 +98,11 @@
   [auth routes ids annotation-type records]
   (let [auth-user-id (auth/authenticated-user-id auth)
         entities (core/get-entities auth ids routes)
+        entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth doc)) (core/create-values auth routes docs))))
+    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth routes docs))))
 
 (defn delete-annotations
   [auth annotation-ids routes]
@@ -104,15 +116,16 @@
     (when-not (= (str (auth/authenticated-user-id auth)) (str (:user existing)))
       (forbidden! "Update of an other user's annotations is forbidden"))
 
-    (when-not #{k/NOTES} (:annotation_type existing)
+    (when-not (#{k/NOTES} (:annotation_type existing))
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (let [time     (util/iso-short-now)
+    (let [entity (first (core/get-entities auth [(:entity existing)] rt))
+          time     (util/iso-short-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth doc)) (core/update-values auth rt [update]))))))
+      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth rt [update]))))))
 
 
 

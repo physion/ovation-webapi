@@ -8,7 +8,8 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [clojure.data.json :as json]
             [ovation.config :as config]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [clojure.string :as string]))
 
 
 (facts "About @-mention notification"
@@ -22,38 +23,48 @@
             user-id       (str (util/make-uuid))
             server        config/NOTIFICATIONS_SERVER
             text          "some text"
-            body          {:notification {:url (util/join-path [entity-id annotation-id])}}]
+            entity-type   k/PROJECT-TYPE
+            body          {:notification {:url (str entity-type "://" (util/join-path [entity-id annotation-id]))}}]
         (with-fake-http [{:url (util/join-path [server "api" "common" "v1" "notifications"]) :method :post} {:body   (json/write-str body)
                                                                                                              :status 201}]
-          (:status @(a/send-mention-notification ..auth.. user-id entity-id annotation-id text)) => 201)))
+          (:status @(a/send-mention-notification ..auth.. user-id {:_id  entity-id
+                                                                   :type entity-type} annotation-id text)) => 201)))
     (fact "sets :url"
       (let [entity-id     (str (util/make-uuid))
             annotation-id (str (util/make-uuid))
             user-id       (str (util/make-uuid))
-            text          "some text"]
-        (a/mention-notification-body user-id entity-id annotation-id text) => {:user_id           user-id
-                                                                               :url               (str  entity-id "/" annotation-id)
-                                                                               :notification_type k/MENTION_NOTIFICATION
-                                                                               :body              text})))
+            proj-id       (str (util/make-uuid))
+            text          "some text"
+            entity-type   k/FOLDER-TYPE
+            entity        {:_id   entity-id
+                           :type  entity-type
+                           :links {:_collaboration_roots [proj-id]}}]
+        (a/mention-notification-body user-id entity annotation-id text) => {:user_id           user-id
+                                                                            :url               (str (string/lower-case entity-type) "://" proj-id "/" entity-id "/" annotation-id)
+                                                                            :notification_type k/MENTION_NOTIFICATION
+                                                                            :body              text})))
 
   (facts "create-annotations"
     (fact "notifies"
-      (let [expected [{:_id             ..uuid..
-                       :entity          ..id1..
-                       :user            ..user..
-                       :annotation_type ..type..
-                       :type            "Annotation"
-                       :annotation      {:tag ..tag..}
-                       :links           {:_collaboration_roots [..root1..]}}]]
+      (let [note {:_id             ..uuid..
+                  :entity          ..id1..
+                  :user            ..user..
+                  :annotation_type ..type..
+                  :type            "Annotation"
+                  :annotation      {:tag ..tag..}
+                  :links           {:_collaboration_roots [..root1..]}}
+            expected [note]
+            entity   {:_id   ..id1..
+                      :type  k/FILE-TYPE
+                      :links {:_collaboration_roots [..root1..]}}]
 
         (a/create-annotations ..auth.. ..rt.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. [..id1..] ..rt..) => [{:_id   ..id1..
-                                                             :links {:_collaboration_roots [..root1..]}}]
-          (core/create-values ..auth.. ..rt.. expected) => [..result..]
-          (a/notify ..auth.. ..result..) => ..notified..))))
+          (core/get-entities ..auth.. [..id1..] ..rt..) => [entity]
+          (core/create-values ..auth.. ..rt.. expected) => [note]
+          (a/notify ..auth.. entity note) => ..notified..))))
 
   (facts "update-annotations"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
@@ -63,13 +74,17 @@
                        :user            ..user..
                        :annotation_type c/NOTES
                        :type            c/ANNOTATION-TYPE
-                       :annotation      {:text ..old..}}]
+                       :annotation      {:text ..old..}}
+              entity  {:_id   ..entity..
+                       :type  k/FILE-TYPE
+                       :links {:_collaboration_roots [..root1..]}}]
 
           (a/update-annotation ..auth.. ..rt.. ..uuid.. {:text ..new..}) => ..notified..
 
           (provided
             (util/iso-short-now) => ..time..
             (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
+            (core/get-entities ..auth.. [..entity..] ..rt..) => [entity]
             (core/update-values ..auth.. ..rt.. [{:_id             ..uuid..
                                                   :entity          ..entity..
                                                   :user            ..user..
@@ -77,17 +92,22 @@
                                                   :type            c/ANNOTATION-TYPE
                                                   :annotation      {:text ..new..}
                                                   :edited_at       ..time..}]) => [..result..]
-            (a/notify ..auth.. ..result..) => ..notified..)))))
+            (a/notify ..auth.. entity ..result..) => ..notified..)))))
 
 
   (facts "notify"
     (fact "sends notification"
-      (let [note {:type c/ANNOTATION-TYPE
-                  :entity (str (util/make-uuid))
+      (let [entity-id (str (util/make-uuid))
+            note-id (str (util/make-uuid))
+            note {:type c/ANNOTATION-TYPE
+                  :_id note-id
+                  :entity (str "project://" entity-id "/" note-id)
                   :annotation_type c/NOTES
                   :annotation {:text "text"}}]
-        (a/notify ..auth.. note) => note
+        (a/notify ..auth.. ..entity.. note) => note
         (provided
+          ..entity.. =contains=> {:type k/PROJECT-TYPE
+                                  :_id entity-id}
           (a/mentions note) => [{:name ..name.. :uuid (str (util/make-uuid))}]))))
 
   (facts "notified-users"

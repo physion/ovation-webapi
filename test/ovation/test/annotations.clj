@@ -6,7 +6,8 @@
             [ovation.auth :as auth]
             [ovation.core :as core]
             [ovation.constants :as c]
-            [ring.util.http-response :refer [unprocessable-entity forbidden] :as http-response])
+            [ring.util.http-response :refer [unprocessable-entity forbidden] :as http-response]
+            [ovation.constants :as k])
   (:import (clojure.lang ExceptionInfo)))
 
 
@@ -17,6 +18,19 @@
                                      (str "throw+: " map)
                                      nil
                                      (slingshot.support/stack-trace))))
+
+
+(facts "About entity-uri"
+  (fact "for project"
+    (let [proj-id (str (util/make-uuid))]
+      (a/entity-uri {:_id proj-id :type k/PROJECT-TYPE}) => (str "project://" proj-id)))
+
+  (fact "for nested entity"
+    (let [proj-id   (str (util/make-uuid))
+          entity-id (str (util/make-uuid))]
+      (a/entity-uri {:_id   entity-id
+                     :type  k/FILE-TYPE
+                     :links {:_collaboration_roots [proj-id]}}) => (str "file://" proj-id "/" entity-id))))
 
 (against-background [(couch/db ..auth..) => ..db..]
   (facts "About `get-annotations`"
@@ -72,18 +86,24 @@
                        :annotation_type ..type..
                        :type            "Annotation"
                        :annotation      {:tag ..tag..}
-                       :links           {:_collaboration_roots [..root2..]}}]]
+                       :links           {:_collaboration_roots [..root2..]}}]
+            entity1 {:_id   ..id1..
+                      :type  ..type..
+                      :links {:_collaboration_roots [..root1..]}}
 
-        (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => [..result..]
+            entity2 {:_id   ..id2..
+                      :type  ..type..
+                      :links {:_collaboration_roots [..root2..]}}]
+
+        (a/create-annotations ..auth.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => [..result1.. ..result2..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. [..id1.. ..id2..] ..rt..) => [{:_id   ..id1..
-                                                                     :links {:_collaboration_roots [..root1..]}}
-                                                                    {:_id   ..id2..
-                                                                     :links {:_collaboration_roots [..root2..]}}]
-          (core/create-values ..auth.. ..rt.. expected) => [..result..]
-          (a/notify ..auth.. ..result..) => ..result..))))
+          (core/get-entities ..auth.. [..id1.. ..id2..] ..rt..) => [entity1
+                                                                    entity2]
+          (core/create-values ..auth.. ..rt.. expected) => [{:entity ..id1..} {:entity ..id2..}]
+          (a/notify ..auth.. entity1 {:entity ..id1..}) => ..result1..
+          (a/notify ..auth.. entity2 {:entity ..id2..}) => ..result2..))))
 
   (facts "About update-annotation"
     (facts "authorized user"
@@ -100,6 +120,8 @@
             (provided
               (util/iso-short-now) => ..time..
               (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
+              (core/get-entities ..auth.. [..entity..] ..rt..) => {:_id ..entity..
+                                                                   :type k/PROJECT-TYPE}
               (core/update-values ..auth.. ..rt.. [{:_id             ..uuid..
                                                     :entity          ..entity..
                                                     :user            ..user..
@@ -118,7 +140,7 @@
                      :annotation      {:tag ..tag..}}]
             (a/update-annotation ..auth.. ..rt.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
             (provided
-              (core/get-values ..auth.. [..uuid..] :routes ..rt..) => tag)))))
+              (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [tag])))))
 
     (facts "unauthorized user"
       (against-background [(auth/authenticated-user-id ..auth..) => ..other..]
