@@ -89,13 +89,13 @@
                [wrap-authentication (jws-backend {:secret     config/JWT_SECRET
                                                   :token-name "Bearer"})]
                [wrap-access-rules {:rules    rules
-                                   :on-error auth/throw-unauthorized}]
+                                   :on-error auth/unauthorized-response}]
 
                wrap-authenticated-teams
 
                [logger.timbre/wrap-with-logger {:printer :identity-printer}]
 
-               [wrap-raygun-handler (System/getenv "RAYGUN_API_KEY")]
+               [wrap-raygun-handler (config/config "RAYGUN_API_KEY")]
 
                wrap-newrelic-transaction]
 
