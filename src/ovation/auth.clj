@@ -3,10 +3,9 @@
   (:require [org.httpkit.client :as http]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw! unauthorized! forbidden!]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden! unauthorized forbidden]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
-            [clojure.data.json :as json]
             [buddy.auth]
             [ovation.config :as config]))
 
@@ -35,12 +34,12 @@
       (assoc id ::token (token request))
       id)))
 
-(defn throw-unauthorized
+(defn unauthorized-response
   "A default response constructor for an unathorized request."
   [request value]
   (if (authenticated? request)
-    (forbidden! "Permission denied")
-    (unauthorized! "Unauthorized")))
+    (forbidden "Permission denied")
+    (unauthorized "Unauthorized")))
 
 
 (defn authenticated-user-id

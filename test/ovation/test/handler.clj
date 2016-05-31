@@ -25,7 +25,6 @@
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
-(jws/sign id (config/config "JWT_SECRET"))
 
 (def TOKEN (jws/sign id (config/config "JWT_SECRET")))
 
