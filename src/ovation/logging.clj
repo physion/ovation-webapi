@@ -3,9 +3,7 @@
             ;[taoensso.timbre.appenders.3rd-party.logstash :as logstash-appender]
             [potemkin :refer [import-vars]]
             [ovation.config :as config]
-            [cheshire.core :as cheshire]
-            [clj-time.coerce :as time-coerce]
-            [clj-time.format :as time-format])
+            [cheshire.core :as cheshire])
   (:import [java.net Socket InetAddress]
            [java.io PrintWriter]))
 
@@ -20,7 +18,7 @@
 (defn connect
   [host port]
   (let [addr (InetAddress/getByName host)
-        sock (Socket. addr (java.lang.Integer/parseInt port))]
+        sock (Socket. addr (Integer/parseInt port))]
     [sock
      (PrintWriter. (.getOutputStream sock))]))
 
@@ -89,8 +87,8 @@
       {:level     :info
        :appenders {:timbre (logstash-appender host port)
                    :println (timbre/println-appender {:stream :auto})}})
-    {:level     :error
-     :appenders {:println (timbre/println-appender {:stream :auto})}}))
+    {:level     :error}))
+     ;:appenders {:println (timbre/println-appender {:stream :auto})}}))
 
 
 (defn setup! []
