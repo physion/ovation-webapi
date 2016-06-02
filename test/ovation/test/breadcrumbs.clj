@@ -16,8 +16,10 @@
   (against-background [(links/get-link-targets ..auth.. ..file1.. k/PARENTS-REL ..rt..) => [{:_id ..folder1..} {:_id ..folder2..}]
                        (links/get-link-targets ..auth.. ..file2.. k/PARENTS-REL ..rt..) => [{:_id ..folder2..}]
                        (links/get-link-targets ..auth.. ..folder1.. k/PARENTS-REL ..rt..) => [{:_id ..project1..}]
-                       (links/get-link-targets ..auth.. ..folder2.. k/PARENTS-REL ..rt..) => [{:_id ..project1..} {:_id ..project2..}]]
+                       (links/get-link-targets ..auth.. ..folder2.. k/PARENTS-REL ..rt..) => [{:_id ..project1..} {:_id ..project2..}]
+                       (links/get-link-targets ..auth.. ..project1.. k/PARENTS-REL ..rt..) => []
+                       (links/get-link-targets ..auth.. ..project2.. k/PARENTS-REL ..rt..) => []]
     (fact "calculates file breadcrumbs"
-      (b/get-breadcrumbs ..auth.. ..rt.. [..file1.. ..file2..]) => {..file1.. [{..folder1.. [{..project1.. []}]}
-                                                                               {..folder2.. [{..project1.. []} {..project2.. []}]}]
-                                                                    ..file2.. [{..folder2.. [{..project1.. []} {..project2.. []}]}]})))
+      (b/get-breadcrumbs ..auth.. ..rt.. [..file1.. ..file2..]) => {..file1.. [{..folder1.. [{..project1.. []}
+                                                                                             {..folder2.. [{..project1.. []} {..project2.. []}]}]
+                                                                                  ..file2.. [{..folder2.. [{..project1.. []} {..project2.. []}]}]}]})))
