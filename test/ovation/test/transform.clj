@@ -14,6 +14,28 @@
   (:import (clojure.lang ExceptionInfo)))
 
 
+(facts "About Annotations"
+  (fact "adds self link"
+    ((tr/couch-to-value ..auth.. ..rt..) {:type            k/ANNOTATION-TYPE
+                                          :annotation_type k/TAGS
+                                          :entity          ..id..
+                                          :_id             ..annotation..}) => {:type            k/ANNOTATION-TYPE
+                                                                                :annotation_type k/TAGS
+                                                                                :entity          ..id..
+                                                                                :_id             ..annotation..
+                                                                                :links           {:self ..self..}}
+    (provided
+      (tr/add-value-permissions {:type            k/ANNOTATION-TYPE
+                                 :annotation_type k/TAGS
+                                 :entity          ..id..
+                                 :_id             ..annotation..
+                                 :links           {:self ..self..}} ..auth..) => {:type k/ANNOTATION-TYPE
+                                                                                  :annotation_type k/TAGS
+                                                                                  :entity ..id..
+                                                                                  :_id ..annotation..
+                                                                                  :links {:self ..self..}}
+      (r/named-route ..rt.. :delete-tags {:id ..id.. :annotation-id ..annotation..}) => ..self..)))
+
 (facts "About annotation links"
   (fact "adds annotation links to entity"
     (tr/add-annotation-links {:_id   "123"

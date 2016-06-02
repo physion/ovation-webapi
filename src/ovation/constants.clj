@@ -11,6 +11,7 @@
 (def PROJECT-TYPE "Project")
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
+(def ANNOTATION-TYPE-NAME (clojure.string/lower-case ANNOTATION-TYPE))
 
 ;; Important rels
 (def ACTIVITIES-REL "activities")
