@@ -31,7 +31,8 @@
                                  (let [span (alg/pre-span graph start)
                                        _    (pprint span)]
                                    {start span}))
-                             ids))]))
+                             ids))]
+    (println spans)))
 
 
 
