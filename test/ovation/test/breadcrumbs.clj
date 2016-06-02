@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.constants :as k]
             [ovation.breadcrumbs :as b]
-            [ovation.links :as links]))
+            [ovation.links :as links]
+            [ovation.core :as core]))
 
 
 (facts "About parents"
@@ -18,8 +19,39 @@
                        (links/get-link-targets ..auth.. ..folder1.. k/PARENTS-REL ..rt..) => [{:_id ..project1..}]
                        (links/get-link-targets ..auth.. ..folder2.. k/PARENTS-REL ..rt..) => [{:_id ..project1..} {:_id ..project2..}]
                        (links/get-link-targets ..auth.. ..project1.. k/PARENTS-REL ..rt..) => []
-                       (links/get-link-targets ..auth.. ..project2.. k/PARENTS-REL ..rt..) => []]
+                       (links/get-link-targets ..auth.. ..project2.. k/PARENTS-REL ..rt..) => []
+                       (core/get-entities ..auth.. [..file1.. ..file2.. ..folder1.. ..folder2.. ..project1.. ..project2..] ..rt..) => [{:_id        ..file1..
+                                                                                                                                        :type       k/FILE-TYPE
+                                                                                                                                        :attributes {:name ..filename1..}}
+                                                                                                                                       {:_id        ..file2..
+                                                                                                                                        :type       k/FILE-TYPE
+                                                                                                                                        :attributes {:name ..filename2..}}
+                                                                                                                                       {:_id        ..folder1..
+                                                                                                                                        :type       k/FOLDER-TYPE
+                                                                                                                                        :attributes {:name ..foldername1..}}
+                                                                                                                                       {:_id        ..folder2..
+                                                                                                                                        :type       k/FOLDER-TYPE
+                                                                                                                                        :attributes {:name ..foldername2..}}
+                                                                                                                                       {:_id        ..project1..
+                                                                                                                                        :type       k/PROJECT-TYPE
+                                                                                                                                        :attributes {:name ..projectname1..}}
+                                                                                                                                       {:_id        ..project2..
+                                                                                                                                        :type       k/PROJECT-TYPE
+                                                                                                                                        :attributes {:name ..projectname2..}}]]
+
     (fact "calculates file breadcrumbs"
-      (b/get-breadcrumbs ..auth.. ..rt.. [..file1.. ..file2..]) => {..file1.. [{..folder1.. [{..project1.. []}
-                                                                                             {..folder2.. [{..project1.. []} {..project2.. []}]}]
-                                                                                  ..file2.. [{..folder2.. [{..project1.. []} {..project2.. []}]}]}]})))
+      (b/get-breadcrumbs ..auth.. ..rt.. [..file1.. ..file2..]) => {..file1.. [[{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                                {:type k/FOLDER-TYPE :id ..folder1.. :name ..foldername1..}
+                                                                                {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                               [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                                {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                                {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                               [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                                {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                                {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]
+                                                                    ..file2.. [[{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
+                                                                                {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                                {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                               [{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
+                                                                                {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                                {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]})))

@@ -3,7 +3,9 @@
             [ovation.constants :as k]
             [ubergraph.core :as uber]
             [ubergraph.alg :as alg]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [ovation.core :as core]
+            [ovation.util :as util]))
 
 
 (defn build-graph
@@ -23,12 +25,13 @@
 
 (defn collect-paths
   "Finds all paths from ids to parents"
-  [graph ids]
-  (apply conj (map (fn [start]
-                     (let [span (alg/pre-span graph start)
-                           _    (pprint span)]
-                       {start span}))
-                 ids)))
+  [auth graph ids routes]
+  (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))
+        spans (apply conj (map (fn [start]
+                                 (let [span (alg/pre-span graph start)
+                                       _    (pprint span)]
+                                   {start span}))
+                             ids))]))
 
 
 
@@ -40,7 +43,7 @@
   "Gets all breadcrumb paths to entities with IDs `ids`"
   [auth routes ids]
   (let [graph (build-graph auth routes ids (uber/digraph))]
-    (collect-paths graph ids)))
+    (collect-paths auth graph ids routes)))
 
 
 
