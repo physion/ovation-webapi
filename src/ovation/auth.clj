@@ -142,7 +142,7 @@
 
       ;; default
       (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
-        (or (every? true? (collect-permissions permissions :admin))
+        (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
 (defn- can-read?
