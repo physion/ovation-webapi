@@ -16,15 +16,15 @@
           doc2 {:attributes {:label ..label2..}}
           doc3 {:attributes {}}]
       (against-background [(couch/get-view ..auth.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
-                                                                :endkey        [..id.. ..rel..]
-                                                                :inclusive_end true
-                                                                :reduce        false
-                                                                :include_docs  true}) => [doc1 doc2 doc3]
+                                                                         :endkey        [..id.. ..rel..]
+                                                                         :inclusive_end true
+                                                                         :reduce        false
+                                                                         :include_docs  true}) => [doc1 doc2 doc3]
                            (couch/get-view ..auth.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
-                                                                :endkey        [..id.. ..rel.. ..name..]
-                                                                :inclusive_end true
-                                                                :reduce        false
-                                                                :include_docs  true}) => [doc1]
+                                                                         :endkey        [..id.. ..rel.. ..name..]
+                                                                         :inclusive_end true
+                                                                         :reduce        false
+                                                                         :include_docs  true}) => [doc1]
                            (auth/can? anything ::auth/update anything) => true
                            (couch/db ..auth..) => ..db..
                            (auth/authenticated-teams ..auth..) => []
@@ -188,10 +188,10 @@
 
   (facts "`get-links`"
     (against-background [(couch/get-view ..auth.. ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
-                                                                  :endkey        [..id.. ..rel..]
-                                                                  :inclusive_end true
-                                                                  :reduce        false
-                                                                  :include_docs  true}) => ..docs..
+                                                                           :endkey        [..id.. ..rel..]
+                                                                           :inclusive_end true
+                                                                           :reduce        false
+                                                                           :include_docs  true}) => ..docs..
                          (couch/db ..auth..) => ..db..
                          (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..values..]
 
