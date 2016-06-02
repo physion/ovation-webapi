@@ -220,7 +220,7 @@
             (auth/can? ..auth.. ::auth/delete doc) => true
             (provided
               (auth/get-permissions ..auth.. ..roots..) => ..permissions..
-              (auth/collect-permissions ..permissions.. :write) => [true true]))))
+              (auth/collect-permissions ..permissions.. :admin) => [true true]))))
       (fact "Annoations require :user match authenticated user"
         (auth/can? ..auth.. ::auth/delete {:type "Annotation"
                                            :user ..user..}) => true
