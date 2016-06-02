@@ -35,8 +35,8 @@
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
                               [rel {:self (r/relationship-route rt dto rel)
-                                            :related (r/targets-route rt dto rel)}]
-                              ) relationships))]
+                                          :related (r/targets-route rt dto rel)}])
+                            relationships))]
 
     (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
 
@@ -110,9 +110,9 @@
       "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (-> doc
-                               (add-self-link router)
+                               (add-self-link router))
                                ;(add-value-permissions auth)
-                               )
+
         ;; default
         (add-value-permissions doc auth)))))
 

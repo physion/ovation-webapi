@@ -7,7 +7,9 @@
             [clojure.data.codec.base64 :as b64]
             [ovation.util :as util]
             [clojure.data.json :as json]
-            [ovation.config :as config])
+            [ovation.config :as config]
+            [ovation.constants :as k]
+            [ovation.core :as core])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -205,6 +207,20 @@
                                                                        :admin false}}]))))
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
+      (facts "Relations"
+        (fact "allowed if user is owner"
+          (auth/can? ..auth.. ::auth/delete {:type k/RELATION-TYPE
+                                             :user_id ..user..}) => true)
+        (fact "allowed if user can admin all collaboration roots"
+          (let [doc {:type k/RELATION-TYPE
+                     :user_id ..other..
+                     :source_id ..src..
+                     :target_id ..target..
+                     :links {:_collaboration_roots ..roots..}}]
+            (auth/can? ..auth.. ::auth/delete doc) => true
+            (provided
+              (auth/get-permissions ..auth.. ..roots..) => ..permissions..
+              (auth/collect-permissions ..permissions.. :write) => [true true]))))
       (fact "Annoations require :user match authenticated user"
         (auth/can? ..auth.. ::auth/delete {:type "Annotation"
                                            :user ..user..}) => true

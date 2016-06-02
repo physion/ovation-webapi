@@ -135,7 +135,10 @@
   (let [auth-user-id (authenticated-user-id auth)]
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
-      "Relation" (= auth-user-id (:user_id doc))
+      "Relation" (or (= auth-user-id (:user_id doc))
+                   (let [roots (get-in doc [:links :_collaboration_roots])
+                         permissions (get-permissions auth roots)]
+                     (every? true? (collect-permissions permissions :write))))
 
       ;; default
       (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
