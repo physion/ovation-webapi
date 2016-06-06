@@ -67,7 +67,9 @@
                            {:name "links" :description "Relationships between entities"}
                            {:name "provenance" :description "Provenance graph"}
                            {:name "teams" :description "Manage collaborations"}
-                           {:name "auth" :description "Authentication"}]}}}
+                           {:name "auth" :description "Authentication"}
+                           {:name "ui" :description "Support for Web UI"}
+                           {:name "search" :description "Search Ovation"}]}}}
 
 
   (middleware [[wrap-cors
@@ -392,6 +394,19 @@
             :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
             (let [auth   (auth/identity request)
                   rt     (router request)]
-              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt ids)}))))))))
+              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt ids)}))))
+
+        (context "/search" []
+          :tags ["search"]
+          (GET "/" request
+            :query-params [q :- s/Str
+                           bookmark :- s/Str]
+            :summary "Searches the Ovation database"
+            :return {:data {}
+                     :metadata {:bookmark s/Str}}
+            (let [auth (auth/identity request)
+                  rt (router request)]
+              (ok (search/search auth rt q)))))))))
+
 
 

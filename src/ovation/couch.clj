@@ -108,3 +108,7 @@
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
+
+(defn search
+  [db q]
+  nil)
