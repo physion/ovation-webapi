@@ -107,7 +107,7 @@
       (try+
         (let [entities (core/create-entities auth entities (r/router request))]
           ;; create teams for new Project entities
-          (doall (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+          (dorun (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
           (created {type-kw entities}))
 

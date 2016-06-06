@@ -74,7 +74,7 @@
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (note-text record)
           user-ids (map :uuid (mentions record))]
-      (doall (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
+      (dorun (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
       record)
     record))
 

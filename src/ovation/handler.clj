@@ -20,6 +20,7 @@
             [ovation.auth :as auth]
             [ovation.audit]
             [ovation.tokens :as tokens]
+            [ovation.breadcrumbs :as breadcrumbs]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
@@ -373,5 +374,24 @@
             :name :all-roles
             :return {:roles [TeamRole]}
             :summary "Gets all team Roles for the current Organization"
-            (ok (teams/get-roles* request))))))))
+            (ok (teams/get-roles* request))))
+
+        (context "/breadcrumbs" []
+          :tags ["ui"]
+          (GET "/" request
+            :query-params [id :- s/Str]
+            :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
+            :summary "Gets the breadcrumbs for an entity."
+            (let [auth   (auth/identity request)
+                  rt     (router request)]
+              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt [id])})))
+
+          (POST "/" request
+            :body [ids [s/Str]]
+            :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
+            :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
+            (let [auth   (auth/identity request)
+                  rt     (router request)]
+              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt ids)}))))))))
+
 
