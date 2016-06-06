@@ -36,37 +36,19 @@
      :name (get-in e [:attributes :name])}))
 
 (defn- extend-path
-  [id spans entities path]
-  (let [head (-> path last :id)
-        next-nodes (get-in spans [id head])]
-    (if (nil? next-nodes)
+  [id graph entities path]
+  (let [head       (-> path last :id)
+        next-nodes (map :dest (uber/out-edges graph head))]
+    (if (or (empty? next-nodes) (nil? next-nodes))
       path
-      (let [result (map (fn [n]
-                          (conj path (make-node-description n entities))) next-nodes)]
-        result))))
-
-(defn- extend-paths
-  [id spans entities starting-paths]
-  (loop [paths starting-paths]
-    (let [
-          _ (println paths)
-          head-nodes (map (fn [n] (-> n last :id)) paths)
-          next-nodes (doall (map #(get-in spans [id %]) head-nodes))]
-         (if (every? nil? next-nodes)
-           paths
-           (recur (map #(extend-path id spans entities %) paths))))))
-
+      (map (fn [n] (extend-path id graph entities (conj path (make-node-description n entities)))) next-nodes))))
 
 
 (defn collect-paths
   "Finds all paths from ids to parents"
   [auth graph ids routes]
-  (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))
-        spans (apply conj (map (fn [start]
-                                 (let [span (alg/pre-span graph start)]
-                                   {start span}))
-                             ids))]
-    (into {} (map (fn [id] [id (extend-paths id spans entities [[(make-node-description id entities)]])]) ids))))
+  (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))]
+    (into {} (map (fn [id] [id (mapcat identity (extend-path id graph entities  [(make-node-description id entities)]))]) ids))))
 
 
 (defn get-breadcrumbs
