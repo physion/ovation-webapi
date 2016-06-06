@@ -21,7 +21,8 @@
             [ovation.config :as config]
             [ovation.route-helpers :as rh]
             [buddy.sign.jws :as jws]
-            [ovation.constants :as c])
+            [ovation.constants :as c]
+            [ovation.breadcrumbs :as b])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
@@ -681,3 +682,102 @@
         (auth/identity anything) => ..auth..
         (prov/local ..auth.. ..rt.. [id]) => expected
         (r/router anything) => ..rt..))))
+
+(facts "About breadcrumbs"
+  (facts "POST"
+    (fact "returns file breadcrumbs"
+      (let [id1      (str (UUID/randomUUID))
+            id2      (str (UUID/randomUUID))
+            folder1  (str (UUID/randomUUID))
+            folder2  (str (UUID/randomUUID))
+            project1 (str (UUID/randomUUID))
+            project2 (str (UUID/randomUUID))
+            apikey   TOKEN
+            get      (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "breadcrumbs"]))
+                                 (mock/body (json-post-body [id1 id2]))) apikey)
+            expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
+                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]
+                      (keyword id2) [[{:type k/FILE-TYPE :id id2 :name "filename2"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                     [{:type k/FILE-TYPE :id id2 :name "filename2"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
+        (body-json get) => {:breadcrumbs expected}
+        (provided
+          (auth/identity anything) => ..auth..
+          (ovation.routes/router anything) => ..rt..
+          (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+          (b/get-parents ..auth.. id2 ..rt..) => [{:_id folder2}]
+          (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
+          (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
+          (b/get-parents ..auth.. project1 ..rt..) => []
+          (b/get-parents ..auth.. project2 ..rt..) => []
+          (core/get-entities ..auth.. #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
+                                                                                                :type       k/FILE-TYPE
+                                                                                                :attributes {:name "filename1"}}
+                                                                                               {:_id        id2
+                                                                                                :type       k/FILE-TYPE
+                                                                                                :attributes {:name "filename2"}}
+                                                                                               {:_id        folder1
+                                                                                                :type       k/FOLDER-TYPE
+                                                                                                :attributes {:name "foldername1"}}
+                                                                                               {:_id        folder2
+                                                                                                :type       k/FOLDER-TYPE
+                                                                                                :attributes {:name "foldername2"}}
+                                                                                               {:_id        project1
+                                                                                                :type       k/PROJECT-TYPE
+                                                                                                :attributes {:name "projectname1"}}
+                                                                                               {:_id        project2
+                                                                                                :type       k/PROJECT-TYPE
+                                                                                                :attributes {:name "projectname2"}}]))))
+  (facts "GET"
+    (fact "returns file breadcrumbs"
+      (let [id1      (str (UUID/randomUUID))
+            id2      (str (UUID/randomUUID))
+            folder1  (str (UUID/randomUUID))
+            folder2  (str (UUID/randomUUID))
+            project1 (str (UUID/randomUUID))
+            project2 (str (UUID/randomUUID))
+            apikey   TOKEN
+            get      (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version "breadcrumbs"]) "?id=" id1)) apikey)
+            expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
+                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
+        (body-json get) => {:breadcrumbs expected}
+        (provided
+          (auth/identity anything) => ..auth..
+          (ovation.routes/router anything) => ..rt..
+          (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+          (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
+          (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
+          (b/get-parents ..auth.. project1 ..rt..) => []
+          (b/get-parents ..auth.. project2 ..rt..) => []
+          (core/get-entities ..auth.. #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id        id1
+                                                                                            :type       k/FILE-TYPE
+                                                                                            :attributes {:name "filename1"}}
+                                                                                           {:_id        folder1
+                                                                                            :type       k/FOLDER-TYPE
+                                                                                            :attributes {:name "foldername1"}}
+                                                                                           {:_id        folder2
+                                                                                            :type       k/FOLDER-TYPE
+                                                                                            :attributes {:name "foldername2"}}
+                                                                                           {:_id        project1
+                                                                                            :type       k/PROJECT-TYPE
+                                                                                            :attributes {:name "projectname1"}}
+                                                                                           {:_id        project2
+                                                                                            :type       k/PROJECT-TYPE
+                                                                                            :attributes {:name "projectname2"}}])))))
