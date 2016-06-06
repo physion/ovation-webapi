@@ -9,8 +9,9 @@
 
 
 (defn get-parents
-  [auth routes id]
-  (links/get-link-targets auth id k/PARENTS-REL routes))
+  [auth id routes]
+  (let [parents (links/get-link-targets auth id k/PARENTS-REL routes)]
+    parents))
 
 
 (defn build-graph
@@ -48,15 +49,15 @@
   "Finds all paths from ids to parents"
   [auth graph ids routes]
   (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))]
-    (into {} (map (fn [id] [id (mapcat identity (extend-path id graph entities  [(make-node-description id entities)]))]) ids))))
+    (into {} (map (fn [id] [id (extend-path id graph entities [(make-node-description id entities)])]) ids))))
 
 
 (defn get-breadcrumbs
   "Gets all breadcrumb paths to entities with IDs `ids`"
   [auth routes ids]
-  (let [graph (build-graph auth routes ids (uber/digraph))]
-    (collect-paths auth graph ids routes)))
-
+  (let [graph  (build-graph auth routes ids (uber/digraph))
+        result (collect-paths auth graph ids routes)]
+    result))
 
 
 
