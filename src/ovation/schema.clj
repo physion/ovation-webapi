@@ -214,12 +214,13 @@
 
 (s/defschema TeamUser
   {
-   :id    s/Int
-   :uuid  s/Uuid
-   :name  s/Str
-   :email s/Str
-   :links {:roles s/Str}
-   :type  (s/eq "User")})
+   :id                        s/Int
+   :uuid                      s/Uuid
+   :name                      s/Str
+   :email                     s/Str
+   (s/optional-key :location) s/Str
+   :links                     {:roles s/Str}
+   :type                      (s/eq "User")})
 
 
 (s/defschema TeamMembershipRole
