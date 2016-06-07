@@ -385,16 +385,18 @@
             :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
             :summary "Gets the breadcrumbs for an entity."
             (let [auth   (auth/identity request)
-                  rt     (router request)]
-              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt [id])})))
+                  rt     (router request)
+                  result (breadcrumbs/get-breadcrumbs auth rt [id])]
+              (ok {:breadcrumbs result})))
 
           (POST "/" request
             :body [ids [s/Str]]
             :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
             :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
             (let [auth   (auth/identity request)
-                  rt     (router request)]
-              (ok {:breadcrumbs (breadcrumbs/get-breadcrumbs auth rt ids)}))))
+                  rt     (router request)
+                  result (breadcrumbs/get-breadcrumbs auth rt ids)]
+              (ok {:breadcrumbs result}))))))))
 
         (context "/search" []
           :tags ["search"]

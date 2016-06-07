@@ -14,12 +14,14 @@
             [ovation.revisions :as revisions]
             [clojure.walk :as walk]
             [ovation.constants :as k]
-            [ovation.teams :as teams]))
+            [ovation.teams :as teams]
+            [ovation.routes :as routes]))
 
 (defn get-annotations*
   [request id annotation-key]
   (let [auth (auth/identity request)
-        annotations (annotations/get-annotations auth [id] annotation-key)]
+        rt (routes/router request)
+        annotations (annotations/get-annotations auth [id] annotation-key rt)]
     (ok {(keyword annotation-key) annotations})))
 
 (defn post-annotations*

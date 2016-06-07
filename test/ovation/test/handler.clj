@@ -22,7 +22,8 @@
             [ovation.route-helpers :as rh]
             [buddy.sign.jws :as jws]
             [ovation.constants :as c]
-            [ovation.breadcrumbs :as b])
+            [ovation.breadcrumbs :as b]
+            [ovation.routes :as routes])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
@@ -146,7 +147,8 @@
   (let [apikey TOKEN]
     (against-background [(teams/get-teams anything) => TEAMS
                          (auth/permissions anything) => PERMISSIONS
-                         (auth/identity anything) => ..auth..]
+                         (auth/identity anything) => ..auth..
+                         (routes/router anything) => ..rt..]
       (facts "GET /entities/:id/annotations/:type"
         (let [id   (str (util/make-uuid))
               tags [{:_id             (str (util/make-uuid))
@@ -156,7 +158,7 @@
                      :type            "Annotation"
                      :annotation_type "tags"
                      :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/get-annotations ..auth.. [id] "tags") => tags]
+          (against-background [(annotations/get-annotations ..auth.. [id] "tags" ..rt..) => tags]
             (fact "returns annotations by entity and user"
               (let [path (str "/api/v1/entities/" id "/annotations/tags")
                     {:keys [status body]} (get* app path apikey)]

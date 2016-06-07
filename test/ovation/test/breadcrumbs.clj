@@ -9,7 +9,7 @@
 (facts "About parents"
   (facts "all entities"
     (fact "is parents"
-      (b/get-parents ..auth.. ..rt.. ..id..) => ..parents..
+      (b/get-parents ..auth.. ..id.. ..rt..) => ..parents..
       (provided
         (links/get-link-targets ..auth.. ..id.. "parents" ..rt..) => ..parents..))))
 
