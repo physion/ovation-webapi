@@ -40,16 +40,20 @@
   [id graph entities path]
   (let [head       (-> path last :id)
         next-nodes (map :dest (uber/out-edges graph head))]
-    (if (or (empty? next-nodes) (nil? next-nodes))
-      path
-      (map (fn [n] (extend-path id graph entities (conj path (make-node-description n entities)))) next-nodes))))
+    (if (empty? next-nodes)
+      [path]
+      (mapcat (fn [n] (extend-path id graph entities (conj path (make-node-description n entities)))) next-nodes))))
 
 
 (defn collect-paths
   "Finds all paths from ids to parents"
   [auth graph ids routes]
   (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))]
-    (into {} (map (fn [id] [id (extend-path id graph entities [(make-node-description id entities)])]) ids))))
+    (into {} (map (fn [id]
+                    (let [paths (extend-path id graph entities [(make-node-description id entities)])]
+                      (println paths)
+                      [id paths]))
+               ids))))
 
 
 (defn get-breadcrumbs
