@@ -403,7 +403,7 @@
           :tags ["search"]
           (GET "/" request
             :query-params [q :- s/Str
-                           {bookmark :- s/Str nil}]
+                           {bookmark :- (s/maybe s/Str) nil}]
             :summary "Searches the Ovation database"
             :return {:data     [{:id          s/Uuid
                                  :type        s/Str
