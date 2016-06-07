@@ -7,6 +7,7 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ovation.html :as html]
+            [ovation.transform.read :as read]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
             [ovation.config :as config]
@@ -15,13 +16,13 @@
 
 ;; READ
 (defn get-annotations
-  [auth ids annotation-type]
+  [auth ids annotation-type routes]
   (let [db (couch/db auth)
         opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}]
 
-    (couch/get-view auth db k/ANNOTATIONS-VIEW opts)))
+    (read/values-from-couch (couch/get-view auth db k/ANNOTATIONS-VIEW opts) auth routes)))
 
 
 ;; WRITE
