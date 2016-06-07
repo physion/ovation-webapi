@@ -7,7 +7,8 @@
             [ovation.core :as core]
             [ovation.constants :as c]
             [ring.util.http-response :refer [unprocessable-entity forbidden] :as http-response]
-            [ovation.constants :as k])
+            [ovation.constants :as k]
+            [ovation.transform.read :as read])
   (:import (clojure.lang ExceptionInfo)))
 
 
@@ -59,12 +60,13 @@
                 :_rev            ..rev..
                 :entity          id2
                 :user            user2}]
-        (a/get-annotations ..auth.. [id1 id2] ..type..) => [a1 a2 a3 a4]
+        (a/get-annotations ..auth.. [id1 id2] ..type.. ..rt..) => ..result..
         ;{(keyword id1) {(keyword user1) [a1]
         ;                                                                   (keyword user2) [a2]}
         ;                                                    (keyword id2) {(keyword user1) [a3]
         ;                                                                   (keyword user2) [a4]}}
         (provided
+          (read/values-from-couch [a1 a2 a3 a4] ..auth.. ..rt..) => ..result..
           (couch/get-view ..auth.. ..db.. "annotation_docs" {:keys         [[id1 ..type..]
                                                                             [id2 ..type..]]
                                                              :include_docs true
