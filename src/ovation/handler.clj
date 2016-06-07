@@ -398,17 +398,17 @@
                   result (breadcrumbs/get-breadcrumbs auth rt ids)]
               (ok {:breadcrumbs result}))))))))
 
-        (context "/search" []
-          :tags ["search"]
-          (GET "/" request
-            :query-params [q :- s/Str
-                           bookmark :- s/Str]
-            :summary "Searches the Ovation database"
-            :return {:data {}
-                     :metadata {:bookmark s/Str}}
-            (let [auth (auth/identity request)
-                  rt (router request)]
-              (ok (search/search auth rt q)))))))))
+(context "/search" []
+  :tags ["search"]
+  (GET "/" request
+    :query-params [q :- s/Str
+                   bookmark :- s/Str]
+    :summary "Searches the Ovation database"
+    :return {:data {}
+             :metadata {:bookmark s/Str}}
+    (let [auth (auth/identity request)
+          rt (router request)]
+      (ok (ovation.search/search auth rt q)))))
 
 
 
