@@ -16,18 +16,19 @@
 
 (defn build-graph
   "Builds a directed graph of child -> parent nodes using loop/recur. Returns the Ubergraph."
-  [auth routes entity-ids graph]
-  (loop [ids entity-ids
-         g   graph]
-    (let [edges        (pmap (fn [id]
-                               (let [parents (get-parents auth id routes)]
-                                 (map (fn [parent] [id (:_id parent)]) parents))) ids)
-          parent-edges (apply concat edges)
-          parent-ids   (set (map #(second %) parent-edges))]
+  [auth routes entity-ids g]
+  (let [graph (apply uber/add-nodes g entity-ids)]
+    (loop [ids entity-ids
+           g   graph]
+      (let [edges        (pmap (fn [id]
+                                 (let [parents (get-parents auth id routes)]
+                                   (map (fn [parent] [id (:_id parent)]) parents))) ids)
+            parent-edges (apply concat edges)
+            parent-ids   (set (map #(second %) parent-edges))]
 
-      (if (empty? ids)
-        g
-        (recur parent-ids (uber/add-edges* g parent-edges))))))
+        (if (empty? ids)
+          g
+          (recur parent-ids (uber/add-edges* g parent-edges)))))))
 
 (defn make-node-description
   [id entities]
@@ -51,7 +52,6 @@
   (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))]
     (into {} (map (fn [id]
                     (let [paths (extend-path id graph entities [(make-node-description id entities)])]
-                      (println paths)
                       [id paths]))
                ids))))
 
