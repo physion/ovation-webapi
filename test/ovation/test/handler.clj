@@ -750,15 +750,15 @@
             project2 (str (UUID/randomUUID))
             apikey   TOKEN
             get      (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version "breadcrumbs"]) "?id=" id1)) apikey)
-            expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
-                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
+            expected [[{:type k/FILE-TYPE :id id1 :name "filename1"}
+                       {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
+                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                       {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]]
         (body-json get) => {:breadcrumbs expected}
         (provided
           (auth/identity anything) => ..auth..
