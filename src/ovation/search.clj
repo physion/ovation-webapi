@@ -3,17 +3,24 @@
             [ovation.constants :as k]
             [ovation.core :as core]))
 
+(defn entity-ids
+  [rows]
+  (map (fn [r]
+         (condp = (get-in r [:fields :type])
+           k/ANNOTATION-TYPE (get-in r [:fields :entity])
+           ;; default
+           (:id r))) rows))
+
 (defn get-results
   [auth routes rows]
-  (let [ids (map (fn [r]
-                     (condp = (get-in r [:fields :type])
-                       k/ANNOTATION-TYPE (get-in r [:fields :entity])
-                       ;; default
-                       (:id r)) rows))]
-    (core/get-entities auth ids routes)))
+  (let [ids (entity-ids rows)
+        breadcrumbs (ovation.breadcrumbs/get-breadcrumbs auth routes ids)]
+    (map (fn [entity] {:id          (:_id entity)
+                       :type        (:type entity)
+                       :breadcrumbs (get breadcrumbs (:_id entity))}) (core/get-entities auth ids routes))))
 
 (defn search
-  [auth rt q]
+  [auth rt q & {:keys [bookmark] :or {bookmark nil}}]
   (let [db       (couch/db auth)
         raw      (couch/search db q)
         entities (get-results auth rt (:rows raw))]

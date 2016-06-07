@@ -20,6 +20,7 @@
             [ovation.auth :as auth]
             [ovation.audit]
             [ovation.tokens :as tokens]
+            [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [schema.core :as s]
             [ovation.teams :as teams]
@@ -47,7 +48,7 @@
   (route/resources "/public"))
 
 (defapi app
-  {:swagger {:ui "/"
+  {:swagger {:ui   "/"
              :spec "/swagger.json"
              :data {:info {
                            :version        "2.0.0"
@@ -73,7 +74,7 @@
 
 
   (middleware [[wrap-cors
-                :access-control-allow-origin #".+"        ;; Allow from any origin
+                :access-control-allow-origin #".+"          ;; Allow from any origin
                 :access-control-allow-methods [:get :put :post :delete :options]
                 :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
@@ -91,8 +92,8 @@
                wrap-newrelic-transaction]
 
 
-    (undocumented
-      static-resources)
+              (undocumented
+                static-resources)
 
     (context "/services" []
       (context "/token" []
@@ -101,7 +102,7 @@
           :name :get-token
           :return {:token s/Str}
           :summary "Gets an authorization token"
-          :body [body {:email s/Str
+          :body [body {:email    s/Str
                        :password s/Str}]
           (tokens/get-token (:email body) (:password body)))
 
@@ -149,7 +150,7 @@
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
-              (let [auth (auth/identity request)
+              (let [auth         (auth/identity request)
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
@@ -162,7 +163,7 @@
           :tags ["projects"]
           (get-resources "Project")
           (post-resources "Project" [NewProject])
-          (context "/:id"  []
+          (context "/:id" []
             :path-params [id :- s/Str]
 
             (get-resource "Project" id)
@@ -225,10 +226,10 @@
             (POST "/move" request
               :name :move-folder
               :return {s/Keyword (s/either File Folder)
-                       :links [{s/Keyword s/Any}]
-                       :updates [{s/Keyword s/Any}]}
+                       :links    [{s/Keyword s/Any}]
+                       :updates  [{s/Keyword s/Any}]}
               :summary "Move folder from source folder to destination folder"
-              :body [info {:source s/Str
+              :body [info {:source      s/Str
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
@@ -249,17 +250,17 @@
             (POST "/" request
               :name :create-file-entity
               :return CreateRevisionResponse
-              :body   [revisions {:entities [NewRevision]}]
+              :body [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id (:entities revisions))))
 
             (POST "/move" request
               :name :move-file
               :return {s/Keyword (s/either File Folder)
-                       :links [{s/Keyword s/Any}]
-                       :updates [{s/Keyword s/Any}]}
+                       :links    [{s/Keyword s/Any}]
+                       :updates  [{s/Keyword s/Any}]}
               :summary "Move file from source folder to destination folder"
-              :body [info {:source s/Str
+              :body [info {:source      s/Str
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
@@ -306,9 +307,9 @@
 
             (GET "/" request
               :name :entity-provenance
-              :return {:provenance [{:_id s/Uuid
-                                     :type s/Str
-                                     :name s/Str
+              :return {:provenance [{:_id      s/Uuid
+                                     :type     s/Str
+                                     :name     s/Str
                                      s/Keyword [{:_id s/Uuid :name s/Str :type s/Str}]}]}
               :summary "Local provenance for a single entity"
               (let [auth   (auth/identity request)
@@ -324,8 +325,8 @@
 
             (GET "/" request
               :name :get-team
-              :return {:team Team
-                       :users [TeamUser],
+              :return {:team             Team
+                       :users            [TeamUser],
                        :membership_roles [TeamMembershipRole]}
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
@@ -396,19 +397,23 @@
             (let [auth   (auth/identity request)
                   rt     (router request)
                   result (breadcrumbs/get-breadcrumbs auth rt ids)]
-              (ok {:breadcrumbs result}))))))))
+              (ok {:breadcrumbs result}))))
 
-(context "/search" []
-  :tags ["search"]
-  (GET "/" request
-    :query-params [q :- s/Str
-                   bookmark :- s/Str]
-    :summary "Searches the Ovation database"
-    :return {:data {}
-             :metadata {:bookmark s/Str}}
-    (let [auth (auth/identity request)
-          rt (router request)]
-      (ok (ovation.search/search auth rt q)))))
+        (context "/search" []
+          :tags ["search"]
+          (GET "/" request
+            :query-params [q :- s/Str
+                           {bookmark :- s/Str nil}]
+            :summary "Searches the Ovation database"
+            :return {:data     [{:id          s/Uuid
+                                 :type        s/Str
+                                 :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
+                     :metadata {:bookmark   s/Str
+                                :total_rows s/Num}}
+            (let [auth   (auth/identity request)
+                  rt     (router request)
+                  result (search/search auth rt q :bookmark bookmark)]
+              (ok result))))))))
 
 
 

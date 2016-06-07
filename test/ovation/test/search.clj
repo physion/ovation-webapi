@@ -7,13 +7,20 @@
 
 
 (facts "About search"
-  (fact "calls Cloudant search"
-    (search/search ..auth.. ..rt.. ..q..) => {:data [..result1.. ..result2..]
+  (fact "transforms Cloudant search"
+    (search/search ..auth.. ..rt.. ..q..) => {:data     [..result1.. ..result2..]
                                               :metadata {:bookmark ..bookmark..
                                                          :total_rows ..total..}}
     (provided
       (couch/db ..auth..) => ..db..
-      (core/get-entities ..auth.. (seq [..id1.. ..id2..]) ..rt.) => [..result1.. ..result2..]
+      (search/get-results ..auth.. ..rt.. [{:id     ..id1..
+                                            :order  [3.9 107]
+                                            :fields {:id   ..id1..
+                                                     :type k/PROJECT-TYPE}}
+                                           {:id     ..id2..
+                                            :order  [3.9 107]
+                                            :fields {:id   ..id2..
+                                                     :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
       (couch/search ..db.. ..q..) => {:total_rows ..total..
                                       :bookmark ..bookmark..
                                       :rows [{:id ..id1..
@@ -25,18 +32,34 @@
                                               :fields {:id ..id2..
                                                        :type k/REVISION-TYPE}}]}))
 
-  (fact "Returns entity for Annotation"
-    (search/search ..auth.. ..rt.. ..q..) => {:data [..entity..]
-                                              :metadata {:bookmark ..bookmark..
-                                                         :total_rows ..total..}}
-    (provided
-      (couch/db ..auth..) => ..db..
-      (core/get-entities ..auth.. [..entity..] ..rt..) => [..entity..]
-      (couch/search ..db.. ..q..) => {:total_rows ..total..
-                                      :bookmark   ..bookmark..
-                                      :rows       [{:id     ..id1..
-                                                    :order  [3.9 107]
-                                                    :fields {:id   ..id1..
-                                                             :entity ..entity..
-                                                             :type k/ANNOTATION-TYPE}}]})))
+  (fact "Extracts entity ids"
+    (let [rows [{:id     ..id1..
+                 :order  [3.9 107]
+                 :fields {:id   ..id1..
+                          :type k/PROJECT-TYPE}}
+                {:id     ..id2..
+                 :order  [3.9 107]
+                 :fields {:id     ..id2..
+                          :entity ..eid..
+                          :type   k/ANNOTATION-TYPE}}]]
+      (search/get-results ..auth.. ..rt.. rows) => [{:id ..eid.. :type k/PROJECT-TYPE :breadcrumbs ..bc1..}
+                                                    {:id ..id1.. :type k/FILE-TYPE :breadcrumbs ..bc2..}]
+      (provided
+        (ovation.breadcrumbs/get-breadcrumbs ..auth.. ..rt.. [..eid.. ..id1..]) => {..eid.. ..bc1..
+                                                                                    ..id1.. ..bc2..}
+        (search/entity-ids rows) => [..eid.. ..id1..]
+        (core/get-entities ..auth.. [..eid.. ..id1..] ..rt..) => [{:_id ..eid..
+                                                                   :type k/PROJECT-TYPE}{:_id ..id1..}
+                                                                   :type k/FILE-TYPE])))
+
+  (fact "Gets entity ID from annotations"
+    (search/entity-ids [{:id     ..id1..
+                         :order  [3.9 107]
+                         :fields {:id   ..id1..
+                                  :type k/PROJECT-TYPE}}
+                        {:id     ..id2..
+                         :order  [3.9 107]
+                         :fields {:id     ..id2..
+                                  :entity ..eid..
+                                  :type   k/ANNOTATION-TYPE}}]) => [..id1.. ..eid..]))
 
