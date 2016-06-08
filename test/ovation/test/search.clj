@@ -49,8 +49,9 @@
                                                                                     ..id1.. ..bc2..}
         (search/entity-ids rows) => [..eid.. ..id1..]
         (core/get-entities ..auth.. [..eid.. ..id1..] ..rt..) => [{:_id ..eid..
-                                                                   :type k/PROJECT-TYPE}{:_id ..id1..}
-                                                                   :type k/FILE-TYPE])))
+                                                                   :type k/PROJECT-TYPE}
+                                                                  {:_id ..id1..
+                                                                   :type k/FILE-TYPE}])))
 
   (fact "Gets entity ID from annotations"
     (search/entity-ids [{:id     ..id1..
