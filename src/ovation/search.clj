@@ -15,6 +15,10 @@
            ;; default
            (:id r))) rows))
 
+(defn breadcrumbs-url
+  [routes id]
+  (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
+
 (defn get-results
   [auth routes rows]
   (let [ids (entity-ids rows)
@@ -25,7 +29,7 @@
                        :entity_type (:type entity)
                        :name        (get-in entity [:attributes :name] (:_id entity))
                        :project_names (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) (links/collaboration-roots entity))
-                       :breadcrumbs (routes/named-route routes :get-breadcrumbs {:id (:_id entity)})}) entities)))
+                       :links {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
 (defn search
   [auth rt q & {:keys [bookmark] :or {bookmark nil}}]

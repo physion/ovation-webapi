@@ -411,7 +411,7 @@
                                            :entity_type s/Str
                                            :name        s/Str
                                            :project_names [s/Str]
-                                           :breadcrumbs s/Str}]
+                                           :links {:breadcrumbs s/Str}}]
                      :metadata {:bookmark   s/Str
                                 :total_rows s/Int}}
             (let [auth   (auth/identity request)
