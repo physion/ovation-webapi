@@ -18,6 +18,7 @@
         breadcrumbs (breadcrumbs/get-breadcrumbs auth routes ids)]
     (map (fn [entity] {:id          (:_id entity)
                        :type        (:type entity)
+                       :name        (get-in entity [:attributes :name] (:_id entity))
                        :breadcrumbs (get breadcrumbs (:_id entity))}) (core/get-entities auth ids routes))))
 
 (defn search
