@@ -383,12 +383,12 @@
           :tags ["ui"]
           (GET "/" request
             :query-params [id :- s/Str]
-            :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
+            :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
             :summary "Gets the breadcrumbs for an entity."
             (let [auth   (auth/identity request)
                   rt     (router request)
                   result (breadcrumbs/get-breadcrumbs auth rt [id])]
-              (ok {:breadcrumbs result})))
+              (ok {:breadcrumbs (get result id)})))
 
           (POST "/" request
             :body [ids [s/Str]]
