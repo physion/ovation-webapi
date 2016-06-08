@@ -60,7 +60,6 @@
                                   :type k/PROJECT-TYPE}}
                         {:id     ..id2..
                          :order  [3.9 107]
-                         :fields {:id     ..id2..
-                                  :entity ..eid..
+                         :fields {:id     ..eid..
                                   :type   k/ANNOTATION-TYPE}}]) => [..id1.. ..eid..]))
 

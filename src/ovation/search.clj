@@ -8,7 +8,7 @@
   [rows]
   (map (fn [r]
          (condp = (get-in r [:fields :type])
-           k/ANNOTATION-TYPE (get-in r [:fields :entity])
+           k/ANNOTATION-TYPE (get-in r [:fields :id])
            ;; default
            (:id r))) rows))
 
