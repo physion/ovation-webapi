@@ -407,7 +407,7 @@
                            {limit :- s/Int 25}]
             :summary "Searches the Ovation database"
             :return {:data     [{:id          s/Uuid
-                                 :type        s/Str
+                                 :entity_type s/Str
                                  :name        s/Str
                                  :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
                      :metadata {:bookmark   s/Str

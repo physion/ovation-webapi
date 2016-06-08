@@ -17,7 +17,7 @@
   (let [ids (entity-ids rows)
         breadcrumbs (breadcrumbs/get-breadcrumbs auth routes ids)]
     (map (fn [entity] {:id          (:_id entity)
-                       :type        (:type entity)
+                       :entity_type (:type entity)
                        :name        (get-in entity [:attributes :name] (:_id entity))
                        :breadcrumbs (get breadcrumbs (:_id entity))}) (core/get-entities auth ids routes))))
 
@@ -26,7 +26,7 @@
   (let [db       (couch/db auth)
         raw      (couch/search db q :bookmark bookmark)
         entities (get-results auth rt (:rows raw))]
-    {:metadata {:total_rows (:total_rows raw)
-                :bookmark   (:bookmark raw)}
-     :data     entities}))
+    {:metadata       {:total_rows (:total_rows raw)
+                      :bookmark   (:bookmark raw)}
+     :search_results entities}))
 
