@@ -8,9 +8,9 @@
 
 (facts "About search"
   (fact "transforms Cloudant search"
-    (search/search ..auth.. ..rt.. ..q..) => {:data     [..result1.. ..result2..]
-                                              :metadata {:bookmark ..bookmark..
-                                                         :total_rows ..total..}}
+    (search/search ..auth.. ..rt.. ..q..) => {:search_results [..result1.. ..result2..]
+                                              :metadata       {:bookmark ..bookmark..
+                                                               :total_rows ..total..}}
     (provided
       (couch/db ..auth..) => ..db..
       (search/get-results ..auth.. ..rt.. [{:id     ..id1..
@@ -42,8 +42,8 @@
                  :fields {:id     ..id2..
                           :entity ..eid..
                           :type   k/ANNOTATION-TYPE}}]]
-      (search/get-results ..auth.. ..rt.. rows) => [{:id ..eid.. :type k/PROJECT-TYPE :name ..project.. :breadcrumbs ..bc1..}
-                                                    {:id ..id1.. :type k/FILE-TYPE :name ..file.. :breadcrumbs ..bc2..}]
+      (search/get-results ..auth.. ..rt.. rows) => [{:id ..eid.. :entity_type k/PROJECT-TYPE :name ..project.. :breadcrumbs ..bc1..}
+                                                    {:id ..id1.. :entity_type k/FILE-TYPE :name ..file.. :breadcrumbs ..bc2..}]
       (provided
         (ovation.breadcrumbs/get-breadcrumbs ..auth.. ..rt.. [..eid.. ..id1..]) => {..eid.. ..bc1..
                                                                                     ..id1.. ..bc2..}

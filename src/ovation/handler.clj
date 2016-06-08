@@ -406,9 +406,9 @@
                            {bookmark :- (s/maybe s/Str) nil}
                            {limit :- s/Int 25}]
             :summary "Searches the Ovation database"
-            :return {:data     [{:id          s/Uuid
-                                 :type        s/Str
-                                 :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
+            :return {:search_results     [{:id          s/Uuid
+                                           :entity_type        s/Str
+                                           :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
                      :metadata {:bookmark   s/Str
                                 :total_rows s/Int}}
             (let [auth   (auth/identity request)
