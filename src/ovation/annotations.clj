@@ -7,11 +7,11 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ovation.html :as html]
+            [ovation.logging :as logging]
             [ovation.transform.read :as read]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
-            [ovation.config :as config]
-            [clojure.string :as string]))
+            [ovation.config :as config]))
 
 
 ;; READ
@@ -65,7 +65,7 @@
                  :headers {"Content-Type" "application/json"
                            "Authorization" (auth/make-bearer auth)}}
         url     (util/join-path [config/NOTIFICATIONS_SERVER "api" "common" "v1" "notifications"])]
-    (ovation.logging/info (str "Sending mention notification: " user-id))
+    (logging/info (str "Sending mention notification: " user-id))
     (let [resp (org.httpkit.client/post url options)]
       resp)))
 
