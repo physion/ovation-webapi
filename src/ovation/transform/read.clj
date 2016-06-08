@@ -6,7 +6,8 @@
             [ovation.routes :as r]
             [ovation.constants :as c]
             [ovation.constants :as k]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [clojure.string :as s]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -50,6 +51,15 @@
   "Adds self link to dto"
   [dto rt]
   (assoc-in dto [:links :self] (r/self-route rt dto)))
+
+(defn add-annotation-self-link
+  "Adds self link to Annotation dto"
+  [dto rt]
+  (let [annotation-key (:annotation_type dto)
+        entity-id      (:entity dto)
+        annotation-id  (:_id dto)
+        route-name     (keyword (str "delete-" (s/lower-case annotation-key)))]
+    (assoc-in dto [:links :self] (r/named-route rt route-name {:id entity-id :annotation-id annotation-id}))))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"
@@ -111,10 +121,15 @@
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (-> doc
                                (add-self-link router))
-                               ;(add-value-permissions auth)
+        ;(add-value-permissions auth)
+
+        c/ANNOTATION-TYPE-NAME (-> doc
+                                 (add-annotation-self-link router)
+                                 (add-value-permissions auth))
 
         ;; default
-        (add-value-permissions doc auth)))))
+        (-> doc
+          (add-value-permissions auth))))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"

@@ -9,8 +9,10 @@
 (def RELATION-TYPE util/RELATION_TYPE)
 (def TEAM-TYPE "Team")
 (def PROJECT-TYPE "Project")
+(def SOURCE-TYPE "Source")
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
+(def ANNOTATION-TYPE-NAME (clojure.string/lower-case ANNOTATION-TYPE))
 
 ;; Important rels
 (def ACTIVITIES-REL "activities")
@@ -18,6 +20,7 @@
 (def OUTPUTS-REL "outputs")
 (def ACTIONS-REL "actions")
 (def ORIGINS-REL "origins")
+(def PARENTS-REL "parents")
 
 ;; Constants from Java API
 (def ENTITIES-BY-TYPE-VIEW "entities_by_type")              ;; NB this **MUST** stay in sync with EntityDao$Views/ENTITIES_BY_TYPE

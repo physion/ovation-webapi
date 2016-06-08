@@ -38,8 +38,10 @@
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
-                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "r239"]]
-                 ;[clj-tagsoup/clj-tagsoup "0.3.0"]]
+                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "r239"]
+
+                 ;; Graph
+                 [ubergraph "0.2.1"]]
 
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]

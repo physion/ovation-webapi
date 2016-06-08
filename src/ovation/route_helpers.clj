@@ -14,12 +14,14 @@
             [ovation.revisions :as revisions]
             [clojure.walk :as walk]
             [ovation.constants :as k]
-            [ovation.teams :as teams]))
+            [ovation.teams :as teams]
+            [ovation.routes :as routes]))
 
 (defn get-annotations*
   [request id annotation-key]
   (let [auth (auth/identity request)
-        annotations (annotations/get-annotations auth [id] annotation-key)]
+        rt (routes/router request)
+        annotations (annotations/get-annotations auth [id] annotation-key rt)]
     (ok {(keyword annotation-key) annotations})))
 
 (defn post-annotations*
@@ -107,7 +109,7 @@
       (try+
         (let [entities (core/create-entities auth entities (r/router request))]
           ;; create teams for new Project entities
-          (doall (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+          (dorun (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
           (created {type-kw entities}))
 
