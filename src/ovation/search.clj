@@ -2,7 +2,10 @@
   (:require [ovation.couch :as couch]
             [ovation.constants :as k]
             [ovation.core :as core]
-            [ovation.breadcrumbs :as breadcrumbs]))
+            [ovation.breadcrumbs :as breadcrumbs]
+            [ovation.routes :as routes]
+            [ovation.links :as links]
+            [ovation.util :as util]))
 
 (defn entity-ids
   [rows]
@@ -12,14 +15,21 @@
            ;; default
            (:id r))) rows))
 
+(defn breadcrumbs-url
+  [routes id]
+  (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
+
 (defn get-results
   [auth routes rows]
   (let [ids (entity-ids rows)
-        breadcrumbs (breadcrumbs/get-breadcrumbs auth routes ids)]
+        entities (core/get-entities auth ids routes)
+        root-ids (mapcat #(links/collaboration-roots %) entities)
+        roots (util/into-id-map (core/get-entities auth root-ids routes))]
     (map (fn [entity] {:id          (:_id entity)
                        :entity_type (:type entity)
                        :name        (get-in entity [:attributes :name] (:_id entity))
-                       :breadcrumbs (get breadcrumbs (:_id entity))}) (core/get-entities auth ids routes))))
+                       :project_names (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) (links/collaboration-roots entity))
+                       :links {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
 (defn search
   [auth rt q & {:keys [bookmark] :or {bookmark nil}}]
