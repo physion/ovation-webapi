@@ -6,7 +6,12 @@
             [ovation.auth :as auth]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [org.httpkit.client :as httpkit.client]
+            [ring.util.http-predicates :as http-predicates]
+            [ovation.util :as util]
+            [ring.util.http-response :refer [throw!]]))
+
 
 (def design-doc "api")
 
@@ -110,5 +115,24 @@
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
 
 (defn search
-  [db q]
-  nil)
+  [db q & {:keys [bookmark limit] :or [bookmark nil
+                                       limit nil]}]
+  (let [query-params {:q q :bookmark bookmark :limit limit}
+        opts         {:query-params (apply dissoc
+                                      query-params
+                                      (for [[k v] query-params :when (nil? v)] k))
+                      :headers      {"Accept" "application/json"}
+                      :basic-auth   [(config/config "CLOUDANT_USERNAME") (config/config "CLOUDANT_PASSWORD")]}
+        uri          (str (url/url (config/config "CLOUDANT_DB_URL") "_design" "search" "_search" "all"))
+        resp         @(httpkit.client/get uri opts)]
+    (cond
+      (http-predicates/ok? resp) (-> resp :body util/from-json)
+      :else (throw! resp))))
+
+;_design/search/_search/all?q=test
+; (defn db
+;"Database URL from authorization info"
+;[auth]
+;(-> (url/url (config/config "CLOUDANT_DB_URL"))
+;  (assoc :username (config/config "CLOUDANT_USERNAME")
+;         :password (config/config "CLOUDANT_PASSWORD"))))

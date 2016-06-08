@@ -23,7 +23,7 @@
 (defn search
   [auth rt q & {:keys [bookmark] :or {bookmark nil}}]
   (let [db       (couch/db auth)
-        raw      (couch/search db q)
+        raw      (couch/search db q :bookmark bookmark)
         entities (get-results auth rt (:rows raw))]
     {:metadata {:total_rows (:total_rows raw)
                 :bookmark   (:bookmark raw)}

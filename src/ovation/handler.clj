@@ -403,16 +403,17 @@
           :tags ["search"]
           (GET "/" request
             :query-params [q :- s/Str
-                           {bookmark :- (s/maybe s/Str) nil}]
+                           {bookmark :- (s/maybe s/Str) nil}
+                           {limit :- s/Int 25}]
             :summary "Searches the Ovation database"
             :return {:data     [{:id          s/Uuid
                                  :type        s/Str
                                  :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
                      :metadata {:bookmark   s/Str
-                                :total_rows s/Num}}
+                                :total_rows s/Int}}
             (let [auth   (auth/identity request)
                   rt     (router request)
-                  result (search/search auth rt q :bookmark bookmark)]
+                  result (search/search auth rt q :bookmark bookmark :limit limit)]
               (ok result))))))))
 
 
