@@ -383,6 +383,7 @@
           :tags ["ui"]
           (GET "/" request
             :query-params [id :- s/Str]
+            :name :get-breadcrumbs
             :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
             :summary "Gets the breadcrumbs for an entity."
             (let [auth   (auth/identity request)
@@ -409,7 +410,8 @@
             :return {:search_results     [{:id          s/Uuid
                                            :entity_type s/Str
                                            :name        s/Str
-                                           :breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}]
+                                           :project_names [s/Str]
+                                           :breadcrumbs s/Str}]
                      :metadata {:bookmark   s/Str
                                 :total_rows s/Int}}
             (let [auth   (auth/identity request)
