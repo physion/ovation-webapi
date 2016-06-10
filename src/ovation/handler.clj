@@ -407,13 +407,15 @@
                            {bookmark :- (s/maybe s/Str) nil}
                            {limit :- s/Int 25}]
             :summary "Searches the Ovation database"
-            :return {:search_results     [{:id          s/Uuid
-                                           :entity_type s/Str
-                                           :name        s/Str
-                                           :project_names [s/Str]
-                                           :links {:breadcrumbs s/Str}}]
-                     :metadata {:bookmark   s/Str
-                                :total_rows s/Int}}
+            :return {:search_results [{:id            s/Uuid
+                                       :entity_type   s/Str
+                                       :name          s/Str
+                                       :owner         s/Uuid
+                                       :updated-at    s/Str
+                                       :project_names [s/Str]
+                                       :links         {:breadcrumbs s/Str}}]
+                     :meta           {:bookmark   s/Str
+                                      :total_rows s/Int}}
             (let [auth   (auth/identity request)
                   rt     (router request)
                   result (search/search auth rt q :bookmark bookmark :limit limit)]
