@@ -25,18 +25,20 @@
         entities (core/get-entities auth ids routes)
         root-ids (mapcat #(links/collaboration-roots %) entities)
         roots (util/into-id-map (core/get-entities auth root-ids routes))]
-    (map (fn [entity] {:id          (:_id entity)
-                       :entity_type (:type entity)
-                       :name        (get-in entity [:attributes :name] (:_id entity))
+    (map (fn [entity] {:id            (:_id entity)
+                       :entity_type   (:type entity)
+                       :name          (get-in entity [:attributes :name] (:_id entity))
+                       :owner         (:owner entity)
+                       :updated-at    (get-in entity [:attributes :updated-at])
                        :project_names (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) (links/collaboration-roots entity))
-                       :links {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
+                       :links         {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
 (defn search
   [auth rt q & {:keys [bookmark] :or {bookmark nil}}]
   (let [db       (couch/db auth)
         raw      (couch/search db q :bookmark bookmark)
         entities (get-results auth rt (:rows raw))]
-    {:metadata       {:total_rows (:total_rows raw)
+    {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
      :search_results entities}))
 
