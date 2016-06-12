@@ -237,7 +237,7 @@
                    :relationships {}
                    :attributes {}}]
 
-          (against-background [(core/get-entities ..auth.. [id] ..rt..) => [doc]
+          (against-background [(core/get-entities ..auth.. [id] ..rt.. :include-trashed false) => [doc]
                                (r/router anything) => ..rt..]
             (fact "GET /entities/:id returns status 200"
               (:status (app get)) => 200)
