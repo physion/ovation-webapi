@@ -31,7 +31,8 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger.timbre :as logger.timbre]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 
 (ovation.logging/setup!)
@@ -120,13 +121,24 @@
             :path-params [id :- s/Str]
             (GET "/" request
               :name :get-entity
+              :query-params [{include-trashed :- (s/maybe s/Str) "false"}]
               :return {:entity Entity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
-              :summary "Returns entity with :id"
-              (let [auth (auth/identity request)]
-                (if-let [entities (core/get-entities auth [id] (router request))]
+              :summary "Returns entity with :id. If include-trashed is true, result includes entity even if it's in the trash."
+              (let [auth (auth/identity request)
+                    trashed (if (= "true" (string/lower-case include-trashed)) true false)]
+                (if-let [entities (core/get-entities auth [id] (router request) :include-trashed trashed)]
                   (ok {:entity (first entities)})
                   (not-found {:errors {:detail "Not found"}}))))
+            (DELETE "/" request
+              :name :delete-entity
+              :return {:entities [TrashedEntity]}
+              :summary "Deletes entity with :id. Deleted entities can be restored."
+              (try+
+                (let [auth (auth/identity request)]
+                  (accepted {:entities (core/delete-entity auth [id] (r/router request))}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {:errors {:detail "Delete not authorized"}}))))
 
             (context "/annotations" []
               :tags ["annotations"]
