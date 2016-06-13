@@ -143,7 +143,7 @@
             (PUT "/restore" request
               :name :restore-entity
               :return {:entity Entity}
-              :body [body {:entity TrashedEntity}]
+              :body [body {:entity TrashedEntityUpdate}]
               :summary "Restores a deleted entity from the trash."
               (try+
                 (let [auth (auth/identity request)]

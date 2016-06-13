@@ -250,6 +250,8 @@
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
 
+(s/defschema TrashedEntityUpdate (assoc TrashedEntity (s/optional-key :trash_info) TrashInfoMap))
+
 ;; -- Relationships -- ;;
 
 (def EntityChildren                                         ;; relationships to create when posting a child to a parent entity
