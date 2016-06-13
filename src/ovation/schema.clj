@@ -2,8 +2,7 @@
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
             [ovation.constants :as k]
-            [ovation.util :as util])
-  (:import (org.junit.rules TestName)))
+            [ovation.util :as util]))
 
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any

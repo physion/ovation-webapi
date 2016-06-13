@@ -146,8 +146,22 @@
       (throw+ {:type ::illegal-operation :message "Entity is already trashed"}))
     (assoc doc :trash_info info)))
 
+(defn restore-trashed-entity
+  [auth doc]
+  (dissoc doc :trash_info))
 
-(defn delete-entity
+(defn restore-deleted-entities
+  [auth ids routes]
+  (let [db                (couch/db auth)
+        docs              (get-entities auth ids routes)
+        user-id           (auth/authenticated-user-id auth)
+        trashed           (map #(restore-trashed-entity user-id %) docs)
+        auth-checked-docs (vec (map (auth/check! auth ::auth/update) trashed))]
+    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+      auth
+      routes)))
+
+(defn delete-entities
   [auth ids routes]
   (let [db (couch/db auth)
         docs (get-entities auth ids routes)]

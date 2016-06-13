@@ -121,22 +121,23 @@
             :path-params [id :- s/Str]
             (GET "/" request
               :name :get-entity
-              :query-params [{include-trashed :- (s/maybe s/Str) "false"}]
-              :return {:entity Entity}
+              :query-params [{trash :- (s/maybe s/Bool) false}]
+              :return {:entity TrashedEntity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
               :summary "Returns entity with :id. If include-trashed is true, result includes entity even if it's in the trash."
-              (let [auth (auth/identity request)
-                    trashed (if (= "true" (string/lower-case include-trashed)) true false)]
-                (if-let [entities (core/get-entities auth [id] (router request) :include-trashed trashed)]
-                  (ok {:entity (first entities)})
+              (let [auth (auth/identity request)]
+                (if-let [entities (core/get-entities auth [id] (router request) :include-trashed trash)]
+                  (if-let [entity (first entities)]
+                    (ok {:entity entity})
+                    (not-found {:errors {:detail "Not found"}}))
                   (not-found {:errors {:detail "Not found"}}))))
             (DELETE "/" request
               :name :delete-entity
-              :return {:entities [TrashedEntity]}
+              :return {:entity TrashedEntity}
               :summary "Deletes entity with :id. Deleted entities can be restored."
               (try+
                 (let [auth (auth/identity request)]
-                  (accepted {:entities (core/delete-entity auth [id] (r/router request))}))
+                  (accepted {:entity (first (core/delete-entities auth [id] (r/router request)))}))
                 (catch [:type :ovation.auth/unauthorized] err
                   (unauthorized {:errors {:detail "Delete not authorized"}}))))
 
