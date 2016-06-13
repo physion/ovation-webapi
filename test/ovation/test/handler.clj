@@ -237,7 +237,7 @@
                    :relationships {}
                    :attributes {}}]
 
-          (against-background [(core/get-entities ..auth.. [id] ..rt..) => [doc]
+          (against-background [(core/get-entities ..auth.. [id] ..rt.. :include-trashed false) => [doc]
                                (r/router anything) => ..rt..]
             (fact "GET /entities/:id returns status 200"
               (:status (app get)) => 200)
@@ -484,23 +484,25 @@
                                                                 :trash_root ""})
                    request# (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
 
-               (against-background [(core/delete-entity ..auth.. [(str id#)] ..rt..) => [deleted-entity#]
+               (against-background [(core/delete-entities ..auth.. [(str id#)] ..rt..) => [deleted-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (app (request# id#))]
                      (:status response#) => 202))
                  (fact "DELETE /:id trashes entity"
                    (let [delete-request# (request# id#)]
-                     (body-json delete-request#)) => {:entities [deleted-entity#]}))
+                     (body-json delete-request#)) => {:entity deleted-entity#}))
 
                (fact "returns 401 if not can? :delete"
                  (:status (app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/delete-entity ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/delete-entities ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 
+(facts "About entities"
+  (entity-resource-deletion-tests "entitie"))
 
 (facts "About Projects"
   (entity-resource-create-tests "Project")

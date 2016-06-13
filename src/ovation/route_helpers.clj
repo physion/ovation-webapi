@@ -238,11 +238,11 @@
 
     `(DELETE "/" request#
        :name ~(keyword (str "delete-" (lower-case type-name)))
-       :return {:entities [TrashedEntity]}
+       :return {:entity TrashedEntity}
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
          (let [auth# (auth/identity request#)]
-           (accepted {:entities (core/delete-entity auth# [~id] (r/router request#))}))
+           (accepted {:entity (first (core/delete-entities auth# [~id] (r/router request#)))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 

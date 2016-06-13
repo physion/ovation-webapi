@@ -2,8 +2,7 @@
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
             [ovation.constants :as k]
-            [ovation.util :as util])
-  (:import (org.junit.rules TestName)))
+            [ovation.util :as util]))
 
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any
@@ -250,6 +249,8 @@
 
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
+
+(s/defschema TrashedEntityUpdate (assoc TrashedEntity (s/optional-key :trash_info) TrashInfoMap))
 
 ;; -- Relationships -- ;;
 

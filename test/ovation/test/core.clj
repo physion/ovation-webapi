@@ -199,6 +199,28 @@
               (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")]))))))
 
 
+  (facts "restore-deleted-entities"
+    (let [id         (str (util/make-uuid))
+          rev "1"
+          entity        {:_id        id
+                         :type       "some-type"
+                         :rev rev
+                         :owner ..owner..
+                         :attributes {:my "attributes"}
+                         :trash_info {:trashing_user ..owner-id...
+                                      :trashing_date ..date..
+                                      :trash_root    id}}
+          restored (core/restore-trashed-entity ..auth.. entity)]
+      (core/restore-deleted-entities ..auth.. [id] ..rt..) => ..result..
+      (provided
+        (couch/db ..auth..) => ..db..
+        (auth/authenticated-user-id ..auth..) => ..owner..
+        (core/get-entities ..auth.. [id] ..rt.. :include-trashed true) => [entity]
+        (tw/to-couch ..owner.. [restored]) => ..couch-docs..
+        (couch/bulk-docs ..db.. ..couch-docs..) => ..restored..
+        (tr/entities-from-couch ..restored.. ..auth.. ..rt..) => ..result..
+        (auth/can? ..auth.. ::auth/update restored) => true)))
+
   (facts "`delete-entity`"
     (let [type "some-type"
           attributes {:label ..label1..}
@@ -219,22 +241,22 @@
                              (tr/entities-from-couch ..deleted.. ..auth.. ..rt..) => ..result..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entity ..auth.. [id] ..rt..) => ..result..
+            (core/delete-entities ..auth.. [id] ..rt..) => ..result..
             (provided
               (auth/can? ..auth.. ::auth/delete anything) => true))
 
           (fact "it fails if entity already trashed"
-            (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
+            (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
             (provided
               (core/get-entities ..auth.. [id] ..rt..) => [update]))
 
           (fact "it fails if authenticated user doesn't have write permission"
-            (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
+            (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
             (provided
               (auth/can? ..auth.. ::auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
-          (core/delete-entity ..auth.. [id] ..rt..) => (throws Exception)
+          (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
           (provided
             (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
@@ -247,7 +269,14 @@
         (:trash_info (core/trash-entity ..user.. doc)) => info
         (provided
           (t/now) => ..dt..
-          (tf/unparse (tf/formatters :date-hour-minute-second-ms) ..dt..) => ..date..))))
+          (tf/unparse (tf/formatters :date-hour-minute-second-ms) ..dt..) => ..date..)))))
+
+(facts "restore-trashed-entity helper"
+  (fact "removes :trash_info"
+    (let [doc {:_id        ..id..
+               :attributes {}
+               :trash_info ..trash..}]
+      (core/restore-trashed-entity ..auth.. doc) => (dissoc doc :trash_info)))
 
   (facts "`parent-collaboration-roots`"
     (fact "it allows nil parent"

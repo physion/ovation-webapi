@@ -20,7 +20,7 @@
   (let [graph (apply uber/add-nodes g entity-ids)]
     (loop [ids entity-ids
            g   graph]
-      (let [edges        (pmap (fn [id]
+      (let [edges        (map (fn [id]
                                  (let [parents (get-parents auth id routes)]
                                    (map (fn [parent] [id (:_id parent)]) parents))) ids)
             parent-edges (apply concat edges)

@@ -20,6 +20,7 @@
             [ovation.auth :as auth]
             [ovation.audit]
             [ovation.tokens :as tokens]
+            [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [schema.core :as s]
             [ovation.teams :as teams]
@@ -30,7 +31,8 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger.timbre :as logger.timbre]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 
 (ovation.logging/setup!)
@@ -47,7 +49,7 @@
   (route/resources "/public"))
 
 (defapi app
-  {:swagger {:ui "/"
+  {:swagger {:ui   "/"
              :spec "/swagger.json"
              :data {:info {
                            :version        "2.0.0"
@@ -67,11 +69,13 @@
                            {:name "links" :description "Relationships between entities"}
                            {:name "provenance" :description "Provenance graph"}
                            {:name "teams" :description "Manage collaborations"}
-                           {:name "auth" :description "Authentication"}]}}}
+                           {:name "auth" :description "Authentication"}
+                           {:name "ui" :description "Support for Web UI"}
+                           {:name "search" :description "Search Ovation"}]}}}
 
 
   (middleware [[wrap-cors
-                :access-control-allow-origin #".+"        ;; Allow from any origin
+                :access-control-allow-origin #".+"          ;; Allow from any origin
                 :access-control-allow-methods [:get :put :post :delete :options]
                 :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
@@ -89,8 +93,8 @@
                wrap-newrelic-transaction]
 
 
-    (undocumented
-      static-resources)
+              (undocumented
+                static-resources)
 
     (context "/services" []
       (context "/token" []
@@ -99,7 +103,7 @@
           :name :get-token
           :return {:token s/Str}
           :summary "Gets an authorization token"
-          :body [body {:email s/Str
+          :body [body {:email    s/Str
                        :password s/Str}]
           (tokens/get-token (:email body) (:password body)))
 
@@ -117,13 +121,35 @@
             :path-params [id :- s/Str]
             (GET "/" request
               :name :get-entity
-              :return {:entity Entity}
+              :query-params [{trash :- (s/maybe s/Bool) false}]
+              :return {:entity TrashedEntity}
               :responses {404 {:schema JsonApiError :description "Not found"}}
-              :summary "Returns entity with :id"
+              :summary "Returns entity with :id. If include-trashed is true, result includes entity even if it's in the trash."
               (let [auth (auth/identity request)]
-                (if-let [entities (core/get-entities auth [id] (router request))]
-                  (ok {:entity (first entities)})
+                (if-let [entities (core/get-entities auth [id] (router request) :include-trashed trash)]
+                  (if-let [entity (first entities)]
+                    (ok {:entity entity})
+                    (not-found {:errors {:detail "Not found"}}))
                   (not-found {:errors {:detail "Not found"}}))))
+            (DELETE "/" request
+              :name :delete-entity
+              :return {:entity TrashedEntity}
+              :summary "Deletes entity with :id. Deleted entities can be restored."
+              (try+
+                (let [auth (auth/identity request)]
+                  (accepted {:entity (first (core/delete-entities auth [id] (r/router request)))}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {:errors {:detail "Delete not authorized"}}))))
+            (PUT "/restore" request
+              :name :restore-entity
+              :return {:entity Entity}
+              :body [body {:entity TrashedEntityUpdate}]
+              :summary "Restores a deleted entity from the trash."
+              (try+
+                (let [auth (auth/identity request)]
+                  (ok {:entity (first (core/restore-deleted-entities auth [id] (r/router request)))}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {:errors {:detail "Restore` not authorized"}}))))
 
             (context "/annotations" []
               :tags ["annotations"]
@@ -147,7 +173,7 @@
               :name :delete-relation
               :return {:relationship LinkInfo}
               :summary "Removes relationship"
-              (let [auth (auth/identity request)
+              (let [auth         (auth/identity request)
                     relationship (first (core/get-values auth [id]))]
                 (if relationship
                   (let [source (first (core/get-entities auth [(:source_id relationship)] (r/router request)))]
@@ -160,7 +186,7 @@
           :tags ["projects"]
           (get-resources "Project")
           (post-resources "Project" [NewProject])
-          (context "/:id"  []
+          (context "/:id" []
             :path-params [id :- s/Str]
 
             (get-resource "Project" id)
@@ -223,10 +249,10 @@
             (POST "/move" request
               :name :move-folder
               :return {s/Keyword (s/either File Folder)
-                       :links [{s/Keyword s/Any}]
-                       :updates [{s/Keyword s/Any}]}
+                       :links    [{s/Keyword s/Any}]
+                       :updates  [{s/Keyword s/Any}]}
               :summary "Move folder from source folder to destination folder"
-              :body [info {:source s/Str
+              :body [info {:source      s/Str
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
@@ -247,17 +273,17 @@
             (POST "/" request
               :name :create-file-entity
               :return CreateRevisionResponse
-              :body   [revisions {:entities [NewRevision]}]
+              :body [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
               (created (post-revisions* request id (:entities revisions))))
 
             (POST "/move" request
               :name :move-file
               :return {s/Keyword (s/either File Folder)
-                       :links [{s/Keyword s/Any}]
-                       :updates [{s/Keyword s/Any}]}
+                       :links    [{s/Keyword s/Any}]
+                       :updates  [{s/Keyword s/Any}]}
               :summary "Move file from source folder to destination folder"
-              :body [info {:source s/Str
+              :body [info {:source      s/Str
                            :destination s/Str}]
               (created (move-contents* request id info)))
 
@@ -304,9 +330,9 @@
 
             (GET "/" request
               :name :entity-provenance
-              :return {:provenance [{:_id s/Uuid
-                                     :type s/Str
-                                     :name s/Str
+              :return {:provenance [{:_id      s/Uuid
+                                     :type     s/Str
+                                     :name     s/Str
                                      s/Keyword [{:_id s/Uuid :name s/Str :type s/Str}]}]}
               :summary "Local provenance for a single entity"
               (let [auth   (auth/identity request)
@@ -322,8 +348,8 @@
 
             (GET "/" request
               :name :get-team
-              :return {:team Team
-                       :users [TeamUser],
+              :return {:team             Team
+                       :users            [TeamUser],
                        :membership_roles [TeamMembershipRole]}
               :summary "Gets Project Team"
               (ok (teams/get-team* request id)))
@@ -380,6 +406,7 @@
           :tags ["ui"]
           (GET "/" request
             :query-params [id :- s/Str]
+            :name :get-breadcrumbs
             :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
             :summary "Gets the breadcrumbs for an entity."
             (let [auth   (auth/identity request)
@@ -394,6 +421,28 @@
             (let [auth   (auth/identity request)
                   rt     (router request)
                   result (breadcrumbs/get-breadcrumbs auth rt ids)]
-              (ok {:breadcrumbs result}))))))))
+              (ok {:breadcrumbs result}))))
+
+        (context "/search" []
+          :tags ["search"]
+          (GET "/" request
+            :query-params [q :- s/Str
+                           {bookmark :- (s/maybe s/Str) nil}
+                           {limit :- s/Int 25}]
+            :summary "Searches the Ovation database"
+            :return {:search_results [{:id            s/Uuid
+                                       :entity_type   s/Str
+                                       :name          s/Str
+                                       :owner         s/Uuid
+                                       :updated-at    s/Str
+                                       :project_names [s/Str]
+                                       :links         {:breadcrumbs s/Str}}]
+                     :meta           {:bookmark   s/Str
+                                      :total_rows s/Int}}
+            (let [auth   (auth/identity request)
+                  rt     (router request)
+                  result (search/search auth rt q :bookmark bookmark :limit limit)]
+              (ok result))))))))
+
 
 
