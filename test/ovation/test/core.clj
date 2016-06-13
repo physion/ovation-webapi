@@ -215,7 +215,7 @@
       (provided
         (couch/db ..auth..) => ..db..
         (auth/authenticated-user-id ..auth..) => ..owner..
-        (core/get-entities ..auth.. [id] ..rt..) => [entity]
+        (core/get-entities ..auth.. [id] ..rt.. :include-trashed true) => [entity]
         (tw/to-couch ..owner.. [restored]) => ..couch-docs..
         (couch/bulk-docs ..db.. ..couch-docs..) => ..restored..
         (tr/entities-from-couch ..restored.. ..auth.. ..rt..) => ..result..
