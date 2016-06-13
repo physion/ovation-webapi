@@ -142,7 +142,7 @@
                   (unauthorized {:errors {:detail "Delete not authorized"}}))))
             (PUT "/restore" request
               :name :restore-entity
-              :return {:entity Entity}
+              :return {:entity TrashedEntity}
               :summary "Restores a deleted entity from the trash."
               (try+
                 (let [auth (auth/identity request)]
