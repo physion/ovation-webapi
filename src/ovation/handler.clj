@@ -140,6 +140,15 @@
                   (accepted {:entity (first (core/delete-entities auth [id] (r/router request)))}))
                 (catch [:type :ovation.auth/unauthorized] err
                   (unauthorized {:errors {:detail "Delete not authorized"}}))))
+            (PUT "/restore" request
+              :name :restore-entity
+              :return {:entity Entity}
+              :summary "Restores a deleted entity from the trash."
+              (try+
+                (let [auth (auth/identity request)]
+                  (ok {:entity (first (core/restore-deleted-entities auth [id] (r/router request)))}))
+                (catch [:type :ovation.auth/unauthorized] err
+                  (unauthorized {:errors {:detail "Restore` not authorized"}}))))
 
             (context "/annotations" []
               :tags ["annotations"]

@@ -153,7 +153,7 @@
 (defn restore-deleted-entities
   [auth ids routes]
   (let [db                (couch/db auth)
-        docs              (get-entities auth ids routes)
+        docs              (get-entities auth ids routes :include-trashed true)
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
         auth-checked-docs (vec (map (auth/check! auth ::auth/update) trashed))]
