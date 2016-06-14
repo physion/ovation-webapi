@@ -23,16 +23,16 @@
                                             :order  [3.9 107]
                                             :fields {:id   ..id2..
                                                      :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
-      (couch/search ..db.. ..q.. :bookmark nil) => {:total_rows ..total..
-                                                    :bookmark   ..bookmark..
-                                                    :rows       [{:id     ..id1..
-                                                                  :order  [3.9 107]
-                                                                  :fields {:id   ..id1..
-                                                                           :type k/PROJECT-TYPE}}
-                                                                 {:id     ..id2..
-                                                                  :order  [3.9 107]
-                                                                  :fields {:id   ..id2..
-                                                                           :type k/REVISION-TYPE}}]}))
+      (couch/search ..db.. ..q.. :bookmark nil :limit nil) => {:total_rows ..total..
+                                                               :bookmark   ..bookmark..
+                                                               :rows       [{:id     ..id1..
+                                                                             :order  [3.9 107]
+                                                                             :fields {:id   ..id1..
+                                                                                      :type k/PROJECT-TYPE}}
+                                                                            {:id     ..id2..
+                                                                             :order  [3.9 107]
+                                                                             :fields {:id   ..id2..
+                                                                                      :type k/REVISION-TYPE}}]}))
 
   (fact "Extracts entity ids"
     (let [rows [{:id     ..id1..

@@ -250,7 +250,7 @@
 
 (s/defschema TrashedEntity (assoc Entity (s/optional-key :trash_info) TrashInfoMap))
 
-(s/defschema TrashedEntityUpdate (assoc TrashedEntity (s/optional-key :trash_info) TrashInfoMap))
+(s/defschema TrashedEntityUpdate (assoc EntityUpdate (s/optional-key :trash_info) TrashInfoMap))
 
 ;; -- Relationships -- ;;
 
