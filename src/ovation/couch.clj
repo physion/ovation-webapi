@@ -125,14 +125,7 @@
                       :basic-auth   [(config/config "CLOUDANT_USERNAME") (config/config "CLOUDANT_PASSWORD")]}
         uri          (str (url/url (config/config "CLOUDANT_DB_URL") "_design" "search" "_search" "all"))
         resp         @(httpkit.client/get uri opts)]
+
     (cond
       (http-predicates/ok? resp) (-> resp :body util/from-json)
       :else (throw! resp))))
-
-;_design/search/_search/all?q=test
-; (defn db
-;"Database URL from authorization info"
-;[auth]
-;(-> (url/url (config/config "CLOUDANT_DB_URL"))
-;  (assoc :username (config/config "CLOUDANT_USERNAME")
-;         :password (config/config "CLOUDANT_PASSWORD"))))
