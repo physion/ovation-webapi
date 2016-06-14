@@ -36,9 +36,10 @@
                        :links         {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
 (defn search
-  [auth rt q & {:keys [bookmark] :or {bookmark nil}}]
+  [auth rt q & {:keys [bookmark limit] :or {bookmark nil
+                                            limit nil}}]
   (let [db       (couch/db auth)
-        raw      (couch/search db q :bookmark bookmark)
+        raw      (couch/search db q :bookmark bookmark :limit limit)
         entities (get-results auth rt (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
