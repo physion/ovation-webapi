@@ -30,7 +30,9 @@
                        :name          (get-in entity [:attributes :name] (:_id entity))
                        :owner         (:owner entity)
                        :updated-at    (get-in entity [:attributes :updated-at])
-                       :project_names (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) (links/collaboration-roots entity))
+                       :project_names (if-let [collaboration-roots (links/collaboration-roots entity)]
+                                        (remove nil? (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) collaboration-roots))
+                                        [])
                        :links         {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
 (defn search
