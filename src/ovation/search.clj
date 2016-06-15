@@ -35,11 +35,12 @@
                                         [])
                        :links         {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
 
+(def MIN-SEARCH 200)
 (defn search
   [auth rt q & {:keys [bookmark limit] :or {bookmark nil
-                                            limit nil}}]
+                                            limit 0}}]
   (let [db       (couch/db auth)
-        raw      (couch/search db q :bookmark bookmark :limit limit)
+        raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
         entities (get-results auth rt (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
