@@ -33,6 +33,10 @@
   [rt doc]
   (rt :file-head-revisions {:id (:_id doc)}))
 
+(defn upload-complete-route
+  [rt doc]
+  (rt :upload-complete {:id (:_id doc)}))
+
 (defn annotations-route
   [rt doc annotation-type]
   (rt (keyword (format "get-%s" annotation-type)) {:id (:_id doc)}))

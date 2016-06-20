@@ -77,3 +77,14 @@
   "Create Rails Resources for each revision and update attributes accordingly"
   [auth revisions]
   (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel
+
+
+(defn update-metadata
+  [auth routes revision]
+  (let [resp (http/get (util/join-path [config/RESOURCES_SERVER (:_id revision) "metadata"])
+               {:oauth-token (::auth/token auth)
+                :headers {"Content-Type" "application/json"}})
+        body (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+        updated-revision (update-in revision [:attributes] merge body)]
+    (first (core/update-entities auth [updated-revision] routes))))
+
