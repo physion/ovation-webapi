@@ -434,7 +434,7 @@
                                        :entity_type   s/Str
                                        :name          s/Str
                                        :owner         s/Uuid
-                                       :updated-at    s/Str
+                                       :updated-at    (s/maybe s/Str) ;; allow nil updated-at
                                        :project_names [s/Str]
                                        :links         {:breadcrumbs s/Str}}]
                      :meta           {:bookmark   s/Str
