@@ -317,9 +317,9 @@
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))
-            (PUT "/update-metadata" request
-              :name :update-metadata
-              :summary "Updates metadata from S3 for this Revision"
+            (PUT "/upload-complete" request
+              :name :upload-complete
+              :summary "Indicates upload is complete and updates metadata from S3 for this Revision"
               :return {:revision Revision}
               (let [auth   (auth/identity request)
                     rt     (router request)
