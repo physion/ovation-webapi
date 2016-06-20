@@ -32,7 +32,8 @@
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger.timbre :as logger.timbre]
             [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [ovation.revisions :as revisions]))
 
 
 (ovation.logging/setup!)
@@ -316,11 +317,20 @@
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
               (created (post-revisions* request id revisions)))
+            (PUT "/update-metadata" request
+              :name :update-metadata
+              :summary "Updates metadata from S3 for this Revision"
+              :return {:revision Revision}
+              (let [auth   (auth/identity request)
+                    rt     (router request)
+                    revision (first (core/get-entities auth [id] rt))]
+                (ok {:revision (revisions/update-metadata auth rt revision)})))
             (context "/links/:rel" []
               :path-params [rel :- s/Str]
 
               (rel-related "Revision" id rel)
               (relationships "Revision" id rel))))
+
 
 
         (context "/prov" []
