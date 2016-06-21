@@ -80,8 +80,8 @@
   (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p
-                                                                            :include_docs true})))
+                           (go (<! (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p
+                                                                                    :include_docs true})))))
                          partitions)]
 
     (apply concat (map <?? thread-results))))
