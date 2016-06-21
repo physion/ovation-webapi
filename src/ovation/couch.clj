@@ -84,7 +84,7 @@
                                                                             :include_docs true})))
                          partitions)]
 
-    (apply concat (map <?? thread-results))))
+    (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
 (defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
