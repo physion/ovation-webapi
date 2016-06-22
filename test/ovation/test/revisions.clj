@@ -122,6 +122,25 @@
             (core/get-entities ..auth.. [..revid1.. ..revid2..] ..rt..) => [..rev1.. ..rev2..]))))
 
     (facts "Rails Resources"
+      (facts "update-metadata"
+        (fact "returns 422 if URL is not ovation.io"
+          (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
+            (rev/update-metadata ..auth.. ..rt.. revision) => (throws ExceptionInfo)))
+
+        (fact "updates metadata from Rails"
+          (let [revid "100"
+                revision {:_id ..id.. :attributes {:url (util/join-path [config/RESOURCES_SERVER revid])}}
+                length 100
+                etag "etag"]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+                                                                                                                  {:status  200
+                                                                                                                   :body (util/to-json {:content_length length
+                                                                                                                                        :etag           etag})})]
+              (rev/update-metadata ..auth.. ..rt.. revision) => ..result..
+              (provided
+                (core/update-entities ..auth.. [(assoc-in revision [:attributes :content_length] length)] ..rt..) => [..result..])))))
+
+
       (facts "`make-resource`"
         (fact "creates a Rails Resource"
           (let [revid "revid"]

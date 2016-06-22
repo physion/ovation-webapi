@@ -47,6 +47,12 @@
     (assoc-in dto [:links :heads] (r/heads-route rt dto))
     dto))
 
+(defn add-upload-complete-link
+  [dto rt]
+  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
+    (assoc-in dto [:links :upload-complete] (r/upload-complete-route rt dto))
+    dto))
+
 (defn add-self-link
   "Adds self link to dto"
   [dto rt]
@@ -91,6 +97,7 @@
           (dissoc :relationships)
           (add-self-link router)
           (add-heads-link router)
+          (add-upload-complete-link router)
           (add-annotation-links router)
           (add-relationship-links router)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)

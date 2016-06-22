@@ -72,11 +72,19 @@
       ;; Pull docs into a list
       (<?? (async/into '() docs)))))
 
+(def ALL-DOCS-PARTITION 20)
+
 (defn all-docs
   "Gets all documents with given document IDs"
   [auth db ids]
-  (get-view auth db k/ALL-DOCS-VIEW {:keys         ids
-                                     :include_docs true}))
+  (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
+        thread-results (map
+                         (fn [p]
+                           (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p
+                                                                            :include_docs true})))
+                         partitions)]
+
+    (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
 (defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."

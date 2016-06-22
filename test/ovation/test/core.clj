@@ -37,7 +37,9 @@
       (against-background [(couch/db ..auth..) => ..db..
                            (auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
-          (core/delete-values ..auth.. [{:type "Project"}] anything) => (throws Throwable))
+          (core/delete-values ..auth.. [..id..] anything) => (throws Throwable)
+          (provided
+            (couch/all-docs ..auth.. ..db.. [..id..]) => [{:type "Project" :_id ..id..}]))
         (fact "calls delete-docs"
           (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
           (provided

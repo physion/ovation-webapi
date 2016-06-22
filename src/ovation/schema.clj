@@ -95,6 +95,7 @@
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
                               (s/optional-key :timeline-events)      s/Str
+                              (s/optional-key :upload-complete)      s/Str
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
