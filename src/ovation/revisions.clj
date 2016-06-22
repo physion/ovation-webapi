@@ -82,7 +82,7 @@
 (defn update-metadata
   [auth routes revision]
   (let [resp (http/get (util/join-path [config/RESOURCES_SERVER (:_id revision) "metadata"])
-               {:oauth-token (::auth/token auth)
+               {:query-params {:token (::auth/token auth)}
                 :headers {"Content-Type" "application/json"}})
         body (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
         updated-revision (update-in revision [:attributes] merge body)]
