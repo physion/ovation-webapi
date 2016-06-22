@@ -7,7 +7,9 @@
             [ovation.config :as config]
             [ovation.util :as util]
             [org.httpkit.client :as http]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [clojure.string :as string]
+            [ring.util.http-response :refer [unprocessable-entity!]]))
 
 (defn get-head-revisions
   [auth routes file]
@@ -81,10 +83,16 @@
 
 (defn update-metadata
   [auth routes revision]
-  (let [resp (http/get (util/join-path [config/RESOURCES_SERVER (:_id revision) "metadata"])
+
+  (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
+    (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
+
+  (let [rsrc-id          (last (string/split (get-in revision [:attributes :url]) #"/"))
+        resp             (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
                {:oauth-token (::auth/token auth)
-                :headers {"Content-Type" "application/json"}})
-        body (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+                :headers     {"Content-Type" "application/json"
+                              "Accept"       "application/json"}})
+        body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
         updated-revision (update-in revision [:attributes] merge body)]
     (first (core/update-entities auth [updated-revision] routes))))
 

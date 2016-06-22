@@ -123,11 +123,16 @@
 
     (facts "Rails Resources"
       (facts "update-metadata"
+        (fact "returns 422 if URL is not ovation.io"
+          (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
+            (rev/update-metadata ..auth.. ..rt.. revision) => (throws ExceptionInfo)))
+
         (fact "updates metadata from Rails"
-          (let [revision {:_id ..id..}
+          (let [revid "100"
+                revision {:_id ..id.. :attributes {:url (util/join-path [config/RESOURCES_SERVER revid])}}
                 length 100
                 etag "etag"]
-            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER ..id.. "metadata"]) :method :get} (fn [orig-fn opts callback]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                                   {:status  200
                                                                                                                    :body (util/to-json {:content_length length
                                                                                                                                         :etag           etag})})]
