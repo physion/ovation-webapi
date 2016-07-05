@@ -166,4 +166,4 @@
                                                    :aws      {}
                                                    :post-url ..url..}
           (provided
-            ..rev.. =contains=> {:url ..url..}))))))
+            ..rev.. =contains=> {:attributes {:url ..url..}}))))))
