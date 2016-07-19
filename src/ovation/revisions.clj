@@ -54,10 +54,10 @@
 
 (defn make-resource
   [auth revision]
-  (if (:url revision)
+  (if-let [existing-url (get-in revision [:attributes :url])]
     {:revision revision
      :aws      {}
-     :post-url (:url revision)}
+     :post-url existing-url}
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
