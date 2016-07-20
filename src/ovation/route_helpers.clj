@@ -17,6 +17,7 @@
             [ovation.teams :as teams]
             [ovation.routes :as routes]))
 
+
 (defn get-annotations*
   [request id annotation-key]
   (let [auth (auth/identity request)
@@ -102,6 +103,26 @@
              entities# (core/of-type auth# ~type-name (r/router request#))]
          (ok {~type-kw entities#})))))
 
+(defn remove-embedded-relationships
+  [entities]
+  (map #(dissoc % :relationships) entities))
+
+(defn- relationships-map
+  [pre post]
+  (into {} (remove #(nil? (second %)) (map (fn [e-pre e-post] [(:_id e-post) (:relationships e-pre)]) pre post))))
+
+
+(defn- embedded-links
+  [auth entities rel-map routes]
+  (let [entities-map (util/into-id-map entities)]
+    (mapcat (fn [[id relationships]]
+              (mapcat (fn [[rel info]]
+                        (if (:create_as_inverse info)
+                          (links/add-links auth (core/get-entities auth (:related info) routes) (:inverse_rel info) [id] routes :inverse-rel rel)
+                          (links/add-links auth [(get entities-map id)] rel (:related info) routes :inverse-rel (:inverse_rel info))
+                          )) relationships))
+      rel-map)))
+
 (defn post-resources*
   [request type-name type-kw new-entities]
   (let [auth (auth/identity request)]
@@ -179,26 +200,6 @@
     {:links links
      :updates updates}))
 
-(defn- relationships-map
-  [pre post]
-  (into {} (remove #(nil? (second %)) (map (fn [e-pre e-post] [(:_id e-post) (:relationships e-pre)]) pre post))))
-
-
-(defn- embedded-links
-  [auth entities rel-map routes]
-  (let [entities-map (util/into-id-map entities)]
-    (mapcat (fn [[id relationships]]
-              (mapcat (fn [[rel info]]
-                        (if (:create_as_inverse info)
-                          (links/add-links auth (core/get-entities auth (:related info) routes) (:inverse_rel info) [id] routes :inverse-rel rel)
-                          (links/add-links auth [(get entities-map id)] rel (:related info) routes :inverse-rel (:inverse_rel info))
-                          )) relationships))
-      rel-map)))
-
-
-(defn remove-embedded-relationships
-  [entities]
-  (map #(dissoc % :relationships) entities))
 
 (defn post-resource*
   [request type-name id body]
