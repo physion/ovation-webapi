@@ -70,6 +70,7 @@
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
+        (core/get-entities ..auth.. [..projectid..] ..rt..) => [project]
         (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
         (links/add-links ..auth.. anything :activities [(:_id activity)] ..rt.. :inverse-rel :parents) => {:updates ..updates..
                                                                                                             :links   ..embedded..}
