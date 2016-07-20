@@ -17,6 +17,7 @@
             [ovation.teams :as teams]
             [ovation.routes :as routes]))
 
+
 (defn get-annotations*
   [request id annotation-key]
   (let [auth (auth/identity request)
@@ -102,16 +103,47 @@
              entities# (core/of-type auth# ~type-name (r/router request#))]
          (ok {~type-kw entities#})))))
 
+(defn remove-embedded-relationships
+  [entities]
+  (map #(dissoc % :relationships) entities))
+
+(defn- relationships-map
+  [pre post]
+  (into {} (remove #(nil? (second %)) (map (fn [e-pre e-post] [(:_id e-post) (:relationships e-pre)]) pre post))))
+
+
+(defn- embedded-links
+  [auth entities rel-map routes]
+  (let [entities-map (util/into-id-map entities)]
+    (mapcat (fn [[id relationships]]
+              (mapcat (fn [[rel info]]
+                        (if (:create_as_inverse info)
+                          (links/add-links auth (core/get-entities auth (:related info) routes) (:inverse_rel info) [id] routes :inverse-rel rel)
+                          (links/add-links auth [(get entities-map id)] rel (:related info) routes :inverse-rel (:inverse_rel info))
+                          )) relationships))
+      rel-map)))
+
 (defn post-resources*
-  [request type-name type-kw entities]
+  [request type-name type-kw new-entities]
   (let [auth (auth/identity request)]
-    (if (every? #(= type-name (:type %)) entities)
+    (if (every? #(= type-name (:type %)) new-entities)
       (try+
-        (let [entities (core/create-entities auth entities (r/router request))]
+        (let [routes           (r/router request)
+              cleaned-entities (remove-embedded-relationships new-entities)
+              entities         (core/create-entities auth cleaned-entities routes)
+              rel-map          (relationships-map new-entities entities) ;; NB Assumes result of create-entities is in the same order as body!!
+              embedded-links   (embedded-links auth entities rel-map routes)
+              links            (core/create-values auth routes (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
+              updates          (core/update-entities auth (mapcat :updates embedded-links) routes :authorize false :update-collaboration-roots true)]
           ;; create teams for new Project entities
           (dorun (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
-          (created {type-kw entities}))
+          (if (and (zero? (count links))
+                (zero? (count updates)))
+            (created {type-kw entities})
+            (created {type-kw  entities
+                      :links   links
+                      :updates updates})))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
@@ -125,7 +157,9 @@
         type-path (typepath type-name)
         type-kw (keyword type-path)]
     `(POST "/" request#
-       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
+       :return {~type-kw                  [~(clojure.core/symbol "ovation.schema" type-name)]
+                (s/optional-key :links)   [LinkInfo]
+                (s/optional-key :updates) [Entity]}
        :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
        (post-resources* request# ~type-name ~type-kw (~type-kw entities#)))))
@@ -158,24 +192,28 @@
 (defn make-child-links*
   [auth parent-id type-name targets routes]
   (let [target-ids (map :_id targets)
-        sources (core/get-entities auth [parent-id] routes)
-        type (util/entity-type-name-keyword type-name)
-        results (map (make-child-link* auth sources target-ids type routes) targets)
-        links (apply concat (map :links results))
-        updates (apply concat (map :updates results))]
+        sources    (core/get-entities auth [parent-id] routes)
+        type       (util/entity-type-name-keyword type-name)
+        results    (map (make-child-link* auth sources target-ids type routes) targets)
+        links      (mapcat :links results)
+        updates    (mapcat :updates results)]
     {:links links
      :updates updates}))
+
 
 (defn post-resource*
   [request type-name id body]
   (let [auth (auth/identity request)]
     (try+
-      (let [
-            routes (r/router request)
-            entities (core/create-entities auth body routes :parent id)
-            child-links (make-child-links* auth id type-name entities routes)
-            links (core/create-values auth routes (:links child-links))
-            updates (core/update-entities auth (:updates child-links) routes :authorize false :update-collaboration-roots true)]
+
+      (let [routes           (r/router request)
+            cleaned-entities (remove-embedded-relationships body)
+            entities         (core/create-entities auth cleaned-entities routes :parent id)
+            rel-map          (relationships-map body entities) ;; NB Assumes result of create-entities is in the same order as body!!
+            child-links      (make-child-links* auth id type-name entities routes)
+            embedded-links   (embedded-links auth entities rel-map routes)
+            links            (core/create-values auth routes (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
+            updates          (core/update-entities auth (mapcat :updates (cons child-links embedded-links)) routes :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
 
         (created {:entities entities
                   :links    links

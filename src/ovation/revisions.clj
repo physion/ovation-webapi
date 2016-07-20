@@ -89,9 +89,9 @@
 
   (let [rsrc-id          (last (string/split (get-in revision [:attributes :url]) #"/"))
         resp             (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-               {:oauth-token (::auth/token auth)
-                :headers     {"Content-Type" "application/json"
-                              "Accept"       "application/json"}})
+                          {:oauth-token (::auth/token auth)
+                           :headers     {"Content-Type" "application/json"
+                                         "Accept"       "application/json"}})
         body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
         updated-revision (update-in revision [:attributes] merge body)]
     (first (core/update-entities auth [updated-revision] routes))))

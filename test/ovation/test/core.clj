@@ -10,7 +10,7 @@
             [clj-time.core :as t]
             [clj-time.format :as tf]
             [ovation.constants :as k]
-            [ovation.teams :as teams]))
+            [ovation.links :as links]))
 
 (facts "About values"
   (facts "read"
@@ -64,36 +64,36 @@
   (facts "`filter-trashed"
     (facts "with include-trashed false"
       (fact "it removes documents with :trash_info"
-        (core/filter-trashed [{:name ...good...}
-                              {:name       ...trashed...
-                               :trash_info ...info...}] false) => (seq [{:name ...good...}])))
+        (core/filter-trashed [{:name ..good..}
+                              {:name       ..trashed..
+                               :trash_info ..info..}] false) => (seq [{:name ..good..}])))
     (facts "with include-trashed true"
       (fact "it allows documents with :trash_info"
-        (core/filter-trashed [{:name ...good...}
-                              {:name       ...trashed...
-                               :trash_info ...info...}] true) => (seq [{:name ...good...}
-                                                                       {:name       ...trashed...
-                                                                        :trash_info ...info...}]))))
+        (core/filter-trashed [{:name ..good..}
+                              {:name       ..trashed..
+                               :trash_info ..info..}] true) => (seq [{:name ..good..}
+                                                                       {:name       ..trashed..
+                                                                        :trash_info ..info..}]))))
 
 
   (facts "`of-type`"
     (fact "it gets all entities of type"
-      (core/of-type ...auth... ...type... ..rt..) => ...result...
+      (core/of-type ..auth.. ..type.. ..rt..) => ..result..
       (provided
-        (couch/db ...auth...) => ...db...
-        (couch/get-view ...auth... ...db... k/ENTITIES-BY-TYPE-VIEW {:key ...type... :reduce false :include_docs true}) => [...docs...]
-        (tr/entities-from-couch [...docs...] ..auth.. ..rt..) => ...entities...
-        (core/filter-trashed ...entities... false) => ...result...)))
+        (couch/db ..auth..) => ..db..
+        (couch/get-view ..auth.. ..db.. k/ENTITIES-BY-TYPE-VIEW {:key ..type.. :reduce false :include_docs true}) => [..docs..]
+        (tr/entities-from-couch [..docs..] ..auth.. ..rt..) => ..entities..
+        (core/filter-trashed ..entities.. false) => ..result..)))
 
   (facts "get-entities"
     (facts "with existing entities"
       (fact "it gets a single entity"
-        (core/get-entities ...auth... [...id...] ..rt..) => ...result...
+        (core/get-entities ..auth.. [..id..] ..rt..) => ..result..
         (provided
-          (couch/db ...auth...) => ...db...
-          (couch/all-docs ...auth.. ...db... [...id...]) => [{:_id ..id1..} {:_id ..id2..}]
-          (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ...entities...
-          (core/filter-trashed ...entities... false) => ...result...))))
+          (couch/db ..auth..) => ..db..
+          (couch/all-docs ..auth.. ..db.. [..id..]) => [{:_id ..id1..} {:_id ..id2..}]
+          (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ..entities..
+          (core/filter-trashed ..entities.. false) => ..result..))))
 
   (facts "get-owner"
     (fact "it gets the entity owner"
@@ -104,41 +104,42 @@
 
 
 (facts "About Command"
-  (facts "`create-entity`"
+  (facts "create-entity"
     (let [type "..type.."                                    ; Anything but user
-          attributes {:label ...label...}
+          attributes {:label ..label..}
           new-entity {:type       type
                       :attributes attributes}]
 
       (fact "it throws unauthorized exception if any :type is User"
         (core/create-entities ..auth.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception)
         (provided
-          (couch/db ...auth...) => ...db...))
+          (couch/db ..auth..) => ..db..))
 
-      (against-background [(couch/db ...auth...) => ...db...
-                           (tw/to-couch ...owner-id... [{:type       type
+      (against-background [(couch/db ..auth..) => ..db..
+                           (tw/to-couch ..owner-id.. [{:type       type
                                                          :attributes attributes}]
-                             :collaboration_roots []) => [...doc...]
-                           (auth/authenticated-user-id ...auth...) => ...owner-id...
-                           (couch/bulk-docs ...db... [...doc...]) => ...result...
-                           (tr/entities-from-couch ...result... ..auth.. ..routes..) => ...result...]
+                             :collaboration_roots []) => [..doc..]
+                           (auth/authenticated-user-id ..auth..) => ..owner-id..
+                           (couch/bulk-docs ..db.. [..doc..]) => ..result..
+                           (tr/entities-from-couch ..result.. ..auth.. ..routes..) => ..result..]
+
 
         (fact "it sends doc to Couch"
-          (core/create-entities ...auth... [new-entity] ..routes..) => ...result...)
+          (core/create-entities ..auth.. [new-entity] ..routes..) => ..result..)
 
         (facts "with parent"
           (fact "it adds collaboration roots from parent"
-            (core/create-entities ...auth... [new-entity] ..rt.. :parent ...parent...) => ...result...
+            (core/create-entities ..auth.. [new-entity] ..rt.. :parent ..parent..) => ..result..
             (provided
-              (tr/entities-from-couch ...result... ..auth.. ..rt..) => ...result...
-              (core/parent-collaboration-roots ...auth... ...parent... ..rt..) => ...collaboration_roots...
-              (tw/to-couch ...owner-id... [{:type       type
+              (tr/entities-from-couch ..result.. ..auth.. ..rt..) => ..result..
+              (core/parent-collaboration-roots ..auth.. ..parent.. ..rt..) => ..collaboration_roots..
+              (tw/to-couch ..owner-id.. [{:type       type
                                             :attributes attributes}]
-                :collaboration_roots ...collaboration_roots...) => [...doc...])))
+                :collaboration_roots ..collaboration_roots..) => [..doc..])))
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entities ...auth... [new-entity] ..routes.. :parent nil) => ...result...))
+            (core/create-entities ..auth.. [new-entity] ..routes.. :parent nil) => ..result..))
 
         (facts "with Project"
           (fact "creates team for Projects"
@@ -146,10 +147,10 @@
                                              :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
                                                                                                    :_id  ..id..}]
             (provided
-              (tw/to-couch ...owner-id... [{:type       "Project"
+              (tw/to-couch ..owner-id.. [{:type       "Project"
                                             :attributes attributes}]
-                :collaboration_roots []) => [...doc...]
-              (tr/entities-from-couch ...result... ..auth.. ..routes..) => [{:type "Project"
+                :collaboration_roots []) => [..doc..]
+              (tr/entities-from-couch ..result.. ..auth.. ..routes..) => [{:type "Project"
                                                                              :_id  ..id..}]))))))
 
   (facts "`update-entity`"
@@ -209,7 +210,7 @@
                          :rev rev
                          :owner ..owner..
                          :attributes {:my "attributes"}
-                         :trash_info {:trashing_user ..owner-id...
+                         :trash_info {:trashing_user ..owner-id..
                                       :trashing_date ..date..
                                       :trash_root    id}}
           restored (core/restore-trashed-entity ..auth.. entity)]
@@ -231,7 +232,7 @@
           id (str (util/make-uuid))
           rev "1"
           entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
-          update (assoc entity :trash_info {:trashing_user ..owner-id...
+          update (assoc entity :trash_info {:trashing_user ..owner-id..
                                             :trashing_date ..date..
                                             :trash_root    id})]
       (against-background [(couch/db ..auth..) => ..db..
@@ -273,7 +274,7 @@
           (t/now) => ..dt..
           (tf/unparse (tf/formatters :date-hour-minute-second-ms) ..dt..) => ..date..)))))
 
-(facts "restore-trashed-entity helper"
+(facts "About restore-trashed-entity helper"
   (fact "removes :trash_info"
     (let [doc {:_id        ..id..
                :attributes {}
@@ -282,7 +283,7 @@
 
   (facts "`parent-collaboration-roots`"
     (fact "it allows nil parent"
-      (core/parent-collaboration-roots ...auth... nil ..rt..) => [])
+      (core/parent-collaboration-roots ..auth.. nil ..rt..) => [])
 
     (fact "it returns parent links._collaboation_roots"
       (core/parent-collaboration-roots ..auth.. ..parent.. ..rt..) => ..roots..

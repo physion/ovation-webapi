@@ -380,6 +380,8 @@
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
                (against-background [(core/create-entities ..auth.. [new-entity#] ..rt..) => [entity#]
+                                    (core/create-values ..auth.. ..rt.. []) => []
+                                    (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => []
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
@@ -517,7 +519,7 @@
   (entity-resources-read-tests "Source")
   (entity-resource-read-tests "Source")
   (entity-resource-create-tests "Source")
-  (entity-resources-create-tests "Project")
+  (entity-resources-create-tests "Source")
   (entity-resource-update-tests "Source")
   (entity-resource-deletion-tests "Source"))
 
