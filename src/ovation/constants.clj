@@ -10,6 +10,7 @@
 (def TEAM-TYPE "Team")
 (def PROJECT-TYPE "Project")
 (def SOURCE-TYPE "Source")
+(def ACTIVITY-TYPE "Activity")
 
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
 (def ANNOTATION-TYPE-NAME (clojure.string/lower-case ANNOTATION-TYPE))

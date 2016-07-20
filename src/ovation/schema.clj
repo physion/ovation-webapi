@@ -85,8 +85,7 @@
 
 (s/defschema Entity (assoc BaseEntity
                       (s/optional-key :owner) s/Uuid
-                      :relationships {s/Keyword {
-                                                 :self    s/Str
+                      :relationships {s/Keyword {:self    s/Str
                                                  :related s/Str}}
 
                       :links {:self                                  s/Str
@@ -110,8 +109,24 @@
 (s/defschema ProjectUpdate (-> EntityUpdate
                                (assoc :type (s/eq "Project"))))
 
-(s/defschema NewActivity (-> NewEntity
-                           (assoc :type (s/eq "Activity"))))
+(s/defschema NewChildActivity (-> NewEntity
+                                (assoc :type (s/eq "Activity"))
+                                (assoc (s/optional-key :relationships) {(s/optional-key :inputs)  {:related     [s/Uuid]
+                                                                                                   :type        (s/eq k/REVISION-TYPE)
+                                                                                                   :inverse_rel (s/eq :activities)}
+                                                                        (s/optional-key :outputs) {:related     [s/Uuid]
+                                                                                                   :type        (s/eq k/REVISION-TYPE)
+                                                                                                   :inverse_rel (s/eq :origins)}
+                                                                        (s/optional-key :actions) {:related     [s/Uuid]
+                                                                                                   :type        (s/eq k/REVISION-TYPE)
+                                                                                                   :inverse_rel (s/eq :procedures)}})))
+
+(s/defschema NewActivity (-> NewChildActivity
+                           (assoc-in [:relationships :parents] {:related           [s/Uuid]
+                                                                :type              (s/eq k/PROJECT-TYPE)
+                                                                :inverse_rel       (s/eq :activities)
+                                                                :create_as_inverse (s/eq true)})))
+
 (s/defschema Activity (-> Entity
                         (assoc :type (s/eq "Activity"))))
 (s/defschema ActivityUpdate (-> EntityUpdate
