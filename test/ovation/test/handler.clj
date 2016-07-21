@@ -23,7 +23,8 @@
             [buddy.sign.jws :as jws]
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
-            [ovation.routes :as routes])
+            [ovation.routes :as routes]
+            [compojure.api.validator])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
@@ -133,14 +134,13 @@
 
 (facts "About Swagger API"
   (fact "is valid"
-    (compojure.api.swagger/validate app) =not=> nil))
+    (compojure.api.validator/validate app) =not=> nil))
 
 (facts "About invalid routes"
   (let [apikey TOKEN]
     (fact "invalid path =>  404"
       (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
         response => nil?))))
-
 
 
 (facts "About annotations"
