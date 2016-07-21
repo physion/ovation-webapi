@@ -111,21 +111,31 @@
 
 (s/defschema NewChildActivity (-> NewEntity
                                 (assoc :type (s/eq "Activity"))
-                                (assoc (s/optional-key :relationships) {(s/optional-key :inputs)  {:related     [s/Uuid]
+                                (assoc (s/optional-key :relationships) {(s/optional-key :inputs)  {:related     [s/Str]
                                                                                                    :type        (s/eq k/REVISION-TYPE)
-                                                                                                   :inverse_rel (s/eq :activities)}
-                                                                        (s/optional-key :outputs) {:related     [s/Uuid]
+                                                                                                   :inverse_rel (s/eq "activities")}
+                                                                        (s/optional-key :outputs) {:related     [s/Str]
                                                                                                    :type        (s/eq k/REVISION-TYPE)
-                                                                                                   :inverse_rel (s/eq :origins)}
-                                                                        (s/optional-key :actions) {:related     [s/Uuid]
+                                                                                                   :inverse_rel (s/eq "origins")}
+                                                                        (s/optional-key :actions) {:related     [s/Str]
                                                                                                    :type        (s/eq k/REVISION-TYPE)
-                                                                                                   :inverse_rel (s/eq :procedures)}})))
+                                                                                                   :inverse_rel (s/eq "procedures")}})))
 
-(s/defschema NewActivity (-> NewChildActivity
-                           (assoc-in [:relationships :parents] {:related           [s/Uuid]
-                                                                :type              (s/eq k/PROJECT-TYPE)
-                                                                :inverse_rel       (s/eq :activities)
-                                                                :create_as_inverse (s/eq true)})))
+(s/defschema NewActivity (-> NewEntity
+                           (assoc :type (s/eq "Activity"))
+                           (assoc (s/optional-key :relationships) {:parents                  {:related           [s/Str]
+                                                                                              :type              (s/eq k/PROJECT-TYPE)
+                                                                                              :inverse_rel       (s/eq "activities")
+                                                                                              :create_as_inverse (s/eq true)}
+                                                                   (s/optional-key :inputs)  {:related     [s/Str]
+                                                                                              :type        (s/eq k/REVISION-TYPE)
+                                                                                              :inverse_rel (s/eq "activities")}
+                                                                   (s/optional-key :outputs) {:related     [s/Str]
+                                                                                              :type        (s/eq k/REVISION-TYPE)
+                                                                                              :inverse_rel (s/eq "origins")}
+                                                                   (s/optional-key :actions) {:related     [s/Str]
+                                                                                              :type        (s/eq k/REVISION-TYPE)
+                                                                                              :inverse_rel (s/eq "procedures")}})))
 
 (s/defschema Activity (-> Entity
                         (assoc :type (s/eq "Activity"))))
