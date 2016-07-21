@@ -3,8 +3,8 @@
   :description "Ovation REST API"
   :url "http://ovation.io"
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.2.374"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/core.async "0.2.385"]
 
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
