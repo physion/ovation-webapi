@@ -116,11 +116,11 @@
   [auth entities rel-map routes]
   (let [entities-map (util/into-id-map entities)]
     (mapcat (fn [[id relationships]]
-              (mapcat (fn [[rel info]]
-                        (if (:create_as_inverse info)
-                          (links/add-links auth (core/get-entities auth (:related info) routes) (:inverse_rel info) [id] routes :inverse-rel rel)
-                          (links/add-links auth [(get entities-map id)] rel (:related info) routes :inverse-rel (:inverse_rel info))
-                          )) relationships))
+           (map (fn [[rel info]]
+                     (if (:create_as_inverse info)
+                       (links/add-links auth (core/get-entities auth (:related info) routes) (:inverse_rel info) [id] routes :inverse-rel rel)
+                       (links/add-links auth [(get entities-map id)] rel (:related info) routes :inverse-rel (:inverse_rel info))
+                       )) relationships))
       rel-map)))
 
 (defn post-resources*
