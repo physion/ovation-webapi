@@ -20,7 +20,7 @@
             [ovation.prov :as prov]
             [ovation.config :as config]
             [ovation.route-helpers :as rh]
-            [buddy.sign.jws :as jws]
+            [buddy.sign.jwt :as jwt]
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
             [ovation.routes :as routes]
@@ -29,7 +29,7 @@
 
 (def id {:uuid (UUID/randomUUID)})
 
-(def TOKEN (jws/sign id (config/config "JWT_SECRET")))
+(def TOKEN (jwt/sign id (config/config "JWT_SECRET")))
 
 (def TEAMS (promise))
 (deliver TEAMS [])
