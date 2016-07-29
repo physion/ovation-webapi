@@ -109,8 +109,8 @@
   [docs auth router]
   (let [teams (auth/authenticated-teams auth)
         xf    (comp
-                ((map (couch-to-entity auth router))
-                  (filter #(auth/can? auth ::auth/read % :teams teams))))]
+                (map (couch-to-entity auth router))
+                (filter #(auth/can? auth ::auth/read % :teams teams)))]
     (sequence xf docs)))
 
 (defn add-value-permissions
