@@ -11,7 +11,6 @@
 
 
 
-;; Authentication — this should be replaced with buddy.auth
 (defn authenticated?
   [request]
   (buddy.auth/authenticated? request))
@@ -146,9 +145,9 @@
           (= auth-user-id (:owner doc)))))))
 
 (defn- can-read?
-  [auth doc cached-teams]
+  [auth doc & {:keys [cached-teams] :or [cached-teams nil]}]
   (let [authenticated-user  (authenticated-user-id auth)
-        authenticated-teams (or cached-teams (authenticated-teams auth)) ;(or teams (authenticated-teams auth))
+        authenticated-teams (or cached-teams (authenticated-teams auth))
         owner               (case (:type doc)
                               "Annotation" (:user doc)
                               "Relation" (:user_id doc)
@@ -167,7 +166,7 @@
     ::create (can-create? auth doc)
     ::update (can-update? auth doc)
     ::delete (can-delete? auth doc)
-    ::read (can-read? auth doc teams)
+    ::read (can-read? auth doc :teams teams)
 
     ;;default
     (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})))

@@ -171,7 +171,7 @@
   (facts "for entities"
     (let [doc {:owner ..id..}]
       (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
-        (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
+        (tr/add-entity-permissions doc ..id.. ..teams..) => (assoc doc :permissions {:update ..update..
                                                                            :delete ..delete..
                                                                            :create true})
         (provided
