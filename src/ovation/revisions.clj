@@ -12,9 +12,8 @@
             [ring.util.http-response :refer [unprocessable-entity!]]))
 
 (defn get-head-revisions
-  [auth routes file]
+  [auth routes file-id]
   (let [db      (couch/db auth)
-        file-id (:_id file)
         result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
                                                                          :endkey   file-id
                                                                          :reduce   true

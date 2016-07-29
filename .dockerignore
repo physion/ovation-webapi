@@ -1,0 +1,10 @@
+.idea
+.repository
+node_modules
+projectFilesBackup
+*.iml
+.git
+.gitignore
+js/*
+examples
+.repository

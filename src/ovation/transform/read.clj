@@ -76,14 +76,14 @@
     dto))
 
 (defn add-entity-permissions
-  [doc auth]
+  [doc auth teams]
   (-> doc
     (assoc-in [:permissions :create] true)
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
 (defn couch-to-entity
-  [auth router]
+  [auth router & {:keys [teams] :or {teams nil}}]
   (fn [doc]
     (case (:error doc)
       "conflict" (conflict!)
@@ -101,16 +101,17 @@
           (add-annotation-links router)
           (add-relationship-links router)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)
-          (add-entity-permissions auth))))))
+          (add-entity-permissions auth teams))))))
 
 
 (defn entities-from-couch
   "Transform couchdb documents."
   [docs auth router]
-  (let [teams (auth/authenticated-teams auth)]
-    (->> docs
-      (map (couch-to-entity auth router))
-      (filter #(auth/can? auth ::auth/read % :teams teams)))))
+  (let [teams (auth/authenticated-teams auth)
+        xf    (comp
+                ((map (couch-to-entity auth router))
+                  (filter #(auth/can? auth ::auth/read % :teams teams))))]
+    (sequence xf docs)))
 
 (defn add-value-permissions
   [doc auth]
