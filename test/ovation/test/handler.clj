@@ -20,15 +20,16 @@
             [ovation.prov :as prov]
             [ovation.config :as config]
             [ovation.route-helpers :as rh]
-            [buddy.sign.jws :as jws]
+            [buddy.sign.jwt :as jwt]
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
-            [ovation.routes :as routes])
+            [ovation.routes :as routes]
+            [compojure.api.validator])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
 
-(def TOKEN (jws/sign id (config/config "JWT_SECRET")))
+(def TOKEN (jwt/sign id (config/config "JWT_SECRET")))
 
 (def TEAMS (promise))
 (deliver TEAMS [])
@@ -133,14 +134,13 @@
 
 (facts "About Swagger API"
   (fact "is valid"
-    (compojure.api.swagger/validate app) =not=> nil))
+    (compojure.api.validator/validate app) =not=> nil))
 
 (facts "About invalid routes"
   (let [apikey TOKEN]
     (fact "invalid path =>  404"
       (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
         response => nil?))))
-
 
 
 (facts "About annotations"
@@ -380,6 +380,8 @@
                                                (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
                (against-background [(core/create-entities ..auth.. [new-entity#] ..rt..) => [entity#]
+                                    (core/create-values ..auth.. ..rt.. []) => []
+                                    (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => []
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
@@ -517,7 +519,7 @@
   (entity-resources-read-tests "Source")
   (entity-resource-read-tests "Source")
   (entity-resource-create-tests "Source")
-  (entity-resources-create-tests "Project")
+  (entity-resources-create-tests "Source")
   (entity-resource-update-tests "Source")
   (entity-resource-deletion-tests "Source"))
 
@@ -574,9 +576,8 @@
           (teams/get-teams anything) => TEAMS
           (auth/permissions anything) => PERMISSIONS
           (auth/identity anything) => ..auth..
-          (core/get-entities ..auth.. [id] ..rt..) => [doc]
           (r/router anything) => ..rt..
-          (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs)))))
+          (revisions/get-head-revisions ..auth.. ..rt.. id) => revs)))))
 
 (facts "/move"
   (fact "moves file"

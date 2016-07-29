@@ -3,32 +3,32 @@
   :description "Ovation REST API"
   :url "http://ovation.io"
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/core.async "0.2.374"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/core.async "0.2.385"]
 
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "1.0.2"]
+                 [metosin/compojure-api "1.1.3"]
                  [metosin/ring-swagger-ui "2.1.4-0"]
-                 [ring-cors "0.1.7"]
+                 [ring-cors "0.1.8"]
                  [ring-logger "0.7.6"]
-                 [buddy/buddy-auth "0.13.0"]
-                 [ring/ring-jetty-adapter "1.4.0"]
+                 [buddy/buddy-auth "1.1.0"]
+                 [ring/ring-jetty-adapter "1.5.0"]
 
 
                  ;; HTTP and CouchDB
-                 [http-kit "2.1.19"]
+                 [http-kit "2.2.0"]
                  [org.clojure/data.codec "0.1.0"]
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.28.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.30.1"]
                  [yleisradio/new-reliquary "1.0.0"]
 
                  ;; Raygun
-                 [com.mindscapehq/core "1.6.0"]
+                 [com.mindscapehq/core "2.1.0"]
 
 
                  ;; Logging
@@ -38,10 +38,10 @@
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
-                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "r239"]
+                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20160628.1"]
 
                  ;; Graph
-                 [ubergraph "0.2.1"]]
+                 [ubergraph "0.2.2"]]
 
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]

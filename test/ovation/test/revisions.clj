@@ -99,21 +99,20 @@
     (facts "HEAD"
       (facts "`get-head-revisions`"
         (fact "gets HEAD revisions from couch view"
-          (rev/get-head-revisions ..auth.. ..rt.. ..file..) => [..rev..]
+          (rev/get-head-revisions ..auth.. ..rt.. ..fileid..) => [..rev..]
           (provided
             (couch/db ..auth..) => ..db..
-            ..file.. =contains=> {:_id ..fileid..}
             (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:reduce   true
                                                               :group    true
                                                               :startkey ..fileid..
                                                               :endkey   ..fileid..}) => [{:key   ..fileid..
                                                                                           :value [[..revid..], 3]}]
             (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))
+
         (fact "returns all HEAD revisions"
-          (rev/get-head-revisions ..auth.. ..rt.. ..file..) => [..rev1.. ..rev2..]
+          (rev/get-head-revisions ..auth.. ..rt.. ..fileid..) => [..rev1.. ..rev2..]
           (provided
             (couch/db ..auth..) => ..db..
-            ..file.. =contains=> {:_id ..fileid..}
             (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:reduce   true
                                                               :group    true
                                                               :startkey ..fileid..

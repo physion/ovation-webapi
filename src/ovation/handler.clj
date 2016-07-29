@@ -191,7 +191,7 @@
             :path-params [id :- s/Str]
 
             (get-resource "Project" id)
-            (post-resource "Project" id [NewFolder NewFile NewActivity])
+            (post-resource "Project" id [NewFolder NewFile NewChildActivity])
             (put-resource "Project" id)
             (delete-resource "Project" id)
 
@@ -224,6 +224,7 @@
         (context "/activities" []
           :tags ["activities"]
           (get-resources "Activity")
+          (post-resources "Activity" [NewActivity])
           (context "/:id" []
             :path-params [id :- s/Str]
 

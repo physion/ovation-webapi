@@ -12,9 +12,8 @@
             [ring.util.http-response :refer [unprocessable-entity!]]))
 
 (defn get-head-revisions
-  [auth routes file]
+  [auth routes file-id]
   (let [db      (couch/db auth)
-        file-id (:_id file)
         result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
                                                                          :endkey   file-id
                                                                          :reduce   true
@@ -89,9 +88,9 @@
 
   (let [rsrc-id          (last (string/split (get-in revision [:attributes :url]) #"/"))
         resp             (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-               {:oauth-token (::auth/token auth)
-                :headers     {"Content-Type" "application/json"
-                              "Accept"       "application/json"}})
+                          {:oauth-token (::auth/token auth)
+                           :headers     {"Content-Type" "application/json"
+                                         "Accept"       "application/json"}})
         body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
         updated-revision (update-in revision [:attributes] merge body)]
     (first (core/update-entities auth [updated-revision] routes))))

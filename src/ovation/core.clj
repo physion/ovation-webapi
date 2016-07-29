@@ -61,7 +61,6 @@
         :_collaboration_roots)
       [])))
 
-
 (defn create-entities
   "POSTs entity(s) with the given parent and owner"
   [auth entities routes & {:keys [parent] :or {parent nil}}]
@@ -70,13 +69,15 @@
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
-    (let [entities (tr/entities-from-couch (couch/bulk-docs db
-                                             (tw/to-couch (auth/authenticated-user-id auth)
-                                               entities
-                                               :collaboration_roots (parent-collaboration-roots auth parent routes)))
-                     auth
-                     routes)]
-      entities)))
+
+    (let [created-entities (tr/entities-from-couch (couch/bulk-docs db
+                                                     (tw/to-couch (auth/authenticated-user-id auth)
+                                                       entities
+                                                       :collaboration_roots (parent-collaboration-roots auth parent routes)))
+                             auth
+                             routes)]
+
+      created-entities)))
 
 (defn- write-values
   [auth routes values op]
