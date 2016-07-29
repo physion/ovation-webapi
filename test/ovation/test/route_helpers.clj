@@ -10,6 +10,14 @@
             [ovation.util :as util])
   (:import (clojure.lang ExceptionInfo)))
 
+(defn sling-throwable
+  [exception-map]
+  (slingshot.support/get-throwable (slingshot.support/make-context
+                                     exception-map
+                                     (str "throw+: " map)
+                                     nil
+                                     (slingshot.support/stack-trace))))
+
 (facts "About get-head-revisions*"
   (fact "returns HEAD revisions for file"
     (r/get-head-revisions* ..req.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
@@ -17,15 +25,14 @@
       ..req.. =contains=> {:identity ..auth..}
       ..file.. =contains=> {:type "File"}
       (routes/router ..req..) => ..rt..
-      (core/get-entities ..auth.. [..id..] ..rt..) => (seq [..file..])
-      (revisions/get-head-revisions ..auth.. ..rt.. ..file..) => ..revs..))
+      (revisions/get-head-revisions ..auth.. ..rt.. ..id..) => ..revs..))
 
-  (fact "+throws not-found if file is not found"
+  (fact "+throws not-found if HEADs throws not found"
     (r/get-head-revisions* ..req.. ..id..) => (throws ExceptionInfo)
     (provided
       ..req.. =contains=> {:identity ..auth..}
       (routes/router ..req..) => ..rt..
-      (core/get-entities ..auth.. [..id..] ..rt..) => [])))
+      (revisions/get-head-revisions ..auth.. ..rt.. ..id..) =throws=> (sling-throwable {:type ::revisions/not-found}))))
 
 (facts "About post-resource*"
   (fact "adds embedded relationships"

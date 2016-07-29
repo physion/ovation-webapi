@@ -576,9 +576,8 @@
           (teams/get-teams anything) => TEAMS
           (auth/permissions anything) => PERMISSIONS
           (auth/identity anything) => ..auth..
-          (core/get-entities ..auth.. [id] ..rt..) => [doc]
           (r/router anything) => ..rt..
-          (revisions/get-head-revisions ..auth.. ..rt.. doc) => revs)))))
+          (revisions/get-head-revisions ..auth.. ..rt.. id) => revs)))))
 
 (facts "/move"
   (fact "moves file"
