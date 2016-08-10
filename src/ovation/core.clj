@@ -5,7 +5,8 @@
             [ovation.auth :as auth]
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 
@@ -28,7 +29,7 @@
 
 
 
-(defn get-entities
+(defn-traced get-entities
   "Gets entities by ID"
   [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
@@ -36,7 +37,7 @@
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
-(defn get-values
+(defn-traced get-values
   "Get values by ID"
   [auth ids & {:keys [routes]}]
   (let [db (couch/db auth)
@@ -45,13 +46,13 @@
       (tr/values-from-couch docs auth routes)
       docs)))
 
-(defn get-owner
+(defn-traced get-owner
   [auth routes entity]
   (first (get-entities auth [(:owner entity)] routes)))
 
 ;; COMMAND
 
-(defn parent-collaboration-roots
+(defn-traced parent-collaboration-roots
   [auth parent routes]
   (if (nil? parent)
     []
@@ -61,7 +62,7 @@
         :_collaboration_roots)
       [])))
 
-(defn create-entities
+(defn-traced create-entities
   "POSTs entity(s) with the given parent and owner"
   [auth entities routes & {:keys [parent] :or {parent nil}}]
   (let [db (couch/db auth)]
@@ -88,13 +89,13 @@
         docs (map (auth/check! auth op) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
 
-(defn create-values
+(defn-traced create-values
   "POSTs value(s) direct to Couch"
   [auth routes values]
 
   (write-values auth routes values ::auth/create))
 
-(defn update-values
+(defn-traced update-values
   "PUTs value(s) direct to Couch"
   [auth routes values]
 
@@ -116,7 +117,7 @@
                              :_rev (:rev update))))))
 
 
-(defn update-entities
+(defn-traced update-entities
   "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
   updates only entity attributes from lastest rev"
   [auth entities routes & {:keys [direct authorize update-collaboration-roots] :or {direct                     false
@@ -138,7 +139,7 @@
         auth
         routes))))
 
-(defn trash-entity
+(defn-traced trash-entity
   [user-id doc]
   (let [info {(keyword k/TRASHING-USER) user-id
               (keyword k/TRASHING-DATE) (util/iso-now)
@@ -147,11 +148,11 @@
       (throw+ {:type ::illegal-operation :message "Entity is already trashed"}))
     (assoc doc :trash_info info)))
 
-(defn restore-trashed-entity
+(defn-traced restore-trashed-entity
   [auth doc]
   (dissoc doc :trash_info))
 
-(defn restore-deleted-entities
+(defn-traced restore-deleted-entities
   [auth ids routes]
   (let [db                (couch/db auth)
         docs              (get-entities auth ids routes :include-trashed true)
@@ -162,7 +163,7 @@
       auth
       routes)))
 
-(defn delete-entities
+(defn-traced delete-entities
   [auth ids routes]
   (let [db (couch/db auth)
         docs (get-entities auth ids routes)]
@@ -178,7 +179,7 @@
                               routes))))
 
 
-(defn delete-values
+(defn-traced delete-values
   "DELETEs value(s) direct to Couch"
   [auth ids routes]
 
