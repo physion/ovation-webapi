@@ -73,7 +73,8 @@
                            {:name "teams" :description "Manage collaborations"}
                            {:name "auth" :description "Authentication"}
                            {:name "ui" :description "Support for Web UI"}
-                           {:name "search" :description "Search Ovation"}]}}}
+                           {:name "search" :description "Search Ovation"}
+                           {:name "zip" :description "Download ZIP archive"}]}}}
 
 
   (middleware [[wrap-cors

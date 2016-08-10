@@ -90,6 +90,7 @@
 
                       :links {:self                                  s/Str
                               (s/optional-key :heads)                s/Str
+                              (s/optional-key :zip)                  s/Str
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
