@@ -7,7 +7,8 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [ovation.auth :as auth]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -89,7 +90,7 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn couch-to-entity
+(defn-traced couch-to-entity
   [auth router & {:keys [teams] :or {teams nil}}]
   (fn [doc]
     (case (:error doc)
@@ -112,7 +113,7 @@
           (add-entity-permissions auth teams))))))
 
 
-(defn entities-from-couch
+(defn-traced entities-from-couch
   "Transform couchdb documents."
   [docs auth router]
   (let [teams (auth/authenticated-teams auth)
@@ -127,7 +128,7 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn couch-to-value
+(defn-traced couch-to-value
   [auth router]
   (fn [doc]
     (case (:error doc)
@@ -147,7 +148,7 @@
         (-> doc
           (add-value-permissions auth))))))
 
-(defn values-from-couch
+(defn-traced values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs auth router]
   (let [teams (auth/authenticated-teams auth)]

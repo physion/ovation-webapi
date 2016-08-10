@@ -3,8 +3,7 @@
             [ovation.version :as ver]
             [ovation.util :as util]
             [clojure.tools.logging :as logging]
-            [clj-time.core :as t]
-            [clj-time.format :as f]))
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 (defn ensure-id
   "Makes sure there's an _id for entity"
@@ -42,7 +41,7 @@
   [doc timestamp]
   (assoc-in doc [:attributes :updated-at] timestamp))
 
-(defn doc-to-couch
+(defn-traced doc-to-couch
   [owner-id collaboration-roots doc]
   (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
     (let [time (util/iso-short-now)
@@ -59,7 +58,7 @@
         (add-collaboration-roots roots)))
     doc))
 
-(defn to-couch
+(defn-traced to-couch
   "Transform documents for CouchDB"
   [owner-id docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
   (logging/info "Transforming to couch" docs)
