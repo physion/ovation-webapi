@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [compojure.api.routes :refer [path-for*]]
             [compojure.route :as route]
-            [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict]]
+            [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict temporary-redirect]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.logger :refer [wrap-with-logger]]
             [ovation.middleware.raygun :refer [wrap-raygun-handler]]
@@ -33,7 +33,8 @@
             [ring.logger.timbre :as logger.timbre]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [ovation.revisions :as revisions]))
+            [ovation.revisions :as revisions]
+            [ovation.util :as util]))
 
 
 (ovation.logging/setup!)
@@ -72,7 +73,8 @@
                            {:name "teams" :description "Manage collaborations"}
                            {:name "auth" :description "Authentication"}
                            {:name "ui" :description "Support for Web UI"}
-                           {:name "search" :description "Search Ovation"}]}}}
+                           {:name "search" :description "Search Ovation"}
+                           {:name "zip" :description "Download ZIP archive"}]}}}
 
 
   (middleware [[wrap-cors
@@ -433,6 +435,21 @@
                   rt     (router request)
                   result (breadcrumbs/get-breadcrumbs auth rt ids)]
               (ok {:breadcrumbs result}))))
+
+        (context "/zip" []
+          :tags ["zip"]
+          (context "/folders" []
+            (GET "/:id" request
+              :path-params [id :- s/Uuid]
+              :name :zip-folder
+              :summary "Download Folder contents as a Zip archive"
+              (temporary-redirect (util/join-path [config/ZIP_SERVICE "api" "v1" "folders" id]))))
+          (context "/activities" []
+            (GET "/:id" request
+              :path-params [id :- s/Uuid]
+              :name :zip-activity
+              :summary "Download Activity contents as a Zip archive"
+              (temporary-redirect (util/join-path [config/ZIP_SERVICE "api" "v1" "activities" id])))))
 
         (context "/search" []
           :tags ["search"]

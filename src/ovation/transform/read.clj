@@ -7,7 +7,8 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [ovation.auth :as auth]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 (defn add-annotation-links                                  ;;keep
@@ -47,6 +48,13 @@
     (assoc-in dto [:links :heads] (r/heads-route rt dto))
     dto))
 
+(defn add-zip-link
+  [dto rt]
+  (condp = (:type dto)
+    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route rt dto))
+    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route rt dto))
+    dto))
+
 (defn add-upload-complete-link
   [dto rt]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
@@ -82,7 +90,7 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn couch-to-entity
+(defn-traced couch-to-entity
   [auth router & {:keys [teams] :or {teams nil}}]
   (fn [doc]
     (case (:error doc)
@@ -98,13 +106,14 @@
           (add-self-link router)
           (add-heads-link router)
           (add-upload-complete-link router)
+          (add-zip-link router)
           (add-annotation-links router)
           (add-relationship-links router)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)
           (add-entity-permissions auth teams))))))
 
 
-(defn entities-from-couch
+(defn-traced entities-from-couch
   "Transform couchdb documents."
   [docs auth router]
   (let [teams (auth/authenticated-teams auth)
@@ -119,7 +128,7 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn couch-to-value
+(defn-traced couch-to-value
   [auth router]
   (fn [doc]
     (case (:error doc)
@@ -139,7 +148,7 @@
         (-> doc
           (add-value-permissions auth))))))
 
-(defn values-from-couch
+(defn-traced values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs auth router]
   (let [teams (auth/authenticated-teams auth)]

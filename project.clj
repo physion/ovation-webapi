@@ -26,6 +26,7 @@
                  ;; New Relic agent (JAR)
                  [com.newrelic.agent.java/newrelic-agent "3.30.1"]
                  [yleisradio/new-reliquary "1.0.0"]
+                 [com.climate/clj-newrelic "0.2.1"]
 
                  ;; Raygun
                  [com.mindscapehq/core "2.1.0"]
