@@ -30,7 +30,7 @@
                                                  :annotation      TagRecord}))
 
 (s/defschema PropertyRecord {:key   s/Str
-                             :value (describe s/Str "(may be any JSON type)")})
+                             :value s/Any})
 (s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type (s/eq k/PROPERTIES)
                                                       :annotation      PropertyRecord}))
 
