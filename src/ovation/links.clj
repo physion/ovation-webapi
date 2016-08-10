@@ -7,7 +7,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.set :refer [union]]
             [ovation.constants :as k]
-            [ovation.transform.read :as tr]))
+            [ovation.transform.read :as tr]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 ;; QUERY
@@ -17,7 +18,7 @@
               (= label doc-label)
               false)))
 
-(defn get-links
+(defn-traced get-links
   [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
   (let [db (couch/db auth)
         opts {:startkey      (if name [id rel name] [id rel])
@@ -29,7 +30,7 @@
       auth
       routes)))
 
-(defn get-link-targets
+(defn-traced get-link-targets
   "Gets the document targets for id--rel->"
   [auth id rel routes & {:keys [label name include-trashed] :or {label nil
                                                                  name nil
@@ -131,7 +132,7 @@
        :targets (vals targets-updates)})))
 
 
-(defn make-links
+(defn-traced make-links
   [authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]
 
   (for [source sources
@@ -150,7 +151,7 @@
           named (if name (assoc base :name name) base)]
       (if inverse-rel (assoc named :inverse_rel (clojure.core/name inverse-rel)) named))))
 
-(defn add-links
+(defn-traced add-links
   "Adds link(s) with the given relation name from doc to each specified target ID. `doc` may be a single doc
   or a Sequential collection of source documents. For each source document, links to all targets are built.
 
@@ -174,7 +175,7 @@
        :updates (concat (:sources updates) (:targets updates))})))
 
 
-(defn delete-links
+(defn-traced delete-links
   ([auth routes doc rel target-id & {:keys [name] :or [name nil]}]
    (auth/check! auth ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]

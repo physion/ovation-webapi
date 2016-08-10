@@ -15,28 +15,29 @@
             [clojure.walk :as walk]
             [ovation.constants :as k]
             [ovation.teams :as teams]
-            [ovation.routes :as routes]))
+            [ovation.routes :as routes]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
-(defn get-annotations*
+(defn-traced get-annotations*
   [request id annotation-key]
   (let [auth (auth/identity request)
         rt (routes/router request)
         annotations (annotations/get-annotations auth [id] annotation-key rt)]
     (ok {(keyword annotation-key) annotations})))
 
-(defn post-annotations*
+(defn-traced post-annotations*
   [request id annotation-key annotations]
   (let [auth (auth/identity request)
         annotations-kw (keyword annotation-key)]
     (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
 
-(defn delete-annotations*
+(defn-traced delete-annotations*
   [request annotation-id annotation-key]
   (let [auth (auth/identity request)]
     (accepted {(keyword annotation-key) (annotations/delete-annotations auth [annotation-id] (r/router request))})))
 
-(defn put-annotation*
+(defn-traced put-annotation*
   [request annotation-key annotation-id annotation]
 
   (let [auth (auth/identity request)]
@@ -123,7 +124,7 @@
                 relationships))
       rel-map)))
 
-(defn post-resources*
+(defn-traced post-resources*
   [request type-name type-kw new-entities]
   (let [auth (auth/identity request)]
     (if (every? #(= type-name (:type %)) new-entities)
@@ -178,7 +179,7 @@
              (ok {~single-type-kw (first projects#)})
              (not-found {:errors {:detail "Not found"}})))))))
 
-(defn make-child-link*
+(defn-traced make-child-link*
   [auth sources target-ids source-type routes]
   (fn [target]
     (let [target-type (util/entity-type-keyword target)
@@ -189,7 +190,7 @@
         (links/add-links auth sources rel target-ids routes :inverse-rel inverse-rel)
         {}))))
 
-(defn make-child-links*
+(defn-traced make-child-links*
   [auth parent-id type-name targets routes]
   (let [target-ids (map :_id targets)
         sources    (core/get-entities auth [parent-id] routes)
@@ -201,7 +202,7 @@
      :updates updates}))
 
 
-(defn post-resource*
+(defn-traced post-resource*
   [request type-name id body]
   (let [auth (auth/identity request)]
     (try+
@@ -236,7 +237,7 @@
        (post-resource* request# ~type-name ~id (:entities body#)))))
 
 
-(defn put-resource*
+(defn-traced put-resource*
   [request id type-name type-kw updates]
   (let [entity-id (str (:_id updates))]
     (if-not (= id (str entity-id))
@@ -284,7 +285,7 @@
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
-(defn rel-related*
+(defn-traced rel-related*
   [request id rel routes]
   (let [auth (auth/identity request)
         related (links/get-link-targets auth id (lower-case rel) routes)]
@@ -300,14 +301,14 @@
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
        (rel-related* request# ~id ~rel (r/router request#)))))
 
-(defn get-relationships*
+(defn-traced get-relationships*
   [request id rel]
   (let [auth (auth/identity request)
         rels (links/get-links auth id rel (r/router request))]
     (ok {:links rels})))
 
 
-(defn post-relationships*
+(defn-traced post-relationships*
   [request id new-links rel]
   (try+
     (let [auth (auth/identity request)
@@ -346,7 +347,7 @@
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
          (post-relationships* request# ~id new-links# ~rel)))))
 
-(defn post-revisions*
+(defn-traced post-revisions*
   [request id revisions]
   (let [auth (auth/identity request)]
     (try+
@@ -366,7 +367,7 @@
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))
 
-(defn get-head-revisions*
+(defn-traced get-head-revisions*
   [request id]
   (let [auth   (auth/identity request)
         routes (r/router request)]
@@ -384,7 +385,7 @@
   [src dest]
   (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :inverse-rel]))
 
-(defn move-contents*
+(defn-traced move-contents*
   [request id info]
   (let [routes (r/router request)
         auth   (auth/identity request)
