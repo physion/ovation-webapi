@@ -17,7 +17,7 @@
   (filter #(or include_trashed (nil? (:trash_info %))) entities))
 
 
-(defn of-type
+(defn-traced of-type
   "Gets all entities of the given type"
   [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
   (let [db (couch/db auth)]
