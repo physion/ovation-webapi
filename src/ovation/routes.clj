@@ -33,6 +33,14 @@
   [rt doc]
   (rt :file-head-revisions {:id (:_id doc)}))
 
+(defn zip-activity-route
+  [rt doc]
+  (rt :zip-activity {:id (:_id doc)}))
+
+(defn zip-folder-route
+  [rt doc]
+  (rt :zip-folder {:id (:_id doc)}))
+
 (defn upload-complete-route
   [rt doc]
   (rt :upload-complete {:id (:_id doc)}))

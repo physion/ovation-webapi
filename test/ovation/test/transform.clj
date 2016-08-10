@@ -90,7 +90,7 @@
         (r/relationship-route ..rt.. dto :relB) => ..relB-self..)))
 
 
-  (fact "`add-relationship-links` adds heads to File entity links"
+  (fact "`add-heads-link` adds heads to File entity links"
     (let [type k/FILE-TYPE
           dto {:type type :links {:_collaboration_roots [..collab..]}}]
       (tr/add-heads-link dto ..rt..) => (-> dto
@@ -98,6 +98,26 @@
                                                                       :heads ..headrt..}))
       (provided
         (r/heads-route ..rt.. dto) => ..headrt..)))
+
+  (facts "add-zip-link"
+    (fact "adds zip link for Activity"
+      (let [type k/ACTIVITY-TYPE
+            dto {:type type :links {:_collaboration_roots [..roots..]}}]
+        (tr/add-zip-link dto ..rt..) => (assoc-in dto [:links :zip] ..zip..)
+        (provided
+          (r/zip-activity-route ..rt.. dto) => ..zip..)))
+
+    (fact "adds zip link for Folder"
+      (let [type k/FOLDER-TYPE
+            dto {:type type :links {:_collaboration_roots [..roots..]}}]
+        (tr/add-zip-link dto ..rt..) => (assoc-in dto [:links :zip] ..zip..)
+        (provided
+          (r/zip-folder-route ..rt.. dto) => ..zip..)))
+
+    (fact "does not add zip link for Project"
+      (let [type k/PROJECT-TYPE
+            dto {:type type :links {:_collaboration_roots [..roots..]}}]
+        (tr/add-zip-link dto ..rt..) => dto)))
 
   (fact "`add-self-link` adds self link to entity"
     (let [couch {:_id   ..id..

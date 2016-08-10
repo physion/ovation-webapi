@@ -47,6 +47,13 @@
     (assoc-in dto [:links :heads] (r/heads-route rt dto))
     dto))
 
+(defn add-zip-link
+  [dto rt]
+  (condp = (:type dto)
+    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route rt dto))
+    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route rt dto))
+    dto))
+
 (defn add-upload-complete-link
   [dto rt]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
@@ -98,6 +105,7 @@
           (add-self-link router)
           (add-heads-link router)
           (add-upload-complete-link router)
+          (add-zip-link router)
           (add-annotation-links router)
           (add-relationship-links router)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)

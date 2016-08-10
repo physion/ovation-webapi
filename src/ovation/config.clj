@@ -20,3 +20,4 @@
 (def CLOUDANT_PASSWORD (config "CLOUDANT_PASSWORD"))
 
 (def PORT (config "PORT" :default 8080))
+(def ZIP_SERVICE (config "ZIP_SERVICE" :default "https://zip-staging.ovation.io"))
