@@ -60,7 +60,7 @@
                              result-channels nil]
                         (if-let [prefix (first roots)]
                           (let [c (chan)]
-                            (async/thread
+                            (async/go
                               (let [r (cl/get-view design-doc view (prefix-keys opts prefix))]
                                 (async/onto-chan c r)))
                             (recur (rest roots) (conj result-channels c)))
