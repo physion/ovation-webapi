@@ -59,8 +59,8 @@
         (let [results (loop [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
                              result-channels nil]
                         (if-let [prefix (first roots)]
-                          (let [c (chan)]
-                            (async/go
+                          (let [c (chan 100)]
+                            (async/thread
                               (let [r (cl/get-view design-doc view (prefix-keys opts prefix))]
                                 (async/onto-chan c r)))
                             (recur (rest roots) (conj result-channels c)))
