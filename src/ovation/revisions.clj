@@ -9,9 +9,10 @@
             [org.httpkit.client :as http]
             [ovation.auth :as auth]
             [clojure.string :as string]
-            [ring.util.http-response :refer [unprocessable-entity!]]))
+            [ring.util.http-response :refer [unprocessable-entity!]]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
-(defn get-head-revisions
+(defn-traced get-head-revisions
   [auth routes file-id]
   (let [db      (couch/db auth)
         result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
@@ -40,7 +41,7 @@
   (let [files (core/get-entities auth [(get-in parent [:attributes :file_id])] routes)]
     (create-revisions-from-file auth routes (first files) parent new-revisions)))
 
-(defn create-revisions
+(defn-traced create-revisions
   [auth routes parent new-revisions]
 
   (condp = (:type parent)
@@ -51,7 +52,7 @@
                   (create-revisions-from-file auth routes parent (first heads) new-revisions))))
 
 
-(defn make-resource
+(defn-traced make-resource
   [auth revision]
   (if-let [existing-url (get-in revision [:attributes :url])]
     {:revision revision
@@ -74,13 +75,13 @@
          :aws      aws
          :post-url post-url}))))
 
-(defn make-resources
+(defn-traced make-resources
   "Create Rails Resources for each revision and update attributes accordingly"
   [auth revisions]
   (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel
 
 
-(defn update-metadata
+(defn-traced update-metadata
   [auth routes revision]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))

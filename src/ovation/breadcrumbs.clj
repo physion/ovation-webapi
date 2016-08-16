@@ -5,16 +5,17 @@
             [ubergraph.alg :as alg]
             [clojure.pprint :refer [pprint]]
             [ovation.core :as core]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
-(defn get-parents
+(defn-traced get-parents
   [auth id routes]
   (let [parents (links/get-link-targets auth id k/PARENTS-REL routes)]
     parents))
 
 
-(defn build-graph
+(defn-traced build-graph
   "Builds a directed graph of child -> parent nodes using loop/recur. Returns the Ubergraph."
   [auth routes entity-ids g]
   (let [graph (apply uber/add-nodes g entity-ids)]
@@ -46,7 +47,7 @@
       (mapcat (fn [n] (extend-path id graph entities (conj path (make-node-description n entities)))) next-nodes))))
 
 
-(defn collect-paths
+(defn-traced collect-paths
   "Finds all paths from ids to parents"
   [auth graph ids routes]
   (let [entities (util/into-id-map (core/get-entities auth (uber/nodes graph) routes))]
@@ -56,7 +57,7 @@
                ids))))
 
 
-(defn get-breadcrumbs
+(defn-traced get-breadcrumbs
   "Gets all breadcrumb paths to entities with IDs `ids`"
   [auth routes ids]
   (let [graph  (build-graph auth routes ids (uber/digraph))
