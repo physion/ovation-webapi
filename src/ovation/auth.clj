@@ -7,7 +7,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [buddy.auth]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 
@@ -48,7 +49,7 @@
 
 
 ;; Authorization
-(defn permissions
+(defn-traced permissions
   [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
         opts {:oauth-token   token
@@ -65,18 +66,18 @@
                 :permissions)))))
 
 
-(defn get-permissions
+(defn-traced get-permissions
   [auth collaboration-roots]
   (let [permissions (deref (::authenticated-permissions auth) 500 [])
         root-set (set collaboration-roots)]
     (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
 
-(defn collect-permissions
+(defn-traced collect-permissions
   [permissions perm]
   (map #(-> % :permissions perm) permissions))
 
-(defn authenticated-teams
+(defn-traced authenticated-teams
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
@@ -160,7 +161,7 @@
                  (some (set roots) authenticated-teams))))))
 
 
-(defn can?
+(defn-traced can?
   [auth op doc & {:keys [teams] :or {:teams nil}}]
   (case op
     ::create (can-create? auth doc)
@@ -172,7 +173,7 @@
     (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})))
 
 
-(defn check!
+(defn-traced check!
   ([auth op]
    (fn [doc]
      (when-not (can? auth op doc)

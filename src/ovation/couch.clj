@@ -10,7 +10,8 @@
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
-            [ring.util.http-response :refer [throw!]]))
+            [ring.util.http-response :refer [throw!]]
+            [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 (def design-doc "api")
@@ -39,7 +40,7 @@
             (assoc :endkey (cons prefix (key-seq (:endkey opts)))))))
 
 
-(defn get-view
+(defn-traced get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
   each of owner and team ids, prepending to the start and end keys taking unique results.
 
@@ -74,7 +75,7 @@
 
 (def ALL-DOCS-PARTITION 20)
 
-(defn all-docs
+(defn-traced all-docs
   "Gets all documents with given document IDs"
   [auth db ids]
   (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
@@ -86,7 +87,7 @@
 
     (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
-(defn merge-updates
+(defn-traced merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
@@ -100,7 +101,7 @@
 
       docs)))
 
-(defn bulk-docs
+(defn-traced bulk-docs
   "Creates or updates documents"
   [db docs]
   (cl/with-db db
@@ -117,12 +118,12 @@
     (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
-(defn delete-docs
+(defn-traced delete-docs
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
 
-(defn search
+(defn-traced search
   [db q & {:keys [bookmark limit] :or [bookmark nil
                                        limit nil]}]
   (let [query-params {:q q :bookmark bookmark :limit limit}
