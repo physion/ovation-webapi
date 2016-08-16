@@ -93,7 +93,7 @@
 
                [wrap-raygun-handler (config/config "RAYGUN_API_KEY")]
 
-               ;wrap-newrelic-transaction
+               wrap-newrelic-transaction
                ]
 
 
