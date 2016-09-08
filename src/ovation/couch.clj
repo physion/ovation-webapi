@@ -42,36 +42,26 @@
 
 (defn-traced get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
-  each of owner and team ids, prepending to the start and end keys taking unique results.
+  each of owner and team ids, prepending to the start and end keys, and taking the aggregate unique results.
 
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (cl/with-db db
-    (let [docs (chan 1 (if (:include_docs opts)
-                         (comp
-                           (map :doc)
-                           (distinct))
-                         (distinct)))]
+  (let [tf (if (:include_docs opts)
+             (comp (map :doc) (distinct))
+             (distinct))]
 
-      ;; Run queries, placing all results onto the docs channel
+    (cl/with-db db
       (if prefix-teams
-        (let [results (loop [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
-                             result-channels nil]
-                        (if-let [prefix (first roots)]
-                          (let [c (chan)]
-                            (async/go
-                              (let [r (cl/get-view design-doc view (prefix-keys opts prefix))]
-                                (async/onto-chan c r)))
-                            (recur (rest roots) (conj result-channels c)))
-                          (async/merge result-channels)))]
-          (async/pipe results docs))
+        ;; [prefix-teams] Run queries in parallel
+        (let [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
+              merged-results (doall (pmap (fn [prefix]
+                                     (cl/get-view design-doc view (prefix-keys opts prefix))) roots))]
 
-        ;; Make single call, placing results onto docs channel
-        (async/onto-chan docs (cl/get-view design-doc view opts) true))
+          (into '() tf (apply concat merged-results)))
 
-      ;; Pull docs into a list
-      (<?? (async/into '() docs)))))
+        ;; [!prefix-teams] Make single call
+        (into '() tf (cl/get-view design-doc view opts))))))
 
 (def ALL-DOCS-PARTITION 20)
 

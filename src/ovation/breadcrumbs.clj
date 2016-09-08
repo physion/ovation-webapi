@@ -2,7 +2,6 @@
   (:require [ovation.links :as links]
             [ovation.constants :as k]
             [ubergraph.core :as uber]
-            [ubergraph.alg :as alg]
             [clojure.pprint :refer [pprint]]
             [ovation.core :as core]
             [ovation.util :as util]
