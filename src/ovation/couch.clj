@@ -55,8 +55,8 @@
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
         (let [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
-              merged-results (pmap (fn [prefix]
-                                     (cl/get-view design-doc view (prefix-keys opts prefix))) roots)]
+              merged-results (doall (pmap (fn [prefix]
+                                     (cl/get-view design-doc view (prefix-keys opts prefix))) roots))]
 
           (into '() tf (apply concat merged-results)))
 
