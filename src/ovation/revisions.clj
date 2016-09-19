@@ -29,7 +29,10 @@
   (loop [revs revisions
          f    file]
     (if-let [r (first revs)]
-      (recur (rest revs) (assoc-in f [:revisions (:_id r) :status] status))
+      (recur (rest revs) (assoc-in f [:revisions (:_id r)] {:status     status
+                                                            :started-at (or (get-in f [:revisions (:_id r) :started-at])
+                                                                          (get-in r [:attributes :created-at])
+                                                                          (util/iso-now))}))
       f)))
 
 

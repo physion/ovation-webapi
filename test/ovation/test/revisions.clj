@@ -25,15 +25,18 @@
   (facts "update-file-status"
     (fact "adds revision to status"
       (let [file         {}
-            rev          {:_id ..id..}
-            updated-file {:revisions {..id.. {:status ..status..}}}]
+            rev          {:_id        ..id..
+                          :attributes {:created-at ..now..}}
+            updated-file {:revisions {..id.. {:status ..status.. :started-at ..now..}}}]
         (rev/update-file-status file [rev] ..status..) => updated-file))
     (fact "handles multiple revisions"
       (let [file         {}
-            rev1         {:_id ..id1..}
-            rev2         {:_id ..id2..}
-            updated-file {:revisions {..id1.. {:status ..status..}
-                                      ..id2.. {:status ..status..}}}]
+            rev1         {:_id        ..id1..
+                          :attributes {:created-at ..now..}}
+            rev2         {:_id        ..id2..
+                          :attributes {:created-at ..now..}}
+            updated-file {:revisions {..id1.. {:status ..status.. :started-at ..now..}
+                                      ..id2.. {:status ..status.. :started-at ..now..}}}]
         (rev/update-file-status file [rev1 rev2] ..status..) => updated-file)))
 
   (against-background [(auth/authenticated-user-id ..auth..) => ..userid..]
@@ -165,11 +168,12 @@
     (facts "record-upload-failure"
       (fact "updates file=>revision and Revision status to FAILED"
         (let [rev              {:_id        ..revid..
-                                :attributes {:file_id ..fileid..}}
+                                :attributes {:file_id    ..fileid..
+                                             :created-at ..now..}}
               file             {:_id ..fileid..}
 
               updated-revision (assoc-in rev [:attributes :upload-status] k/ERROR)
-              updated-file     (assoc-in file [:revisions ..revid..] {:status k/ERROR})]
+              updated-file     (assoc-in file [:revisions ..revid..] {:status k/ERROR :started-at ..now..})]
           (rev/record-upload-failure ..auth.. ..rt.. rev) => {:revision updated-revision
                                                               :file     updated-file}
           (provided
