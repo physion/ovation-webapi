@@ -141,28 +141,40 @@
         (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
           (rev/update-metadata ..auth.. ..rt.. revision) => (throws ExceptionInfo)))
 
-      (fact "updates metadata from Rails"
-        (let [revid    "100"
-              revision {:_id ..id.. :attributes {:url (util/join-path [config/RESOURCES_SERVER revid])
-                                                 :file_id ..fileid..}}
-              length   100
-              etag     "etag"
-              updated-rev (assoc-in revision [:attributes :content_length] length)]
+      (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
+        (let [revid       "100"
+              revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+                                                    :file_id ..fileid..}}
+              file        {:_id ..fileid..}
+              length      100
+              etag        "etag"
+              updated-rev (-> revision
+                            (assoc-in [:attributes :content_length] length)
+                            (assoc-in [:attributes :upload-status] k/COMPLETE))]
           (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                              {:status 200
                                                                                                               :body   (util/to-json {:content_length length
                                                                                                                                      :etag           etag})})]
-            (rev/update-metadata ..auth.. ..rt.. revision) => ..result..
+            (rev/update-metadata ..auth.. ..rt.. revision) => {:_id ..id.. :result true}
             (provided
-              (rev/update-file-status ..file.. [revision] k/COMPLETE) => ..updated-file..
-              (core/get-entities ..auth.. [..fileid..] ..rt..) => [..file..]
-              (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt..) => [..result..])))))
+              (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
+              (core/get-entity ..auth.. ..fileid.. ..rt..) => file
+              (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt..) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
 
 
     (facts "record-upload-failure"
-      (future-fact "updates file=>revision status"
-        )
-      (future-fact "updates revision status"))
+      (fact "updates file=>revision and Revision status to FAILED"
+        (let [rev              {:_id        ..revid..
+                                :attributes {:file_id ..fileid..}}
+              file             {:_id ..fileid..}
+
+              updated-revision (assoc-in rev [:attributes :upload-status] k/ERROR)
+              updated-file     (assoc-in file [:revisions ..revid..] {:status k/ERROR})]
+          (rev/record-upload-failure ..auth.. ..rt.. rev) => {:revision updated-revision
+                                                              :file     updated-file}
+          (provided
+            (core/get-entity ..auth.. ..fileid.. ..rt..) => file
+            (core/update-entities ..auth.. [updated-revision updated-file] ..rt..) => [updated-revision updated-file]))))
 
 
     (facts "make-resource"

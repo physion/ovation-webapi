@@ -332,13 +332,16 @@
             (PUT "/upload-failed" request
               :name :upload-failed
               :summary "Indicates upload failed and updates the File status"
-              :return {:revision Revision}
+              :return {:revision Revision
+                       :file     File}
               :body [err {:code    s/Int
                           :message s/Str}]
               (let [auth     (auth/identity request)
                     rt       (router request)
-                    revision (first (core/get-entities auth [id] rt))]
-                (ok {:revision (revisions/record-upload-failure auth rt revision)})))
+                    revision (first (core/get-entities auth [id] rt))
+                    result   (revisions/record-upload-failure auth rt revision)]
+                (ok {:revision (:revision result)
+                     :file     (:file result)})))
             (context "/links/:rel" []
               :path-params [rel :- s/Str]
 

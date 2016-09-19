@@ -37,8 +37,8 @@
   [auth routes file parent new-revisions]
   (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
         new-revs     (map #(-> %
-                        (assoc-in [:attributes :file_id] (:_id file))
-                        (assoc-in [:attributes :previous] previous)) new-revisions)
+                            (assoc-in [:attributes :file_id] (:_id file))
+                            (assoc-in [:attributes :previous] previous)) new-revisions)
         revisions    (core/create-entities auth new-revs routes)
         updated-file (update-file-status file revisions k/UPLOADING)
         links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
@@ -92,7 +92,7 @@
   (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel
 
 
-(defn update-metadata
+(defn-traced update-metadata
   [auth routes revision & {:keys [complete] :or {complete true}}]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
@@ -104,16 +104,25 @@
                            :headers     {"Content-Type" "application/json"
                                          "Accept"       "application/json"}})
         file    (if complete
-                  (future (first (core/get-entities auth [(get-in revision [:attributes :file_id])] routes)))
+                  (future (core/get-entity auth (get-in revision [:attributes :file_id]) routes))
                   nil)]
     (let [body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
-          updated-revision (update-in revision [:attributes] merge body)
+          updated-revision (-> revision
+                             (update-in [:attributes] merge body)
+                             (assoc-in [:attributes :upload-status] k/COMPLETE))
           updates          (if file
                              [updated-revision (update-file-status @file [revision] k/COMPLETE)]
                              [updated-revision])]
-      (first (core/update-entities auth updates routes)))))
+      (first (filter #(= (:_id %) (:_id revision))
+               (core/update-entities auth updates routes))))))
 
 
 (defn record-upload-failure
   [auth routes revision]
-  )
+  (let [file-id          (get-in revision [:attributes :file_id])
+        file             (core/get-entity auth file-id routes)
+        updated-file     (update-file-status file [revision] k/ERROR)
+        updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
+        updates          (core/update-entities auth [updated-revision updated-file] routes)]
+    {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
+     :file     (first (filter #(= (:_id %) (:_id file)) updates))}))
