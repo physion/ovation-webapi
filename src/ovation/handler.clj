@@ -334,7 +334,7 @@
               :summary "Indicates upload failed and updates the File status"
               :return {:revision Revision
                        :file     File}
-              :body [err {:code    s/Int
+              :body [err {:code    (s/or s/Str s/Int)
                           :message s/Str}]
               (let [auth     (auth/identity request)
                     rt       (router request)
