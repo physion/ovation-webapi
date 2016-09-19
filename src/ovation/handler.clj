@@ -93,8 +93,8 @@
 
                [wrap-raygun-handler (config/config "RAYGUN_API_KEY")]
 
-               wrap-newrelic-transaction
-               ]
+               wrap-newrelic-transaction]
+
 
 
               (undocumented
@@ -329,6 +329,16 @@
                     rt     (router request)
                     revision (first (core/get-entities auth [id] rt))]
                 (ok {:revision (revisions/update-metadata auth rt revision)})))
+            (PUT "/upload-failed" request
+              :name :upload-failed
+              :summary "Indicates upload failed and updates the File status"
+              :return {:revision Revision}
+              :body [err {:code    s/Int
+                          :message s/Str}]
+              (let [auth     (auth/identity request)
+                    rt       (router request)
+                    revision (first (core/get-entities auth [id] rt))]
+                (ok {:revision (revisions/record-upload-failure auth rt revision)})))
             (context "/links/:rel" []
               :path-params [rel :- s/Str]
 

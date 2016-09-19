@@ -24,14 +24,24 @@
       []
       (core/get-entities auth ids routes))))
 
+(defn update-file-status
+  [file revisions status]
+  (loop [revs revisions
+         f    file]
+    (if-let [r (first revs)]
+      (recur (rest revs) (assoc-in f [:revisions (:_id r) :status] status))
+      f)))
+
+
 (defn- create-revisions-from-file
   [auth routes file parent new-revisions]
-  (let [previous (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
-        new-revs (map #(-> %
+  (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
+        new-revs     (map #(-> %
                         (assoc-in [:attributes :file_id] (:_id file))
                         (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions (core/create-entities auth new-revs routes)
-        links-result (links/add-links auth [file] :revisions (map :_id revisions) routes :inverse-rel :file)]
+        revisions    (core/create-entities auth new-revs routes)
+        updated-file (update-file-status file revisions k/UPLOADING)
+        links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
@@ -42,6 +52,7 @@
     (create-revisions-from-file auth routes (first files) parent new-revisions)))
 
 (defn-traced create-revisions
+  "Creates new Revisions. Returns result of links/add-links; you should call core/create-values and core/update-entities on the result"
   [auth routes parent new-revisions]
 
   (condp = (:type parent)
@@ -81,18 +92,28 @@
   (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel
 
 
-(defn-traced update-metadata
-  [auth routes revision]
+(defn update-metadata
+  [auth routes revision & {:keys [complete] :or {complete true}}]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
     (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
 
-  (let [rsrc-id          (last (string/split (get-in revision [:attributes :url]) #"/"))
-        resp             (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
+  (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
+        resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
                           {:oauth-token (::auth/token auth)
                            :headers     {"Content-Type" "application/json"
                                          "Accept"       "application/json"}})
-        body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
-        updated-revision (update-in revision [:attributes] merge body)]
-    (first (core/update-entities auth [updated-revision] routes))))
+        file    (if complete
+                  (future (first (core/get-entities auth [(get-in revision [:attributes :file_id])] routes)))
+                  nil)]
+    (let [body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+          updated-revision (update-in revision [:attributes] merge body)
+          updates          (if file
+                             [updated-revision (update-file-status @file [revision] k/COMPLETE)]
+                             [updated-revision])]
+      (first (core/update-entities auth updates routes)))))
 
+
+(defn record-upload-failure
+  [auth routes revision]
+  )
