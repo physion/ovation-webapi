@@ -96,6 +96,7 @@
                               (s/optional-key :notes)                s/Str
                               (s/optional-key :timeline-events)      s/Str
                               (s/optional-key :upload-complete)      s/Str
+                              (s/optional-key :upload-failed)        s/Str
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
@@ -161,7 +162,10 @@
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                      (assoc :type (s/eq "File"))))
+                    (assoc :type (s/eq "File"))
+                    (assoc (s/optional-key :revisions) [{:_id                    s/Uuid
+                                                         :status                 (s/enum k/UPLOADING k/COMPLETE k/ERROR)
+                                                         (s/optional-key :error) s/Str}])))
 
 (s/defschema FileUpdate (-> EntityUpdate
                             (assoc :type (s/eq "File"))))

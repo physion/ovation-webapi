@@ -45,3 +45,8 @@
 
 ;; Notifications
 (def MENTION_NOTIFICATION "mention")
+
+;; Revision status
+(def UPLOADING "in-progress")
+(def COMPLETE "complete")
+(def ERROR "error")

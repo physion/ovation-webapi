@@ -356,12 +356,12 @@
             revisions-with-ids (map #(assoc % :_id (str (util/make-uuid))) revisions)
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
             result (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
-            links (core/create-values auth routes (:links result))
-            updates (core/update-entities auth (:updates result) routes :update-collaboration-roots true)]
+            links (future (core/create-values auth routes (:links result)))
+            updates (future (core/update-entities auth (:updates result) routes :update-collaboration-roots true))]
 
         {:entities (:revisions result)
-         :links     links
-         :updates   updates
+         :links     @links
+         :updates   @updates
          :aws       (map (fn [m] {:id  (get-in m [:revision :_id])
                                   :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err

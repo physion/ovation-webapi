@@ -37,6 +37,10 @@
       (tr/entities-from-couch auth routes)
       (filter-trashed include-trashed))))
 
+(defn-traced get-entity
+  [auth id routes  & {:keys [include-trashed] :or {include-trashed false}}]
+  (first (get-entities auth [id] routes :include-trashed include-trashed)))
+
 (defn-traced get-values
   "Get values by ID"
   [auth ids & {:keys [routes]}]
