@@ -327,7 +327,7 @@
               :return {:revision Revision}
               (let [auth   (auth/identity request)
                     rt     (router request)
-                    revision (first (core/get-entities auth [id] rt))]
+                    revision (core/get-entity auth id rt)]
                 (ok {:revision (revisions/update-metadata auth rt revision)})))
             (PUT "/upload-failed" request
               :name :upload-failed
