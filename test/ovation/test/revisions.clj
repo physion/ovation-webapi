@@ -162,7 +162,7 @@
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
               (core/get-entity ..auth.. ..fileid.. ..rt..) => file
-              (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt..) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
+              (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt.. :direct true) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
 
 
     (facts "record-upload-failure"
@@ -178,7 +178,7 @@
                                                               :file     updated-file}
           (provided
             (core/get-entity ..auth.. ..fileid.. ..rt..) => file
-            (core/update-entities ..auth.. [updated-revision updated-file] ..rt..) => [updated-revision updated-file]))))
+            (core/update-entities ..auth.. [updated-revision updated-file] ..rt.. :direct true) => [updated-revision updated-file]))))
 
 
     (facts "make-resource"

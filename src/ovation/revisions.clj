@@ -117,15 +117,15 @@
                              [updated-revision (update-file-status @file [revision] k/COMPLETE)]
                              [updated-revision])]
       (first (filter #(= (:_id %) (:_id revision))
-               (core/update-entities auth updates routes))))))
+               (core/update-entities auth updates routes :direct true))))))
 
 
-(defn record-upload-failure
+(defn-traced record-upload-failure
   [auth routes revision]
   (let [file-id          (get-in revision [:attributes :file_id])
         file             (core/get-entity auth file-id routes)
         updated-file     (update-file-status file [revision] k/ERROR)
         updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
-        updates          (core/update-entities auth [updated-revision updated-file] routes)]
+        updates          (core/update-entities auth [updated-revision updated-file] routes :direct true)]
     {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
      :file     (first (filter #(= (:_id %) (:_id file)) updates))}))

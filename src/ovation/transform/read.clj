@@ -92,7 +92,14 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn-traced couch-to-entity
+(defn convert-file-revision-status
+  [doc]
+  (if (= (:type doc) k/FILE-TYPE)
+    (let [revisions (into {} (map (fn [[k,v]] [(name k) v]) (:revisions doc)))]
+      (assoc doc :revisions revisions))
+    doc))
+
+(defn couch-to-entity
   [auth router & {:keys [teams] :or {teams nil}}]
   (fn [doc]
     (case (:error doc)
@@ -111,6 +118,7 @@
           (add-zip-link router)
           (add-annotation-links router)
           (add-relationship-links router)
+          (convert-file-revision-status)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)
           (add-entity-permissions auth teams))))))
 
