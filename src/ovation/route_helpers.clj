@@ -351,13 +351,13 @@
   [request id revisions]
   (let [auth (auth/identity request)]
     (try+
-      (let [routes (r/router request)
-            parent (first (core/get-entities auth [id] routes))
-            revisions-with-ids (map #(assoc % :_id (str (util/make-uuid))) revisions)
+      (let [routes                   (r/router request)
+            parent                   (core/get-entity auth id routes)
+            revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
-            result (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
-            links (future (core/create-values auth routes (:links result)))
-            updates (future (core/update-entities auth (:updates result) routes :update-collaboration-roots true))]
+            result                   (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
+            links                    (future (core/create-values auth routes (:links result)))
+            updates                  (future (core/update-entities auth (:updates result) routes :update-collaboration-roots true))]
 
         {:entities (:revisions result)
          :links     @links
