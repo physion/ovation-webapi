@@ -105,39 +105,38 @@
 
   (write-values auth routes values ::auth/update))
 
-(defn- merge-updates
-  [updates & {:keys [update-collaboration-roots]}]
+(defn- merge-updates-fn
+  [updates & {:keys [update-collaboration-roots allow-keys] :or [allow-keys []]}]
 
   (let [updated-attributes (into {} (map (fn [update] [(str (:_id update)) {:attributes           (:attributes update)
                                                                             :rev                  (:_rev update)
-                                                                            :_collaboration_roots (get-in update [:links :_collaboration_roots])}]) updates))]
+                                                                            :_collaboration_roots (get-in update [:links :_collaboration_roots])
+                                                                            :allowed-keys         (select-keys update allow-keys)}]) updates))]
     (fn [doc]
-      (let [update        (updated-attributes (str (:_id doc)))
-            roots         (if update-collaboration-roots (:_collaboration_roots update) (get-in doc [:links :_collaboration_roots]))
-            updated-roots (if (nil? roots)
-                            doc
-                            (assoc-in doc [:links :_collaboration_roots] roots))]
-        (assoc updated-roots :attributes (:attributes update)
-                             :_rev (:rev update))))))
+      (let [update (updated-attributes (str (:_id doc)))
+            roots  (if update-collaboration-roots (:_collaboration_roots update) (get-in doc [:links :_collaboration_roots]))]
+        (-> doc
+          (assoc-in [:links :_collaboration_roots] (or roots [])) ; Update collaboration roots
+          (merge (:allowed-keys update))                    ; Merge additional allowed keys
+          (assoc :attributes (:attributes update)           ; Update attributes and rev
+                 :_rev (:rev update)))))))
 
 
 (defn-traced update-entities
-  "Updates entities{EntityUpdate} or creates entities. If :direct true, PUTs entities directly, otherwise,
+  "Updates entities{EntityUpdate} or creates entities. If :allow-keys is non-empty, allows extra keys. Otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [direct authorize update-collaboration-roots] :or {direct                     false
-                                                                                    authorize                  true
-                                                                                    update-collaboration-roots false}}]
+  [auth entities routes & {:keys [authorize update-collaboration-roots allow-keys] :or {authorize                  true
+                                                                                        update-collaboration-roots false
+                                                                                        allow-keys                 []}}]
   (let [db (couch/db auth)]
 
     (when (some #{k/USER-ENTITY} (map :type entities))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-    (let [bulk-docs         (if direct
-                              entities
-                              (let [ids      (map :_id entities)
-                                    docs     (get-entities auth ids routes)
-                                    merge-fn (merge-updates entities :update-collaboration-roots update-collaboration-roots)]
-                                (map merge-fn docs)))
+    (let [bulk-docs         (let [ids      (map :_id entities)
+                                  docs     (get-entities auth ids routes)
+                                  merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
+                              (map merge-fn docs))
           auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
         auth

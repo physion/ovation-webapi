@@ -357,7 +357,9 @@
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
             result                   (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
             links                    (future (core/create-values auth routes (:links result)))
-            updates                  (future (core/update-entities auth (:updates result) routes :update-collaboration-roots true))]
+            updates                  (future (core/update-entities auth (:updates result) routes
+                                               :update-collaboration-roots true
+                                               :allow-keys [:revisions]))]
 
         {:entities (:revisions result)
          :links     @links

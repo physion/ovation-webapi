@@ -43,7 +43,7 @@
                             (assoc-in [:attributes :file_id] (:_id file))
                             (assoc-in [:attributes :previous] previous)) new-revisions)
         revisions    (core/create-entities auth new-revs routes)
-        updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading
+        updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
         links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
@@ -119,7 +119,7 @@
                              [updated-revision (update-file-status @file [revision] k/COMPLETE)]
                              [updated-revision])]
       (first (filter #(= (:_id %) (:_id revision))
-               (core/update-entities auth updates routes :direct true))))))
+               (core/update-entities auth updates routes :allow-keys [:revisions]))))))
 
 
 (defn-traced record-upload-failure
@@ -128,6 +128,6 @@
         file             (core/get-entity auth file-id routes)
         updated-file     (update-file-status file [revision] k/ERROR)
         updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
-        updates          (core/update-entities auth [updated-revision updated-file] routes :direct true)]
+        updates          (core/update-entities auth [updated-revision updated-file] routes :allow-keys [:revisions])]
     {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
      :file     (first (filter #(= (:_id %) (:_id file)) updates))}))

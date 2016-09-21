@@ -153,18 +153,21 @@
               (tr/entities-from-couch ..result.. ..auth.. ..routes..) => [{:type "Project"
                                                                              :_id  ..id..}]))))))
 
-  (facts "`update-entity`"
-    (let [type "some-type"
-          attributes {:label ..label1..}
-          new-entity {:type       type
+  (facts "update-entity"
+    (let [type           "some-type"
+          attributes     {:label ..label1..}
+          new-entity     {:type   type
                       :attributes attributes}
-          id (util/make-uuid)
-          rev "1"
-          rev2 "2"
-          entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
-          update (-> entity
-                   (assoc-in [:attributes :label] ..label2..)
-                   (assoc-in [:attributes :foo] ..foo..))
+          id             (util/make-uuid)
+          rev            "1"
+          rev2           "2"
+          entity         (assoc new-entity :_id id
+                                           :_rev rev
+                                           :owner ..owner-id..
+                                           :links {:_collaboration_roots []})
+          update         (-> entity
+                           (assoc-in [:attributes :label] ..label2..)
+                           (assoc-in [:attributes :foo] ..foo..))
           updated-entity (-> entity
                            (assoc :_rev rev2))]
       (against-background [(couch/db ..auth..) => ..db..]
@@ -179,7 +182,15 @@
             (core/update-entities ..auth.. [update] ..rt..) => [updated-entity]
             (provided
               (auth/can? ..auth.. ::auth/update anything) => true))
-
+          (fact "it updates allowed keys"
+            (let [update-with-revs         (assoc update :revisions ..revs..)
+                  updated-entity-with-revs (assoc updated-entity :revisions ..revs..)]
+              (core/update-entities ..auth.. [update-with-revs] ..rt.. :allow-keys [:revisions]) => [updated-entity-with-revs]
+              (provided
+                (auth/can? ..auth.. ::auth/update anything) => true
+                (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
+                (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs]
+                (tr/entities-from-couch [updated-entity-with-revs] ..auth.. ..rt..) => [updated-entity-with-revs])))
           (fact "it updates collaboration roots"
             (let [update2 (-> update
                             (assoc-in [:links :_collaboration_roots] [..roots..]))
@@ -224,7 +235,7 @@
         (tr/entities-from-couch ..restored.. ..auth.. ..rt..) => ..result..
         (auth/can? ..auth.. ::auth/update restored) => true)))
 
-  (facts "`delete-entity`"
+  (facts "delete-entity"
     (let [type "some-type"
           attributes {:label ..label1..}
           new-entity {:type       type
@@ -263,7 +274,7 @@
           (provided
             (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
-  (facts "`trash-entity` helper"
+  (facts "trash-entity helper"
     (fact "adds required info"
       (let [doc {:_id ..id..}
             info {:trashing_user ..user..
@@ -281,7 +292,7 @@
                :trash_info ..trash..}]
       (core/restore-trashed-entity ..auth.. doc) => (dissoc doc :trash_info)))
 
-  (facts "`parent-collaboration-roots`"
+  (facts "parent-collaboration-roots"
     (fact "it allows nil parent"
       (core/parent-collaboration-roots ..auth.. nil ..rt..) => [])
 
