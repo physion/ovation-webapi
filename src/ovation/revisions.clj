@@ -43,7 +43,7 @@
                             (assoc-in [:attributes :file_id] (:_id file))
                             (assoc-in [:attributes :previous] previous)) new-revisions)
         revisions    (core/create-entities auth new-revs routes)
-        updated-file (update-file-status file revisions k/UPLOADING)
+        updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading
         links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
@@ -85,7 +85,9 @@
             url (:public_url result)
             aws (:aws result)
             post-url (:url result)]
-        {:revision (assoc-in revision [:attributes :url] url)
+        {:revision (-> revision
+                     (assoc-in [:attributes :url] url)
+                     (assoc-in [:attributes :upload-status] k/UPLOADING))
          :aws      aws
          :post-url post-url}))))
 

@@ -190,7 +190,8 @@
                                                                                       :url        "post"}})}]
             (rev/make-resource ..auth.. {:_id        revid
                                          :attributes {}}) => {:revision {:_id        revid
-                                                                         :attributes {:url "url"}}
+                                                                         :attributes {:url "url"
+                                                                                      :upload-status k/UPLOADING}}
                                                               :aws      "aws"
                                                               :post-url "post"}
             (provided
