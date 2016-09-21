@@ -189,7 +189,8 @@
               (provided
                 (auth/can? ..auth.. ::auth/update anything) => true
                 (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
-                (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs])))
+                (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs]
+                (tr/entities-from-couch [updated-entity-with-revs] ..auth.. ..rt..) => [updated-entity-with-revs])))
           (fact "it updates collaboration roots"
             (let [update2 (-> update
                             (assoc-in [:links :_collaboration_roots] [..roots..]))
