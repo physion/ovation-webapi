@@ -55,10 +55,12 @@
     k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route rt dto))
     dto))
 
-(defn add-upload-complete-link
+(defn add-upload-links
   [dto rt]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
-    (assoc-in dto [:links :upload-complete] (r/upload-complete-route rt dto))
+    (-> dto
+      (assoc-in [:links :upload-complete] (r/upload-complete-route rt dto))
+      (assoc-in [:links :upload-failed] (r/upload-failed-route rt dto)))
     dto))
 
 (defn add-self-link
@@ -90,7 +92,14 @@
     (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
-(defn-traced couch-to-entity
+(defn convert-file-revision-status
+  [doc]
+  (if (= (:type doc) k/FILE-TYPE)
+    (let [revisions (into {} (map (fn [[k,v]] [(name k) v]) (:revisions doc)))]
+      (assoc doc :revisions revisions))
+    doc))
+
+(defn couch-to-entity
   [auth router & {:keys [teams] :or {teams nil}}]
   (fn [doc]
     (case (:error doc)
@@ -105,10 +114,11 @@
           (dissoc :relationships)
           (add-self-link router)
           (add-heads-link router)
-          (add-upload-complete-link router)
+          (add-upload-links router)
           (add-zip-link router)
           (add-annotation-links router)
           (add-relationship-links router)
+          (convert-file-revision-status)
           (assoc-in [:links :_collaboration_roots] collaboration-roots)
           (add-entity-permissions auth teams))))))
 

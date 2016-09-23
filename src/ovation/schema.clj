@@ -88,6 +88,11 @@
                       :relationships {s/Keyword {:self    s/Str
                                                  :related s/Str}}
 
+                      ;; For File
+                      (s/optional-key :revisions) {s/Uuid {:status                 (s/enum k/UPLOADING k/COMPLETE k/ERROR)
+                                                           :started-at             s/Str
+                                                           (s/optional-key :error) s/Str}}
+
                       :links {:self                                  s/Str
                               (s/optional-key :heads)                s/Str
                               (s/optional-key :zip)                  s/Str
@@ -96,6 +101,7 @@
                               (s/optional-key :notes)                s/Str
                               (s/optional-key :timeline-events)      s/Str
                               (s/optional-key :upload-complete)      s/Str
+                              (s/optional-key :upload-failed)        s/Str
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
@@ -161,7 +167,7 @@
 (s/defschema NewFile (-> NewEntity
                          (assoc :type (s/eq "File"))))
 (s/defschema File (-> Entity
-                      (assoc :type (s/eq "File"))))
+                    (assoc :type (s/eq "File"))))
 
 (s/defschema FileUpdate (-> EntityUpdate
                             (assoc :type (s/eq "File"))))
