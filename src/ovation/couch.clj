@@ -48,15 +48,17 @@
   [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
   (let [tf (if (:include_docs opts)
-             (comp (map :doc) (distinct))
+             (comp
+               (map :doc)
+               (distinct))
              (distinct))]
 
     (cl/with-db db
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
-        (let [roots           (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
-              merged-results (doall (pmap (fn [prefix]
-                                     (cl/get-view design-doc view (prefix-keys opts prefix))) roots))]
+        (let [roots          (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
+              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts %))) roots))
+              merged-results (map deref view-calls)]
 
           (into '() tf (apply concat merged-results)))
 

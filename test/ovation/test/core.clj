@@ -72,8 +72,8 @@
         (core/filter-trashed [{:name ..good..}
                               {:name       ..trashed..
                                :trash_info ..info..}] true) => (seq [{:name ..good..}
-                                                                       {:name       ..trashed..
-                                                                        :trash_info ..info..}]))))
+                                                                     {:name       ..trashed..
+                                                                      :trash_info ..info..}]))))
 
 
   (facts "`of-type`"
@@ -157,7 +157,7 @@
     (let [type           "some-type"
           attributes     {:label ..label1..}
           new-entity     {:type   type
-                      :attributes attributes}
+                          :attributes attributes}
           id             (util/make-uuid)
           rev            "1"
           rev2           "2"
