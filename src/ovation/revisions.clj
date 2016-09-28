@@ -109,14 +109,14 @@
                            :headers     {"Content-Type" "application/json"
                                          "Accept"       "application/json"}})
         file    (if complete
-                  (future (core/get-entity auth (get-in revision [:attributes :file_id]) routes))
+                  (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
                   nil)]
     (let [body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
           updated-revision (-> revision
                              (update-in [:attributes] merge body)
                              (assoc-in [:attributes :upload-status] k/COMPLETE))
           updates          (if file
-                             [updated-revision (update-file-status @file [revision] k/COMPLETE)]
+                             [updated-revision (update-file-status file [revision] k/COMPLETE)]
                              [updated-revision])]
       (first (filter #(= (:_id %) (:_id revision))
                (core/update-entities auth updates routes :allow-keys [:revisions]))))))

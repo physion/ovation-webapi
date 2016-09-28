@@ -356,15 +356,15 @@
             revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
             result                   (revisions/create-revisions auth routes parent (map :revision revisions-with-resources))
-            links                    (future (core/create-values auth routes (:links result)))
-            updates                  (future (core/update-entities auth (:updates result) routes
-                                               :update-collaboration-roots true
-                                               :allow-keys [:revisions]))]
+            links                    (core/create-values auth routes (:links result))
+            updates                  (core/update-entities auth (:updates result) routes
+                                       :update-collaboration-roots true
+                                       :allow-keys [:revisions])]
 
-        {:entities (:revisions result)
-         :links     @links
-         :updates   @updates
-         :aws       (map (fn [m] {:id  (get-in m [:revision :_id])
+        {:entities (filter #(= (:type %) k/REVISION-TYPE) updates)
+         :links    links
+         :updates  updates
+         :aws      (map (fn [m] {:id  (get-in m [:revision :_id])
                                   :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
       (catch [:type :ovation.revisions/file-revision-conflict] err
         (conflict {:errors {:detail (:message err)}})))))
@@ -401,15 +401,15 @@
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
 
-      (let [added (links/add-links auth dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
-            links (future (core/create-values auth routes (:links added)))
-            updates (future (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true))]
+      (let [added   (links/add-links auth dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
+            links   (core/create-values auth routes (:links added))
+            updates (core/update-entities auth (:updates added) routes :authorize false :update-collaboration-roots true)]
 
         (do
           (links/delete-links auth routes (first src) (rel (first src) entity) id)
 
           {(util/entity-type-keyword entity)    entity
-           :updates @updates
-           :links   @links}))
+           :updates updates
+           :links   links}))
 
       (unprocessable-entity! {:errors {:detail "Unexpected entity type"}}))))
