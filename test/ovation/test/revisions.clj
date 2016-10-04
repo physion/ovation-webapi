@@ -9,7 +9,8 @@
             [ovation.couch :as couch]
             [ovation.config :as config]
             [org.httpkit.fake :refer [with-fake-http]]
-            [ovation.util :as util])
+            [ovation.util :as util]
+            [ovation.transform.read :as tr])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn sling-throwable
@@ -121,23 +122,37 @@
         (rev/get-head-revisions ..auth.. ..rt.. ..fileid..) => [..rev..]
         (provided
           (couch/db ..auth..) => ..db..
-          (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:reduce   true
-                                                            :group    true
-                                                            :startkey ..fileid..
-                                                            :endkey   ..fileid..}) => [{:key   ..fileid..
-                                                                                        :value [[..revid..], 3]}]
-          (core/get-entities ..auth.. [..revid..] ..rt..) => [..rev..]))
+          (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey     [..fileid.. {}]
+                                                            :descending   true
+                                                            :include_docs true
+                                                            :limit        2}) => [{:key [..fileid.. 0]
+                                                                                   :doc ..doc..}]
+          (tr/entities-from-couch [..doc..] ..auth.. ..rt..) => [..rev..]
+          (core/filter-trashed [..rev..] false) => [..rev..]))
 
-      (fact "returns all HEAD revisions"
-        (rev/get-head-revisions ..auth.. ..rt.. ..fileid..) => [..rev1.. ..rev2..]
+      (fact "returns all HEAD revisions when top 2 are equal"
+        (rev/get-head-revisions ..auth.. ..rt.. ..fileid..) => [..rev1.. ..rev2.. ..rev3..]
         (provided
           (couch/db ..auth..) => ..db..
-          (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:reduce   true
-                                                            :group    true
-                                                            :startkey ..fileid..
-                                                            :endkey   ..fileid..}) => [{:key   ..fileid..
-                                                                                        :value [[..revid1.. ..revid2..], 3]}]
-          (core/get-entities ..auth.. [..revid1.. ..revid2..] ..rt..) => [..rev1.. ..rev2..])))
+          (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey     [..fileid.. {}]
+                                                            :descending   true
+                                                            :include_docs true
+                                                            :limit        2}) => [{:key [..fileid.. ..len..]
+                                                                                   :doc ..doc1..}
+                                                                                  {:key [..fileid.. ..len..]
+                                                                                   :doc ..doc2..}]
+          (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey      [..fileid.. ..len..]
+                                                            :endkey        [..fileid.. ..len..]
+                                                            :inclusive_end true
+                                                            :include_docs  true}) => [{:key [..fileid.. ..len..]
+                                                                                       :doc ..doc1..}
+                                                                                      {:key [..fileid.. ..len..]
+                                                                                       :doc ..doc2..}
+                                                                                      {:key [..fileid.. ..len..]
+                                                                                       :doc ..doc3..}]
+
+          (tr/entities-from-couch [..doc1.. ..doc2.. ..doc3..] ..auth.. ..rt..) => [..rev1.. ..rev2.. ..rev3..]
+          (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..])))
 
     (facts "update-metadata"
       (fact "returns 422 if URL is not ovation.io"

@@ -10,19 +10,32 @@
             [ovation.auth :as auth]
             [clojure.string :as string]
             [ring.util.http-response :refer [unprocessable-entity!]]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [com.climate.newrelic.trace :refer [defn-traced]]
+            [ovation.transform.read :as tr]))
 
 (defn-traced get-head-revisions
+  "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
+  they're not equal (or if there are less than 2), returns the top doc. If they're equal, returns
+  all Revisions with that parent count"
+
   [auth routes file-id]
-  (let [db      (couch/db auth)
-        result  (:value (first (couch/get-view auth db k/REVISIONS-VIEW {:startkey file-id
-                                                                         :endkey   file-id
-                                                                         :reduce   true
-                                                                         :group    true})))
-        ids     (first result)]
-    (if (nil? ids)
-      []
-      (core/get-entities auth ids routes))))
+  (let [docs (let [db     (couch/db auth)
+                   tops   (couch/get-view auth db k/REVISIONS-VIEW {:startkey     [file-id {}]
+                                                                    :descending   true
+                                                                    :include_docs true
+                                                                    :limit        2})
+                   counts (map #(get-in % [:key 1]) tops)]
+               (if (or (< 2 (count tops))
+                     (not (= (first counts) (second counts))))
+                 (map :doc (take 1 tops))
+                 (let [all-tops (couch/get-view auth db k/REVISIONS-VIEW {:startkey      [file-id (first counts)]
+                                                                          :endkey        [file-id (first counts)]
+                                                                          :inclusive_end true
+                                                                          :include_docs  true})]
+                   (map :doc all-tops))))]
+    (-> docs
+      (tr/entities-from-couch auth routes)
+      (core/filter-trashed false))))
 
 (defn update-file-status
   [file revisions status]
