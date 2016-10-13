@@ -123,6 +123,7 @@
         (provided
           (couch/db ..auth..) => ..db..
           (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey     [..fileid.. {}]
+                                                            :endkey       [..fileid..]
                                                             :descending   true
                                                             :include_docs true
                                                             :limit        2}) => [{:key [..fileid.. 0]
@@ -135,6 +136,7 @@
         (provided
           (couch/db ..auth..) => ..db..
           (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey     [..fileid.. {}]
+                                                            :endkey       [..fileid..]
                                                             :descending   true
                                                             :include_docs true
                                                             :limit        2}) => [{:key [..fileid.. ..len..]
