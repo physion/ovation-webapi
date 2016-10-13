@@ -24,7 +24,8 @@
                                                                     :endkey       [file-id]
                                                                     :descending   true
                                                                     :include_docs true
-                                                                    :limit        2})
+                                                                    :limit        2}
+                            :prefix-teams false)
                    counts (map #(get-in % [:key 1]) tops)]
                (if (or (< 2 (count tops))
                      (not (= (first counts) (second counts))))
@@ -32,7 +33,8 @@
                  (let [all-tops (couch/get-view auth db k/REVISIONS-VIEW {:startkey      [file-id (first counts)]
                                                                           :endkey        [file-id (first counts)]
                                                                           :inclusive_end true
-                                                                          :include_docs  true})]
+                                                                          :include_docs  true}
+                                  :prefix-teams false)]
                    (map :doc all-tops))))]
     (-> docs
       (tr/entities-from-couch auth routes)
