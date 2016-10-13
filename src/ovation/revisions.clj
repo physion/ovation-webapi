@@ -21,6 +21,7 @@
   [auth routes file-id]
   (let [docs (let [db     (couch/db auth)
                    tops   (couch/get-view auth db k/REVISIONS-VIEW {:startkey     [file-id {}]
+                                                                    :endkey       [file-id]
                                                                     :descending   true
                                                                     :include_docs true
                                                                     :limit        2})
