@@ -126,8 +126,8 @@
                                                             :endkey       [..fileid..]
                                                             :descending   true
                                                             :include_docs true
-                                                            :limit        2}) => [{:key [..fileid.. 0]
-                                                                                   :doc ..doc..}]
+                                                            :limit        2} :prefix-teams false) => [{:key [..fileid.. 0]
+                                                                                                       :doc ..doc..}]
           (tr/entities-from-couch [..doc..] ..auth.. ..rt..) => [..rev..]
           (core/filter-trashed [..rev..] false) => [..rev..]))
 
@@ -139,15 +139,15 @@
                                                             :endkey       [..fileid..]
                                                             :descending   true
                                                             :include_docs true
-                                                            :limit        2}) => [{:key [..fileid.. ..len..]
-                                                                                   :doc ..doc1..}
+                                                            :limit        2} :prefix-teams false) => [{:key [..fileid.. ..len..]
+                                                                                                       :doc ..doc1..}
                                                                                   {:key [..fileid.. ..len..]
                                                                                    :doc ..doc2..}]
           (couch/get-view ..auth.. ..db.. k/REVISIONS-VIEW {:startkey      [..fileid.. ..len..]
                                                             :endkey        [..fileid.. ..len..]
                                                             :inclusive_end true
-                                                            :include_docs  true}) => [{:key [..fileid.. ..len..]
-                                                                                       :doc ..doc1..}
+                                                            :include_docs  true} :prefix-teams false) => [{:key [..fileid.. ..len..]
+                                                                                                           :doc ..doc1..}
                                                                                       {:key [..fileid.. ..len..]
                                                                                        :doc ..doc2..}
                                                                                       {:key [..fileid.. ..len..]
