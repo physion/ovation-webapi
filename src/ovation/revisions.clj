@@ -24,18 +24,19 @@
                                                                     :endkey       [file-id]
                                                                     :descending   true
                                                                     :include_docs true
-                                                                    :limit        2}
-                            :prefix-teams false)
-                   counts (map #(get-in % [:key 1]) tops)]
-               (if (or (< 2 (count tops))
-                     (not (= (first counts) (second counts))))
-                 (map :doc (take 1 tops))
-                 (let [all-tops (couch/get-view auth db k/REVISIONS-VIEW {:startkey      [file-id (first counts)]
-                                                                          :endkey        [file-id (first counts)]
-                                                                          :inclusive_end true
-                                                                          :include_docs  true}
-                                  :prefix-teams false)]
-                   (map :doc all-tops))))]
+                                                                    :limit        2} :prefix-teams false)
+                   counts (map (fn [doc] (count (get-in doc [:attributes :previous]))) tops)]
+               (if (and (> (count tops) 1)
+                     (= (first counts) (second counts)))
+
+                 ;; HEAD conflict
+                 (couch/get-view auth db k/REVISIONS-VIEW {:startkey      [file-id (first counts)]
+                                                           :endkey        [file-id (first counts)]
+                                                           :inclusive_end true
+                                                           :include_docs  true} :prefix-teams false)
+
+                 ;; Unique HEAD
+                 (take 1 tops)))]
     (-> docs
       (tr/entities-from-couch auth routes)
       (core/filter-trashed false))))
