@@ -131,7 +131,10 @@
       (try+
         (let [routes           (r/router request)
               cleaned-entities (remove-embedded-relationships new-entities)
-              entities         (core/create-entities auth cleaned-entities routes)
+              created-entities (core/create-entities auth cleaned-entities routes)
+              entities         (if (some :relationships new-entities)
+                                 (core/get-entities auth (map :_id created-entities) routes)
+                                 created-entities)
               rel-map          (relationships-map new-entities entities) ;; NB Assumes result of create-entities is in the same order as body!!
               embedded-links   (embedded-links auth entities rel-map routes)
               links            (core/create-values auth routes (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
