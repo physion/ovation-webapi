@@ -128,7 +128,9 @@
         file    (if complete
                   (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
                   nil)]
-    (let [body             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+    (let [body             (if (= (:status @resp) 200)
+                             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+                             {}) ;; if it's not 200, don't add any additional attributes
           updated-revision (-> revision
                              (update-in [:attributes] merge body)
                              (assoc-in [:attributes :upload-status] k/COMPLETE))
