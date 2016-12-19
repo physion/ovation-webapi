@@ -173,6 +173,25 @@
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
               (core/get-entity ..auth.. ..fileid.. ..rt..) => file
+              (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))
+
+      (fact "skips metadata from Rails and sets file=>revision status to COMPLETE if rails response is not 200 [#136329619]"
+        (let [revid       "100"
+              revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+                                                    :file_id ..fileid..}}
+              file        {:_id ..fileid..}
+              length      100
+              etag        "etag"
+              updated-rev (-> revision
+                            (assoc-in [:attributes :upload-status] k/COMPLETE))]
+          (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+                                                                                                             {:status 500
+                                                                                                              :body   (util/to-json {:content_length length
+                                                                                                                                     :etag           etag})})]
+            (rev/update-metadata ..auth.. ..rt.. revision) => {:_id ..id.. :result true}
+            (provided
+              (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
+              (core/get-entity ..auth.. ..fileid.. ..rt..) => file
               (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
 
 
