@@ -45,7 +45,8 @@
 (defn authenticated-user-id
   "The UUID of the authorized user"
   [auth]
-  (:uuid auth))
+  (if-let [ateams (::authenticated-teams auth)]
+    (:user_uuid (deref ateams 500 {:user_uuid nil}))))
 
 
 ;; Authorization
@@ -81,7 +82,7 @@
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
-    (deref ateams 500 [])))
+    (:team_uuids (deref ateams 500 {:team_uuids []}))))
 
 (defn effective-collaboration-roots
   [doc]

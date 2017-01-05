@@ -17,7 +17,7 @@
                                                       :body   (util/to-json {:team_uuids teams})}]
 
         (fact "calls /teams"
-          @(teams/get-teams ..apikey..) => teams))))
+          @(teams/get-teams ..apikey..) => {:team_uuids teams}))))
 
   (facts "get-team*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
