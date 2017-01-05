@@ -3,8 +3,7 @@
   (:require [ovation.auth :as auth]
             [clojure.string :refer [lower-case]]
             [ovation.teams :as teams]
-            [ovation.auth :as auth]
-            [ovation.logging :as logging]))
+            [ovation.auth :as auth]))
 
 (defn wrap-authenticated-teams
   "Wrap the response with a future authenticated-teams"
