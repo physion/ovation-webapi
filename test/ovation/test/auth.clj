@@ -19,9 +19,9 @@
 
 (facts "About authentication"
   (fact "`authorized-user-id` returns user UUID"
-    (auth/authenticated-user-id ...auth...) => ...id...
+    (auth/authenticated-user-id ..auth..) => ..id..
     (provided
-      ...auth... =contains=> {:uuid ...id...})))
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})})))
 
 
 (facts "About `can?`"
