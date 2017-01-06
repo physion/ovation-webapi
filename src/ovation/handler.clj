@@ -39,9 +39,7 @@
 
 (ovation.logging/setup!)
 
-(def rules [{:pattern #"^/services/token/refresh$"
-             :handler authenticated?}
-            {:pattern #"^/api.*"
+(def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
 
 (def DESCRIPTION (slurp (io/file (io/resource "description.html"))))
@@ -99,23 +97,6 @@
 
               (undocumented
                 static-resources)
-
-    (context "/services" []
-      (context "/token" []
-        :tags ["auth"]
-        (POST "/" request
-          :name :get-token
-          :return {:token s/Str}
-          :summary "Gets an authorization token"
-          :body [body {:email    s/Str
-                       :password s/Str}]
-          (tokens/get-token (:email body) (:password body)))
-
-        (GET "/refresh" request
-          :name :refresh-token
-          :return {:token s/Str}
-          :summary "Gets a refreshed authorization token"
-          (tokens/refresh-token request))))
 
     (context "/api" []
       (context "/v1" []
