@@ -19,6 +19,7 @@ function(doc) {
       index("default", doc.attributes[k1]);
     }
     index("id", doc._id, {"store": true});
+    index("default", doc._id);
   }
 
   if(doc.type === 'Annotation') {
