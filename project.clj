@@ -56,8 +56,8 @@
   ;; For EB .ebextensions
   :war-resources-path "war-resources"
 
-  :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 7"
-                    :environments [{:name "webapi-development"
+  :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 8"
+                    :environments [{:name "webapi-development-jdk8"
                                     :env  {"OVATION_IO_HOST_URI" "https://services-staging.ovation.io"}}]}}
 
   :profiles {:dev      {:dependencies [[ring-mock "0.1.5"]
