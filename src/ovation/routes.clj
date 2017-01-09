@@ -19,11 +19,23 @@
         id (:_id doc)]
     (rt (keyword (format "get-%s-link-targets" type)) {:id id :rel name})))
 
+(defn targets-route2
+  [rt type id name]
+  (rt (keyword (format "get-%s-link-targets" type)) {:id id :rel name}))
+
 (defn self-route
   [rt doc]
   (let [type (util/entity-type-name doc)
         id (:_id doc)]
     (rt (keyword (format "get-%s" type)) {:id id})))
+
+(defn self-route2
+  [rt type-name id]
+  (rt (keyword (format "get-%s" type-name)) {:id id}))
+
+(defn entity-route
+  [rt id]
+  (rt :get-entity {:id id}))
 
 (defn named-route
   [rt name args]
@@ -32,6 +44,11 @@
 (defn heads-route
   [rt doc]
   (rt :file-head-revisions {:id (:_id doc)}))
+
+
+(defn heads-route2
+  [rt id]
+  (rt :file-head-revisions {:id id}))
 
 (defn zip-activity-route
   [rt doc]

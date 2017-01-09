@@ -30,7 +30,8 @@
   [request id annotation-key annotations]
   (let [auth (auth/identity request)
         annotations-kw (keyword annotation-key)]
-    (created {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
+    (created (routes/entity-route (routes/router request) id)
+      {annotations-kw (annotations/create-annotations auth (r/router request) [id] annotation-key annotations)})))
 
 (defn-traced delete-annotations*
   [request annotation-id annotation-key]
@@ -144,10 +145,10 @@
 
           (if (and (zero? (count links))
                 (zero? (count updates)))
-            (created {type-kw entities})
-            (created {type-kw  entities
-                      :links   links
-                      :updates updates})))
+            (created (routes (keyword (format "all-%s" (lower-case type-name)))) {type-kw entities})
+            (created (routes (keyword (format "all-%s" (lower-case type-name)))) {type-kw  entities
+                                                                                  :links   links
+                                                                                  :updates updates})))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
@@ -207,7 +208,8 @@
 
 (defn-traced post-resource*
   [request type-name id body]
-  (let [auth (auth/identity request)]
+  (let [auth (auth/identity request)
+        rt   (routes/router request)]
     (try+
 
       (let [routes           (r/router request)
@@ -219,9 +221,9 @@
             links            (core/create-values auth routes (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
             updates          (core/update-entities auth (mapcat :updates (cons child-links embedded-links)) routes :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
 
-        (created {:entities entities
-                  :links    links
-                  :updates updates}))
+        (created (routes/self-route rt (first entities)) {:entities entities
+                                                          :links    links
+                                                          :updates  updates}))
 
       (catch [:type :ovation.auth/unauthorized] err
         (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
@@ -322,10 +324,10 @@
       (if source
         (let [groups (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links auth [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
-          (let [links (core/create-values auth routes (flatten (map :links link-groups)))
-                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :authorize false  :update-collaboration-roots true)]
-            (created {:updates updates
-                      :links   links})))
+          (let [links   (core/create-values auth routes (flatten (map :links link-groups)))
+                updates (core/update-entities auth (flatten (map :updates link-groups)) routes :authorize false :update-collaboration-roots true)]
+            (created (routes/entity-route (routes/router request) id) {:updates updates
+                                                                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
       (unauthorized {:errors {:detail message}}))
