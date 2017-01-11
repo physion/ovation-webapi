@@ -34,7 +34,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [ovation.revisions :as revisions]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [ovation.routes :as routes]))
 
 
 (ovation.logging/setup!)
@@ -239,7 +240,8 @@
               :summary "Move folder from source folder to destination folder"
               :body [info {:source      s/Str
                            :destination s/Str}]
-              (created (move-contents* request id info)))
+              (created (routes/self-route2 (routes/router request) "folder" id)
+                (move-contents* request id info)))
 
             (context "/links/:rel" []
               :path-params [rel :- s/Str]
@@ -260,7 +262,8 @@
               :return CreateRevisionResponse
               :body [revisions {:entities [NewRevision]}]
               :summary "Creates a new downstream Revision from the current HEAD Revision"
-              (created (post-revisions* request id (:entities revisions))))
+              (created (routes/heads-route2 (routes/router request) id)
+                (post-revisions* request id (:entities revisions))))
 
             (POST "/move" request
               :name :move-file
@@ -270,7 +273,8 @@
               :summary "Move file from source folder to destination folder"
               :body [info {:source      s/Str
                            :destination s/Str}]
-              (created (move-contents* request id info)))
+              (created (routes/self-route2 (routes/router request) "file" id)
+                (move-contents* request id info)))
 
             (GET "/heads" request
               :name :file-head-revisions
@@ -300,7 +304,8 @@
               :return CreateRevisionResponse
               :body [revisions [NewRevision]]
               :summary "Creates a new downstream Revision"
-              (created (post-revisions* request id revisions)))
+              (created (routes/targets-route2 (routes/router request) "revision" id "revisions")
+                (post-revisions* request id revisions)))
             (PUT "/upload-complete" request
               :name :upload-complete
               :summary "Indicates upload is complete and updates metadata from S3 for this Revision"
@@ -365,7 +370,7 @@
                 :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
                 :body [body {:membership NewTeamMembershipRole}]
                 (let [membership (teams/post-membership* request id (:membership body))]
-                  (created membership)))
+                  (created ((routes/router request) :get-team {:id id}) membership)))
               (context "/:mid" []
                 :path-params [mid :- s/Str]
 

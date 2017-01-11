@@ -4,14 +4,13 @@
   :url "http://ovation.io"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.2.385"]
+                 [org.clojure/core.async "0.2.395"]
 
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "1.1.3"]
-                 [metosin/ring-swagger-ui "2.1.4-0"]
+                 [metosin/compojure-api "1.1.9"]
                  [ring-cors "0.1.8"]
                  [ring-logger "0.7.6"]
                  [buddy/buddy-auth "1.1.0"]
@@ -24,7 +23,7 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.30.1"]
+                 [com.newrelic.agent.java/newrelic-agent "3.34.0"]
                  [yleisradio/new-reliquary "1.0.0"]
                  [com.climate/clj-newrelic "0.2.1"]
 
@@ -64,8 +63,8 @@
                                        [midje "1.8.3"]
                                        [http-kit.fake "0.2.2"]
                                        [ring-server "0.4.0"]]
-                        :plugins      [[lein-midje "3.2"]
-                                       [lein-ring "0.9.7"]]}
+                        :plugins      [[lein-midje "3.2.1"]
+                                       [lein-ring "0.10.0"]]}
 
              :newrelic {:java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
                         :jvm-opts    ["-Dnewrelic.config.file=/app/newrelic/newrelic.yml"]}
