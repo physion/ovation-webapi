@@ -10,7 +10,7 @@
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "1.1.9"]
+                 [metosin/compojure-api "1.1.10"]
                  [ring-cors "0.1.8"]
                  [ring-logger "0.7.6"]
                  [buddy/buddy-auth "1.1.0"]
