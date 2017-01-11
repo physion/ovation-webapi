@@ -11,7 +11,6 @@
 
                  ;; Compojure API and middleware
                  [metosin/compojure-api "1.1.9"]
-                 ;[metosin/ring-swagger-ui "2.2.8"]
                  [ring-cors "0.1.8"]
                  [ring-logger "0.7.6"]
                  [buddy/buddy-auth "1.1.0"]
