@@ -1,5 +1,5 @@
 (ns ovation.config
-  :require [environ.core :refer [env]])
+  (:require [environ.core :refer [env]]))
 
 (defn config
   [name & {:keys [default] :or {default nil}}]

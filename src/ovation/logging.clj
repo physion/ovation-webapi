@@ -21,8 +21,8 @@
                    :println (appenders/println-appender {:stream :auto})}})
 
     {:level     :info
-     :appenders {:println (appenders/println-appender {:stream :auto})
-                 :file    (appenders/spit-appender {:fname "/var/app/current/ovation.log"})}}))
+     :appenders {:println (appenders/println-appender {:stream :auto})}}))
+; :file    (appenders/spit-appender {:fname "/var/app/current/ovation.log"})
 
 
 (defn setup! []

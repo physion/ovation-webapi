@@ -18,9 +18,9 @@
                                  (assoc :username username
                                         :password password))
       (provided
-        (config/config "CLOUDANT_DB_URL") => dburl
-        (config/config "CLOUDANT_USERNAME") => username
-        (config/config "CLOUDANT_PASSWORD") => password))))
+        (config/config :cloudant-db-url) => dburl
+        (config/config :cloudant-username) => username
+        (config/config :cloudant-password) => password))))
 
 
 (facts "About `get-view`"

@@ -29,7 +29,7 @@
 
 (def id {:uuid (UUID/randomUUID)})
 
-(def TOKEN (jwt/sign id (config/config "JWT_SECRET")))
+(def TOKEN (jwt/sign id (config/config :jwt-secret)))
 
 (def TEAMS (promise))
 (deliver TEAMS [])
