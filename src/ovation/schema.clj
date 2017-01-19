@@ -119,10 +119,12 @@
 (s/defschema NewChildActivity (-> NewEntity
                                 (assoc :type (s/eq "Activity"))
                                 (assoc (s/optional-key :relationships) {(s/optional-key :inputs)  {:related     [s/Str]
-                                                                                                   :type        (s/eq k/REVISION-TYPE)
+                                                                                                   :type        (s/either (s/eq k/REVISION-TYPE)
+                                                                                                                  (s/eq k/SOURCE-TYPE))
                                                                                                    :inverse_rel (s/eq "activities")}
                                                                         (s/optional-key :outputs) {:related     [s/Str]
-                                                                                                   :type        (s/eq k/REVISION-TYPE)
+                                                                                                   :type        (s/either (s/eq k/REVISION-TYPE)
+                                                                                                                  (s/eq k/SOURCE-TYPE))
                                                                                                    :inverse_rel (s/eq "origins")}
                                                                         (s/optional-key :actions) {:related     [s/Str]
                                                                                                    :type        (s/eq k/REVISION-TYPE)
@@ -133,12 +135,14 @@
                            (assoc (s/optional-key :relationships) {:parents                  {:related           [s/Str]
                                                                                               :type              (s/eq k/PROJECT-TYPE)
                                                                                               :inverse_rel       (s/eq "activities")
-                                                                                              :create_as_inverse (s/eq true)}
+                                                                                              :create_as_inverse (s/either (s/eq true) (s/eq "true"))}
                                                                    (s/optional-key :inputs)  {:related     [s/Str]
-                                                                                              :type        (s/eq k/REVISION-TYPE)
+                                                                                              :type        (s/either (s/eq k/REVISION-TYPE)
+                                                                                                             (s/eq k/SOURCE-TYPE))
                                                                                               :inverse_rel (s/eq "activities")}
                                                                    (s/optional-key :outputs) {:related     [s/Str]
-                                                                                              :type        (s/eq k/REVISION-TYPE)
+                                                                                              :type        (s/either (s/eq k/REVISION-TYPE)
+                                                                                                             (s/eq k/SOURCE-TYPE))
                                                                                               :inverse_rel (s/eq "origins")}
                                                                    (s/optional-key :actions) {:related     [s/Str]
                                                                                               :type        (s/eq k/REVISION-TYPE)

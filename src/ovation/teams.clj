@@ -28,7 +28,7 @@
    :headers     {"Content-Type" "application/json; charset=utf-8"}})
 
 (defn get-teams
-  "Gets all teams for authenticated user as a future: [id1 id2]"
+  "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2]}"
   [api-token]
   (let [opts (request-opts api-token)
         url  (make-url "team_uuids")]
@@ -36,9 +36,7 @@
               (if (hp/ok? resp)
                 (-> resp
                   :body
-                  util/from-json
-                  :team_uuids))))))
-
+                  util/from-json))))))
 (defn create-team
   [request team-uuid]
 
