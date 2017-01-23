@@ -46,7 +46,7 @@
   (loop [revs revisions
          f    file]
     (if-let [r (first revs)]
-      (recur (rest revs) (assoc-in f [:revisions (:_id r)] {:status     status
+      (recur (rest revs) (assoc-in f [:revisions (:_id r)] {:status     (if (get-in r [:attributes :remote]) k/COMPLETE status)
                                                             :started-at (or (get-in f [:revisions (:_id r) :started-at])
                                                                           (get-in r [:attributes :created-at])
                                                                           (util/iso-now))}))
@@ -86,7 +86,9 @@
 (defn-traced make-resource
   [auth revision]
   (if-let [existing-url (get-in revision [:attributes :url])]
-    {:revision revision
+    {:revision (-> revision
+                 (assoc-in [:attributes :remote] true)
+                 (assoc-in [:attributes :upload-status] k/COMPLETE))
      :aws      {}
      :post-url existing-url}
 

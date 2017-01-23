@@ -30,6 +30,12 @@
                           :attributes {:created-at ..now..}}
             updated-file {:revisions {..id.. {:status ..status.. :started-at ..now..}}}]
         (rev/update-file-status file [rev] ..status..) => updated-file))
+    (fact "sets status COMPLETE if revision is remote [#137147211]"
+      (let [file {}
+            rev {:_id ..id..
+                 :attributes {:created-at ..now..
+                              :remote true}}]
+        (get-in (rev/update-file-status file [rev] ..status..) [:revisions ..id.. :status]) => k/COMPLETE))
     (fact "handles multiple revisions"
       (let [file         {}
             rev1         {:_id        ..id1..
@@ -232,9 +238,17 @@
                                                     :body   "{}"}]
             (rev/make-resource ..auth.. {:_id        revid
                                          :attributes {}}) => (throws ExceptionInfo))))
+      (fact "sets [:attributes :remote] to true if :url is present already"
+        (let [rev {:attributes {:url ..url..}}]
+          (rev/make-resource ..auth.. rev) => {:revision (-> rev
+                                                           (assoc-in [:attributes :remote] true)
+                                                           (assoc-in [:attributes :upload-status] k/COMPLETE))
+                                               :aws      {}
+                                               :post-url ..url..}))
       (fact "does not create a Rails resource if :url is present already"
-        (rev/make-resource ..auth.. ..rev..) => {:revision ..rev..
-                                                 :aws      {}
-                                                 :post-url ..url..}
-        (provided
-          ..rev.. =contains=> {:attributes {:url ..url..}})))))
+        (let [rev {:attributes {:url ..url..}}]
+          (rev/make-resource ..auth.. rev) => {:revision (-> rev
+                                                           (assoc-in [:attributes :remote] true)
+                                                           (assoc-in [:attributes :upload-status] k/COMPLETE))
+                                               :aws      {}
+                                               :post-url ..url..})))))
