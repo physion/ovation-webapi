@@ -1,94 +1,48 @@
 (ns ovation.logging
   (:require [taoensso.timbre :as timbre]
-            ;[taoensso.timbre.appenders.3rd-party.logstash :as logstash-appender]
+            [taoensso.timbre.appenders.core :as appenders]
+            [taoensso.timbre.appenders.3rd-party.logstash :refer [logstash-appender]]
+            [taoensso.timbre.appenders.3rd-party.logstash :refer [logstash-appender]]
             [potemkin :refer [import-vars]]
             [ovation.config :as config]
-            [cheshire.core :as cheshire])
-  (:import [java.net Socket InetAddress]
-           [java.io PrintWriter]))
-
+            [clojure.tools.logging :as log]))
 
 (import-vars
   [taoensso.timbre
    log debug info warn error fatal])
 
+(def log4j-appender-fn "Timbre -> Log4j appender :fn"
+  (let [log4j-factory (clojure.tools.logging.impl/log4j-factory)
+        levels        #{:trace, :debug, :info, :warn, :error, :fatal}]
+    (fn [{:keys [hostname_ timestamp_ ?err_ ?ns-str level output-fn] :as data}]
+      (log/log log4j-factory
+        (or ?ns-str "?ns")
+        (get levels level :info)
+        (or (force ?err_) nil)
+        (output-fn data)))))
 
-;; copied from taoensso.timbre.appenders.3rd-party.logstash until it's in the JAR
-
-(defn connect
-  [host port]
-  (let [addr (InetAddress/getByName host)
-        sock (Socket. addr (Integer/parseInt port))]
-    [sock
-     (PrintWriter. (.getOutputStream sock))]))
-
-(defn connection-ok?
-  [[^Socket sock ^PrintWriter out]]
-  (and (not (.isClosed sock))
-    (.isConnected sock)
-    (not (.checkError out))))
-
-(def iso-format "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-
-(defn data->json-stream
-  [data writer opts]
-  ;; Note: this it meant to target the logstash-filter-json; especially "message" and "@timestamp" get a special meaning there.
-  (let [stacktrace-str (if-let [pr (:pr-stacktrace opts)]
-                         #(with-out-str (pr %))
-                         timbre/stacktrace)]
-    (cheshire/generate-stream
-      (merge (:context data)
-        {:level (:level data)
-         :namespace (:?ns-str data)
-         :file (:?file data)
-         :line (:?line data)
-         :stacktrace (some-> (force (:?err_ data)) (stacktrace-str))
-         :hostname (force (:hostname_ data))
-         :message (force (:msg_ data))
-         "@timestamp" (:instant data)})
-      writer
-      (merge {:date-format iso-format
-              :pretty false}
-        opts))))
-
-(defn logstash-appender
-  "Returns a Logstash appender, which will send each event in JSON
-  format to the logstash server at `host:port`. Additionally `opts`
-  may be a map with `:pr-stracktrace` mapped to a function taking an
-  exception, which should write the stacktrace of that exception to
-  `*out`."
-  [host port & [opts]]
-  (let [conn (atom nil)
-        nl "\n"]
-    {:enabled?   true
-     :async?     false
-     :min-level  nil
-     :rate-limit nil
-     :output-fn  :inherit
-     :fn
-                 (fn [data]
-                   (try
-                     (let [[sock out] (swap! conn
-                                        (fn [conn]
-                                          (or (and conn (connection-ok? conn) conn)
-                                            (connect host port))))]
-                       (locking sock
-                         (data->json-stream data out (select-keys opts [:pr-stacktrace]))
-                         ;; logstash tcp input plugin: "each event is assumed to be one line of text".
-                         (.write ^java.io.Writer out nl)))
-                     (catch java.io.IOException _
-                       nil)))}))
+(def log4j-appender "Timber appender which outputs to log4j."
+  {:enabled?  true
+   :async?    false
+   :min-level :info
+   :output-fn (fn [{:keys [msg_]}] (str (force msg_)))
+   :fn        log4j-appender-fn})
 
 
 (defn logging-config
   []
-  (if-let [host config/LOGGING_HOST]
-    (let [port config/LOGGING_PORT]
+  (let [host config/LOGGING_HOST
+        port config/LOGGING_PORT]
+    (if (and host port)
+      (timbre/merge-config! {:level     :info
+                             :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
+                             :appenders {:logstash   (logstash-appender host port)
+                                         :println    (appenders/println-appender {:stream :auto})
+                                         :papertrail (assoc log4j-appender
+                                                       :enabled? (config/config :log-to-papertrail))}})
+
       {:level     :info
-       :appenders {:timbre (logstash-appender host port)
-                   :println (timbre/println-appender {:stream :auto})}})
-    {:level     :error}))
-     ;:appenders {:println (timbre/println-appender {:stream :auto})}}))
+       :appenders {:println (appenders/println-appender {:stream :auto})}})))
 
 
 (defn setup! []

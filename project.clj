@@ -32,13 +32,19 @@
 
 
                  ;; Logging
-                 [com.taoensso/timbre "4.3.1"]
+                 [com.taoensso/timbre "4.8.0"]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
+                                                    javax.jms/jms
+                                                    com.sun.jmdk/jmxtools
+                                                    com.sun.jmx/jmxri]]
                  [potemkin "0.4.3"]
                  [ring-logger-timbre "0.7.5"]
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
                  [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20160628.1"]
+                 [environ "1.1.0"]
 
                  ;; Graph
                  [ubergraph "0.2.2"]]

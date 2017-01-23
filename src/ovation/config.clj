@@ -1,23 +1,24 @@
-(ns ovation.config)
+(ns ovation.config
+  (:require [environ.core :refer [env]]))
 
 (defn config
   [name & {:keys [default] :or {default nil}}]
-  (or (System/getenv name) (System/getProperty name) default))
+  (or (env name) default))
 
-(def JWT_SECRET (config "JWT_SECRET"))
-(def NOTIFICATIONS_SERVER (config "NOTIFICATIONS_SERVER"))
-(def AUTH_SERVER (config "AUTH_SERVER"))
+(def JWT_SECRET (config :jwt-secret))
+(def NOTIFICATIONS_SERVER (config :notifications-server))
+(def AUTH_SERVER (config :auth-server))
 
-(def RESOURCES_SERVER (config "RESOURCES_SERVER"))
+(def RESOURCES_SERVER (config :resources-server))
 
-(def TEAMS_SERVER (config "TEAMS_SERVER"))
+(def TEAMS_SERVER (config :teams-server))
 
-(def LOGGING_HOST (config "LOGGING_HOST"))
-(def LOGGING_PORT (config "LOGGING_PORT"))
+(def LOGGING_HOST (config :logging-host))
+(def LOGGING_PORT (config :logging-port))
 
-(def CLOUDANT_DB_URL (config "CLOUDANT_DB_URL"))
-(def CLOUDANT_USERNAME (config "CLOUDANT_USERNAME"))
-(def CLOUDANT_PASSWORD (config "CLOUDANT_PASSWORD"))
+(def CLOUDANT_DB_URL (config :cloudant-db-url))
+(def CLOUDANT_USERNAME (config :clouddant-username))
+(def CLOUDANT_PASSWORD (config :cloudant-password))
 
-(def PORT (config "PORT" :default 8080))
-(def ZIP_SERVICE (config "ZIP_SERVICE" :default "https://zip-staging.ovation.io"))
+(def PORT (config :port :default 8080))
+(def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))

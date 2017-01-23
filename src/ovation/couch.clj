@@ -21,9 +21,9 @@
 (defn db
   "Database URL from authorization info"
   [auth]
-  (-> (url/url (config/config "CLOUDANT_DB_URL"))
-    (assoc :username (config/config "CLOUDANT_USERNAME")
-           :password (config/config "CLOUDANT_PASSWORD"))))
+  (-> (url/url (config/config :cloudant-db-url))
+    (assoc :username (config/config :cloudant-username)
+           :password (config/config :cloudant-password))))
 
 
 (defn- key-seq
