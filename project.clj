@@ -33,6 +33,11 @@
 
                  ;; Logging
                  [com.taoensso/timbre "4.8.0"]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
+                                                    javax.jms/jms
+                                                    com.sun.jmdk/jmxtools
+                                                    com.sun.jmx/jmxri]]
                  [potemkin "0.4.3"]
                  [ring-logger-timbre "0.7.5"]
 

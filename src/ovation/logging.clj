@@ -4,25 +4,45 @@
             [taoensso.timbre.appenders.3rd-party.logstash :refer [logstash-appender]]
             [taoensso.timbre.appenders.3rd-party.logstash :refer [logstash-appender]]
             [potemkin :refer [import-vars]]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [clojure.tools.logging :as log]))
 
 (import-vars
   [taoensso.timbre
    log debug info warn error fatal])
 
+(def log4j-appender-fn "Timbre -> Log4j appender :fn"
+  (let [log4j-factory (clojure.tools.logging.impl/log4j-factory)
+        levels        #{:trace, :debug, :info, :warn, :error, :fatal}]
+    (fn [{:keys [hostname_ timestamp_ ?err_ ?ns-str level output-fn] :as data}]
+      (log/log log4j-factory
+        (or ?ns-str "?ns")
+        (get levels level :info)
+        (or (force ?err_) nil)
+        (output-fn data)))))
+
+(def log4j-appender "Timber appender which outputs to log4j."
+  {:enabled?  true
+   :async?    false
+   :min-level :info
+   :output-fn (fn [{:keys [msg_]}] (str (force msg_)))
+   :fn        log4j-appender-fn})
+
 
 (defn logging-config
   []
-  (if-let [host config/LOGGING_HOST]
-    (let [port config/LOGGING_PORT]
-      {:level     :info
-       :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
-       :appenders {:timbre (logstash-appender host port)
-                   :println (appenders/println-appender {:stream :auto})}})
+  (let [host config/LOGGING_HOST
+        port config/LOGGING_PORT]
+    (if (and host port)
+      (timbre/merge-config! {:level     :info
+                             :output-fn (partial timbre/default-output-fn {:stacktrace-fonts {}})
+                             :appenders {:logstash   (logstash-appender host port)
+                                         :println    (appenders/println-appender {:stream :auto})
+                                         :papertrail (assoc log4j-appender
+                                                       :enabled? (config/config :log-to-papertrail))}})
 
-    {:level     :info
-     :appenders {:println (appenders/println-appender {:stream :auto})}}))
-; :file    (appenders/spit-appender {:fname "/var/app/current/ovation.log"})
+      {:level     :info
+       :appenders {:println (appenders/println-appender {:stream :auto})}})))
 
 
 (defn setup! []
