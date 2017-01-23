@@ -60,7 +60,7 @@
   :resource-paths ["resources"]
 
   ;; For EB .ebextensions
-  :war-resources-path "war-resources"
+  ;:war-resources-path "war-resources"
 
   :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 8"
                     :environments [{:name "webapi-development-jdk8"

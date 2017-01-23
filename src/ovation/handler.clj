@@ -41,7 +41,8 @@
 (def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
 
-(def DESCRIPTION (slurp (io/file (io/resource "description.md"))))
+(def DESCRIPTION "")
+;(slurp (io/file (io/resource "description.md")))
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
