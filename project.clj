@@ -43,7 +43,7 @@
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
-                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20160628.1"]
+                 [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20160628.1" :exclusions [com.google.guava/guava]]
                  [environ "1.1.0"]
 
                  ;; Graph
@@ -52,7 +52,8 @@
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
-  :ring {:handler ovation.handler/app}
+  :ring {:handler ovation.handler/app
+         :main    ovation.main}
 
   :main ovation.main
 
@@ -71,6 +72,8 @@
                                        [ring-server "0.4.0"]]
                         :plugins      [[lein-midje "3.2.1"]
                                        [lein-ring "0.10.0"]]}
+
+             :uberjar  {:aot [ovation.main]}
 
              :newrelic {:java-agents [[com.newrelic.agent.java/newrelic-agent "3.28.0"]]
                         :jvm-opts    ["-Dnewrelic.config.file=/app/newrelic/newrelic.yml"]}
