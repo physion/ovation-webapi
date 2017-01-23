@@ -63,7 +63,7 @@
   ;:war-resources-path "war-resources"
 
   :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 8"
-                    :environments [{:name "ovation-webapi"}]}}
+                    :environments [{:name "ovation-webapi-staging"}]}}
 
   :profiles {:dev      {:dependencies [[ring-mock "0.1.5"]
                                        [midje "1.8.3"]
