@@ -4,4 +4,5 @@
             [ovation.config :as config]))
 
 (defn -main []
-  (jetty/run-jetty #'ovation.handler/app {:port (config/PORT) :join? false}))
+  (ovation.logging/setup!)
+  (jetty/run-jetty #'ovation.handler/app {:port config/PORT :join? false}))
