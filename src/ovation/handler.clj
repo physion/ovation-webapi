@@ -38,12 +38,11 @@
             [ovation.routes :as routes]))
 
 
-(ovation.logging/setup!)
-
 (def rules [{:pattern #"^/api.*"
              :handler authenticated?}])
 
-(def DESCRIPTION (slurp (io/file (io/resource "description.md"))))
+(def DESCRIPTION "\n## Data model\n[Ovation's data model](/public/data_model.png)\n\n## Authentication\nPaste your API token into the \"API token\" field at the top-right of this page\n\n\n## Getting Started\n- Projects and Sources are \"top-level\" entities in the Ovation data model. \nAll other entities (Folders, Files, Revisions, and Activities) belong to at least one Project.\n\n- Files track individual Revisions (versions) of the file and always have at least one \"HEAD\" Revision, the most recent version.\n\n- Entities have `attributes` that can be modified by PUTing the document with modified `attributes`. The Ovation web application uses some of these attributes (listed in the figure above). Removing these attributes may cause issues for users of the web app. So be nice.\n\n- Entities may be annotated by any user that can read the entity. Annotations include keyword tags, properties (key-value pairs), notes, and time line events.\n\n## Relationships\n\nAll relationships between entities in the Ovation data model are bi-directional and many-to-many. Each relationship has a source entity and a target entity. A `rel` specifies the source-to-target relationship an an optional `inverse_rel` specifies the name of the inverse target-to-source relationship. The [data model](/public/data_model.png) shows the `rel` and `inverse_rel` names used by the Ovation web app. You can add additional relationships using this API.\n\nWhen entities are created by POSTing to the parent, parent/child relationship(s) are automatically created. To add a new relationship, POST a relationship document to the entity's `links/{rel}/relationships` resource. To delete a relationship, send a DELETE to the relationship's`self` link (`/api/v1/relationships/{id}`).\n")
+;(slurp (io/file (io/resource "description.md")))
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
