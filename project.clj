@@ -9,6 +9,9 @@
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
+                 ;; Component
+                 [com.stuartsierra/component "0.3.2"]
+
                  ;; Compojure API and middleware
                  [metosin/compojure-api "1.1.10"]
                  [ring-cors "0.1.8"]

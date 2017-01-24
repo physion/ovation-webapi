@@ -5,7 +5,8 @@
             [taoensso.timbre.appenders.3rd-party.logstash :refer [logstash-appender]]
             [potemkin :refer [import-vars]]
             [ovation.config :as config]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [com.stuartsierra.component :as component]))
 
 (import-vars
   [taoensso.timbre
@@ -45,5 +46,9 @@
        :appenders {:println (appenders/println-appender {:stream :auto})}})))
 
 
-(defn setup! []
-  (timbre/set-config! (logging-config)))
+(defrecord Logging []
+  component/Lifecycle
+
+  (start [this]
+    (timbre/set-config! (logging-config)))
+  (stop [this]))
