@@ -44,7 +44,7 @@
                  [org.slf4j/jul-to-slf4j "1.7.22"]
                  [org.slf4j/jcl-over-slf4j "1.7.22"]
 
-                 ; Appenders
+                 ; Appenders. Set `-Dlogback.configurationFile=...` system property to choose logback-staging or logback-production
                  [com.papertrailapp/logback-syslog4j "1.0.0"] ; For Papertrail
                  [net.logstash.logback/logstash-logback-encoder "4.8"] ; For Catalyze
 
