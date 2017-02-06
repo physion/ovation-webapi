@@ -46,7 +46,7 @@
 
                  ; Appenders
                  [com.papertrailapp/logback-syslog4j "1.0.0"] ; For Papertrail
-
+                 [net.logstash.logback/logstash-logback-encoder "4.8"] ; For Catalyze
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
