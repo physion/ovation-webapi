@@ -5,5 +5,4 @@
             [ovation.config :as config]))
 
 (defn -main []
-  (ovation.logging/setup!)                                  ;; TODO Get a component system instead
   (jetty/run-jetty #'ovation.handler/app {:port config/PORT :join? false}))

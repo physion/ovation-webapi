@@ -30,7 +30,7 @@
             [buddy.auth.middleware :refer [wrap-authentication]]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
-            [ring.logger.timbre :as logger.timbre]
+            [ring.logger :as ring.logger]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [ovation.revisions :as revisions]
@@ -86,7 +86,7 @@
 
                wrap-authenticated-teams
 
-               [logger.timbre/wrap-with-logger {:printer :identity-printer}]
+               [ring.logger/wrap-with-logger {:printer :identity-printer}]
 
                [wrap-raygun-handler (config/config "RAYGUN_API_KEY")]
 
