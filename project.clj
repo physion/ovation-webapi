@@ -44,6 +44,10 @@
                  [org.slf4j/jul-to-slf4j "1.7.22"]
                  [org.slf4j/jcl-over-slf4j "1.7.22"]
 
+                 ; Appenders
+                 [com.papertrailapp/logback-syslog4j "1.0.0"] ; For Papertrail
+
+
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
                  [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20160628.1" :exclusions [com.google.guava/guava]]
