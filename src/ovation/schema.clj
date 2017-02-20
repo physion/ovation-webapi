@@ -252,9 +252,9 @@
   {
    :id                          s/Int
    :uuid                        s/Uuid
-   (s/optional-key :name)       s/Str
-   (s/optional-key :first_name) s/Str
-   (s/optional-key :last_name)  s/Str
+   (s/optional-key :name)       (s/maybe s/Str)
+   (s/optional-key :first_name) (s/maybe s/Str)
+   (s/optional-key :last_name)  (s/maybe s/Str)
    :email                       s/Str
    :location                    (s/maybe s/Str)
    :user_preference             s/Num
