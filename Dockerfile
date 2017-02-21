@@ -12,4 +12,4 @@ WORKDIR /app
 
 RUN ["lein", "deps"]
 
-CMD ["lein", "ring", "server-headless"]
+CMD ["lein", "run"]

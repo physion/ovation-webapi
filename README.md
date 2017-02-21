@@ -43,10 +43,17 @@ To start a web server for the application on port 3000:
     docker-compose up
 
 Or from a REPL:
-
-    (use 'ring.server.standalone)
-    (require 'ovation.handler)
-    (serve ovation.handler/app)
+    
+    ;; start system
+    (require 'ovation.user)
+    (ovation.user/go)
+    
+    ;; stop system
+    (ovation.user/stop)
+    
+    ;; reset/refresh repl
+    (ovation.user/reset)
+    
     
 ## REPL
 
