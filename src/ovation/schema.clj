@@ -250,14 +250,16 @@
 
 (s/defschema TeamUser
   {
-   :id              s/Int
-   :uuid            s/Uuid
-   :name            s/Str
-   :email           s/Str
-   :location        (s/maybe s/Str)
-   :user_preference s/Num
-   :links           {:roles s/Str}
-   :type            (s/eq "User")})
+   :id                          s/Int
+   :uuid                        s/Uuid
+   (s/optional-key :name)       (s/maybe s/Str)
+   (s/optional-key :first_name) (s/maybe s/Str)
+   (s/optional-key :last_name)  (s/maybe s/Str)
+   :email                       s/Str
+   :location                    (s/maybe s/Str)
+   :user_preference             s/Num
+   :links                       {:roles s/Str}
+   :type                        (s/eq "User")})
 
 
 (s/defschema TeamMembershipRole
