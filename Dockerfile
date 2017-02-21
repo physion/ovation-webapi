@@ -1,8 +1,8 @@
 FROM clojure
 MAINTAINER support@ovation.io
 
-COPY . /usr/src/app
-WORKDIR /usr/src/app
+COPY . /app
+WORKDIR /app
 
 ENV PORT 8080
 EXPOSE 8080
