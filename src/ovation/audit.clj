@@ -1,7 +1,7 @@
 (ns ovation.audit
   (:require [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
-            [ovation.logging]
+            [clojure.tools.logging]
             [ovation.auth :as auth]))
 
 
@@ -14,4 +14,4 @@
 (defn audit
   "Logs audit for request"
   [request body]
-  (ovation.logging/info "[AUDIT] " {:identity (auth/authenticated-user-id (auth/identity request))} body))
+  (clojure.tools.logging/info "[AUDIT] " {:identity (auth/authenticated-user-id (auth/identity request))} body))

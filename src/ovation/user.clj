@@ -1,33 +1,33 @@
-(ns user
+(ns ovation.user
   (:require [ovation.system :as system]
             [com.stuartsierra.component :as component]
             [clojure.tools.namespace.repl :refer (refresh refresh-all)]
-            ;; dev-system.clj only contains: (def the-system)
-            [ovation.dev-system :refer [the-system]])
+            [ovation.config :as config]))
 
-  (def system-config
-       {:web-server {:port 3000
-                     :host "localhost"}
-        :db {:host 3456
-             :host "localhost"}
-        :handler {cookie-config {}}}
+(def system-config
+  {:web {:port 3000}
+   :db  {:host     (config/config :cloudant-db-url)
+         :port     1234
+         :username (config/config :cloudant-username)
+         :password (config/config :cloudant-password)}})
 
+(def dev-system nil)
 
-       (defn init []
-         (alter-root-var #'the-system
-           (constantly system/create-system system-config)))
+(defn init []
+  (alter-var-root #'dev-system
+    (constantly (system/create-system system-config))))
 
-       (defn start []
-         (alter-root-var #'the-system component/start))
+(defn start []
+  (alter-var-root #'dev-system component/start))
 
-       (defn stop []
-         (alter-root-var #'the-system
-           #(when % (component/stop %))))
+(defn stop []
+  (alter-var-root #'dev-system
+    #(when % (component/stop %))))
 
-       (defn go []
-         (init)
-         (start))
+(defn go []
+  (init)
+  (start))
 
-       (defn reset []
-         (stop)
-         (refresh :after 'user/go))
+(defn reset []
+  (stop)
+  (refresh :after 'ovation.user/go))

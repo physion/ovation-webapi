@@ -7,7 +7,7 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ovation.html :as html]
-            [ovation.logging :as logging]
+            [clojure.tools.logging :as logging]
             [ovation.transform.read :as read]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]

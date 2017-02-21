@@ -9,7 +9,6 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
-            [ovation.logging]
             [ovation.routes :refer [router]]
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
@@ -19,7 +18,6 @@
             [ovation.routes :as r]
             [ovation.auth :as auth]
             [ovation.audit]
-            [ovation.tokens :as tokens]
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [schema.core :as s]
@@ -32,7 +30,6 @@
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger :as ring.logger]
             [clojure.java.io :as io]
-            [clojure.string :as string]
             [ovation.revisions :as revisions]
             [ovation.util :as util]
             [ovation.routes :as routes]))
@@ -48,7 +45,7 @@
 (defroutes static-resources
   (route/resources "/public"))
 
-(defn create-app [{:keys [db] :as system}]
+(defn create-app [db]
   (api
     {:swagger {:ui   "/"
                :spec "/swagger.json"
@@ -470,5 +467,5 @@
                 (ok result)))))))))
 
 
-(def app (create-app {}))
+(def app (create-app nil))
 
