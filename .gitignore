@@ -32,3 +32,5 @@ ovation_webapi.iml
 node_modules
 
 *.iml
+
+lein
