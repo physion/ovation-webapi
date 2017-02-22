@@ -40,7 +40,7 @@
   [auth db rt q & {:keys [bookmark limit] :or {bookmark nil
                                             limit 0}}]
   (let [raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
-        entities (get-results auth rt (:rows raw))]
+        entities (get-results auth db rt (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
      :search_results entities}))

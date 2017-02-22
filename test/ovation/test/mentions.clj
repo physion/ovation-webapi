@@ -85,13 +85,13 @@
             (util/iso-short-now) => ..time..
             (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
             (core/get-entities ..auth.. ..db.. [..entity..] ..rt..) => [entity]
-            (core/update-values ..auth.. ..rt.. [{:_id             ..uuid..
-                                                  :entity          ..entity..
-                                                  :user            ..user..
-                                                  :annotation_type c/NOTES
-                                                  :type            c/ANNOTATION-TYPE
-                                                  :annotation      {:text ..new..}
-                                                  :edited_at       ..time..}]) => [..result..]
+            (core/update-values ..auth.. ..db.. ..rt.. [{:_id             ..uuid..
+                                                         :entity          ..entity..
+                                                         :user            ..user..
+                                                         :annotation_type c/NOTES
+                                                         :type            c/ANNOTATION-TYPE
+                                                         :annotation      {:text ..new..}
+                                                         :edited_at       ..time..}]) => [..result..]
             (a/notify ..auth.. entity ..result..) => ..notified..)))))
 
 
