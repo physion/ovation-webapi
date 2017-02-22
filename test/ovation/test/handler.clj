@@ -1,7 +1,7 @@
 (ns ovation.test.handler
   (:require [midje.sweet :refer :all]
             [ring.mock.request :as mock]
-            [ovation.handler :refer [app]]
+            [ovation.handler :refer [create-app]]
             [clojure.data.json :as json]
             [slingshot.slingshot :refer [try+]]
             [ovation.auth :as auth]
@@ -24,7 +24,9 @@
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
             [ovation.routes :as routes]
-            [compojure.api.validator])
+            [compojure.api.validator]
+            [ovation.test.system :as test.system]
+            [ovation.system :as system])
   (:import (java.util UUID)))
 
 (def id {:uuid (UUID/randomUUID)})
@@ -46,11 +48,13 @@
                                      nil
                                      (slingshot.support/stack-trace))))
 
+
 (defn mock-req
   [req apikey]
   (-> req
     (mock/header "Authorization" (format "Bearer %s" apikey))
     (mock/content-type "application/json")))
+
 
 (defn body-json
   [request]
@@ -59,9 +63,11 @@
         result (json/read reader)]
     (walk/keywordize-keys result)))
 
+
 (defn json-post-body
   [m]
   (json/write-str (walk/stringify-keys m)))
+
 
 (defn get*
   [app path apikey]
@@ -71,6 +77,7 @@
         body (json/read reader)]
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
+
 
 (defn delete*
   [app path apikey]
@@ -93,6 +100,7 @@
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
+
 (defn put*
   [app path apikey body]
   (let [post (mock-req (-> (mock/request :put path)
@@ -104,6 +112,7 @@
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
+
 (defn typepath
   [typename]
   (case (lower-case typename)
@@ -111,138 +120,6 @@
     ;;default
     (lower-case (str typename "s"))))
 
-(facts "About authorization"
-  (fact "invalid API key returns 401"
-    (let [apikey "12345"
-          get (mock-req (mock/request :get "/api/v1/entities/123") apikey)]
-      (:status (app get)) => 401)))
-
-
-(facts "About doc route"
-  (let [apikey TOKEN]
-    (fact "HEAD / => 302"
-      (let [response (app (mock-req (mock/request :head "/") apikey))]
-        (:status response) => 302))
-    (fact "GET / redirects"
-      (let [response (app (mock-req (mock/request :get "/") apikey))]
-        (:status response) => 302
-        (-> response (:headers) (get "Location")) => "/index.html"))
-    (fact "HEAD /index.html returns 200"
-      (let [response (app (mock-req (mock/request :head "/index.html") apikey))]
-        (:status response) => 200))))
-
-
-(facts "About Swagger API"
-  (fact "is valid"
-    (compojure.api.validator/validate app) =not=> nil))
-
-(facts "About invalid routes"
-  (let [apikey TOKEN]
-    (fact "invalid path =>  404"
-      (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
-        response => nil?))))
-
-
-(facts "About annotations"
-  (let [apikey TOKEN]
-    (against-background [(teams/get-teams anything) => TEAMS
-                         (auth/permissions anything) => PERMISSIONS
-                         (auth/identity anything) => ..auth..
-                         (routes/router anything) => ..rt..]
-      (facts "GET /entities/:id/annotations/:type"
-        (let [id   (str (util/make-uuid))
-              tags [{:_id             (str (util/make-uuid))
-                     :_rev            "1"
-                     :entity          id
-                     :user            (str (util/make-uuid))
-                     :type            "Annotation"
-                     :annotation_type "tags"
-                     :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/get-annotations ..auth.. [id] "tags" ..rt..) => tags]
-            (fact "returns annotations by entity and user"
-              (let [path (str "/api/v1/entities/" id "/annotations/tags")
-                    {:keys [status body]} (get* app path apikey)]
-                status => 200
-                body => {:tags tags})))))
-
-      (facts "POST /entities/:id/annotations/:type"
-        (let [id   (str (util/make-uuid))
-              post {:tags [{:tag "--tag--"}]}
-              tags [{:_id             (str (util/make-uuid))
-                     :_rev            "1"
-                     :entity          id
-                     :user            (str (util/make-uuid))
-                     :type            "Annotation"
-                     :annotation_type "tags"
-                     :annotation      {:tag "--tag--"}}]]
-          (against-background [(annotations/create-annotations ..auth.. anything [id] "tags" (:tags post)) => tags]
-            (fact "creates annotations"
-              (let [path (str "/api/v1/entities/" id "/annotations/tags")
-                    {:keys [status body]} (post* app path apikey post)]
-                status => 201
-                body => {:tags tags})))))
-
-      (facts "PUT /entities/:id/annotations/:type"
-        (let [entity-id (util/make-uuid)
-              note-id   (util/make-uuid)
-              user-id   (util/make-uuid)
-              update    {:_id             (str note-id)
-                         :_rev            "1"
-                         :entity          (str entity-id)
-                         :user            (str user-id)
-                         :type            "Annotation"
-                         :annotation_type c/NOTES
-                         :annotation      {:text      "--note--"
-                                           :timestamp (util/iso-short-now)}}]
-          (against-background [(annotations/update-annotation ..auth.. anything (str note-id) (:annotation update)) => update]
-            (fact "updates annotation"
-              (let [path (str "/api/v1/entities/" entity-id "/annotations/notes/" note-id)
-                    {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
-                status => 200
-                body => {:note update}))))))
-
-    (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
-      (let [id            (str (util/make-uuid))
-            annotation-id (str (util/make-uuid))
-            tags          [{:_id             annotation-id
-                            :_rev            "1"
-                            :entity          id
-                            :user            (str (util/make-uuid))
-                            :type            "Annotation"
-                            :annotation_type "tags"
-                            :annotation      {:tag "--tag--"}}]]
-        (against-background [(teams/get-teams anything) => TEAMS
-                             (auth/permissions anything) => PERMISSIONS
-                             (auth/identity anything) => ..auth..
-                             (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
-          (fact "deletes annotations"
-            (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
-                  {:keys [status body]} (delete* app path apikey)]
-              status => 202
-              body => {:tags tags})))))))
-
-(facts "About /entities"
-  (let [apikey TOKEN]
-    (against-background [(teams/get-teams anything) => TEAMS
-                         (auth/permissions anything) => PERMISSIONS
-                         (auth/identity anything) => ..auth..]
-
-      (facts "read"
-        (let [id (str (UUID/randomUUID))
-              get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id])) apikey)
-              doc {:_id        id
-                   :_rev       "123"
-                   :type       "Entity"
-                   :links      {:self "self"}
-                   :relationships {}
-                   :attributes {}}]
-
-          (against-background [(core/get-entities ..auth.. [id] ..rt.. :include-trashed false) => [doc]
-                               (r/router anything) => ..rt..]
-            (fact "GET /entities/:id returns status 200"
-              (:status (app get)) => 200)
-            (fact "GET /entities/:id returns doc"
-              (body-json get) => {:entity doc})))))))
 
 (defmacro entity-resources-read-tests
   "Facts about reading resources"
@@ -267,6 +144,7 @@
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all " type-path)
                      (body-json get-req#) => {~(keyword type-path) [entity#]}))))))))))
+
 
 (defmacro entity-resource-read-tests
   "Facts about reading resource"
@@ -301,6 +179,7 @@
                        (:status (app get-req#)) => 404
                        (provided
                          (core/get-entities ..auth.. [id#] ..rt..) => [source#]))))))))))))
+
 
 (defmacro entity-resource-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
@@ -353,7 +232,6 @@
                  (provided
                    (r/router anything) => ..rt..
                    (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
-
 
 
 (defmacro entity-resources-create-tests
@@ -502,235 +380,410 @@
                    (core/delete-entities ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
+(test.system/system-background
+  (let [app (test.system/get-app)]
 
-(facts "About entities"
-  (entity-resource-deletion-tests "entitie"))
+    (facts "About authorization"
+      (fact "invalid API key returns 401"
+        (let [apikey "12345"
+              get (mock-req (mock/request :get "/api/v1/entities/123") apikey)]
+          (:status (app get)) => 401)))
 
-(facts "About Projects"
-  (entity-resource-create-tests "Project")
-  (entity-resources-create-tests "Project")
 
-  (entity-resources-read-tests "Project")
-  (entity-resource-read-tests "Project")
-  (entity-resource-update-tests "Project")
-  (entity-resource-deletion-tests "Project"))
+    (facts "About doc route"
+      (let [apikey TOKEN]
+        (fact "HEAD / => 302"
+          (let [response (app (mock-req (mock/request :head "/") apikey))]
+            (:status response) => 302))
+        (fact "GET / redirects"
+          (let [response (app (mock-req (mock/request :get "/") apikey))]
+            (:status response) => 302
+            (-> response (:headers) (get "Location")) => "/index.html"))
+        (fact "HEAD /index.html returns 200"
+          (let [response (app (mock-req (mock/request :head "/index.html") apikey))]
+            (:status response) => 200))))
 
-(facts "About Sources"
-  (entity-resources-read-tests "Source")
-  (entity-resource-read-tests "Source")
-  (entity-resource-create-tests "Source")
-  (entity-resources-create-tests "Source")
-  (entity-resource-update-tests "Source")
-  (entity-resource-deletion-tests "Source"))
 
-(facts "About Folders"
-  (entity-resources-read-tests "Folder")
-  (entity-resource-read-tests "Folder")
-  (entity-resource-create-tests "Folder")
-  (entity-resource-update-tests "Folder")
-  (entity-resource-deletion-tests "Folder"))
+    (facts "About Swagger API"
+      (fact "is valid"
+        (compojure.api.validator/validate app) =not=> nil))
 
-(facts "About Files"
-  (entity-resource-read-tests "File")
-  (entity-resources-read-tests "File")
-  (entity-resource-update-tests "File")
-  (entity-resource-deletion-tests "File")
-  (facts "related Sources"
-    (let [apikey TOKEN]
-      (against-background [(teams/get-teams anything) => TEAMS
-                           (auth/permissions anything) => PERMISSIONS
-                           (auth/identity anything) => ..auth..]
-        (future-fact "associates created Source")))))
+    (facts "About invalid routes"
+      (let [apikey TOKEN]
+        (fact "invalid path =>  404"
+          (let [response (app (mock-req (mock/request :get "/invalid/path") apikey))]
+            response => nil?))))
 
-(facts "About Activities"
-  (entity-resources-read-tests "Activity")
 
-  (entity-resource-read-tests "Activity")
-  (entity-resource-update-tests "Activity")
-  (entity-resource-deletion-tests "Activity"))
+    (facts "About annotations"
+      (let [apikey TOKEN]
+        (against-background [(teams/get-teams anything) => TEAMS
+                             (auth/permissions anything) => PERMISSIONS
+                             (auth/identity anything) => ..auth..
+                             (routes/router anything) => ..rt..]
+          (facts "GET /entities/:id/annotations/:type"
+            (let [id   (str (util/make-uuid))
+                  tags [{:_id             (str (util/make-uuid))
+                         :_rev            "1"
+                         :entity          id
+                         :user            (str (util/make-uuid))
+                         :type            "Annotation"
+                         :annotation_type "tags"
+                         :annotation      {:tag "--tag--"}}]]
+              (against-background [(annotations/get-annotations ..auth.. [id] "tags" ..rt..) => tags]
+                (fact "returns annotations by entity and user"
+                  (let [path (str "/api/v1/entities/" id "/annotations/tags")
+                        {:keys [status body]} (get* app path apikey)]
+                    status => 200
+                    body => {:tags tags})))))
 
-(facts "About revisions routes"
-  (facts "/files/:id/HEAD"
-    (fact "returns HEAD revisions"
-      (let [apikey TOKEN
-            id     (str (UUID/randomUUID))
-            doc    {:_id           id
-                    :_rev          "123"
-                    :type          k/FILE-TYPE
-                    :links         {:self "self"}
-                    :relationships {}
-                    :attributes    {}}
-            revs   [{:_id           id
-                     :_rev          "123"
-                     :type          k/REVISION-TYPE
-                     :links         {:self "self"}
-                     :relationships {}
-                     :attributes    {:content_type ""
-                                     :name         ""
-                                     :url          ""
-                                     :previous     [(str (util/make-uuid))]
-                                     :file_id      (str (util/make-uuid))}}]
-            get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
-        (body-json get) => {:revisions revs}
-        (provided
-          (teams/get-teams anything) => TEAMS
-          (auth/permissions anything) => PERMISSIONS
-          (auth/identity anything) => ..auth..
-          (r/router anything) => ..rt..
-          (revisions/get-head-revisions ..auth.. ..rt.. id) => revs)))))
+          (facts "POST /entities/:id/annotations/:type"
+            (let [id   (str (util/make-uuid))
+                  post {:tags [{:tag "--tag--"}]}
+                  tags [{:_id             (str (util/make-uuid))
+                         :_rev            "1"
+                         :entity          id
+                         :user            (str (util/make-uuid))
+                         :type            "Annotation"
+                         :annotation_type "tags"
+                         :annotation      {:tag "--tag--"}}]]
+              (against-background [(annotations/create-annotations ..auth.. anything [id] "tags" (:tags post)) => tags]
+                (fact "creates annotations"
+                  (let [path (str "/api/v1/entities/" id "/annotations/tags")
+                        {:keys [status body]} (post* app path apikey post)]
+                    status => 201
+                    body => {:tags tags})))))
 
-(facts "/move"
-  (fact "moves file"
-    (let [apikey TOKEN
-          id     (str (util/make-uuid))
-          body   {:source      (str (util/make-uuid))
-                  :destination (str (util/make-uuid))}
-          post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "files" id "move"]))
-                             (mock/body (json-post-body body))) apikey)
-          expected {:something "awesome"}]
-      (body-json post) => expected
-      (provided
-        (rh/move-contents* anything id body) => expected)))
+          (facts "PUT /entities/:id/annotations/:type"
+            (let [entity-id (util/make-uuid)
+                  note-id   (util/make-uuid)
+                  user-id   (util/make-uuid)
+                  update    {:_id             (str note-id)
+                             :_rev            "1"
+                             :entity          (str entity-id)
+                             :user            (str user-id)
+                             :type            "Annotation"
+                             :annotation_type c/NOTES
+                             :annotation      {:text      "--note--"
+                                               :timestamp (util/iso-short-now)}}]
+              (against-background [(annotations/update-annotation ..auth.. anything (str note-id) (:annotation update)) => update]
+                (fact "updates annotation"
+                  (let [path (str "/api/v1/entities/" entity-id "/annotations/notes/" note-id)
+                        {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
+                    status => 200
+                    body => {:note update}))))))
 
-  (fact "moves folder"
-    (let [apikey TOKEN
-          id     (str (util/make-uuid))
-          body   {:source      (str (util/make-uuid))
-                  :destination (str (util/make-uuid))}
-          post   (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "folders" id "move"]))
-                             (mock/body (json-post-body body))) apikey)
-          expected {:something "awesome"}]
-      (body-json post) => expected
-      (provided
-        (rh/move-contents* anything id body) => expected))))
+        (facts "DELETE /entities/:id/annotations/:type/:annotation-id"
+          (let [id            (str (util/make-uuid))
+                annotation-id (str (util/make-uuid))
+                tags          [{:_id             annotation-id
+                                :_rev            "1"
+                                :entity          id
+                                :user            (str (util/make-uuid))
+                                :type            "Annotation"
+                                :annotation_type "tags"
+                                :annotation      {:tag "--tag--"}}]]
+            (against-background [(teams/get-teams anything) => TEAMS
+                                 (auth/permissions anything) => PERMISSIONS
+                                 (auth/identity anything) => ..auth..
+                                 (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
+              (fact "deletes annotations"
+                (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
+                      {:keys [status body]} (delete* app path apikey)]
+                  status => 202
+                  body => {:tags tags}))))))
 
-(facts "About Teams API"
-  (facts "GET /teams/:id"
-    (fact "returns team"
-      (let [apikey TOKEN
-            id (str (util/make-uuid))
-            get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
-            team {:id                  "1"
-                  :type                "Team"
-                  :name                id
-                  :uuid                id
-                  :roles               []
-                  :pending_memberships [{
-                                         :id        "232",
-                                         :role      {
-                                                      :id 184,
-                                                      :organization_id 63,
-                                                      :name "Member",
-                                                      :links {:permissions "/api/v1/permissions?role_id=184"}}
-                                                    ,
-                                         :added     "2016-02-01T21:00:00.000Z",
-                                         :email     "newmember@example.com",
-                                         :type      "PendingMembership"},
-                                        {
-                                         :id        "2323",
-                                         :role      {
-                                                     :id 184,
-                                                     :organization_id 63,
-                                                     :name "Member",
-                                                     :links {:permissions "/api/v1/permissions?role_id=184"}}
-                                                    ,
-                                         :added     "2016-02-01T21:00:00.000Z",
-                                         :email     "newmember@example.com",
-                                         :type      "PendingMembership"}]
+      (facts "About /entities"
+        (let [apikey TOKEN]
+          (against-background [(teams/get-teams anything) => TEAMS
+                               (auth/permissions anything) => PERMISSIONS
+                               (auth/identity anything) => ..auth..]
 
-                  :memberships         [{:id                  1774,
-                                         :team_id             573,
-                                         :added               "2016-02-01T21:00:00.000Z",
-                                         :email     "existingmember@example.com",
-                                         :role      {
-                                                     :id 184,
-                                                     :organization_id 63,
-                                                     :name "Member",
-                                                     :links {:permissions "/api/v1/permissions?role_id=184"}}
-                                                    ,
-                                         :type                "Membership",
-                                         :user_id             8,
-                                         :membership_role_ids [
-                                                               1526]
+            (facts "read"
+              (let [id  (str (UUID/randomUUID))
+                    get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "entities" id])) apikey)
+                    doc {:_id           id
+                         :_rev          "123"
+                         :type          "Entity"
+                         :links         {:self "self"}
+                         :relationships {}
+                         :attributes    {}}]
 
-                                         :links {:self "--self--"}}]
-                  :links               {:self        "--url--"
-                                        :memberships "--membership--url--"}}]
-        (body-json get) => {:team team
-                            :users []
-                            :membership_roles []}
-        (provided
-          (teams/get-teams anything) => TEAMS
-          (auth/permissions anything) => PERMISSIONS
-          (teams/get-team* anything id) => {:team             team
-                                            :users            []
-                                            :membership_roles []})))))
+                (against-background [(core/get-entities ..auth.. [id] ..rt.. :include-trashed false) => [doc]
+                                     (r/router anything) => ..rt..]
+                  (fact "GET /entities/:id returns status 200"
+                    (:status (app get)) => 200)
+                  (fact "GET /entities/:id returns doc"
+                    (body-json get) => {:entity doc}))))))))
 
-(facts "About activity user stories"
-  (facts "create project activity")
-  (facts "create folder activity"))
+    (facts "About entities"
+      (entity-resource-deletion-tests "entitie"))
 
-(facts "About provenance"
-  (fact "/prov/:id returns local provenance"
-    (let [apikey TOKEN
-          id (str (UUID/randomUUID))
-          expected [{:_id id
-                     :type "Activity"
-                     :name "Something"
-                     :inputs []
-                     :outputs []}]
-          get (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
-      (body-json get) => {:provenance expected}
-      (provided
-        (teams/get-teams anything) => TEAMS
-        (auth/permissions anything) => PERMISSIONS
-        (auth/identity anything) => ..auth..
-        (prov/local ..auth.. ..rt.. [id]) => expected
-        (r/router anything) => ..rt..))))
+    (facts "About Projects"
+      (entity-resource-create-tests "Project")
+      (entity-resources-create-tests "Project")
 
-(facts "About breadcrumbs"
-  (facts "POST"
-    (fact "returns file breadcrumbs"
-      (let [id1      (str (UUID/randomUUID))
-            id2      (str (UUID/randomUUID))
-            folder1  (str (UUID/randomUUID))
-            folder2  (str (UUID/randomUUID))
-            project1 (str (UUID/randomUUID))
-            project2 (str (UUID/randomUUID))
-            apikey   TOKEN
-            get      (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "breadcrumbs"]))
-                                 (mock/body (json-post-body [id1 id2]))) apikey)
-            expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
-                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]
-                      (keyword id2) [[{:type k/FILE-TYPE :id id2 :name "filename2"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                                     [{:type k/FILE-TYPE :id id2 :name "filename2"}
-                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
-        (body-json get) => {:breadcrumbs expected}
-        (provided
-          (auth/identity anything) => ..auth..
-          (ovation.routes/router anything) => ..rt..
-          (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
-          (b/get-parents ..auth.. id2 ..rt..) => [{:_id folder2}]
-          (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
-          (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
-          (b/get-parents ..auth.. project1 ..rt..) => []
-          (b/get-parents ..auth.. project2 ..rt..) => []
-          (core/get-entities ..auth.. #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
+      (entity-resources-read-tests "Project")
+      (entity-resource-read-tests "Project")
+      (entity-resource-update-tests "Project")
+      (entity-resource-deletion-tests "Project"))
+
+    (facts "About Sources"
+      (entity-resources-read-tests "Source")
+      (entity-resource-read-tests "Source")
+      (entity-resource-create-tests "Source")
+      (entity-resources-create-tests "Source")
+      (entity-resource-update-tests "Source")
+      (entity-resource-deletion-tests "Source"))
+
+    (facts "About Folders"
+      (entity-resources-read-tests "Folder")
+      (entity-resource-read-tests "Folder")
+      (entity-resource-create-tests "Folder")
+      (entity-resource-update-tests "Folder")
+      (entity-resource-deletion-tests "Folder"))
+
+    (facts "About Files"
+      (entity-resource-read-tests "File")
+      (entity-resources-read-tests "File")
+      (entity-resource-update-tests "File")
+      (entity-resource-deletion-tests "File")
+      (facts "related Sources"
+        (let [apikey TOKEN]
+          (against-background [(teams/get-teams anything) => TEAMS
+                               (auth/permissions anything) => PERMISSIONS
+                               (auth/identity anything) => ..auth..]
+            (future-fact "associates created Source")))))
+
+    (facts "About Activities"
+      (entity-resources-read-tests "Activity")
+
+      (entity-resource-read-tests "Activity")
+      (entity-resource-update-tests "Activity")
+      (entity-resource-deletion-tests "Activity"))
+
+    (facts "About revisions routes"
+      (facts "/files/:id/HEAD"
+        (fact "returns HEAD revisions"
+          (let [apikey TOKEN
+                id     (str (UUID/randomUUID))
+                doc    {:_id           id
+                        :_rev          "123"
+                        :type          k/FILE-TYPE
+                        :links         {:self "self"}
+                        :relationships {}
+                        :attributes    {}}
+                revs   [{:_id           id
+                         :_rev          "123"
+                         :type          k/REVISION-TYPE
+                         :links         {:self "self"}
+                         :relationships {}
+                         :attributes    {:content_type ""
+                                         :name         ""
+                                         :url          ""
+                                         :previous     [(str (util/make-uuid))]
+                                         :file_id      (str (util/make-uuid))}}]
+                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "files" id "heads"])) apikey)]
+            (body-json get) => {:revisions revs}
+            (provided
+              (teams/get-teams anything) => TEAMS
+              (auth/permissions anything) => PERMISSIONS
+              (auth/identity anything) => ..auth..
+              (r/router anything) => ..rt..
+              (revisions/get-head-revisions ..auth.. ..rt.. id) => revs)))))
+
+    (facts "/move"
+      (fact "moves file"
+        (let [apikey   TOKEN
+              id       (str (util/make-uuid))
+              body     {:source      (str (util/make-uuid))
+                        :destination (str (util/make-uuid))}
+              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "files" id "move"]))
+                                   (mock/body (json-post-body body))) apikey)
+              expected {:something "awesome"}]
+          (body-json post) => expected
+          (provided
+            (rh/move-contents* anything id body) => expected)))
+
+      (fact "moves folder"
+        (let [apikey   TOKEN
+              id       (str (util/make-uuid))
+              body     {:source      (str (util/make-uuid))
+                        :destination (str (util/make-uuid))}
+              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "folders" id "move"]))
+                                   (mock/body (json-post-body body))) apikey)
+              expected {:something "awesome"}]
+          (body-json post) => expected
+          (provided
+            (rh/move-contents* anything id body) => expected))))
+
+    (facts "About Teams API"
+      (facts "GET /teams/:id"
+        (fact "returns team"
+          (let [apikey TOKEN
+                id     (str (util/make-uuid))
+                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version "teams" id])) apikey)
+                team   {:id                  "1"
+                        :type                "Team"
+                        :name                id
+                        :uuid                id
+                        :roles               []
+                        :pending_memberships [{
+                                               :id    "232",
+                                               :role  {
+                                                       :id              184,
+                                                       :organization_id 63,
+                                                       :name            "Member",
+                                                       :links           {:permissions "/api/v1/permissions?role_id=184"}},
+                                               :added "2016-02-01T21:00:00.000Z",
+                                               :email "newmember@example.com",
+                                               :type  "PendingMembership"},
+                                              {
+                                               :id    "2323",
+                                               :role  {
+                                                       :id              184,
+                                                       :organization_id 63,
+                                                       :name            "Member",
+                                                       :links           {:permissions "/api/v1/permissions?role_id=184"}},
+                                               :added "2016-02-01T21:00:00.000Z",
+                                               :email "newmember@example.com",
+                                               :type  "PendingMembership"}]
+
+                        :memberships         [{:id                  1774,
+                                               :team_id             573,
+                                               :added               "2016-02-01T21:00:00.000Z",
+                                               :email               "existingmember@example.com",
+                                               :role                {
+                                                                     :id              184,
+                                                                     :organization_id 63,
+                                                                     :name            "Member",
+                                                                     :links           {:permissions "/api/v1/permissions?role_id=184"}},
+                                               :type                "Membership",
+                                               :user_id             8,
+                                               :membership_role_ids [
+                                                                     1526]
+
+                                               :links               {:self "--self--"}}]
+                        :links               {:self        "--url--"
+                                              :memberships "--membership--url--"}}]
+            (body-json get) => {:team             team
+                                :users            []
+                                :membership_roles []}
+            (provided
+              (teams/get-teams anything) => TEAMS
+              (auth/permissions anything) => PERMISSIONS
+              (teams/get-team* anything id) => {:team             team
+                                                :users            []
+                                                :membership_roles []})))))
+
+    (facts "About activity user stories"
+      (facts "create project activity")
+      (facts "create folder activity"))
+
+    (facts "About provenance"
+      (fact "/prov/:id returns local provenance"
+        (let [apikey   TOKEN
+              id       (str (UUID/randomUUID))
+              expected [{:_id     id
+                         :type    "Activity"
+                         :name    "Something"
+                         :inputs  []
+                         :outputs []}]
+              get      (mock-req (mock/request :get (util/join-path ["" "api" ver/version "prov" id])) apikey)]
+          (body-json get) => {:provenance expected}
+          (provided
+            (teams/get-teams anything) => TEAMS
+            (auth/permissions anything) => PERMISSIONS
+            (auth/identity anything) => ..auth..
+            (prov/local ..auth.. ..rt.. [id]) => expected
+            (r/router anything) => ..rt..))))
+
+    (facts "About breadcrumbs"
+      (facts "POST"
+        (fact "returns file breadcrumbs"
+          (let [id1      (str (UUID/randomUUID))
+                id2      (str (UUID/randomUUID))
+                folder1  (str (UUID/randomUUID))
+                folder2  (str (UUID/randomUUID))
+                project1 (str (UUID/randomUUID))
+                project2 (str (UUID/randomUUID))
+                apikey   TOKEN
+                get      (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version "breadcrumbs"]))
+                                     (mock/body (json-post-body [id1 id2]))) apikey)
+                expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                          {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
+                                          {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                         [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                          {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                          {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                         [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                                          {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                          {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]
+                          (keyword id2) [[{:type k/FILE-TYPE :id id2 :name "filename2"}
+                                          {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                          {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                                         [{:type k/FILE-TYPE :id id2 :name "filename2"}
+                                          {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                                          {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
+            (body-json get) => {:breadcrumbs expected}
+            (provided
+              (auth/identity anything) => ..auth..
+              (ovation.routes/router anything) => ..rt..
+              (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+              (b/get-parents ..auth.. id2 ..rt..) => [{:_id folder2}]
+              (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
+              (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
+              (b/get-parents ..auth.. project1 ..rt..) => []
+              (b/get-parents ..auth.. project2 ..rt..) => []
+              (core/get-entities ..auth.. #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
+                                                                                                    :type       k/FILE-TYPE
+                                                                                                    :attributes {:name "filename1"}}
+                                                                                                   {:_id        id2
+                                                                                                    :type       k/FILE-TYPE
+                                                                                                    :attributes {:name "filename2"}}
+                                                                                                   {:_id        folder1
+                                                                                                    :type       k/FOLDER-TYPE
+                                                                                                    :attributes {:name "foldername1"}}
+                                                                                                   {:_id        folder2
+                                                                                                    :type       k/FOLDER-TYPE
+                                                                                                    :attributes {:name "foldername2"}}
+                                                                                                   {:_id        project1
+                                                                                                    :type       k/PROJECT-TYPE
+                                                                                                    :attributes {:name "projectname1"}}
+                                                                                                   {:_id        project2
+                                                                                                    :type       k/PROJECT-TYPE
+                                                                                                    :attributes {:name "projectname2"}}]))))
+      (facts "GET"
+        (fact "returns file breadcrumbs"
+          (let [id1      (str (UUID/randomUUID))
+                id2      (str (UUID/randomUUID))
+                folder1  (str (UUID/randomUUID))
+                folder2  (str (UUID/randomUUID))
+                project1 (str (UUID/randomUUID))
+                project2 (str (UUID/randomUUID))
+                apikey   TOKEN
+                get      (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version "breadcrumbs"]) "?id=" id1)) apikey)
+                expected [[{:type k/FILE-TYPE :id id1 :name "filename1"}
+                           {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
+                           {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                          [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                           {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                           {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
+                          [{:type k/FILE-TYPE :id id1 :name "filename1"}
+                           {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
+                           {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]]
+            (body-json get) => {:breadcrumbs expected}
+            (provided
+              (auth/identity anything) => ..auth..
+              (ovation.routes/router anything) => ..rt..
+              (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+              (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
+              (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
+              (b/get-parents ..auth.. project1 ..rt..) => []
+              (b/get-parents ..auth.. project2 ..rt..) => []
+              (core/get-entities ..auth.. #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id        id1
                                                                                                 :type       k/FILE-TYPE
                                                                                                 :attributes {:name "filename1"}}
-                                                                                               {:_id        id2
-                                                                                                :type       k/FILE-TYPE
-                                                                                                :attributes {:name "filename2"}}
                                                                                                {:_id        folder1
                                                                                                 :type       k/FOLDER-TYPE
                                                                                                 :attributes {:name "foldername1"}}
@@ -742,47 +795,4 @@
                                                                                                 :attributes {:name "projectname1"}}
                                                                                                {:_id        project2
                                                                                                 :type       k/PROJECT-TYPE
-                                                                                                :attributes {:name "projectname2"}}]))))
-  (facts "GET"
-    (fact "returns file breadcrumbs"
-      (let [id1      (str (UUID/randomUUID))
-            id2      (str (UUID/randomUUID))
-            folder1  (str (UUID/randomUUID))
-            folder2  (str (UUID/randomUUID))
-            project1 (str (UUID/randomUUID))
-            project2 (str (UUID/randomUUID))
-            apikey   TOKEN
-            get      (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version "breadcrumbs"]) "?id=" id1)) apikey)
-            expected [[{:type k/FILE-TYPE :id id1 :name "filename1"}
-                       {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
-                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
-                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-                       {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]]
-        (body-json get) => {:breadcrumbs expected}
-        (provided
-          (auth/identity anything) => ..auth..
-          (ovation.routes/router anything) => ..rt..
-          (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
-          (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
-          (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
-          (b/get-parents ..auth.. project1 ..rt..) => []
-          (b/get-parents ..auth.. project2 ..rt..) => []
-          (core/get-entities ..auth.. #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id        id1
-                                                                                            :type       k/FILE-TYPE
-                                                                                            :attributes {:name "filename1"}}
-                                                                                           {:_id        folder1
-                                                                                            :type       k/FOLDER-TYPE
-                                                                                            :attributes {:name "foldername1"}}
-                                                                                           {:_id        folder2
-                                                                                            :type       k/FOLDER-TYPE
-                                                                                            :attributes {:name "foldername2"}}
-                                                                                           {:_id        project1
-                                                                                            :type       k/PROJECT-TYPE
-                                                                                            :attributes {:name "projectname1"}}
-                                                                                           {:_id        project2
-                                                                                            :type       k/PROJECT-TYPE
-                                                                                            :attributes {:name "projectname2"}}])))))
+                                                                                                :attributes {:name "projectname2"}}])))))))

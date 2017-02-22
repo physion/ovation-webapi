@@ -465,7 +465,3 @@
                     rt     (router request)
                     result (search/search auth rt q :bookmark bookmark :limit limit)]
                 (ok result)))))))))
-
-
-(def app (create-app nil))
-
