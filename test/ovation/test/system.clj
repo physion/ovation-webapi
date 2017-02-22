@@ -36,3 +36,6 @@
 
 (defn get-app []
   (get-in test-system [:api :handler]))
+
+(defn get-db []
+  (get-in test-system [:database :connection]))

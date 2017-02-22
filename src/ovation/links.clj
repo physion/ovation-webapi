@@ -19,9 +19,8 @@
               false)))
 
 (defn-traced get-links
-  [auth id rel routes & {:keys [label name] :or {label nil name nil}}]
-  (let [db (couch/db auth)
-        opts {:startkey      (if name [id rel name] [id rel])
+  [auth db id rel routes & {:keys [label name] :or {label nil name nil}}]
+  (let [opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}]
@@ -32,11 +31,10 @@
 
 (defn-traced get-link-targets
   "Gets the document targets for id--rel->"
-  [auth id rel routes & {:keys [label name include-trashed] :or {label nil
-                                                                 name nil
-                                                                 include-trashed false}}]
-  (let [db (couch/db auth)
-        opts {:startkey      (if name [id rel name] [id rel])
+  [auth db id rel routes & {:keys [label name include-trashed] :or {label           nil
+                                                                    name            nil
+                                                                    include-trashed false}}]
+  (let [opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}
@@ -76,9 +74,9 @@
   [source target]
 
   (let [source-roots (collaboration-roots source)
-        source-type (util/entity-type-keyword source)
+        source-type  (util/entity-type-keyword source)
         target-roots (collaboration-roots target)
-        target-type (util/entity-type-keyword target)]
+        target-type  (util/entity-type-keyword target)]
     (cond
       (= source-type :project) [source (add-roots target source-roots)]
       (= target-type :project) [(add-roots source target-roots) target]
@@ -105,13 +103,13 @@
   even when it's not necessary."
   [source-docs target-docs]
 
-  (loop [sources (util/into-id-map source-docs)
-         targets (util/into-id-map target-docs)
+  (loop [sources         (util/into-id-map source-docs)
+         targets         (util/into-id-map target-docs)
          sources-updates {}
          targets-updates {}
-         cross (for [source source-docs
-                     target target-docs]
-                 [(:_id source) (:_id target)])]
+         cross           (for [source source-docs
+                               target target-docs]
+                           [(:_id source) (:_id target)])]
 
     (if-let [[source-id target-id] (first cross)]
       (if-let [[source-update target-update] (update-collaboration-roots-for-target (get sources source-id) (get targets target-id))]
@@ -139,16 +137,16 @@
         target targets]
     (let [source-roots (collaboration-roots source)
           target-roots (collaboration-roots target)
-          source-id (:_id source)
-          target-id (:_id target)
-          base {:_id       (link-id source-id rel target-id :name name)
-                :type      util/RELATION_TYPE
-                :target_id (:_id target)
-                :source_id (:_id source)
-                :rel       (clojure.core/name rel)
-                :user_id   authenticated-user-id
-                :links     {:_collaboration_roots (concat source-roots target-roots)}}
-          named (if name (assoc base :name name) base)]
+          source-id    (:_id source)
+          target-id    (:_id target)
+          base         {:_id       (link-id source-id rel target-id :name name)
+                        :type      util/RELATION_TYPE
+                        :target_id (:_id target)
+                        :source_id (:_id source)
+                        :rel       (clojure.core/name rel)
+                        :user_id   authenticated-user-id
+                        :links     {:_collaboration_roots (concat source-roots target-roots)}}
+          named        (if name (assoc base :name name) base)]
       (if inverse-rel (assoc named :inverse_rel (clojure.core/name inverse-rel)) named))))
 
 (defn-traced add-links
@@ -159,27 +157,27 @@
   ```{  :updates    <updated documents>
         :links      <new LinkInfo documents>}```
    "
-  [auth sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
-                                                                              name nil
-                                                                              strict false]}]
+  [auth db sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
+                                                                                 name nil
+                                                                                 strict false]}]
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
-        targets (core/get-entities auth target-ids routes)]
+        targets               (core/get-entities auth db target-ids routes)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
       (throw+ {:type ::target-not-found :message "Target(s) not found"}))
 
-    (let [links (make-links authenticated-user-id sources rel targets inverse-rel :name name)
+    (let [links   (make-links authenticated-user-id sources rel targets inverse-rel :name name)
           updates (update-collaboration-roots sources targets)]
       {:links   links
        :updates (concat (:sources updates) (:targets updates))})))
 
 
 (defn-traced delete-links
-  ([auth routes doc rel target-id & {:keys [name] :or [name nil]}]
+  ([auth db routes doc rel target-id & {:keys [name] :or [name nil]}]
    (auth/check! auth ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
-      (core/delete-values auth [link-id] routes)))
-  ([auth routes doc link-id]
+     (core/delete-values auth db [link-id] routes)))
+  ([auth db routes doc link-id]
    (auth/check! auth ::auth/update doc)
-   (core/delete-values auth [link-id] routes)))
+   (core/delete-values auth db [link-id] routes)))

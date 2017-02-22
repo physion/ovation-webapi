@@ -46,24 +46,24 @@
 
   (facts "create-annotations"
     (fact "notifies"
-      (let [note {:_id             ..uuid..
-                  :entity          ..id1..
-                  :user            ..user..
-                  :annotation_type ..type..
-                  :type            "Annotation"
-                  :annotation      {:tag ..tag..}
-                  :links           {:_collaboration_roots [..root1..]}}
+      (let [note     {:_id             ..uuid..
+                      :entity          ..id1..
+                      :user            ..user..
+                      :annotation_type ..type..
+                      :type            "Annotation"
+                      :annotation      {:tag ..tag..}
+                      :links           {:_collaboration_roots [..root1..]}}
             expected [note]
             entity   {:_id   ..id1..
                       :type  k/FILE-TYPE
                       :links {:_collaboration_roots [..root1..]}}]
 
-        (a/create-annotations ..auth.. ..rt.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
+        (a/create-annotations ..auth.. ..db.. ..rt.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. [..id1..] ..rt..) => [entity]
-          (core/create-values ..auth.. ..rt.. expected) => [note]
+          (core/get-entities ..auth.. ..db.. [..id1..] ..rt..) => [entity]
+          (core/create-values ..auth.. ..db.. ..rt.. expected) => [note]
           (a/notify ..auth.. entity note) => ..notified..))))
 
   (facts "update-annotations"
@@ -79,12 +79,12 @@
                        :type  k/FILE-TYPE
                        :links {:_collaboration_roots [..root1..]}}]
 
-          (a/update-annotation ..auth.. ..rt.. ..uuid.. {:text ..new..}) => ..notified..
+          (a/update-annotation ..auth.. ..db.. ..rt.. ..uuid.. {:text ..new..}) => ..notified..
 
           (provided
             (util/iso-short-now) => ..time..
             (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
-            (core/get-entities ..auth.. [..entity..] ..rt..) => [entity]
+            (core/get-entities ..auth.. ..db.. [..entity..] ..rt..) => [entity]
             (core/update-values ..auth.. ..rt.. [{:_id             ..uuid..
                                                   :entity          ..entity..
                                                   :user            ..user..
@@ -98,16 +98,16 @@
   (facts "notify"
     (fact "sends notification"
       (let [entity-id (str (util/make-uuid))
-            note-id (str (util/make-uuid))
-            note {:type c/ANNOTATION-TYPE
-                  :_id note-id
-                  :entity (str "project://" entity-id "/" note-id)
-                  :annotation_type c/NOTES
-                  :annotation {:text "text"}}]
+            note-id   (str (util/make-uuid))
+            note      {:type            c/ANNOTATION-TYPE
+                       :_id             note-id
+                       :entity          (str "project://" entity-id "/" note-id)
+                       :annotation_type c/NOTES
+                       :annotation      {:text "text"}}]
         (a/notify ..auth.. ..entity.. note) => note
         (provided
           ..entity.. =contains=> {:type k/PROJECT-TYPE
-                                  :_id entity-id}
+                                  :_id  entity-id}
           (a/mentions note) => [{:name ..name.. :uuid (str (util/make-uuid))}]))))
 
   (facts "notified-users"

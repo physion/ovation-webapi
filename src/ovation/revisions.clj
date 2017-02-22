@@ -18,9 +18,8 @@
   they're not equal (or if there are less than 2), returns the top doc. If they're equal, returns
   all Revisions with that parent count"
 
-  [auth routes file-id]
-  (let [docs (let [db     (couch/db auth)
-                   tops   (couch/get-view auth db k/REVISIONS-VIEW {:startkey     [file-id {}]
+  [auth db routes file-id]
+  (let [docs (let [tops   (couch/get-view auth db k/REVISIONS-VIEW {:startkey     [file-id {}]
                                                                     :endkey       [file-id]
                                                                     :descending   true
                                                                     :include_docs true
@@ -54,33 +53,33 @@
 
 
 (defn- create-revisions-from-file
-  [auth routes file parent new-revisions]
+  [auth db routes file parent new-revisions]
   (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
         new-revs     (map #(-> %
-                            (assoc-in [:attributes :file_id] (:_id file))
-                            (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions    (core/create-entities auth new-revs routes)
+                             (assoc-in [:attributes :file_id] (:_id file))
+                             (assoc-in [:attributes :previous] previous)) new-revisions)
+        revisions    (core/create-entities auth db new-revs routes)
         updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
-        links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
+        links-result (links/add-links auth db [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
-  [auth routes parent new-revisions]
-  (let [files (core/get-entities auth [(get-in parent [:attributes :file_id])] routes)]
-    (create-revisions-from-file auth routes (first files) parent new-revisions)))
+  [auth db routes parent new-revisions]
+  (let [files (core/get-entities auth db [(get-in parent [:attributes :file_id])] routes)]
+    (create-revisions-from-file auth db routes (first files) parent new-revisions)))
 
 (defn-traced create-revisions
   "Creates new Revisions. Returns result of links/add-links; you should call core/create-values and core/update-entities on the result"
-  [auth routes parent new-revisions]
+  [auth db routes parent new-revisions]
 
   (condp = (:type parent)
-    k/REVISION-TYPE (create-revisions-from-revision auth routes parent new-revisions)
-    k/FILE-TYPE (let [heads (get-head-revisions auth routes parent)]
+    k/REVISION-TYPE (create-revisions-from-revision auth db routes parent new-revisions)
+    k/FILE-TYPE (let [heads (get-head-revisions auth db routes parent)]
                   (when (> (count heads) 1)
                     (throw+ {:type ::file-revision-conflict :message "File has multiple head revisions"}))
-                  (create-revisions-from-file auth routes parent (first heads) new-revisions))))
+                  (create-revisions-from-file auth db routes parent (first heads) new-revisions))))
 
 
 (defn-traced make-resource
@@ -101,8 +100,8 @@
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
       (let [result   (:resource (util/from-json (:body @resp)))
-            url (:public_url result)
-            aws (:aws result)
+            url      (:public_url result)
+            aws      (:aws result)
             post-url (:url result)]
         {:revision (-> revision
                      (assoc-in [:attributes :url] url)
@@ -117,22 +116,22 @@
 
 
 (defn-traced update-metadata
-  [auth routes revision & {:keys [complete] :or {complete true}}]
+  [auth db routes revision & {:keys [complete] :or {complete true}}]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
     (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
 
   (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
         resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-                          {:oauth-token (::auth/token auth)
-                           :headers     {"Content-Type" "application/json"
-                                         "Accept"       "application/json"}})
+                  {:oauth-token (::auth/token auth)
+                   :headers     {"Content-Type" "application/json"
+                                 "Accept"       "application/json"}})
         file    (if complete
                   (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
                   nil)]
     (let [body             (if (= (:status @resp) 200)
                              (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
-                             {}) ;; if it's not 200, don't add any additional attributes
+                             {})                            ;; if it's not 200, don't add any additional attributes
           updated-revision (-> revision
                              (update-in [:attributes] merge body)
                              (assoc-in [:attributes :upload-status] k/COMPLETE))
@@ -140,15 +139,15 @@
                              [updated-revision (update-file-status file [revision] k/COMPLETE)]
                              [updated-revision])]
       (first (filter #(= (:_id %) (:_id revision))
-               (core/update-entities auth updates routes :allow-keys [:revisions]))))))
+               (core/update-entities auth db updates routes :allow-keys [:revisions]))))))
 
 
 (defn-traced record-upload-failure
-  [auth routes revision]
+  [auth db routes revision]
   (let [file-id          (get-in revision [:attributes :file_id])
         file             (core/get-entity auth file-id routes)
         updated-file     (update-file-status file [revision] k/ERROR)
         updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
-        updates          (core/update-entities auth [updated-revision updated-file] routes :allow-keys [:revisions])]
+        updates          (core/update-entities auth db [updated-revision updated-file] routes :allow-keys [:revisions])]
     {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
      :file     (first (filter #(= (:_id %) (:_id file)) updates))}))

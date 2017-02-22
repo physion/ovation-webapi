@@ -20,11 +20,11 @@
   (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
 
 (defn get-results
-  [auth routes rows]
+  [auth db routes rows]
   (let [ids (entity-ids rows)
-        entities (core/get-entities auth ids routes)
+        entities (core/get-entities auth db ids routes)
         root-ids (mapcat #(links/collaboration-roots %) entities)
-        roots (util/into-id-map (core/get-entities auth root-ids routes))]
+        roots (util/into-id-map (core/get-entities auth db root-ids routes))]
     (map (fn [entity] {:id            (:_id entity)
                        :entity_type   (:type entity)
                        :name          (get-in entity [:attributes :name] (:_id entity))
@@ -37,10 +37,9 @@
 
 (def MIN-SEARCH 200)
 (defn search
-  [auth rt q & {:keys [bookmark limit] :or {bookmark nil
+  [auth db rt q & {:keys [bookmark limit] :or {bookmark nil
                                             limit 0}}]
-  (let [db       (couch/db auth)
-        raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
+  (let [raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
         entities (get-results auth rt (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}

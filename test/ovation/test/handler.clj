@@ -63,31 +63,31 @@
 
 (defn get*
   [app path apikey]
-  (let [get (mock-req (mock/request :get path) apikey)
+  (let [get      (mock-req (mock/request :get path) apikey)
         response (app get)
-        reader (clojure.java.io/reader (:body response))
-        body (json/read reader)]
+        reader   (clojure.java.io/reader (:body response))
+        body     (json/read reader)]
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
 
 (defn delete*
   [app path apikey]
-  (let [get (mock-req (mock/request :delete path) apikey)
+  (let [get      (mock-req (mock/request :delete path) apikey)
         response (app get)
-        reader (clojure.java.io/reader (:body response))
-        body (json/read reader)]
+        reader   (clojure.java.io/reader (:body response))
+        body     (json/read reader)]
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
 
 
 (defn post*
   [app path apikey body]
-  (let [post (mock-req (-> (mock/request :post path)
-                         (mock/body (json-post-body body))) apikey)
+  (let [post     (mock-req (-> (mock/request :post path)
+                             (mock/body (json-post-body body))) apikey)
         response (app post)
-        reader (clojure.java.io/reader (:body response))
-        body (json/read reader)]
+        reader   (clojure.java.io/reader (:body response))
+        body     (json/read reader)]
 
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
@@ -95,11 +95,11 @@
 
 (defn put*
   [app path apikey body]
-  (let [post (mock-req (-> (mock/request :put path)
-                         (mock/body (json-post-body body))) apikey)
+  (let [post     (mock-req (-> (mock/request :put path)
+                             (mock/body (json-post-body body))) apikey)
         response (app post)
-        reader (clojure.java.io/reader (:body response))
-        body (json/read reader)]
+        reader   (clojure.java.io/reader (:body response))
+        body     (json/read reader)]
 
     {:status (:status response)
      :body   (walk/keywordize-keys body)}))
@@ -114,7 +114,7 @@
 
 (defmacro entity-resources-read-tests
   "Facts about reading resources"
-  [app entity-type]
+  [app db entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
@@ -131,7 +131,7 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path])) apikey#)]
-                 (against-background [(core/of-type ..auth.. ~type-name ..rt..) => [entity#]
+                 (against-background [(core/of-type ..auth.. ~db ~type-name ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET / gets all " type-path)
                      (body-json get-req#) => {~(keyword type-path) [entity#]}))))))))))
@@ -139,7 +139,7 @@
 
 (defmacro entity-resource-read-tests
   "Facts about reading resource"
-  [app entity-type]
+  [app db entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
@@ -157,7 +157,7 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities ..auth.. [id#] ..rt..) => [entity#]
+                 (against-background [(core/get-entities ..auth.. ~db [id#] ..rt..) => [entity#]
                                       (r/router anything) => ..rt..]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
@@ -169,12 +169,12 @@
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (~app get-req#)) => 404
                        (provided
-                         (core/get-entities ..auth.. [id#] ..rt..) => [source#]))))))))))))
+                         (core/get-entities ..auth.. ~db [id#] ..rt..) => [source#]))))))))))))
 
 
 (defmacro entity-resource-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
-  [app entity-type]
+  [app db entity-type]
 
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
@@ -203,11 +203,11 @@
                    links#        [{:type "Relation" :foo "bar"}]]
 
 
-               (against-background [(core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
-                                    (core/get-entities ..auth.. [(:_id parent#)] ..rt..) => [parent#]
-                                    (links/add-links ..auth.. [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
-                                    (core/create-values ..auth.. ..rt.. links#) => links#
-                                    (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
+               (against-background [(core/create-entities ..auth.. ~db [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
+                                    (core/get-entities ..auth.. ~db [(:_id parent#)] ..rt..) => [parent#]
+                                    (links/add-links ..auth.. ~db [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
+                                    (core/create-values ..auth.. ~db ..rt.. links#) => links#
+                                    (core/update-entities ..auth.. ~db anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
@@ -222,12 +222,12 @@
                  (:status (~app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..auth.. ~db [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resources-create-tests
   "Facts about a resource creation (e.g. \"Project\")"
-  [app entity-type]
+  [app db entity-type]
 
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
@@ -248,9 +248,9 @@
                    request#            (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~type-path]))
                                                           (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-               (against-background [(core/create-entities ..auth.. [new-entity#] ..rt..) => [entity#]
-                                    (core/create-values ..auth.. ..rt.. []) => []
-                                    (core/update-entities ..auth.. anything ..rt.. :authorize false :update-collaboration-roots true) => []
+               (against-background [(core/create-entities ..auth.. ~db [new-entity#] ..rt..) => [entity#]
+                                    (core/create-values ..auth.. ~db ..rt.. []) => []
+                                    (core/update-entities ..auth.. ~db ..rt.. :authorize false :update-collaboration-roots true) => []
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
@@ -270,12 +270,12 @@
                  (:status (~app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..auth.. ~db [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-update-tests
   "Facts about a resource update (e.g. \"Project\")"
-  [app entity-type]
+  [app db entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
@@ -303,7 +303,7 @@
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))
                                                                 (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
-               (against-background [(core/update-entities ..auth.. [update#] ..rt..) => [updated-entity#]
+               (against-background [(core/update-entities ..auth.. ~db [update#] ..rt..) => [updated-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 200"
                    (let [response# (~app (request# id#))]
@@ -327,12 +327,12 @@
                  (:status (~app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/update-entities ..auth.. ~db [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-deletion-tests
   "Facts about a resource type (e.g. \"Project\")"
-  [app entity-type]
+  [app db entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
@@ -355,7 +355,7 @@
                                                                 :trash_root    ""})
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~type-path (str entity-id#)]))) apikey#))]
 
-               (against-background [(core/delete-entities ..auth.. [(str id#)] ..rt..) => [deleted-entity#]
+               (against-background [(core/delete-entities ..auth.. ~db [(str id#)] ..rt..) => [deleted-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (~app (request# id#))]
@@ -368,11 +368,12 @@
                  (:status (~app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/delete-entities ..auth.. [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/delete-entities ..auth.. ~db [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
-(against-background [(around :contents  (test.system/system-background ?form))]
-  (let [app (test.system/get-app)]
+(against-background [(around :contents (test.system/system-background ?form))]
+  (let [app (test.system/get-app)
+        db  (test.system/get-db)]
 
     (defn body-json
       [request]
@@ -384,7 +385,7 @@
     (facts "About authorization"
       (fact "invalid API key returns 401"
         (let [apikey "12345"
-              get (mock-req (mock/request :get "/api/v1/entities/123") apikey)]
+              get    (mock-req (mock/request :get "/api/v1/entities/123") apikey)]
           (:status (app get)) => 401)))
 
 
@@ -428,7 +429,7 @@
                          :type            "Annotation"
                          :annotation_type "tags"
                          :annotation      {:tag "--tag--"}}]]
-              (against-background [(annotations/get-annotations ..auth.. [id] "tags" ..rt..) => tags]
+              (against-background [(annotations/get-annotations ..auth.. db [id] "tags" ..rt..) => tags]
                 (fact "returns annotations by entity and user"
                   (let [path (str "/api/v1/entities/" id "/annotations/tags")
                         {:keys [status body]} (get* app path apikey)]
@@ -445,7 +446,7 @@
                          :type            "Annotation"
                          :annotation_type "tags"
                          :annotation      {:tag "--tag--"}}]]
-              (against-background [(annotations/create-annotations ..auth.. anything [id] "tags" (:tags post)) => tags]
+              (against-background [(annotations/create-annotations ..auth.. db anything [id] "tags" (:tags post)) => tags]
                 (fact "creates annotations"
                   (let [path (str "/api/v1/entities/" id "/annotations/tags")
                         {:keys [status body]} (post* app path apikey post)]
@@ -464,7 +465,7 @@
                              :annotation_type c/NOTES
                              :annotation      {:text      "--note--"
                                                :timestamp (util/iso-short-now)}}]
-              (against-background [(annotations/update-annotation ..auth.. anything (str note-id) (:annotation update)) => update]
+              (against-background [(annotations/update-annotation ..auth.. db anything (str note-id) (:annotation update)) => update]
                 (fact "updates annotation"
                   (let [path (str "/api/v1/entities/" entity-id "/annotations/notes/" note-id)
                         {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
@@ -484,7 +485,7 @@
             (against-background [(teams/get-teams anything) => TEAMS
                                  (auth/permissions anything) => PERMISSIONS
                                  (auth/identity anything) => ..auth..
-                                 (annotations/delete-annotations ..auth.. [annotation-id] anything) => tags]
+                                 (annotations/delete-annotations ..auth.. db [annotation-id] anything) => tags]
               (fact "deletes annotations"
                 (let [path (str "/api/v1/entities/" id "/annotations/tags/" annotation-id)
                       {:keys [status body]} (delete* app path apikey)]
@@ -515,37 +516,37 @@
                     (body-json get) => {:entity doc}))))))))
 
     (facts "About entities"
-      (entity-resource-deletion-tests app "entitie"))
+      (entity-resource-deletion-tests app db "entitie"))
 
     (facts "About Projects"
-      (entity-resource-create-tests app "Project")
-      (entity-resources-create-tests app "Project")
+      (entity-resource-create-tests app db "Project")
+      (entity-resources-create-tests app db "Project")
 
-      (entity-resources-read-tests app "Project")
-      (entity-resource-read-tests app "Project")
-      (entity-resource-update-tests app "Project")
-      (entity-resource-deletion-tests app "Project"))
+      (entity-resources-read-tests app db "Project")
+      (entity-resource-read-tests app db "Project")
+      (entity-resource-update-tests app db "Project")
+      (entity-resource-deletion-tests app db "Project"))
 
     (facts "About Sources"
-      (entity-resources-read-tests app "Source")
-      (entity-resource-read-tests app "Source")
-      (entity-resource-create-tests app "Source")
-      (entity-resources-create-tests app "Source")
-      (entity-resource-update-tests app "Source")
-      (entity-resource-deletion-tests app "Source"))
+      (entity-resources-read-tests app db "Source")
+      (entity-resource-read-tests app db "Source")
+      (entity-resource-create-tests app db "Source")
+      (entity-resources-create-tests app db "Source")
+      (entity-resource-update-tests app db "Source")
+      (entity-resource-deletion-tests app db "Source"))
 
     (facts "About Folders"
-      (entity-resources-read-tests app "Folder")
-      (entity-resource-read-tests app "Folder")
-      (entity-resource-create-tests app "Folder")
-      (entity-resource-update-tests app "Folder")
-      (entity-resource-deletion-tests app "Folder"))
+      (entity-resources-read-tests app db "Folder")
+      (entity-resource-read-tests app db "Folder")
+      (entity-resource-create-tests app db "Folder")
+      (entity-resource-update-tests app db "Folder")
+      (entity-resource-deletion-tests app db "Folder"))
 
     (facts "About Files"
-      (entity-resource-read-tests app "File")
-      (entity-resources-read-tests app "File")
-      (entity-resource-update-tests app "File")
-      (entity-resource-deletion-tests app "File")
+      (entity-resource-read-tests app db "File")
+      (entity-resources-read-tests app db "File")
+      (entity-resource-update-tests app db "File")
+      (entity-resource-deletion-tests app db "File")
 
       (facts "related Sources"
         (let [apikey TOKEN]
@@ -555,11 +556,11 @@
             (future-fact "associates created Source")))))
 
     (facts "About Activities"
-      (entity-resources-read-tests app "Activity")
+      (entity-resources-read-tests app db "Activity")
 
-      (entity-resource-read-tests app "Activity")
-      (entity-resource-update-tests app "Activity")
-      (entity-resource-deletion-tests app "Activity"))
+      (entity-resource-read-tests app db "Activity")
+      (entity-resource-update-tests app db "Activity")
+      (entity-resource-deletion-tests app db "Activity"))
 
     (facts "About revisions routes"
       (facts "/files/:id/HEAD"
@@ -589,7 +590,7 @@
               (auth/permissions anything) => PERMISSIONS
               (auth/identity anything) => ..auth..
               (r/router anything) => ..rt..
-              (revisions/get-head-revisions ..auth.. ..rt.. id) => revs)))))
+              (revisions/get-head-revisions ..auth.. db ..rt.. id) => revs)))))
 
     (facts "/move"
       (fact "moves file"
@@ -602,7 +603,7 @@
               expected {:something "awesome"}]
           (body-json post) => expected
           (provided
-            (rh/move-contents* anything id body) => expected)))
+            (rh/move-contents* anything db id body) => expected)))
 
       (fact "moves folder"
         (let [apikey   TOKEN
@@ -614,7 +615,7 @@
               expected {:something "awesome"}]
           (body-json post) => expected
           (provided
-            (rh/move-contents* anything id body) => expected))))
+            (rh/move-contents* anything db id body) => expected))))
 
     (facts "About Teams API"
       (facts "GET /teams/:id"
@@ -694,7 +695,7 @@
             (teams/get-teams anything) => TEAMS
             (auth/permissions anything) => PERMISSIONS
             (auth/identity anything) => ..auth..
-            (prov/local ..auth.. ..rt.. [id]) => expected
+            (prov/local ..auth.. db ..rt.. [id]) => expected
             (r/router anything) => ..rt..))))
 
     (facts "About breadcrumbs"
@@ -728,30 +729,30 @@
             (provided
               (auth/identity anything) => ..auth..
               (ovation.routes/router anything) => ..rt..
-              (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
-              (b/get-parents ..auth.. id2 ..rt..) => [{:_id folder2}]
-              (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
-              (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
-              (b/get-parents ..auth.. project1 ..rt..) => []
-              (b/get-parents ..auth.. project2 ..rt..) => []
-              (core/get-entities ..auth.. #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
-                                                                                                    :type       k/FILE-TYPE
-                                                                                                    :attributes {:name "filename1"}}
-                                                                                                   {:_id        id2
-                                                                                                    :type       k/FILE-TYPE
-                                                                                                    :attributes {:name "filename2"}}
-                                                                                                   {:_id        folder1
-                                                                                                    :type       k/FOLDER-TYPE
-                                                                                                    :attributes {:name "foldername1"}}
-                                                                                                   {:_id        folder2
-                                                                                                    :type       k/FOLDER-TYPE
-                                                                                                    :attributes {:name "foldername2"}}
-                                                                                                   {:_id        project1
-                                                                                                    :type       k/PROJECT-TYPE
-                                                                                                    :attributes {:name "projectname1"}}
-                                                                                                   {:_id        project2
-                                                                                                    :type       k/PROJECT-TYPE
-                                                                                                    :attributes {:name "projectname2"}}]))))
+              (b/get-parents ..auth.. db id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+              (b/get-parents ..auth.. db id2 ..rt..) => [{:_id folder2}]
+              (b/get-parents ..auth.. db folder1 ..rt..) => [{:_id project1}]
+              (b/get-parents ..auth.. db folder2 ..rt..) => [{:_id project1} {:_id project2}]
+              (b/get-parents ..auth.. db project1 ..rt..) => []
+              (b/get-parents ..auth.. db project2 ..rt..) => []
+              (core/get-entities ..auth.. db #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
+                                                                                                       :type       k/FILE-TYPE
+                                                                                                       :attributes {:name "filename1"}}
+                                                                                                      {:_id        id2
+                                                                                                       :type       k/FILE-TYPE
+                                                                                                       :attributes {:name "filename2"}}
+                                                                                                      {:_id        folder1
+                                                                                                       :type       k/FOLDER-TYPE
+                                                                                                       :attributes {:name "foldername1"}}
+                                                                                                      {:_id        folder2
+                                                                                                       :type       k/FOLDER-TYPE
+                                                                                                       :attributes {:name "foldername2"}}
+                                                                                                      {:_id        project1
+                                                                                                       :type       k/PROJECT-TYPE
+                                                                                                       :attributes {:name "projectname1"}}
+                                                                                                      {:_id        project2
+                                                                                                       :type       k/PROJECT-TYPE
+                                                                                                       :attributes {:name "projectname2"}}]))))
       (facts "GET"
         (fact "returns file breadcrumbs"
           (let [id1      (str (UUID/randomUUID))
@@ -775,23 +776,23 @@
             (provided
               (auth/identity anything) => ..auth..
               (ovation.routes/router anything) => ..rt..
-              (b/get-parents ..auth.. id1 ..rt..) => [{:_id folder1} {:_id folder2}]
-              (b/get-parents ..auth.. folder1 ..rt..) => [{:_id project1}]
-              (b/get-parents ..auth.. folder2 ..rt..) => [{:_id project1} {:_id project2}]
-              (b/get-parents ..auth.. project1 ..rt..) => []
-              (b/get-parents ..auth.. project2 ..rt..) => []
-              (core/get-entities ..auth.. #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id        id1
-                                                                                                :type       k/FILE-TYPE
-                                                                                                :attributes {:name "filename1"}}
-                                                                                               {:_id        folder1
-                                                                                                :type       k/FOLDER-TYPE
-                                                                                                :attributes {:name "foldername1"}}
-                                                                                               {:_id        folder2
-                                                                                                :type       k/FOLDER-TYPE
-                                                                                                :attributes {:name "foldername2"}}
-                                                                                               {:_id        project1
-                                                                                                :type       k/PROJECT-TYPE
-                                                                                                :attributes {:name "projectname1"}}
-                                                                                               {:_id        project2
-                                                                                                :type       k/PROJECT-TYPE
-                                                                                                :attributes {:name "projectname2"}}])))))))
+              (b/get-parents ..auth.. db id1 ..rt..) => [{:_id folder1} {:_id folder2}]
+              (b/get-parents ..auth.. db folder1 ..rt..) => [{:_id project1}]
+              (b/get-parents ..auth.. db folder2 ..rt..) => [{:_id project1} {:_id project2}]
+              (b/get-parents ..auth.. db project1 ..rt..) => []
+              (b/get-parents ..auth.. db project2 ..rt..) => []
+              (core/get-entities ..auth.. db #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id        id1
+                                                                                                   :type       k/FILE-TYPE
+                                                                                                   :attributes {:name "filename1"}}
+                                                                                                  {:_id        folder1
+                                                                                                   :type       k/FOLDER-TYPE
+                                                                                                   :attributes {:name "foldername1"}}
+                                                                                                  {:_id        folder2
+                                                                                                   :type       k/FOLDER-TYPE
+                                                                                                   :attributes {:name "foldername2"}}
+                                                                                                  {:_id        project1
+                                                                                                   :type       k/PROJECT-TYPE
+                                                                                                   :attributes {:name "projectname1"}}
+                                                                                                  {:_id        project2
+                                                                                                   :type       k/PROJECT-TYPE
+                                                                                                   :attributes {:name "projectname2"}}])))))))
