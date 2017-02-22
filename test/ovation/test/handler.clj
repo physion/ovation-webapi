@@ -250,7 +250,7 @@
 
                (against-background [(core/create-entities ..auth.. ~db [new-entity#] ..rt..) => [entity#]
                                     (core/create-values ..auth.. ~db ..rt.. []) => []
-                                    (core/update-entities ..auth.. ~db ..rt.. :authorize false :update-collaboration-roots true) => []
+                                    (core/update-entities ..auth.. ~db [] ..rt.. :authorize false :update-collaboration-roots true) => []
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
