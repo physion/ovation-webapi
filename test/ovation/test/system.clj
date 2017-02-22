@@ -27,31 +27,6 @@
   (init)
   (start))
 
-(defn down? [test-system]
-  (let [c (::count (meta test-system))]
-    (or (nil? c) (zero? c))))
-
-(defn update-meta [m k f]
-  (with-meta m (update-in (meta m) [k] f)))
-
-(defn system-up! [test-system]
-  (alter-var-root
-    test-system
-    (fn [system]
-      (-> system
-        (if (down? system) (go))
-        (update-meta ::count (fnil inc 0))))))
-
-(defn system-down! [test-system]
-  (alter-var-root
-    test-system
-    (fn [system]
-      (if (down? system)
-        system
-        (-> system
-          (if (= 1 (::count (meta system))) (stop))
-          (update-meta ::count dec))))))
-
 (defmacro system-background [ & body]
   `(try
      (go)
