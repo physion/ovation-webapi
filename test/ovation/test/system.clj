@@ -5,7 +5,7 @@
 
 (def system-config
   {:web {:port 3000}
-   :db  {:host     (config/config :cloudant-db-url :default "db-host")
+   :db  {:host     (config/config :cloudant-db-url :default "https://db-host")
          :username (config/config :cloudant-username :default "db-username")
          :password (config/config :cloudant-password :default "db-password")}})
 
