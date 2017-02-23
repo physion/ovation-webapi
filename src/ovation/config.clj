@@ -20,5 +20,5 @@
 (def CLOUDANT_USERNAME (config :clouddant-username))
 (def CLOUDANT_PASSWORD (config :cloudant-password))
 
-(def PORT (config :port :default 8080))
+(def PORT (Integer/parseInt (config :port :default 8080)))
 (def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))

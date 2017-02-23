@@ -1,1 +1,1 @@
-web: lein with-profile newrelic ring server-headless $PORT
+web: lein with-profile newrelic run

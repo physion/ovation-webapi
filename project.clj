@@ -60,7 +60,8 @@
 
   :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
 
-  :ring {:main    ovation.main}
+  :ring {:handler ovation.handler/app
+         :main    ovation.main}
 
   :main ovation.main
 
