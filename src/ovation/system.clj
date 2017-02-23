@@ -4,7 +4,8 @@
             [ovation.handler :as handler]
             (system.components
               [jetty :refer [new-web-server]])
-            [cemerick.url :as url]))
+            [cemerick.url :as url]
+            [ovation.config :as config]))
 
 
 ;; Database
@@ -39,6 +40,19 @@
 
 (defn new-api []
   (map->Api {}))
+
+
+;; Notifications
+(defrecord Notifications [url]
+  component/Lifecycle
+
+  (start [this]
+    (logging/info "Starting notifiations component")
+    this)
+
+  (stop [this]
+    (logging/info "Stopping notifications component")
+    this))
 
 
 ;; System
