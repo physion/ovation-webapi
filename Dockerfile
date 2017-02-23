@@ -1,12 +1,15 @@
 FROM clojure
 MAINTAINER support@ovation.io
 
+RUN apt-get -y update
+
+ENV PORT 3000
+EXPOSE 3000
+
+RUN mkdir -p /app
 COPY . /app
 WORKDIR /app
 
-ENV PORT 8080
-EXPOSE 8080
-
 RUN ["lein", "deps"]
 
-CMD ["lein", "ring", "server-headless"]
+CMD ["lein", "run"]

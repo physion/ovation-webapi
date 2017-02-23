@@ -3,7 +3,7 @@
             [ovation.util :as util]
             [ovation.config :as config]
             [org.httpkit.client :as httpkit.client]
-            [ovation.logging :as logging]
+            [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.auth :as auth]

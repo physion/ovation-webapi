@@ -9,12 +9,15 @@
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
 
+                 ;; Component
+                 [com.stuartsierra/component "0.3.2"]
+                 [org.danielsz/system "0.4.0"]
+
                  ;; Compojure API and middleware
                  [metosin/compojure-api "1.1.10"]
                  [ring-cors "0.1.8"]
-                 [ring-logger "0.7.6"]
-                 [buddy/buddy-auth "1.1.0"]
-                 [ring/ring-jetty-adapter "1.5.0"]
+                 [ring-logger "0.7.7"]
+                 [buddy/buddy-auth "1.4.1"]
 
 
                  ;; HTTP and CouchDB
@@ -30,16 +33,20 @@
                  ;; Raygun
                  [com.mindscapehq/core "2.1.0"]
 
-
                  ;; Logging
-                 [com.taoensso/timbre "4.8.0"]
+                 ; Use Logback for logging
+                 [ch.qos.logback/logback-classic "1.1.9"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
-                                                    javax.jms/jms
-                                                    com.sun.jmdk/jmxtools
-                                                    com.sun.jmx/jmxri]]
                  [potemkin "0.4.3"]
-                 [ring-logger-timbre "0.7.5"]
+
+                 ; Route all other logging to Logback
+                 [org.slf4j/log4j-over-slf4j "1.7.22"]
+                 [org.slf4j/jul-to-slf4j "1.7.22"]
+                 [org.slf4j/jcl-over-slf4j "1.7.22"]
+
+                 ; Appenders. Set `-Dlogback.configurationFile=...` system property to choose logback-staging or logback-production
+                 [com.papertrailapp/logback-syslog4j "1.0.0"] ; For Papertrail
+                 [net.logstash.logback/logstash-logback-encoder "4.8"] ; For Catalyze
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]

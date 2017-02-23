@@ -11,7 +11,8 @@
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
             [ring.util.http-response :refer [throw!]]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [com.climate.newrelic.trace :refer [defn-traced]]
+            [clojure.tools.logging :as logging]))
 
 
 (def design-doc "api")
@@ -21,6 +22,7 @@
 (defn db
   "Database URL from authorization info"
   [auth]
+  (logging/debug "DEPRECATED call to couch/db")
   (-> (url/url (config/config :cloudant-db-url))
     (assoc :username (config/config :cloudant-username)
            :password (config/config :cloudant-password))))

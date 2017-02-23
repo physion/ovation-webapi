@@ -10,12 +10,11 @@
 
 (facts "About search"
   (fact "transforms Cloudant search"
-    (search/search ..auth.. ..rt.. ..q..) => {:search_results [..result1.. ..result2..]
+    (search/search ..auth.. ..db.. ..rt.. ..q..) => {:search_results [..result1.. ..result2..]
                                               :meta           {:bookmark   ..bookmark..
                                                                :total_rows ..total..}}
     (provided
-      (couch/db ..auth..) => ..db..
-      (search/get-results ..auth.. ..rt.. [{:id     ..id1..
+      (search/get-results ..auth.. ..db.. ..rt.. [{:id     ..id1..
                                             :order  [3.9 107]
                                             :fields {:id   ..id1..
                                                      :type k/PROJECT-TYPE}}
@@ -44,7 +43,7 @@
                  :fields {:id     ..id2..
                           :entity ..eid..
                           :type   k/ANNOTATION-TYPE}}]]
-      (search/get-results ..auth.. ..rt.. rows) => [{:id ..eid..
+      (search/get-results ..auth.. ..db.. ..rt.. rows) => [{:id ..eid..
                                                      :entity_type k/PROJECT-TYPE
                                                      :name ..project..
                                                      :project_names [..project..]
@@ -71,7 +70,7 @@
                                     :type k/FILE-TYPE
                                     :owner ..user2..
                                     :attributes {:name ..file.. :updated-at ..update2..}}) => [..fileprojectid..]
-        (core/get-entities ..auth.. [..eid.. ..fileprojectid..] ..rt..) => [{:_id ..fileprojectid..
+        (core/get-entities ..auth.. ..db.. [..eid.. ..fileprojectid..] ..rt..) => [{:_id ..fileprojectid..
                                                                              :type k/PROJECT-TYPE
                                                                              :owner ..user2..
                                                                              :attributes {:name ..fileproject..
@@ -81,7 +80,7 @@
                                                                              :owner ..user1..
                                                                              :attributes {:name ..project..
                                                                                           :updated-at ..update1..}}]
-        (core/get-entities ..auth.. [..eid.. ..id1..] ..rt..) => [{:_id ..eid..
+        (core/get-entities ..auth.. ..db.. [..eid.. ..id1..] ..rt..) => [{:_id ..eid..
                                                                    :type k/PROJECT-TYPE
                                                                    :owner ..user1..
                                                                    :attributes {:name ..project..

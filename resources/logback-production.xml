@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="logstash" class="net.logstash.logback.appender.LogstashSocketAppender">
+        <host>${LOGSTASH_HOST}</host>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="logstash"/>
+    </root>
+
+
+</configuration>

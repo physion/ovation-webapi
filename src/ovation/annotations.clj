@@ -7,7 +7,7 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ovation.html :as html]
-            [ovation.logging :as logging]
+            [clojure.tools.logging :as logging]
             [ovation.transform.read :as read]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
@@ -16,9 +16,8 @@
 
 ;; READ
 (defn get-annotations
-  [auth ids annotation-type routes]
-  (let [db (couch/db auth)
-        opts {:keys         (vec (map #(vec [% annotation-type]) ids))
+  [auth db ids annotation-type routes]
+  (let [opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}]
 
@@ -96,21 +95,21 @@
      :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
-  [auth routes ids annotation-type records]
+  [auth db routes ids annotation-type records]
   (let [auth-user-id (auth/authenticated-user-id auth)
-        entities (core/get-entities auth ids routes)
+        entities (core/get-entities auth db ids routes)
         entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth routes docs))))
+    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth db routes docs))))
 
 (defn delete-annotations
-  [auth annotation-ids routes]
-  (core/delete-values auth annotation-ids routes))
+  [auth db annotation-ids routes]
+  (core/delete-values auth db annotation-ids routes))
 
 (defn update-annotation
-  [auth rt id annotation]
+  [auth db rt id annotation]
 
   (let [existing (first (core/get-values auth [id] :routes rt))]
 
@@ -120,13 +119,13 @@
     (when-not (#{k/NOTES} (:annotation_type existing))
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (let [entity (first (core/get-entities auth [(:entity existing)] rt))
+    (let [entity (first (core/get-entities auth db [(:entity existing)] rt))
           time     (util/iso-short-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth rt [update]))))))
+      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth db rt [update]))))))
 
 
 

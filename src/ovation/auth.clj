@@ -58,7 +58,9 @@
 
     (future (let [response @(http/get url opts)]
               (when (not (hp/ok? response))
-                (logging/error "Unable to retrieve object permissions")
+                (logging/error "Unable to retrieve object permissions" (-> response
+                                                                         :body
+                                                                         (util/from-json)))
                 (throw! response))
 
               (-> response

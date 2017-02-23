@@ -15,45 +15,41 @@
 (facts "About values"
   (facts "read"
     (facts "`get-values`"
-      (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authenticated-user-id ..auth..) => ..user..]
+      (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
         (fact "gets values"
-          (core/get-values ..auth.. [..id..]) => [..doc..]
+          (core/get-values ..auth.. ..db.. [..id..]) => [..doc..]
           (provided
             (couch/all-docs ..auth.. ..db.. [..id..]) => [..doc..])))))
   (facts "write"
     (facts "`create-values`"
-      (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authenticated-user-id ..auth..) => ..user..]
+      (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
-          (core/create-values ..auth.. ..rt.. [{:type "Project"}]) => (throws Throwable))
+          (core/create-values ..auth.. ..db.. ..rt.. [{:type "Project"}]) => (throws Throwable))
         (fact "bulk-updates values"
-          (core/create-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
+          (core/create-values ..auth.. ..db.. ..rt.. [{:type "Annotation"}]) => ..result..
           (provided
             (auth/check! ..auth.. ::auth/create) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "`delete-values`"
-      (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authenticated-user-id ..auth..) => ..user..]
+      (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
-          (core/delete-values ..auth.. [..id..] anything) => (throws Throwable)
+          (core/delete-values ..auth.. ..db.. [..id..] anything) => (throws Throwable)
           (provided
             (couch/all-docs ..auth.. ..db.. [..id..]) => [{:type "Project" :_id ..id..}]))
         (fact "calls delete-docs"
-          (core/delete-values ..auth.. [..id..] ..rt..) => ..result..
+          (core/delete-values ..auth.. ..db.. [..id..] ..rt..) => ..result..
           (provided
             (couch/all-docs ..auth.. ..db.. [..id..]) => [{:type "Annotation"}]
             (auth/check! ..auth.. ::auth/delete) => identity
             (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
             (tr/values-from-couch ..docs.. ..auth.. ..rt..) => ..result..))))
     (facts "update-values"
-      (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authenticated-user-id ..auth..) => ..user..]
+      (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
         (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\" or \"Relation\""
-          (core/update-values ..auth.. ..rt.. [{:type "Project"}]) => (throws Exception))
+          (core/update-values ..auth.. ..db.. ..rt.. [{:type "Project"}]) => (throws Exception))
         (fact "bulk-updates values"
-          (core/update-values ..auth.. ..rt.. [{:type "Annotation"}]) => ..result..
+          (core/update-values ..auth.. ..db.. ..rt.. [{:type "Annotation"}]) => ..result..
           (provided
             (auth/check! ..auth.. ::auth/update) => identity
             (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
@@ -78,9 +74,8 @@
 
   (facts "`of-type`"
     (fact "it gets all entities of type"
-      (core/of-type ..auth.. ..type.. ..rt..) => ..result..
+      (core/of-type ..auth.. ..db.. ..type.. ..rt..) => ..result..
       (provided
-        (couch/db ..auth..) => ..db..
         (couch/get-view ..auth.. ..db.. k/ENTITIES-BY-TYPE-VIEW {:key ..type.. :reduce false :include_docs true}) => [..docs..]
         (tr/entities-from-couch [..docs..] ..auth.. ..rt..) => ..entities..
         (core/filter-trashed ..entities.. false) => ..result..)))
@@ -88,36 +83,32 @@
   (facts "get-entities"
     (facts "with existing entities"
       (fact "it gets a single entity"
-        (core/get-entities ..auth.. [..id..] ..rt..) => ..result..
+        (core/get-entities ..auth.. ..db.. [..id..] ..rt..) => ..result..
         (provided
-          (couch/db ..auth..) => ..db..
           (couch/all-docs ..auth.. ..db.. [..id..]) => [{:_id ..id1..} {:_id ..id2..}]
           (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ..entities..
           (core/filter-trashed ..entities.. false) => ..result..))))
 
   (facts "get-owner"
     (fact "it gets the entity owner"
-      (core/get-owner ..auth.. ..rt.. {:owner ..owner-id..}) => ..user..
+      (core/get-owner ..auth.. ..db.. ..rt.. {:owner ..owner-id..}) => ..user..
       (provided
-        (core/get-entities ..auth.. [..owner-id..] ..rt..) => [..user..]))))
+        (core/get-entities ..auth.. ..db.. [..owner-id..] ..rt..) => [..user..]))))
 
 
 
 (facts "About Command"
   (facts "create-entity"
-    (let [type "..type.."                                    ; Anything but user
+    (let [type       "..type.."                             ; Anything but user
           attributes {:label ..label..}
           new-entity {:type       type
                       :attributes attributes}]
 
       (fact "it throws unauthorized exception if any :type is User"
-        (core/create-entities ..auth.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception)
-        (provided
-          (couch/db ..auth..) => ..db..))
+        (core/create-entities ..auth.. ..db.. [(assoc new-entity :type "User")] ..routes..) => (throws Exception))
 
-      (against-background [(couch/db ..auth..) => ..db..
-                           (tw/to-couch ..owner-id.. [{:type       type
-                                                         :attributes attributes}]
+      (against-background [(tw/to-couch ..owner-id.. [{:type       type
+                                                       :attributes attributes}]
                              :collaboration_roots []) => [..doc..]
                            (auth/authenticated-user-id ..auth..) => ..owner-id..
                            (couch/bulk-docs ..db.. [..doc..]) => ..result..
@@ -125,38 +116,38 @@
 
 
         (fact "it sends doc to Couch"
-          (core/create-entities ..auth.. [new-entity] ..routes..) => ..result..)
+          (core/create-entities ..auth.. ..db.. [new-entity] ..routes..) => ..result..)
 
         (facts "with parent"
           (fact "it adds collaboration roots from parent"
-            (core/create-entities ..auth.. [new-entity] ..rt.. :parent ..parent..) => ..result..
+            (core/create-entities ..auth.. ..db.. [new-entity] ..rt.. :parent ..parent..) => ..result..
             (provided
               (tr/entities-from-couch ..result.. ..auth.. ..rt..) => ..result..
-              (core/parent-collaboration-roots ..auth.. ..parent.. ..rt..) => ..collaboration_roots..
+              (core/parent-collaboration-roots ..auth.. ..db.. ..parent.. ..rt..) => ..collaboration_roots..
               (tw/to-couch ..owner-id.. [{:type       type
-                                            :attributes attributes}]
+                                          :attributes attributes}]
                 :collaboration_roots ..collaboration_roots..) => [..doc..])))
 
         (facts "with nil parent"
           (fact "it adds self as collaboration root"
-            (core/create-entities ..auth.. [new-entity] ..routes.. :parent nil) => ..result..))
+            (core/create-entities ..auth.. ..db.. [new-entity] ..routes.. :parent nil) => ..result..))
 
         (facts "with Project"
           (fact "creates team for Projects"
-            (core/create-entities ..auth.. [{:type       "Project"
-                                             :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
-                                                                                                   :_id  ..id..}]
+            (core/create-entities ..auth.. ..db.. [{:type       "Project"
+                                                    :attributes attributes}] ..routes.. :parent nil) => [{:type "Project"
+                                                                                                          :_id  ..id..}]
             (provided
               (tw/to-couch ..owner-id.. [{:type       "Project"
-                                            :attributes attributes}]
+                                          :attributes attributes}]
                 :collaboration_roots []) => [..doc..]
               (tr/entities-from-couch ..result.. ..auth.. ..routes..) => [{:type "Project"
-                                                                             :_id  ..id..}]))))))
+                                                                           :_id  ..id..}]))))))
 
   (facts "update-entity"
     (let [type           "some-type"
           attributes     {:label ..label1..}
-          new-entity     {:type   type
+          new-entity     {:type       type
                           :attributes attributes}
           id             (util/make-uuid)
           rev            "1"
@@ -170,64 +161,62 @@
                            (assoc-in [:attributes :foo] ..foo..))
           updated-entity (-> entity
                            (assoc :_rev rev2))]
-      (against-background [(couch/db ..auth..) => ..db..]
-        (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
-                             (tw/to-couch ..owner-id.. [update]) => [update]
-                             (auth/authenticated-user-id ..auth..) => ..owner-id..
-                             (couch/bulk-docs ..db.. [..doc..]) => [entity]
-                             (core/get-entities ..auth.. [id] ..rt..) => [entity]
-                             (couch/bulk-docs ..db.. [update]) => [updated-entity]
-                             (tr/entities-from-couch [updated-entity] ..auth.. ..rt..) => [updated-entity]]
-          (fact "it updates attributes"
-            (core/update-entities ..auth.. [update] ..rt..) => [updated-entity]
+      (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
+                           (tw/to-couch ..owner-id.. [update]) => [update]
+                           (auth/authenticated-user-id ..auth..) => ..owner-id..
+                           (couch/bulk-docs ..db.. [..doc..]) => [entity]
+                           (core/get-entities ..auth.. ..db.. [id] ..rt..) => [entity]
+                           (couch/bulk-docs ..db.. [update]) => [updated-entity]
+                           (tr/entities-from-couch [updated-entity] ..auth.. ..rt..) => [updated-entity]]
+        (fact "it updates attributes"
+          (core/update-entities ..auth.. ..db.. [update] ..rt..) => [updated-entity]
+          (provided
+            (auth/can? ..auth.. ::auth/update anything) => true))
+        (fact "it updates allowed keys"
+          (let [update-with-revs         (assoc update :revisions ..revs..)
+                updated-entity-with-revs (assoc updated-entity :revisions ..revs..)]
+            (core/update-entities ..auth.. ..db.. [update-with-revs] ..rt.. :allow-keys [:revisions]) => [updated-entity-with-revs]
             (provided
-              (auth/can? ..auth.. ::auth/update anything) => true))
-          (fact "it updates allowed keys"
-            (let [update-with-revs         (assoc update :revisions ..revs..)
-                  updated-entity-with-revs (assoc updated-entity :revisions ..revs..)]
-              (core/update-entities ..auth.. [update-with-revs] ..rt.. :allow-keys [:revisions]) => [updated-entity-with-revs]
-              (provided
-                (auth/can? ..auth.. ::auth/update anything) => true
-                (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
-                (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs]
-                (tr/entities-from-couch [updated-entity-with-revs] ..auth.. ..rt..) => [updated-entity-with-revs])))
-          (fact "it updates collaboration roots"
-            (let [update2 (-> update
-                            (assoc-in [:links :_collaboration_roots] [..roots..]))
-                  updated-entity2 (assoc-in updated-entity [:links :_collaboration_roots] [..roots..])]
-              (core/update-entities ..auth.. [update2] ..rt.. :update-collaboration-roots true) => [updated-entity2]
-              (provided
-                (auth/can? ..auth.. ::auth/update anything) => true
-                (tw/to-couch ..owner-id.. [update2]) => [update2]
-                (couch/bulk-docs ..db.. [update2]) => [updated-entity2]
-                (tr/entities-from-couch [updated-entity2] ..auth.. ..rt..) => [updated-entity2])))
+              (auth/can? ..auth.. ::auth/update anything) => true
+              (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
+              (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs]
+              (tr/entities-from-couch [updated-entity-with-revs] ..auth.. ..rt..) => [updated-entity-with-revs])))
+        (fact "it updates collaboration roots"
+          (let [update2         (-> update
+                                  (assoc-in [:links :_collaboration_roots] [..roots..]))
+                updated-entity2 (assoc-in updated-entity [:links :_collaboration_roots] [..roots..])]
+            (core/update-entities ..auth.. ..db.. [update2] ..rt.. :update-collaboration-roots true) => [updated-entity2]
+            (provided
+              (auth/can? ..auth.. ::auth/update anything) => true
+              (tw/to-couch ..owner-id.. [update2]) => [update2]
+              (couch/bulk-docs ..db.. [update2]) => [updated-entity2]
+              (tr/entities-from-couch [updated-entity2] ..auth.. ..rt..) => [updated-entity2])))
 
-          (fact "it fails if authenticated user doesn't have write permission"
-            (core/update-entities ..auth.. [update] ..rt..) => (throws Exception)
-            (provided
-              (auth/can? ..auth.. ::auth/update anything) => false))
+        (fact "it fails if authenticated user doesn't have write permission"
+          (core/update-entities ..auth.. ..db.. [update] ..rt..) => (throws Exception)
+          (provided
+            (auth/can? ..auth.. ::auth/update anything) => false))
 
-          (fact "it throws unauthorized if entity is a User"
-            (core/update-entities ..auth.. [entity] ..rt..) => (throws Exception)
-            (provided
-              (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")]))))))
+        (fact "it throws unauthorized if entity is a User"
+          (core/update-entities ..auth.. ..db.. [entity] ..rt..) => (throws Exception)
+          (provided
+            (core/get-entities ..auth.. ..db.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
 
   (facts "restore-deleted-entities"
-    (let [id         (str (util/make-uuid))
-          rev "1"
-          entity        {:_id        id
-                         :type       "some-type"
-                         :rev rev
-                         :owner ..owner..
-                         :attributes {:my "attributes"}
-                         :trash_info {:trashing_user ..owner-id..
-                                      :trashing_date ..date..
-                                      :trash_root    id}}
+    (let [id       (str (util/make-uuid))
+          rev      "1"
+          entity   {:_id        id
+                    :type       "some-type"
+                    :rev        rev
+                    :owner      ..owner..
+                    :attributes {:my "attributes"}
+                    :trash_info {:trashing_user ..owner-id..
+                                 :trashing_date ..date..
+                                 :trash_root    id}}
           restored (core/restore-trashed-entity ..auth.. entity)]
-      (core/restore-deleted-entities ..auth.. [id] ..rt..) => ..result..
+      (core/restore-deleted-entities ..auth.. ..db.. [id] ..rt..) => ..result..
       (provided
-        (couch/db ..auth..) => ..db..
         (auth/authenticated-user-id ..auth..) => ..owner..
         (core/get-entities ..auth.. [id] ..rt.. :include-trashed true) => [entity]
         (tw/to-couch ..owner.. [restored]) => ..couch-docs..
@@ -236,47 +225,46 @@
         (auth/can? ..auth.. ::auth/update restored) => true)))
 
   (facts "delete-entity"
-    (let [type "some-type"
+    (let [type       "some-type"
           attributes {:label ..label1..}
           new-entity {:type       type
                       :attributes attributes}
-          id (str (util/make-uuid))
-          rev "1"
-          entity (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
-          update (assoc entity :trash_info {:trashing_user ..owner-id..
-                                            :trashing_date ..date..
-                                            :trash_root    id})]
-      (against-background [(couch/db ..auth..) => ..db..
-                           (auth/authenticated-user-id ..auth..) => ..owner-id..]
+          id         (str (util/make-uuid))
+          rev        "1"
+          entity     (assoc new-entity :_id id :_rev rev :owner ..owner-id..)
+          update     (assoc entity :trash_info {:trashing_user ..owner-id..
+                                                :trashing_date ..date..
+                                                :trash_root    id})]
+      (against-background [(auth/authenticated-user-id ..auth..) => ..owner-id..]
 
-        (against-background [(core/get-entities ..auth.. [id] ..rt..) => [entity]
+        (against-background [(core/get-entities ..auth.. ..db.. [id] ..rt..) => [entity]
                              (tw/to-couch ..owner-id.. [update]) => ..update-docs..
                              (couch/bulk-docs ..db.. ..update-docs..) => ..deleted..
                              (tr/entities-from-couch ..deleted.. ..auth.. ..rt..) => ..result..
                              (util/iso-now) => ..date..]
           (fact "it trashes entity"
-            (core/delete-entities ..auth.. [id] ..rt..) => ..result..
+            (core/delete-entities ..auth.. ..db.. [id] ..rt..) => ..result..
             (provided
               (auth/can? ..auth.. ::auth/delete anything) => true))
 
           (fact "it fails if entity already trashed"
-            (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
+            (core/delete-entities ..auth.. ..db.. [id] ..rt..) => (throws Exception)
             (provided
-              (core/get-entities ..auth.. [id] ..rt..) => [update]))
+              (core/get-entities ..auth.. ..db.. [id] ..rt..) => [update]))
 
           (fact "it fails if authenticated user doesn't have write permission"
-            (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
+            (core/delete-entities ..auth.. ..db.. [id] ..rt..) => (throws Exception)
             (provided
               (auth/can? ..auth.. ::auth/delete anything) => false)))
 
         (fact "it throws unauthorized if entity is a User"
-          (core/delete-entities ..auth.. [id] ..rt..) => (throws Exception)
+          (core/delete-entities ..auth.. ..db.. [id] ..rt..) => (throws Exception)
           (provided
-            (core/get-entities ..auth.. [id] ..rt..) => [(assoc entity :type "User")])))))
+            (core/get-entities ..auth.. ..db.. [id] ..rt..) => [(assoc entity :type "User")])))))
 
   (facts "trash-entity helper"
     (fact "adds required info"
-      (let [doc {:_id ..id..}
+      (let [doc  {:_id ..id..}
             info {:trashing_user ..user..
                   :trashing_date ..date..
                   :trash_root    ..id..}]
@@ -294,10 +282,10 @@
 
   (facts "parent-collaboration-roots"
     (fact "it allows nil parent"
-      (core/parent-collaboration-roots ..auth.. nil ..rt..) => [])
+      (core/parent-collaboration-roots ..auth.. ..db.. nil ..rt..) => [])
 
     (fact "it returns parent links._collaboation_roots"
-      (core/parent-collaboration-roots ..auth.. ..parent.. ..rt..) => ..roots..
+      (core/parent-collaboration-roots ..auth.. ..db.. ..parent.. ..rt..) => ..roots..
       (provided
-        (core/get-entities ..auth.. [..parent..] ..rt..) => [{:other_stuff ..other..
-                                                              :links       {:_collaboration_roots ..roots..}}]))))
+        (core/get-entities ..auth.. ..db.. [..parent..] ..rt..) => [{:other_stuff ..other..
+                                                                     :links       {:_collaboration_roots ..roots..}}]))))
