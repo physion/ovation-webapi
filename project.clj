@@ -18,6 +18,7 @@
                  [ring-cors "0.1.8"]
                  [ring-logger "0.7.7"]
                  [buddy/buddy-auth "1.4.1"]
+                 [ring/ring-jetty-adapter "1.5.0"]
 
 
                  ;; HTTP and CouchDB
