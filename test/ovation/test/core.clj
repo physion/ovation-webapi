@@ -89,6 +89,12 @@
           (tr/entities-from-couch [{:_id ..id1..} {:_id ..id2..}] ..auth.. ..rt..) => ..entities..
           (core/filter-trashed ..entities.. false) => ..result..))))
 
+  (facts "get-entity"
+    (fact "calls get-entities"
+      (core/get-entity ..auth.. ..db.. ..id.. ..rt..) => ..result..
+      (provided
+        (core/get-entities ..auth.. ..db.. [..id..] ..rt.. :include-trashed false) => [..result..])))
+
   (facts "get-owner"
     (fact "it gets the entity owner"
       (core/get-owner ..auth.. ..db.. ..rt.. {:owner ..owner-id..}) => ..user..
