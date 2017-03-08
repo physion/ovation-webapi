@@ -169,7 +169,7 @@
 
               (context "/projects" []
                 :tags ["projects"]
-                (get-resources db "Project")
+                (get-resources db org "Project")
                 (post-resources db org "Project" [NewProject])
                 (context "/:id" []
                   :path-params [id :- s/Str]

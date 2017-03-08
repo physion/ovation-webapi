@@ -16,6 +16,7 @@
             [ovation.constants :as k]
             [ovation.teams :as teams]
             [ovation.routes :as routes]
+            [ovation.request-context :as request-context]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
@@ -150,9 +151,9 @@
                                  (core/get-entities auth db org (map :_id created-entities) routes)
                                  created-entities)
               rel-map          (relationships-map new-entities entities) ;; NB Assumes result of create-entities is in the same order as body!!
-              embedded-links   (embedded-links auth db entities rel-map routes)
-              links            (core/create-values auth db routes org (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
-              updates          (core/update-entities auth db org (mapcat :updates embedded-links) routes :authorize false :update-collaboration-roots true)]
+              embedded-links   (embedded-links ctx db entities rel-map)
+              links            (core/create-values ctx db (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
+              updates          (core/update-entities ctx db (mapcat :updates embedded-links) :authorize false :update-collaboration-roots true)]
           ;; create teams for new Project entities
           (dorun (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
@@ -180,7 +181,8 @@
                 (s/optional-key :updates) [Entity]}
        :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
-       (post-resources* request# ~db ~org ~type-name ~type-kw (~type-kw entities#)))))
+       (let [ctx# (request-context/make-context request# org#)]
+         (post-resources* ctx# ~db ~type-name ~type-kw (~type-kw entities#))))))
 
 (defmacro get-resource
   [db org entity-type id]
@@ -190,10 +192,10 @@
        :name ~(keyword (str "get-" (lower-case type-name)))
        :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
-       (let [auth# (auth/identity request#)]
-         (if-let [entities# (core/get-entities auth# ~db ~org [~id] (r/router request#))]
-           (if-let [projects# (seq (filter #(= ~type-name (:type %)) entities#))]
-             (ok {~single-type-kw (first projects#)})
+       (let [ctx# (request-context/make-context request# org#)]
+         (if-let [entities# (core/get-entities ctx# ~db [~id])]
+           (if-let [filtered# (seq (filter #(= ~type-name (:type %)) entities#))]
+             (ok {~single-type-kw (first filtered#)})
              (not-found {:errors {:detail "Not found"}})))))))
 
 (defn-traced make-child-link*
