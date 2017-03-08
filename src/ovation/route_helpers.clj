@@ -357,7 +357,7 @@
   (let [auth (auth/identity request)]
     (try+
       (let [routes                   (r/router request)
-            parent                   (core/get-entity auth id routes)
+            parent                   (core/get-entity auth db id routes)
             revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
             result                   (revisions/create-revisions auth db routes parent (map :revision revisions-with-resources))
