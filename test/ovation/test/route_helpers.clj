@@ -36,145 +36,166 @@
 
 (facts "About post-resource*"
   (fact "adds embedded relationships"
-    (let [project      {:type k/PROJECT-TYPE
-                        :_id  ..projectid..}
-          rev          {:type k/REVISION-TYPE
-                        :_id  ..revid..}
+    (let [project      {:type         k/PROJECT-TYPE
+                        :_id          ..projectid..
+                        :organization ..org..}
+          rev          {:type         k/REVISION-TYPE
+                        :_id          ..revid..
+                        :organization ..org..}
           new-activity {:type          k/ACTIVITY-TYPE
                         :relationships {:inputs {:related     [(:_id rev)]
                                                  :type        k/REVISION-TYPE
                                                  :inverse_rel :activities}}}
-          activity     (assoc new-activity :_id (util/make-uuid))]
-      (:body (r/post-resource* ..req.. ..db.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
-                                                                                                :links    ..links..
-                                                                                                :updates  ..updates..}
+          activity     (-> new-activity
+                         (assoc :_id (util/make-uuid))
+                         (assoc :organization ..org..))]
+      (:body (r/post-resource* ..req.. ..db.. ..org.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
+                                                                                                        :links    ..links..
+                                                                                                        :updates  ..updates..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
         (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
-        (core/get-entities ..auth.. ..db.. [..projectid..] ..rt..) => [project]
-        (core/create-entities ..auth.. ..db.. [(dissoc new-activity :relationships)] ..rt.. :parent ..projectid..) => [activity]
-        (links/add-links ..auth.. ..db.. [activity] :inputs [(:_id rev)] ..rt.. :inverse-rel :activities) => {:updates ..updates..
-                                                                                                              :links   ..embedded..}
-        (links/add-links ..auth.. ..db.. [project] "activities" [(:_id activity)] ..rt.. :inverse-rel "parents") => {:updates ..updates..
-                                                                                                                     :links   ..links..}
-        (core/create-values ..auth.. ..db.. ..rt.. anything) => ..links..
-        (core/update-entities ..auth.. ..db.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..)))
+        (core/get-entities ..auth.. ..db.. ..org.. [..projectid..] ..rt..) => [project]
+        (core/create-entities ..auth.. ..db.. ..org.. [(dissoc new-activity :relationships)] ..rt.. :parent ..projectid..) => [activity]
+        (links/add-links ..auth.. ..db.. ..org.. [activity] :inputs [(:_id rev)] ..rt.. :inverse-rel :activities) => {:updates ..updates..
+                                                                                                                      :links   ..embedded..}
+        (links/add-links ..auth.. ..db.. ..org.. [project] "activities" [(:_id activity)] ..rt.. :inverse-rel "parents") => {:updates ..updates..
+                                                                                                                             :links   ..links..}
+        (core/create-values ..auth.. ..db.. ..rt.. ..org.. anything) => ..links..
+        (core/update-entities ..auth.. ..db.. ..org.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..)))
 
 
   (fact "handles embedded relationships with :create_as_inverse == true"
-    (let [project      {:type k/PROJECT-TYPE
-                        :_id  ..projectid..}
+    (let [project      {:type         k/PROJECT-TYPE
+                        :_id          ..projectid..
+                        :organization ..org..}
           new-activity {:type          k/ACTIVITY-TYPE
                         :relationships {:parents {:related           [(:_id project)]
                                                   :type              k/PROJECT-TYPE
                                                   :inverse_rel       :activities
                                                   :create_as_inverse true}}}
-          activity     (assoc new-activity :_id (util/make-uuid))]
-      (:body (r/post-resource* ..req.. ..db.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
-                                                                                                :links    ..links..
-                                                                                                :updates  ..updates..}
+          activity     (-> new-activity
+                         (assoc :_id (util/make-uuid))
+                         (assoc :organization ..org..))]
+      (:body (r/post-resource* ..req.. ..db.. ..org.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
+                                                                                                        :links    ..links..
+                                                                                                        :updates  ..updates..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..projectid..] ..rt..) => [project]
+        (core/get-entities ..auth.. ..db.. ..org.. [..projectid..] ..rt..) => [project]
         (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
-        (links/add-links ..auth.. ..db.. anything :activities [(:_id activity)] ..rt.. :inverse-rel :parents) => {:updates ..updates..
-                                                                                                                  :links   ..embedded..}
-        (links/add-links ..auth.. ..db.. anything "activities" [(:_id activity)] ..rt.. :inverse-rel "parents") => {:updates ..updates..
-                                                                                                                    :links   ..links..}
+        (links/add-links ..auth.. ..db.. ..org.. anything :activities [(:_id activity)] ..rt.. :inverse-rel :parents) => {:updates ..updates..
+                                                                                                                          :links   ..embedded..}
+        (links/add-links ..auth.. ..db.. ..org.. anything "activities" [(:_id activity)] ..rt.. :inverse-rel "parents") => {:updates ..updates..
+                                                                                                                            :links   ..links..}
 
-        (core/create-entities ..auth.. ..db.. [(dissoc new-activity :relationships)] ..rt.. :parent ..projectid..) => [activity]
-        (core/create-values ..auth.. ..db.. ..rt.. anything) => ..links..
-        (core/update-entities ..auth.. ..db.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..)))
+        (core/create-entities ..auth.. ..db.. ..org.. [(dissoc new-activity :relationships)] ..rt.. :parent ..projectid..) => [activity]
+        (core/create-values ..auth.. ..db.. ..rt.. ..org.. anything) => ..links..
+        (core/update-entities ..auth.. ..db.. ..org.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..)))
 
   (fact "adds relationships for a new Source"
-    (let [source-entity {:type "Source"
-                         :_id  ..id2..}
-          file-entity   {:type "File"
-                         :_id  ..fileid..}]
-      (:body (r/post-resource* ..req.. ..db.. "file" ..fileid.. [{:type       "Source"
-                                                                  :attributes {}}])) => {:entities (seq [source-entity])
-                                                                                         :links    ..links..
-                                                                                         :updates  ..updates..}
+    (let [source-entity {:type         "Source"
+                         :_id          ..id2..
+                         :organization ..org..}
+          file-entity   {:type         "File"
+                         :_id          ..fileid..
+                         :organization ..org..}]
+      (:body (r/post-resource* ..req.. ..db.. ..org.. "file" ..fileid.. [{:type       "Source"
+                                                                          :attributes {}}])) => {:entities (seq [source-entity])
+                                                                                                 :links    ..links..
+                                                                                                 :updates  ..updates..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..fileid..] ..rt..) => (seq [file-entity])
-        (core/get-entities ..auth.. ..db.. [..id2..] ..rt..) => (seq [source-entity])
-        (core/create-entities ..auth.. ..db.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
-        (core/create-values ..auth.. ..db.. ..rt.. anything) => ..links..
-        (core/update-entities ..auth.. ..db.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..))))
+        (core/get-entities ..auth.. ..db.. ..org.. [..fileid..] ..rt..) => (seq [file-entity])
+        (core/get-entities ..auth.. ..db.. ..org.. [..id2..] ..rt..) => (seq [source-entity])
+        (core/create-entities ..auth.. ..db.. ..org.. [{:type "Source" :attributes {}}] ..rt.. :parent ..fileid..) => [source-entity]
+        (core/create-values ..auth.. ..db.. ..rt.. ..org.. anything) => ..links..
+        (core/update-entities ..auth.. ..db.. ..org.. anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..))))
 
 (facts "About move-file*"
   (fact "fails if entity not file or folder"
-    (let [src  {:type "Folder"
-                :_id  ..src..}
-          file {:type "Whoa"
-                :_id  ..file..}
-          dest {:type "Folder"
-                :_id  ..dest..}]
+    (let [src  {:type         "Folder"
+                :_id          ..src..
+                :organization ..org..}
+          file {:type         "Whoa"
+                :_id          ..file..
+                :organization ..org..}
+          dest {:type         "Folder"
+                :_id          ..dest..
+                :organization ..org..}]
 
-      (r/move-contents* ..req.. ..db.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..src..] ..rt..) => (seq [src])
-        (core/get-entities ..auth.. ..db.. [..dest..] ..rt..) => (seq [dest])
-        (core/get-entities ..auth.. ..db.. [..file..] ..rt..) => (seq [file]))))
+        (core/get-entities ..auth.. ..db.. ..org.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. ..db.. ..org.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. ..db.. ..org.. [..file..] ..rt..) => (seq [file]))))
 
   (fact "fails if src not a folder"
-    (let [src  {:type "Whoa"
-                :_id  ..src..}
-          file {:type "File"
-                :_id  ..file..}
-          dest {:type "Folder"
-                :_id  ..dest..}]
+    (let [src  {:type         "Whoa"
+                :_id          ..src..
+                :organization ..org..}
+          file {:type         "File"
+                :_id          ..file..
+                :organization ..org..}
+          dest {:type         "Folder"
+                :_id          ..dest..
+                :organization ..org..}]
 
-      (r/move-contents* ..req.. ..db.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..src..] ..rt..) => (seq [src])
-        (core/get-entities ..auth.. ..db.. [..dest..] ..rt..) => (seq [dest])
-        (core/get-entities ..auth.. ..db.. [..file..] ..rt..) => (seq [file]))))
+        (core/get-entities ..auth.. ..db.. ..org.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. ..db.. ..org.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. ..db.. ..org.. [..file..] ..rt..) => (seq [file]))))
 
   (fact "fails if dest not a folder"
-    (let [src  {:type "Folder"
-                :_id  ..src..}
-          file {:type "File"
-                :_id  ..file..}
-          dest {:type "Whoa"
-                :_id  ..dest..}]
+    (let [src  {:type         "Folder"
+                :_id          ..src..
+                :organization ..org..}
+          file {:type         "File"
+                :_id          ..file..
+                :organization ..org..}
+          dest {:type         "Whoa"
+                :_id          ..dest..
+                :organization ..org..}]
 
-      (r/move-contents* ..req.. ..db.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+      (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..src..] ..rt..) => (seq [src])
-        (core/get-entities ..auth.. ..db.. [..dest..] ..rt..) => (seq [dest])
-        (core/get-entities ..auth.. ..db.. [..file..] ..rt..) => (seq [file]))))
+        (core/get-entities ..auth.. ..db.. ..org.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. ..db.. ..org.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. ..db.. ..org.. [..file..] ..rt..) => (seq [file]))))
 
   (fact "adds relationships"
-    (let [src  {:type "Folder"
-                :_id  ..src..}
-          file {:type "File"
-                :_id  ..file..}
-          dest {:type "Folder"
-                :_id  ..dest..}]
+    (let [src  {:type         "Folder"
+                :_id          ..src..
+                :organization ..org..}
+          file {:type         "File"
+                :_id          ..file..
+                :organization ..org..}
+          dest {:type         "Folder"
+                :_id          ..dest..
+                :organization ..org..}]
 
-      (r/move-contents* ..req.. ..db.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
-                                                                                             :links   ..created-links..
-                                                                                             :updates ..updated-entities..}
+      (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
+                                                                                                     :links   ..created-links..
+                                                                                                     :updates ..updated-entities..}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         (routes/router ..req..) => ..rt..
-        (core/get-entities ..auth.. ..db.. [..src..] ..rt..) => (seq [src])
-        (core/get-entities ..auth.. ..db.. [..dest..] ..rt..) => (seq [dest])
-        (core/get-entities ..auth.. ..db.. [..file..] ..rt..) => (seq [file])
-        (links/add-links ..auth.. ..db.. [dest] "files" [..file..] ..rt.. :inverse-rel "parents") => {:links   ..links..
-                                                                                                      :updates ..updates..}
-        (links/delete-links ..auth.. ..db.. ..rt.. src "files" ..file..) => ..deleted..
-        (core/create-values ..auth.. ..db.. ..rt.. ..links..) => ..created-links...
-        (core/update-entities ..auth.. ..db.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))
+        (core/get-entities ..auth.. ..db.. ..org.. [..src..] ..rt..) => (seq [src])
+        (core/get-entities ..auth.. ..db.. ..org.. [..dest..] ..rt..) => (seq [dest])
+        (core/get-entities ..auth.. ..db.. ..org.. [..file..] ..rt..) => (seq [file])
+        (links/add-links ..auth.. ..db.. ..org.. [dest] "files" [..file..] ..rt.. :inverse-rel "parents") => {:links   ..links..
+                                                                                                              :updates ..updates..}
+        (links/delete-links ..auth.. ..db.. ..rt.. ..org.. src "files" ..file..) => ..deleted..
+        (core/create-values ..auth.. ..db.. ..rt.. ..org.. ..links..) => ..created-links...
+        (core/update-entities ..auth.. ..db.. ..org.. ..updates.. ..rt.. :authorize false :update-collaboration-roots true) => ..updated-entities..))))
 

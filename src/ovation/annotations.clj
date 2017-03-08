@@ -16,7 +16,7 @@
 
 ;; READ
 (defn get-annotations
-  [auth db ids annotation-type routes]
+  [auth db org ids annotation-type routes]
   (let [opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}]
@@ -95,21 +95,21 @@
      :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
-  [auth db routes ids annotation-type records]
+  [auth db routes org ids annotation-type records]
   (let [auth-user-id (auth/authenticated-user-id auth)
-        entities (core/get-entities auth db ids routes)
+        entities (core/get-entities auth db org ids routes)
         entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth db routes docs))))
+    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth db routes org docs))))
 
 (defn delete-annotations
-  [auth db annotation-ids routes]
-  (core/delete-values auth db annotation-ids routes))
+  [auth db org annotation-ids routes]
+  (core/delete-values auth db org annotation-ids routes))
 
 (defn update-annotation
-  [auth db rt id annotation]
+  [auth db rt org id annotation]
 
   (let [existing (first (core/get-values auth [id] :routes rt))]
 
@@ -119,13 +119,13 @@
     (when-not (#{k/NOTES} (:annotation_type existing))
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (let [entity (first (core/get-entities auth db [(:entity existing)] rt))
+    (let [entity (first (core/get-entities auth db org [(:entity existing)] rt))
           time     (util/iso-short-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth db rt [update]))))))
+      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth db rt org [update]))))))
 
 
 

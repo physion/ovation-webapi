@@ -58,20 +58,20 @@
 
 (facts "About all-docs"
   (fact "it gets docs from _all_docs"
-    (couch/all-docs ..auth.. ..db.. ..ids..) => '(..doc..)
+    (couch/all-docs ..auth.. ..db.. ..org.. ..ids..) => '(..doc..)
     (provided
       (couch/get-view ..auth.. ..db.. k/ALL-DOCS-VIEW {:keys         ..ids..
                                                        :include_docs true}) => [..doc..]
       (partition-all couch/ALL-DOCS-PARTITION ..ids..) => [..ids..]))
 
   (fact "it handles 20 ids"
-    (couch/all-docs ..auth.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+    (couch/all-docs ..auth.. ..db.. ..org.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
     (provided
       (couch/get-view ..auth.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
                                                        :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]))
 
   (fact "it handles >20 ids"
-    (couch/all-docs ..auth.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]
+    (couch/all-docs ..auth.. ..db.. ..org.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]
     (provided
       (couch/get-view ..auth.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
                                                        :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]

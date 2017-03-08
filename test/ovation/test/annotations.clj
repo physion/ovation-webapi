@@ -60,7 +60,7 @@
                 :_rev            ..rev..
                 :entity          id2
                 :user            user2}]
-        (a/get-annotations ..auth.. ..db.. [id1 id2] ..type.. ..rt..) => ..result..
+        (a/get-annotations ..auth.. ..db.. ..org.. [id1 id2] ..type.. ..rt..) => ..result..
         ;{(keyword id1) {(keyword user1) [a1]
         ;                                                                   (keyword user2) [a2]}
         ;                                                    (keyword id2) {(keyword user1) [a3]
@@ -97,13 +97,13 @@
                       :type  ..type..
                       :links {:_collaboration_roots [..root2..]}}]
 
-        (a/create-annotations ..auth.. ..db.. ..rt.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => [..result1.. ..result2..]
+        (a/create-annotations ..auth.. ..db.. ..rt.. ..org.. [..id1.. ..id2..] ..type.. [{:tag ..tag..}]) => [..result1.. ..result2..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. ..db.. [..id1.. ..id2..] ..rt..) => [entity1
+          (core/get-entities ..auth.. ..db.. ..org.. [..id1.. ..id2..] ..rt..) => [entity1
                                                                     entity2]
-          (core/create-values ..auth.. ..db.. ..rt.. expected) => [{:entity ..id1..} {:entity ..id2..}]
+          (core/create-values ..auth.. ..db.. ..rt.. ..org.. expected) => [{:entity ..id1..} {:entity ..id2..}]
           (a/notify ..auth.. entity1 {:entity ..id1..}) => ..result1..
           (a/notify ..auth.. entity2 {:entity ..id2..}) => ..result2..))))
 
@@ -118,19 +118,19 @@
                          :annotation_type c/NOTES
                          :type            c/ANNOTATION-TYPE
                          :annotation      {:note ..old..}}]
-            (a/update-annotation ..auth.. ..db.. ..rt.. ..uuid.. {:note ..new..}) => ..result..
+            (a/update-annotation ..auth.. ..db.. ..rt.. ..org.. ..uuid.. {:note ..new..}) => ..result..
             (provided
               (util/iso-short-now) => ..time..
               (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
-              (core/get-entities ..auth.. ..db.. [..entity..] ..rt..) => {:_id ..entity..
-                                                                   :type k/PROJECT-TYPE}
-              (core/update-values ..auth.. ..db.. ..rt.. [{:_id             ..uuid..
-                                                    :entity          ..entity..
-                                                    :user            ..user..
-                                                    :annotation_type c/NOTES
-                                                    :type            c/ANNOTATION-TYPE
-                                                    :annotation      {:note ..new..}
-                                                    :edited_at       ..time..}]) => [..result..])))
+              (core/get-entities ..auth.. ..db.. ..org.. [..entity..] ..rt..) => {:_id ..entity..
+                                                                   :type               k/PROJECT-TYPE}
+              (core/update-values ..auth.. ..db.. ..rt.. ..org.. [{:_id ..uuid..
+                                                    :entity             ..entity..
+                                                    :user               ..user..
+                                                    :annotation_type    c/NOTES
+                                                    :type               c/ANNOTATION-TYPE
+                                                    :annotation         {:note ..new..}
+                                                    :edited_at          ..time..}]) => [..result..])))
 
 
         (fact "raises 422 for non-note annotation"
@@ -140,7 +140,7 @@
                      :annotation_type c/TAGS
                      :type            c/ANNOTATION-TYPE
                      :annotation      {:tag ..tag..}}]
-            (a/update-annotation ..auth.. ..db.. ..rt.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
+            (a/update-annotation ..auth.. ..db.. ..rt.. ..org.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
             (provided
               (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [tag])))))
 
@@ -153,13 +153,13 @@
                      :annotation_type c/TAGS
                      :type            c/ANNOTATION-TYPE
                      :annotation      {:tag ..tag..}}]
-            (a/update-annotation ..auth.. ..db.. ..rt.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
+            (a/update-annotation ..auth.. ..db.. ..rt.. ..org.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
             (provided
               (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [tag]))))))
 
   (facts "About `delete-annotations`"
     (fact "calls `delete-values"
-      (a/delete-annotations ..auth.. ..db.. [..id1.. ..id2..] ..rt..) => ..result..
+      (a/delete-annotations ..auth.. ..db.. ..org.. [..id1.. ..id2..] ..rt..) => ..result..
       (provided
-        (core/delete-values ..auth.. ..db.. [..id1.. ..id2..] ..rt..) => ..result..))))
+        (core/delete-values ..auth.. ..db.. ..org.. [..id1.. ..id2..] ..rt..) => ..result..))))
 

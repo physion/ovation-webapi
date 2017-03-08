@@ -31,7 +31,7 @@
 
 (defn-traced get-link-targets
   "Gets the document targets for id--rel->"
-  [auth db id rel routes & {:keys [label name include-trashed] :or {label           nil
+  [auth db org id rel routes & {:keys [label name include-trashed] :or {label       nil
                                                                     name            nil
                                                                     include-trashed false}}]
   (let [opts {:startkey      (if name [id rel name] [id rel])
@@ -157,12 +157,12 @@
   ```{  :updates    <updated documents>
         :links      <new LinkInfo documents>}```
    "
-  [auth db sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
+  [auth db org sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
                                                                                  name nil
                                                                                  strict false]}]
 
   (let [authenticated-user-id (auth/authenticated-user-id auth)
-        targets               (core/get-entities auth db target-ids routes)]
+        targets               (core/get-entities auth db org target-ids routes)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
       (throw+ {:type ::target-not-found :message "Target(s) not found"}))
@@ -174,10 +174,10 @@
 
 
 (defn-traced delete-links
-  ([auth db routes doc rel target-id & {:keys [name] :or [name nil]}]
+  ([auth db routes org doc rel target-id & {:keys [name] :or [name nil]}]
    (auth/check! auth ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
-     (core/delete-values auth db [link-id] routes)))
-  ([auth db routes doc link-id]
+     (core/delete-values auth db org [link-id] routes)))
+  ([auth db routes org doc link-id]
    (auth/check! auth ::auth/update doc)
-   (core/delete-values auth db [link-id] routes)))
+   (core/delete-values auth db org [link-id] routes)))

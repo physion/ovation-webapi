@@ -71,8 +71,11 @@
 
 (defn-traced all-docs
   "Gets all documents with given document IDs"
-  [auth db ids]
+  [ctx db ids]
   (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
+        {auth :auth
+         org  :org
+         rt   :routes} ctx
         thread-results (map
                          (fn [p]
                            (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p

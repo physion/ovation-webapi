@@ -100,35 +100,40 @@
     doc))
 
 (defn couch-to-entity
-  [auth router & {:keys [teams] :or {teams nil}}]
-  (fn [doc]
-    (case (:error doc)
-      "conflict" (conflict!)
-      "forbidden" (forbidden!)
-      "unauthorized" (unauthorized!)
-      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
-        (-> doc
-          (remove-user-attributes)
-          (dissoc :named_links)                           ;; For v3
-          (dissoc :links)                                 ;; For v3
-          (dissoc :relationships)
-          (add-self-link router)
-          (add-heads-link router)
-          (add-upload-links router)
-          (add-zip-link router)
-          (add-annotation-links router)
-          (add-relationship-links router)
-          (convert-file-revision-status)
-          (assoc-in [:links :_collaboration_roots] collaboration-roots)
-          (add-entity-permissions auth teams))))))
+  [ctx & {:keys [teams] :or {teams nil}}]
+  (let [{auth   :auth
+         router :routes} ctx]
+    (fn [doc]
+      (case (:error doc)
+        "conflict" (conflict!)
+        "forbidden" (forbidden!)
+        "unauthorized" (unauthorized!)
+        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
+          (-> doc
+            (remove-user-attributes)
+            (dissoc :named_links)                           ;; For v3
+            (dissoc :links)                                 ;; For v3
+            (dissoc :relationships)
+            (add-self-link router)
+            (add-heads-link router)
+            (add-upload-links router)
+            (add-zip-link router)
+            (add-annotation-links router)
+            (add-relationship-links router)
+            (convert-file-revision-status)
+            (assoc-in [:links :_collaboration_roots] collaboration-roots)
+            (add-entity-permissions auth teams)))))))
 
 
 (defn-traced entities-from-couch
   "Transform couchdb documents."
-  [docs auth router]
-  (let [teams (auth/authenticated-teams auth)
+  [docs ctx]
+  (let [{auth :auth
+         org  :org
+         rt   :routes} ctx
+        teams (auth/authenticated-teams auth)
         xf    (comp
-                (map (couch-to-entity auth router))
+                (map (couch-to-entity ctx))
                 (filter #(auth/can? auth ::auth/read % :teams teams)))]
     (sequence xf docs)))
 
@@ -139,29 +144,33 @@
     (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
 
 (defn-traced couch-to-value
-  [auth router]
-  (fn [doc]
-    (case (:error doc)
-      "conflict" (conflict! doc)
-      "forbidden" (forbidden!)
-      "unauthorized" (unauthorized!)
-      (condp = (util/entity-type-name doc)
-        c/RELATION-TYPE-NAME (-> doc
-                               (add-self-link router))
-        ;(add-value-permissions auth)
+  [ctx]
+  (let [{auth   :auth
+         router :routes} ctx]
+    (fn [doc]
+      (case (:error doc)
+        "conflict" (conflict! doc)
+        "forbidden" (forbidden!)
+        "unauthorized" (unauthorized!)
+        (condp = (util/entity-type-name doc)
+          c/RELATION-TYPE-NAME (-> doc
+                                 (add-self-link router))
+          ;(add-value-permissions auth)
 
-        c/ANNOTATION-TYPE-NAME (-> doc
-                                 (add-annotation-self-link router)
-                                 (add-value-permissions auth))
+          c/ANNOTATION-TYPE-NAME (-> doc
+                                   (add-annotation-self-link router)
+                                   (add-value-permissions auth))
 
-        ;; default
-        (-> doc
-          (add-value-permissions auth))))))
+          ;; default
+          (-> doc
+            (add-value-permissions auth)))))))
 
 (defn-traced values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
-  [docs auth router]
-  (let [teams (auth/authenticated-teams auth)]
+  [docs ctx]
+  (let [{auth   :auth
+         router :routes} ctx
+        teams (auth/authenticated-teams auth)]
     (->> docs
-      (map (couch-to-value auth router))
+      (map (couch-to-value ctx))
       (filter #(auth/can? auth ::auth/read % :teams teams)))))

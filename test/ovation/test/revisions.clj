@@ -54,8 +54,9 @@
                               :attributes {}}
                 rev          {:_id  ..revid..
                               :_rev ..revrev..}
-                file         {:_id  ..rsrcid..
-                              :type k/FILE-TYPE}]
+                file         {:_id          ..rsrcid..
+                              :type         k/FILE-TYPE
+                              :organization ..org..}]
             (rev/create-revisions ..auth.. ..db.. ..rt.. ..parent.. [new-revision]) => {:revisions [rev]
                                                                                         :links     ..links..
                                                                                         :updates   []}
@@ -63,15 +64,16 @@
               ..parent.. =contains=> {:type       k/REVISION-TYPE
                                       :_id        ..previd..
                                       :attributes {:file_id  ..rsrcid..
-                                                   :previous [..oldprev..]}}
-              (core/create-entities ..auth.. ..db.. [{:type       "Revision"
-                                                      :attributes {:previous [..oldprev.. ..previd..]
-                                                                   :file_id  ..rsrcid..}}] ..rt..) => [rev]
+                                                   :previous [..oldprev..]}
+                                      :organization ..org..}
+              (core/create-entities ..auth.. ..db.. ..org.. [{:type       "Revision"
+                                                              :attributes {:previous [..oldprev.. ..previd..]
+                                                                           :file_id  ..rsrcid..}}] ..rt..) => [rev]
               ..rev.. =contains=> {:_id ..revid..}
-              (core/get-entities ..auth.. ..db.. [..rsrcid..] ..rt..) => [file]
+              (core/get-entities ..auth.. ..db.. ..org.. [..rsrcid..] ..rt..) => [file]
               (rev/update-file-status file [rev] k/UPLOADING) => ..updated-file..
-              (links/add-links ..auth.. ..db.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
-                                                                                                                 :links   ..links..}))))
+              (links/add-links ..auth.. ..db.. ..org.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
+                                                                                                                                :links   ..links..}))))
       (facts "from a File"
         (facts "with single HEAD revision"
           (fact "creates a new revision"
@@ -86,18 +88,19 @@
                                                                                   :links     ..links..
                                                                                   :updates   []}
               (provided
-                ..file.. =contains=> {:type       k/FILE-TYPE
-                                      :_id        ..fileid..
-                                      :attributes {}}
+                ..file.. =contains=> {:type         k/FILE-TYPE
+                                      :_id          ..fileid..
+                                      :attributes   {}
+                                      :organization ..org..}
                 (rev/get-head-revisions ..auth.. ..db.. ..rt.. ..file..) => [{:type       k/REVISION-TYPE
                                                                               :_id        ..headid..
                                                                               :attributes {:previous []
                                                                                            :file_id  [..fileid..]}}]
-                (core/create-entities ..auth.. ..db.. [{:type       "Revision"
-                                                        :attributes {:previous [..headid..]
-                                                                     :file_id  ..fileid..}}] ..rt..) => [rev]
-                (links/add-links ..auth.. ..db.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
-                                                                                                                   :links   ..links..}
+                (core/create-entities ..auth.. ..db.. ..org.. [{:type       "Revision"
+                                                                :attributes {:previous [..headid..]
+                                                                             :file_id  ..fileid..}}] ..rt..) => [rev]
+                (links/add-links ..auth.. ..db.. ..org.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
+                                                                                                                                  :links   ..links..}
                 (rev/update-file-status ..file.. [rev] k/UPLOADING) => ..updated-file..))))
 
         (facts "without HEAD revision"
@@ -112,16 +115,17 @@
                                                                                   :links     ..links..
                                                                                   :updates   []}
               (provided
-                ..file.. =contains=> {:type       k/FILE-TYPE
-                                      :_id        ..fileid..
-                                      :attributes {}}
+                ..file.. =contains=> {:type         k/FILE-TYPE
+                                      :_id          ..fileid..
+                                      :attributes   {}
+                                      :organization ..org..}
                 (rev/get-head-revisions ..auth.. ..db.. ..rt.. ..file..) => []
-                (core/create-entities ..auth.. ..db.. [{:type       "Revision"
-                                                        :attributes {:previous [] ;; <- this is key
-                                                                     :file_id  ..fileid..}}] ..rt..) => [rev]
+                (core/create-entities ..auth.. ..db.. ..org.. [{:type       "Revision"
+                                                                :attributes {:previous [] ;; <- this is key
+                                                                             :file_id  ..fileid..}}] ..rt..) => [rev]
                 (rev/update-file-status ..file.. [rev] k/UPLOADING) => ..updated-file..
-                (links/add-links ..auth.. ..db.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
-                                                                                                                   :links   ..links..}))))))
+                (links/add-links ..auth.. ..db.. ..org.. [..updated-file..] :revisions [..revid..] ..rt.. :inverse-rel :file) => {:updates []
+                                                                                                                                  :links   ..links..}))))))
 
     (facts "get-head-revisions"
       (fact "gets HEAD revisions from couch view"
@@ -157,7 +161,7 @@
     (facts "update-metadata"
       (fact "returns 422 if URL is not ovation.io"
         (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
-          (rev/update-metadata ..auth.. ..db.. ..rt.. revision) => (throws ExceptionInfo)))
+          (rev/update-metadata ..auth.. ..db.. ..rt.. ..org.. revision) => (throws ExceptionInfo)))
 
       (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
         (let [revid       "100"
@@ -173,11 +177,11 @@
                                                                                                              {:status 200
                                                                                                               :body   (util/to-json {:content_length length
                                                                                                                                      :etag           etag})})]
-            (rev/update-metadata ..auth.. ..db.. ..rt.. revision) => {:_id ..id.. :result true}
+            (rev/update-metadata ..auth.. ..db.. ..rt.. ..org.. revision) => {:_id ..id.. :result true}
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
-              (core/get-entity ..auth.. ..fileid.. ..rt..) => file
-              (core/update-entities ..auth.. ..db.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))
+              (core/get-entity ..auth.. ..db.. ..org.. ..fileid.. ..rt..) => file
+              (core/update-entities ..auth.. ..db.. ..org.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))
 
       (fact "skips metadata from Rails and sets file=>revision status to COMPLETE if rails response is not 200 [#136329619]"
         (let [revid       "100"
@@ -192,11 +196,11 @@
                                                                                                              {:status 500
                                                                                                               :body   (util/to-json {:content_length length
                                                                                                                                      :etag           etag})})]
-            (rev/update-metadata ..auth.. ..db.. ..rt.. revision) => {:_id ..id.. :result true}
+            (rev/update-metadata ..auth.. ..db.. ..rt.. ..org.. revision) => {:_id ..id.. :result true}
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
-              (core/get-entity ..auth.. ..fileid.. ..rt..) => file
-              (core/update-entities ..auth.. ..db.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
+              (core/get-entity ..auth.. ..db.. ..org.. ..fileid.. ..rt..) => file
+              (core/update-entities ..auth.. ..db.. ..org.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))))
 
 
     (facts "record-upload-failure"
@@ -208,11 +212,11 @@
 
               updated-revision (assoc-in rev [:attributes :upload-status] k/ERROR)
               updated-file     (assoc-in file [:revisions ..revid..] {:status k/ERROR :started-at ..now..})]
-          (rev/record-upload-failure ..auth.. ..db.. ..rt.. rev) => {:revision updated-revision
-                                                                     :file     updated-file}
+          (rev/record-upload-failure ..auth.. ..db.. ..rt.. ..org.. rev) => {:revision updated-revision
+                                                                             :file     updated-file}
           (provided
-            (core/get-entity ..auth.. ..fileid.. ..rt..) => file
-            (core/update-entities ..auth.. ..db.. [updated-revision updated-file] ..rt.. :allow-keys [:revisions]) => [updated-revision updated-file]))))
+            (core/get-entity ..auth.. ..db.. ..org.. ..fileid.. ..rt..) => file
+            (core/update-entities ..auth.. ..db.. ..org.. [updated-revision updated-file] ..rt.. :allow-keys [:revisions]) => [updated-revision updated-file]))))
 
 
     (facts "make-resource"

@@ -58,16 +58,16 @@
         new-revs     (map #(-> %
                              (assoc-in [:attributes :file_id] (:_id file))
                              (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions    (core/create-entities auth db new-revs routes)
+        revisions    (core/create-entities auth db (:organization file) new-revs routes)
         updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
-        links-result (links/add-links auth db [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
+        links-result (links/add-links auth db (:organization file) [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
   [auth db routes parent new-revisions]
-  (let [files (core/get-entities auth db [(get-in parent [:attributes :file_id])] routes)]
+  (let [files (core/get-entities auth db (:organization parent) [(get-in parent [:attributes :file_id])] routes)]
     (create-revisions-from-file auth db routes (first files) parent new-revisions)))
 
 (defn-traced create-revisions
@@ -116,7 +116,7 @@
 
 
 (defn-traced update-metadata
-  [auth db routes revision & {:keys [complete] :or {complete true}}]
+  [auth db routes org revision & {:keys [complete] :or {complete true}}]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
     (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
@@ -127,7 +127,7 @@
                    :headers     {"Content-Type" "application/json"
                                  "Accept"       "application/json"}})
         file    (if complete
-                  (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
+                  (core/get-entity auth db org (get-in revision [:attributes :file_id]) routes)
                   nil)]
     (let [body             (if (= (:status @resp) 200)
                              (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
@@ -139,15 +139,15 @@
                              [updated-revision (update-file-status file [revision] k/COMPLETE)]
                              [updated-revision])]
       (first (filter #(= (:_id %) (:_id revision))
-               (core/update-entities auth db updates routes :allow-keys [:revisions]))))))
+               (core/update-entities auth db org updates routes :allow-keys [:revisions]))))))
 
 
 (defn-traced record-upload-failure
-  [auth db routes revision]
+  [auth db routes org revision]
   (let [file-id          (get-in revision [:attributes :file_id])
-        file             (core/get-entity auth file-id routes)
+        file             (core/get-entity auth db org file-id routes)
         updated-file     (update-file-status file [revision] k/ERROR)
         updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
-        updates          (core/update-entities auth db [updated-revision updated-file] routes :allow-keys [:revisions])]
+        updates          (core/update-entities auth db org [updated-revision updated-file] routes :allow-keys [:revisions])]
     {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
      :file     (first (filter #(= (:_id %) (:_id file)) updates))}))

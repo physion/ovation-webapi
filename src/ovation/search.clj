@@ -20,11 +20,11 @@
   (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
 
 (defn get-results
-  [auth db routes rows]
+  [auth db routes org rows]
   (let [ids (entity-ids rows)
-        entities (core/get-entities auth db ids routes)
+        entities (core/get-entities auth db org ids routes)
         root-ids (mapcat #(links/collaboration-roots %) entities)
-        roots (util/into-id-map (core/get-entities auth db root-ids routes))]
+        roots (util/into-id-map (core/get-entities auth db org root-ids routes))]
     (map (fn [entity] {:id            (:_id entity)
                        :entity_type   (:type entity)
                        :name          (get-in entity [:attributes :name] (:_id entity))

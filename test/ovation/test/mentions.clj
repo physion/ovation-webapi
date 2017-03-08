@@ -58,12 +58,12 @@
                       :type  k/FILE-TYPE
                       :links {:_collaboration_roots [..root1..]}}]
 
-        (a/create-annotations ..auth.. ..db.. ..rt.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
+        (a/create-annotations ..auth.. ..db.. ..rt.. ..org.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
         (provided
           (util/make-uuid) => ..uuid..
           (auth/authenticated-user-id ..auth..) => ..user..
-          (core/get-entities ..auth.. ..db.. [..id1..] ..rt..) => [entity]
-          (core/create-values ..auth.. ..db.. ..rt.. expected) => [note]
+          (core/get-entities ..auth.. ..db.. ..org.. [..id1..] ..rt..) => [entity]
+          (core/create-values ..auth.. ..db.. ..rt.. ..org.. expected) => [note]
           (a/notify ..auth.. entity note) => ..notified..))))
 
   (facts "update-annotations"
@@ -79,13 +79,13 @@
                        :type  k/FILE-TYPE
                        :links {:_collaboration_roots [..root1..]}}]
 
-          (a/update-annotation ..auth.. ..db.. ..rt.. ..uuid.. {:text ..new..}) => ..notified..
+          (a/update-annotation ..auth.. ..db.. ..rt.. ..org.. ..uuid.. {:text ..new..}) => ..notified..
 
           (provided
             (util/iso-short-now) => ..time..
             (core/get-values ..auth.. [..uuid..] :routes ..rt..) => [current]
-            (core/get-entities ..auth.. ..db.. [..entity..] ..rt..) => [entity]
-            (core/update-values ..auth.. ..db.. ..rt.. [{:_id             ..uuid..
+            (core/get-entities ..auth.. ..db.. ..org.. [..entity..] ..rt..) => [entity]
+            (core/update-values ..auth.. ..db.. ..rt.. ..org.. [{:_id             ..uuid..
                                                          :entity          ..entity..
                                                          :user            ..user..
                                                          :annotation_type c/NOTES
