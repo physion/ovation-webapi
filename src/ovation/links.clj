@@ -8,6 +8,7 @@
             [clojure.set :refer [union]]
             [ovation.constants :as k]
             [ovation.transform.read :as tr]
+            [ovation.request-context :as request-context]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
@@ -19,22 +20,23 @@
               false)))
 
 (defn-traced get-links
-  [auth db id rel routes & {:keys [label name] :or {label nil name nil}}]
-  (let [opts {:startkey      (if name [id rel name] [id rel])
+  [ctx db id rel & {:keys [label name] :or {label nil name nil}}]
+  (let [{auth ::request-context/auth} ctx
+        opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}]
     (tr/values-from-couch
-      (couch/get-view auth db k/LINK-DOCS-VIEW opts)
-      auth
-      routes)))
+      (couch/get-view (auth ctx) db k/LINK-DOCS-VIEW opts)
+      ctx)))
 
 (defn-traced get-link-targets
   "Gets the document targets for id--rel->"
-  [auth db org id rel routes & {:keys [label name include-trashed] :or {label       nil
-                                                                    name            nil
-                                                                    include-trashed false}}]
-  (let [opts {:startkey      (if name [id rel name] [id rel])
+  [ctx db id rel & {:keys [label name include-trashed] :or {label           nil
+                                                            name            nil
+                                                            include-trashed false}}]
+  (let [{auth ::request-context/auth} ctx
+        opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}
@@ -42,7 +44,7 @@
                (filter (eq-doc-label label) (couch/get-view auth db k/LINKS-VIEW opts))
                (couch/get-view auth db k/LINKS-VIEW opts))]
     (-> docs
-      (tr/entities-from-couch auth routes)
+      (tr/entities-from-couch ctx)
       (core/filter-trashed include-trashed))))
 
 
@@ -157,11 +159,12 @@
   ```{  :updates    <updated documents>
         :links      <new LinkInfo documents>}```
    "
-  [auth db org sources rel target-ids routes & {:keys [inverse-rel name strict] :or [inverse-rel nil
-                                                                                 name nil
-                                                                                 strict false]}]
+  [ctx db sources rel target-ids & {:keys [inverse-rel name strict] :or [inverse-rel nil
+                                                                         name nil
+                                                                         strict false]}]
 
-  (let [authenticated-user-id (auth/authenticated-user-id auth)
+  (let [{auth ::request-context/auth} ctx
+        authenticated-user-id (auth/authenticated-user-id auth)
         targets               (core/get-entities auth db org target-ids routes)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
@@ -174,10 +177,10 @@
 
 
 (defn-traced delete-links
-  ([auth db routes org doc rel target-id & {:keys [name] :or [name nil]}]
-   (auth/check! auth ::auth/update doc)
+  ([ctx db doc rel target-id & {:keys [name] :or [name nil]}]
+   (auth/check! (::request-context/auth ctx) ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
-     (core/delete-values auth db org [link-id] routes)))
-  ([auth db routes org doc link-id]
-   (auth/check! auth ::auth/update doc)
-   (core/delete-values auth db org [link-id] routes)))
+     (core/delete-values ctx db [link-id])))
+  ([ctx db doc link-id]
+   (auth/check! (::request-context/auth ctx) ::auth/update doc)
+   (core/delete-values ctx db [link-id])))

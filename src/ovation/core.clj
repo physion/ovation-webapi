@@ -6,6 +6,7 @@
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
             [ovation.constants :as k]
+            [ovation.request-context :as rc]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
@@ -21,7 +22,7 @@
   "Gets all entities of the given type"
   [ctx db resource & {:keys [include-trashed] :or {include-trashed false}}]
 
-  (let [{auth :auth} ctx]
+  (let [{auth ::rc/auth} ctx]
     (-> (couch/get-view auth db k/ENTITIES-BY-TYPE-VIEW {:key          resource
                                                          :reduce       false
                                                          :include_docs true})
@@ -38,8 +39,8 @@
     (filter-trashed include-trashed)))
 
 (defn-traced get-entity
-  [auth db org id routes & {:keys [include-trashed] :or {include-trashed false}}]
-  (first (get-entities auth db org [id] routes :include-trashed include-trashed)))
+  [ctx db id & {:keys [include-trashed] :or {include-trashed false}}]
+  (first (get-entities ctx db [id] :include-trashed include-trashed)))
 
 (defn-traced get-values
   "Get values by ID"
@@ -73,7 +74,7 @@
     (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
 
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         created-entities (tr/entities-from-couch (couch/bulk-docs db
                                                    (tw/to-couch (auth/authenticated-user-id auth)
                                                      entities
@@ -87,7 +88,7 @@
   (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         docs (map (auth/check! auth op) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) ctx)))
 
@@ -130,7 +131,7 @@
   (when (some #{k/USER-ENTITY} (map :type entities))
     (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         bulk-docs         (let [ids      (map :_id entities)
                                 docs     (get-entities ctx db ids)
                                 merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
@@ -154,7 +155,7 @@
 
 (defn-traced restore-deleted-entities
   [ctx db ids]
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         docs              (get-entities ctx db ids :include-trashed true)
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
@@ -164,7 +165,7 @@
 
 (defn-traced delete-entities
   [ctx db ids]
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         docs (get-entities ctx db ids)]
 
     (when (some #{k/USER-ENTITY} (map :type docs))
@@ -181,7 +182,7 @@
   "DELETEs value(s) direct to Couch"
   [ctx db ids]
 
-  (let [{auth :auth} ctx
+  (let [{auth ::rc/auth} ctx
         values (get-values ctx db ids)]
     (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))

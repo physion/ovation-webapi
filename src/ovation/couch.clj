@@ -7,6 +7,7 @@
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
+            [ovation.request-context :as rc]
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
@@ -47,13 +48,14 @@
   each of owner and team ids, prepending to the start and end keys, and taking the aggregate unique results.
 
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
-  [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
+  [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
   (let [tf (if (:include_docs opts)
              (comp
                (map :doc)
                (distinct))
-             (distinct))]
+             (distinct))
+        auth (::request-context/auth ctx)]
 
     (cl/with-db db
       (if prefix-teams
@@ -73,9 +75,7 @@
   "Gets all documents with given document IDs"
   [ctx db ids]
   (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
-        {auth :auth
-         org  :org
-         rt   :routes} ctx
+        {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
                            (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p

@@ -128,9 +128,7 @@
 (defn-traced entities-from-couch
   "Transform couchdb documents."
   [docs ctx]
-  (let [{auth :auth
-         org  :org
-         rt   :routes} ctx
+  (let [{auth :auth} ctx
         teams (auth/authenticated-teams auth)
         xf    (comp
                 (map (couch-to-entity ctx))

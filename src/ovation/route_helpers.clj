@@ -22,35 +22,30 @@
 
 (defn-traced get-annotations*
   [ctx db id annotation-key]
-  (let [{auth :auth
-         rt   :routes
-         org  :org} ctx
-        annotations (annotations/get-annotations auth db org [id] annotation-key rt)]
+  (let [{auth ::request-context/auth
+         rt   ::request-context/routes
+         org  ::request-context/org} ctx
+        annotations (annotations/get-annotations ctx db [id] annotation-key)]
     (ok {(keyword annotation-key) annotations})))
 
 (defn-traced post-annotations*
   [ctx db id annotation-key annotations]
-  (let [{auth    :auth
-         org     :org
-         rt      :routes} ctx
+  (let [{rt ::request-context/routes} ctx
         annotations-kw (keyword annotation-key)]
     (created (routes/entity-route rt id)
-      {annotations-kw (annotations/create-annotations auth db rt org [id] annotation-key annotations)})))
+      {annotations-kw (annotations/create-annotations ctx db [id] annotation-key annotations)})))
 
 (defn-traced delete-annotations*
   [ctx db annotation-id annotation-key]
   (let [{auth :auth
          org  :org
          rt   :routes} ctx]
-    (accepted {(keyword annotation-key) (annotations/delete-annotations auth db org [annotation-id] rt)})))
+    (accepted {(keyword annotation-key) (annotations/delete-annotations ctx db [annotation-id])})))
 
 (defn-traced put-annotation*
   [ctx db annotation-key annotation-id annotation]
 
-  (let [{auth :auth
-         org  :org
-         rt   :routes} ctx]
-    (ok {(keyword annotation-key) (annotations/update-annotation auth db rt org annotation-id annotation)})))
+  (ok {(keyword annotation-key) (annotations/update-annotation ctx db annotation-id annotation)}))
 
 
 (defn annotation
@@ -140,22 +135,22 @@
       rel-map)))
 
 (defn-traced post-resources*
-  [request db org type-name type-kw new-entities]
-  (let [auth (auth/identity request)]
+  [ctx db type-name type-kw new-entities]
+  (let [{auth   ::request-context/auth
+         routes ::request-context/routes} ctx]
     (if (every? #(= type-name (:type %)) new-entities)
       (try+
-        (let [routes           (r/router request)
-              cleaned-entities (remove-embedded-relationships new-entities)
-              created-entities (core/create-entities auth db org cleaned-entities routes)
+        (let [cleaned-entities (remove-embedded-relationships new-entities)
+              created-entities (core/create-entities ctx db cleaned-entities)
               entities         (if (some :relationships new-entities)
-                                 (core/get-entities auth db org (map :_id created-entities) routes)
+                                 (core/get-entities ctx db (map :_id created-entities))
                                  created-entities)
               rel-map          (relationships-map new-entities entities) ;; NB Assumes result of create-entities is in the same order as body!!
               embedded-links   (embedded-links ctx db entities rel-map)
               links            (core/create-values ctx db (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
               updates          (core/update-entities ctx db (mapcat :updates embedded-links) :authorize false :update-collaboration-roots true)]
           ;; create teams for new Project entities
-          (dorun (map #(teams/create-team request (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+          (dorun (map #(teams/create-team ctx (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
           (if (and (zero? (count links))
                 (zero? (count updates)))
@@ -192,29 +187,29 @@
        :name ~(keyword (str "get-" (lower-case type-name)))
        :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
-       (let [ctx# (request-context/make-context request# org#)]
+       (let [ctx# (request-context/make-context request# ~org)]
          (if-let [entities# (core/get-entities ctx# ~db [~id])]
            (if-let [filtered# (seq (filter #(= ~type-name (:type %)) entities#))]
              (ok {~single-type-kw (first filtered#)})
              (not-found {:errors {:detail "Not found"}})))))))
 
 (defn-traced make-child-link*
-  [auth db org sources target-ids source-type routes]
+  [ctx db sources target-ids source-type]
   (fn [target]
     (let [target-type (util/entity-type-keyword target)
           rel (get-in EntityChildren [source-type target-type :rel])
           inverse-rel (get-in EntityChildren [source-type target-type :inverse-rel])]
 
       (if rel
-        (links/add-links auth db org sources rel target-ids routes :inverse-rel inverse-rel)
+        (links/add-links ctx db sources rel target-ids :inverse-rel inverse-rel)
         {}))))
 
 (defn-traced make-child-links*
-  [auth db org parent-id type-name targets routes]
+  [ctx db parent-id type-name targets]
   (let [target-ids (map :_id targets)
-        sources    (core/get-entities auth db org [parent-id] routes)
+        sources    (core/get-entities ctx db [parent-id])
         type       (util/entity-type-name-keyword type-name)
-        results    (map (make-child-link* auth db org sources target-ids type routes) targets)
+        results    (map (make-child-link* ctx db sources target-ids type) targets)
         links      (mapcat :links results)
         updates    (mapcat :updates results)]
     {:links links
@@ -222,26 +217,24 @@
 
 
 (defn-traced post-resource*
-  [request db org type-name id body]
-  (let [auth (auth/identity request)
-        rt   (routes/router request)]
-    (try+
+  [ctx db type-name id body]
 
-      (let [routes           (r/router request)
-            cleaned-entities (remove-embedded-relationships body)
-            entities         (core/create-entities auth db org cleaned-entities routes :parent id)
-            rel-map          (relationships-map body entities) ;; NB Assumes result of create-entities is in the same order as body!!
-            child-links      (make-child-links* auth db org id type-name entities routes)
-            embedded-links   (embedded-links auth db entities rel-map routes)
-            links            (core/create-values auth db routes org (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
-            updates          (core/update-entities auth db org (mapcat :updates (cons child-links embedded-links)) routes :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
+  (try+
 
-        (created (routes/self-route rt (first entities)) {:entities entities
-                                                          :links    links
-                                                          :updates  updates}))
+    (let [cleaned-entities (remove-embedded-relationships body)
+          entities         (core/create-entities ctx db cleaned-entities :parent id)
+          rel-map          (relationships-map body entities) ;; NB Assumes result of create-entities is in the same order as body!!
+          child-links      (make-child-links* ctx db id type-name entities)
+          embedded-links   (embedded-links ctx db entities rel-map)
+          links            (core/create-values ctx db (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
+          updates          (core/update-entities ctx db (mapcat :updates (cons child-links embedded-links)) :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
 
-      (catch [:type :ovation.auth/unauthorized] err
-        (unauthorized {:errors {:detail "Not authorized to create new entities"}})))))
+      (created (routes/self-route (::request-context/routes ctx) (first entities)) {:entities entities
+                                                                                    :links    links
+                                                                                    :updates  updates}))
+
+    (catch [:type :ovation.auth/unauthorized] err
+      (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
 
 
 (defmacro post-resource
@@ -254,17 +247,17 @@
                 :updates  [Entity]}
        :body [body# {:entities [(apply s/either ~schemas)]}]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
-       (post-resource* request# ~db ~org ~type-name ~id (:entities body#)))))
+       (let [ctx# (request-context/make-context request# ~org)]
+         (post-resource* ctx# ~db ~type-name ~id (:entities body#))))))
 
 
 (defn-traced put-resource*
-  [request db org id type-name type-kw updates]
+  [ctx db id type-name type-kw updates]
   (let [entity-id (str (:_id updates))]
     (if-not (= id (str entity-id))
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
-        (let [auth   (auth/identity request)
-              entity (first (core/update-entities auth db org [updates] (r/router request)))]
+        (let [entity (first (core/update-entities ctx db [updates]))]
           (ok {type-kw entity}))
 
         (catch [:type :ovation.auth/unauthorized] _
@@ -289,7 +282,8 @@
        :return {~type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :body [updates# {~type-kw ~(clojure.core/symbol "ovation.schema" update-type)}]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (put-resource* request# ~db ~id ~org ~type-name ~type-kw (~type-kw updates#)))))
+       (let [ctx# (request-context/make-context request# ~org)]
+         (put-resource* ctx# ~db ~id ~type-name ~type-kw (~type-kw updates#))))))
 
 (defmacro delete-resource
   [db org entity-type id]
@@ -300,49 +294,48 @@
        :return {:entity TrashedEntity}
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
-         (let [auth# (auth/identity request#)]
-           (accepted {:entity (first (core/delete-entities auth# ~db ~org [~id] (r/router request#)))}))
+         (let [ctx# (request-context/make-context request# ~org)]
+           (accepted {:entity (first (core/delete-entities ctx# ~db [~id]))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
 (defn-traced rel-related*
-  [request db id rel routes]
-  (let [auth    (auth/identity request)
-        related (links/get-link-targets auth db id (lower-case rel) routes)]
+  [ctx db id rel]
+  (let [related (links/get-link-targets ctx db id (lower-case rel))]
    (ok {(keyword rel) related})))
 
 
 (defmacro rel-related
-  [db entity-type id rel]
+  [db org entity-type id rel]
   (let [type-name (capitalize entity-type)]
     `(GET "/" request#
        :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
        :return {s/Keyword [Entity]}
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
-       (rel-related* request# ~db ~id ~rel (r/router request#)))))
+       (let [ctx# (request-context/make-context request# ~org)]
+         (rel-related* ctx# ~db ~id ~rel)))))
 
 (defn-traced get-relationships*
-  [request db id rel]
-  (let [auth (auth/identity request)
-        rels (links/get-links auth db id rel (r/router request))]
+  [ctx db id rel]
+  (let [rels (links/get-links ctx db id rel)]
     (ok {:links rels})))
 
 
 (defn-traced post-relationships*
-  [request db org id new-links rel]
+  [ctx db id new-links rel]
   (try+
-    (let [auth   (auth/identity request)
-          source (first (core/get-entities auth db org [id] (r/router request)))
-          routes (r/router request)]
+    (let [{auth   ::request-context/auth
+           routes ::request-context/routes} ctx
+          source (first (core/get-entities ctx db [id]))]
       (when source
         (auth/check! auth ::auth/update source))
       (if source
         (let [groups      (group-by :inverse_rel new-links)
-              link-groups (map (fn [[irel nlinks]] (links/add-links auth db org [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
-          (let [links   (core/create-values auth db routes org (flatten (map :links link-groups)))
-                updates (core/update-entities auth db org (flatten (map :updates link-groups)) routes :authorize false :update-collaboration-roots true)]
-            (created (routes/entity-route (routes/router request) id) {:updates updates
-                                                                       :links   links})))
+              link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
+          (let [links   (core/create-values ctx db (flatten (map :links link-groups)))
+                updates (core/update-entities ctx db (flatten (map :updates link-groups)) :authorize false :update-collaboration-roots true)]
+            (created (routes/entity-route routes id) {:updates updates
+                                                      :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
       (unauthorized {:errors {:detail message}}))
@@ -357,7 +350,8 @@
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (get-relationships* request# ~db ~id ~rel))
+         (let [ctx# (request-context/make-context request# ~org)]
+           (get-relationships* ctx# ~db ~id ~rel)))
 
        (POST "/" request#
          :name ~(keyword (str "create-" (lower-case type-name) "-links"))
@@ -365,19 +359,19 @@
                   :updates [Entity]}
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
-         (post-relationships* request# ~db ~org ~id new-links# ~rel)))))
+         (let [ctx# (request-context/make-context request# ~org)]
+           (post-relationships* ctx# ~db ~id new-links# ~rel))))))
 
 (defn-traced post-revisions*
-  [request db org id revisions]
+  [ctx db id revisions]
   (let [auth (auth/identity request)]
     (try+
-      (let [routes                   (r/router request)
-            parent                   (core/get-entity auth db org id routes)
+      (let [parent                   (core/get-entity ctx db id routes)
             revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
             revisions-with-resources (revisions/make-resources auth revisions-with-ids)
-            result                   (revisions/create-revisions auth db routes parent (map :revision revisions-with-resources))
-            links                    (core/create-values auth db routes org (:links result))
-            updates                  (core/update-entities auth db (:updates result) routes
+            result                   (revisions/create-revisions ctx db parent (map :revision revisions-with-resources))
+            links                    (core/create-values ctx db (:links result))
+            updates                  (core/update-entities ctx db (:updates result)
                                        :update-collaboration-roots true
                                        :allow-keys [:revisions])]
 
@@ -390,12 +384,11 @@
         (conflict {:errors {:detail (:message err)}})))))
 
 (defn-traced get-head-revisions*
-  [request db id]
-  (let [auth   (auth/identity request)
-        routes (r/router request)]
+  [request db org id]
+  (let [ctx (request-context/make-context request org)]
 
     (try+
-      (ok {:revisions (revisions/get-head-revisions auth db routes id)})
+      (ok {:revisions (revisions/get-head-revisions ctx db id)})
       (catch [:type ::revisions/not-found] _
         (not-found! {:errors {:detail "File not found"}})))))
 
@@ -409,24 +402,23 @@
 
 (defn-traced move-contents*
   [request db org id info]
-  (let [routes (r/router request)
-        auth   (auth/identity request)
+  (let [ctx (request-context/make-context request org)
 
-        src    (core/get-entities auth db org [(:source info)] routes)
-        dest   (core/get-entities auth db org [(:destination info)] routes)
-        entity (first (core/get-entities auth db org [id] routes))]
+        src    (core/get-entities ctx db [(:source info)] routes)
+        dest   (core/get-entities ctx db [(:destination info)] routes)
+        entity (first (core/get-entities ctx db [id] routes))]
 
     (if (and
           (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
 
-      (let [added   (links/add-links auth db org dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
-            links   (core/create-values auth db routes org (:links added))
-            updates (core/update-entities auth db org (:updates added) routes :authorize false :update-collaboration-roots true)]
+      (let [added   (links/add-links ctx db dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
+            links   (core/create-values ctx db (:links added))
+            updates (core/update-entities ctx db (:updates added) routes :authorize false :update-collaboration-roots true)]
 
         (do
-          (links/delete-links auth db routes org (first src) (rel (first src) entity) id)
+          (links/delete-links ctx db(first src) (rel (first src) entity) id)
 
           {(util/entity-type-keyword entity)    entity
            :updates updates

@@ -8,9 +8,11 @@
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.auth :as auth]
             [ovation.constants :as k]
+            [ovation.request-context :as rc]
             [clojure.core.async :refer [chan >!!]]
             [slingshot.support :refer [get-throwable]]
-            [ring.util.http-predicates :as hp]))
+            [ring.util.http-predicates :as hp])
+  (:import (ovation.request_context RequestContext)))
 
 
 (defn auth-token
@@ -38,10 +40,10 @@
                   :body
                   util/from-json))))))
 (defn create-team
-  [request team-uuid]
+  [ctx team-uuid]
 
   (logging/info (str "Creating Team for " team-uuid))
-  (let [opts (request-opts (auth-token request))
+  (let [opts (request-opts (token ctx))
         url (make-url "teams")
         body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]
