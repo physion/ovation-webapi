@@ -364,24 +364,23 @@
 
 (defn-traced post-revisions*
   [ctx db id revisions]
-  (let [auth (auth/identity request)]
-    (try+
-      (let [parent                   (core/get-entity ctx db id routes)
-            revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
-            revisions-with-resources (revisions/make-resources auth revisions-with-ids)
-            result                   (revisions/create-revisions ctx db parent (map :revision revisions-with-resources))
-            links                    (core/create-values ctx db (:links result))
-            updates                  (core/update-entities ctx db (:updates result)
-                                       :update-collaboration-roots true
-                                       :allow-keys [:revisions])]
+  (try+
+    (let [parent                   (core/get-entity ctx db id routes)
+          revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
+          revisions-with-resources (revisions/make-resources ctx revisions-with-ids)
+          result                   (revisions/create-revisions ctx db parent (map :revision revisions-with-resources))
+          links                    (core/create-values ctx db (:links result))
+          updates                  (core/update-entities ctx db (:updates result)
+                                     :update-collaboration-roots true
+                                     :allow-keys [:revisions])]
 
-        {:entities (filter #(= (:type %) k/REVISION-TYPE) updates)
-         :links    links
-         :updates  updates
-         :aws      (map (fn [m] {:id  (get-in m [:revision :_id])
-                                  :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
-      (catch [:type :ovation.revisions/file-revision-conflict] err
-        (conflict {:errors {:detail (:message err)}})))))
+      {:entities (filter #(= (:type %) k/REVISION-TYPE) updates)
+       :links    links
+       :updates  updates
+       :aws      (map (fn [m] {:id  (get-in m [:revision :_id])
+                               :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
+    (catch [:type :ovation.revisions/file-revision-conflict] err
+      (conflict {:errors {:detail (:message err)}}))))
 
 (defn-traced get-head-revisions*
   [request db org id]

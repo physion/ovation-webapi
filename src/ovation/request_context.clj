@@ -3,9 +3,9 @@
             [ovation.auth :as auth]))
 
 (defprotocol AuthToken
-  (token [c])
-  (team-ids [c])
-  (user-id [c]))
+  (token [this])
+  (team-ids [thix])
+  (user-id [this]))
 
 (defrecord RequestContext
   [auth org routes]
@@ -21,7 +21,7 @@
 (defn make-context
   "Constructs a RequestContext from a request"
   [request org]
-  #RequestContext{::org     org
-                  ::routes  (routes/router request)
-                  ::auth    (auth/identity request)
-                  ::request request})
+  (map->RequestContext {::org     org
+                        ::routes  (routes/router request)
+                        ::auth    (auth/identity request)
+                        ::request request}))

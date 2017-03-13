@@ -9,23 +9,22 @@
 
 
 (defn-traced get-parents
-  [auth db org id routes]
-  (let [parents (links/get-link-targets auth db org id k/PARENTS-REL routes)]
+  [ctx db id]
+  (let [parents (links/get-link-targets ctx db id k/PARENTS-REL)]
     parents))
 
 
 (defn-traced build-graph
   "Builds a directed graph of child -> parent nodes using loop/recur. Returns the Ubergraph."
-  [auth db routes org entity-ids g]
+  [ctx db entity-ids g]
   (let [graph (apply uber/add-nodes g entity-ids)]
     (loop [ids entity-ids
            g   graph]
-      (let [edges []
-            ;(pmap (fn [id]
-            ;        (let [parents (get-parents auth db org id routes)]
-            ;          (map (fn [parent] [id (:_id parent)]) parents))) ids)
+      (let [edges        (pmap (fn [id]
+                                 (let [parents (get-parents ctx db id)]
+                                   (map (fn [parent] [id (:_id parent)]) parents))) ids)
             parent-edges (apply concat edges)
-            parent-ids (set (map #(second %) parent-edges))]
+            parent-ids   (set (map #(second %) parent-edges))]
 
         (if (empty? ids)
           g
@@ -49,8 +48,8 @@
 
 (defn-traced collect-paths
   "Finds all paths from ids to parents"
-  [auth db org graph ids routes]
-  (let [entities (util/into-id-map (core/get-entities auth db org (uber/nodes graph) routes))]
+  [ctx db graph ids]
+  (let [entities (util/into-id-map (core/get-entities ctx db (uber/nodes graph)))]
     (into {} (map (fn [id]
                     (let [paths (extend-path id graph entities [(make-node-description id entities)])]
                       [id paths]))
@@ -59,9 +58,9 @@
 
 (defn-traced get-breadcrumbs
   "Gets all breadcrumb paths to entities with IDs `ids`"
-  [auth db routes org ids]
-  (let [graph  (build-graph auth db routes org ids (uber/digraph))
-        result (collect-paths auth db org graph ids routes)]
+  [ctx db ids]
+  (let [graph  (build-graph ctx db ids (uber/digraph))
+        result (collect-paths ctx db graph ids)]
     result))
 
 

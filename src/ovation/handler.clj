@@ -32,7 +32,8 @@
             [clojure.java.io :as io]
             [ovation.revisions :as revisions]
             [ovation.util :as util]
-            [ovation.routes :as routes]))
+            [ovation.routes :as routes]
+            [ovation.request-context :as request-context]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -110,8 +111,8 @@
                     :return {:entity TrashedEntity}
                     :responses {404 {:schema JsonApiError :description "Not found"}}
                     :summary "Returns entity with :id. If include-trashed is true, result includes entity even if it's in the trash."
-                    (let [auth (auth/identity request)]
-                      (if-let [entities (core/get-entities auth db org [id] (router request) :include-trashed trash)]
+                    (let [ctx (request-context/make-context request org)]
+                      (if-let [entities (core/get-entities ctx db [id] :include-trashed trash)]
                         (if-let [entity (first entities)]
                           (ok {:entity entity})
                           (not-found {:errors {:detail "Not found"}}))
@@ -121,8 +122,8 @@
                     :return {:entity TrashedEntity}
                     :summary "Deletes entity with :id. Deleted entities can be restored."
                     (try+
-                      (let [auth (auth/identity request)]
-                        (accepted {:entity (first (core/delete-entities auth db org [id] (r/router request)))}))
+                      (let [ctx (request-context/make-context request org)]
+                        (accepted {:entity (first (core/delete-entities ctx db [id]))}))
                       (catch [:type :ovation.auth/unauthorized] err
                         (unauthorized {:errors {:detail "Delete not authorized"}}))))
                   (PUT "/restore" request
@@ -131,8 +132,8 @@
                     :body [body {:entity TrashedEntityUpdate}]
                     :summary "Restores a deleted entity from the trash."
                     (try+
-                      (let [auth (auth/identity request)]
-                        (ok {:entity (first (core/restore-deleted-entities auth db org [id] (r/router request)))}))
+                      (let [ctx (request-context/make-context request org)]
+                        (ok {:entity (first (core/restore-deleted-entities ctx db [id]))}))
                       (catch [:type :ovation.auth/unauthorized] err
                         (unauthorized {:errors {:detail "Restore` not authorized"}}))))
 
@@ -158,11 +159,11 @@
                     :name :delete-relation
                     :return {:relationship LinkInfo}
                     :summary "Removes relationship"
-                    (let [auth         (auth/identity request)
-                          relationship (first (core/get-values auth db org [id]))]
+                    (let [ctx (request-context/make-context request org)
+                          relationship (first (core/get-values ctx db [id]))]
                       (if relationship
-                        (let [source (first (core/get-entities auth db org [(:source_id relationship)] (r/router request)))]
-                          (accepted {:relationships (links/delete-links auth db (r/router request) org
+                        (let [source (first (core/get-entities ctx db [(:source_id relationship)]))]
+                          (accepted {:relationships (links/delete-links ctx db
                                                       source
                                                       (:_id relationship))}))
                         (not-found {:errors {:detail "Not found"}}))))))
@@ -182,13 +183,13 @@
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "Project" id rel)
+                    (rel-related db org "Project" id rel)
                     (relationships db org "Project" id rel))))
 
 
               (context "/sources" []
                 :tags ["sources"]
-                (get-resources db "Source")
+                (get-resources db og "Source")
                 (post-resources db org "Source" [NewSource])
                 (context "/:id" []
                   :path-params [id :- s/Str]
@@ -201,13 +202,13 @@
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "Source" id rel)
+                    (rel-related db org "Source" id rel)
                     (relationships db org "Source" id rel))))
 
 
               (context "/activities" []
                 :tags ["activities"]
-                (get-resources db "Activity")
+                (get-resources db org "Activity")
                 (post-resources db org "Activity" [NewActivity])
                 (context "/:id" []
                   :path-params [id :- s/Str]
@@ -219,12 +220,12 @@
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "Activity" id rel)
+                    (rel-related db org "Activity" id rel)
                     (relationships db org "Activity" id rel))))
 
               (context "/folders" []
                 :tags ["folders"]
-                (get-resources db "Folder")
+                (get-resources db org "Folder")
                 (context "/:id" []
                   :path-params [id :- s/Str]
 
@@ -246,13 +247,13 @@
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "Folder" id rel)
+                    (rel-related db org "Folder" id rel)
                     (relationships db org "Folder" id rel))))
 
 
               (context "/files" []
                 :tags ["files"]
-                (get-resources db "File")
+                (get-resources db org "File")
                 (context "/:id" []
                   :path-params [id :- s/Str]
 
@@ -262,8 +263,9 @@
                     :return CreateRevisionResponse
                     :body [revisions {:entities [NewRevision]}]
                     :summary "Creates a new downstream Revision from the current HEAD Revision"
-                    (created (routes/heads-route2 (routes/router request) id)
-                      (post-revisions* request db org id (:entities revisions))))
+                    (let [ctx (request-context/make-context request org)]
+                      (created (routes/heads-route2 (routes/router request) id)
+                        (post-revisions* ctx db id (:entities revisions)))))
 
                   (POST "/move" request
                     :name :move-file
@@ -280,14 +282,14 @@
                     :name :file-head-revisions
                     :return {:revisions [Revision]}
                     :summary "Gets the HEAD revision(s) for this file"
-                    (get-head-revisions* request db id))
+                    (get-head-revisions* request db org id))
                   (put-resource db org "File" id)
                   (delete-resource db org "File" id)
 
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "File" id rel)
+                    (rel-related db org "File" id rel)
                     (relationships db org "File" id rel))))
 
 
@@ -304,31 +306,30 @@
                     :return CreateRevisionResponse
                     :body [revisions [NewRevision]]
                     :summary "Creates a new downstream Revision"
-                    (created (routes/targets-route2 (routes/router request) "revision" id "revisions")
-                      (post-revisions* request db org id revisions)))
+                    (let [ctx (request-context/make-context request org)]
+                      (created (routes/targets-route2 (routes/router request) "revision" id "revisions")
+                        (post-revisions* ctx db id revisions))))
                   (PUT "/upload-complete" request
                     :name :upload-complete
                     :summary "Indicates upload is complete and updates metadata from S3 for this Revision"
                     :return {:revision Revision}
-                    (let [auth     (auth/identity request)
-                          rt       (router request)
-                          revision (core/get-entity auth db org id rt)]
-                      (ok {:revision (revisions/update-metadata auth db rt org revision)})))
+                    (let [ctx (request-context/make-context request org)
+                          revision (core/get-entity ctx db id)]
+                      (ok {:revision (revisions/update-metadata ctx db revision)})))
                   (PUT "/upload-failed" request
                     :name :upload-failed
                     :summary "Indicates upload failed and updates the File status"
                     :return {:revision Revision
                              :file     File}
-                    (let [auth     (auth/identity request)
-                          rt       (router request)
-                          revision (first (core/get-entities auth db org [id] rt))
-                          result   (revisions/record-upload-failure auth db rt org revision)]
+                    (let [ctx (request-context/make-context request org)
+                          revision (first (core/get-entities ctx db [id] ))
+                          result   (revisions/record-upload-failure ctx db revision)]
                       (ok {:revision (:revision result)
                            :file     (:file result)})))
                   (context "/links/:rel" []
                     :path-params [rel :- s/Str]
 
-                    (rel-related db "Revision" id rel)
+                    (rel-related db org "Revision" id rel)
                     (relationships db org "Revision" id rel))))
 
 
@@ -345,10 +346,8 @@
                                            :name     s/Str
                                            s/Keyword [{:_id s/Uuid :name s/Str :type s/Str}]}]}
                     :summary "Local provenance for a single entity"
-                    (let [auth   (auth/identity request)
-                          rt     (router request)
-                          _ (println [auth db rt org [id]])
-                          result (prov/local auth db rt org [id])]
+                    (let [ctx (request-context/make-context request org)
+                          result (prov/local ctx db [id])]
                       (ok {:provenance result})))))
 
               (context "/teams" []
@@ -420,18 +419,16 @@
                   :name :get-breadcrumbs
                   :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
                   :summary "Gets the breadcrumbs for an entity."
-                  (let [auth   (auth/identity request)
-                        rt     (router request)
-                        result (breadcrumbs/get-breadcrumbs auth db rt org [id])]
+                  (let [ctx (request-context/make-context request org)
+                        result (breadcrumbs/get-breadcrumbs ctx db [id])]
                     (ok {:breadcrumbs (get result id)})))
 
                 (POST "/" request
                   :body [ids [s/Str]]
                   :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
                   :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
-                  (let [auth   (auth/identity request)
-                        rt     (router request)
-                        result (breadcrumbs/get-breadcrumbs auth db rt org ids)]
+                  (let [ctx (request-context/make-context request org)
+                        result (breadcrumbs/get-breadcrumbs ctx db ids)]
                     (ok {:breadcrumbs result}))))
 
               (context "/zip" []

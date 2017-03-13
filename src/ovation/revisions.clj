@@ -11,7 +11,8 @@
             [clojure.string :as string]
             [ring.util.http-response :refer [unprocessable-entity!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
-            [ovation.transform.read :as tr]))
+            [ovation.transform.read :as tr]
+            [ovation.request-context :as request-context]))
 
 (defn-traced get-head-revisions
   "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
@@ -58,16 +59,16 @@
         new-revs     (map #(-> %
                              (assoc-in [:attributes :file_id] (:_id file))
                              (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions    (core/create-entities ctx db (:organization file) new-revs)
+        revisions    (core/create-entities ctx db new-revs)
         updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
-        links-result (links/add-links ctx db (:organization file) [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
+        links-result (links/add-links ctx db [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
   [ctx db parent new-revisions]
-  (let [files (core/get-entities ctx db (:organization parent) [(get-in parent [:attributes :file_id])])]
+  (let [files (core/get-entities ctx db [(get-in parent [:attributes :file_id])])]
     (create-revisions-from-file ctx db (first files) parent new-revisions)))
 
 (defn-traced create-revisions
@@ -93,7 +94,7 @@
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:oauth-token (token ctx)
+          resp (http/post config/RESOURCES_SERVER {:oauth-token (request-context/token ctx)
                                                    :body        (util/to-json body)
                                                    :headers     {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
@@ -116,14 +117,14 @@
 
 
 (defn-traced update-metadata
-  [ctx db org revision & {:keys [complete] :or {complete true}}]
+  [ctx db revision & {:keys [complete] :or {complete true}}]
 
   (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
     (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
 
   (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
         resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-                  {:oauth-token (token ctx)
+                  {:oauth-token (request-context/token ctx)
                    :headers     {"Content-Type" "application/json"
                                  "Accept"       "application/json"}})
         file    (if complete

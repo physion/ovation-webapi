@@ -123,7 +123,6 @@
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
-                            (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org) => ..ctx..]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
@@ -135,8 +134,7 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path])) apikey#)]
-                 (against-background [(core/of-type ..ctx.. ~db ~org ~type-name) => [entity#]
-                                      (r/router anything) => ..rt..]
+                 (against-background [(core/of-type ..ctx.. ~db ~org ~type-name) => [entity#]]
                    (fact ~(str "GET / gets all " type-path)
                      (body-json get-req#) => {~(keyword type-path) [entity#]}))))))))))
 
@@ -149,8 +147,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
-                            (auth/identity anything) => ..auth..]
+                            (auth/permissions anything) => PERMISSIONS]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [id#     (str (UUID/randomUUID))
@@ -161,8 +158,8 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path id#])) apikey#)]
-                 (against-background [(core/get-entities ..auth.. ~db ~org [id#] ..rt..) => [entity#]
-                                      (r/router anything) => ..rt..]
+                 (against-background [(request-context/make-context anything ~org) => ..ctx..
+                                      (core/get-entities ..ctx.. ~db ~org [id#]) => [entity#]]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
                    (let [source# {:_id        id#
@@ -173,7 +170,7 @@
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (~app get-req#)) => 404
                        (provided
-                         (core/get-entities ..auth.. ~db ~org [id#] ..rt..) => [source#]))))))))))))
+                         (core/get-entities ..ctx.. ~db ~org [id#]) => [source#]))))))))))))
 
 
 (defmacro entity-resource-create-tests
@@ -186,7 +183,8 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
-                            (auth/identity anything) => ..auth..]
+                            (auth/identity anything) => ..auth..
+                            (request-context/make-context anything ~org) => ..ctx..]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [source-type#  ~(util/entity-type-name-keyword type-name)
@@ -207,11 +205,11 @@
                    links#        [{:type "Relation" :foo "bar"}]]
 
 
-               (against-background [(core/create-entities ..auth.. ~db ~org [new-entity#] ..rt.. :parent (:_id parent#)) => [entity#]
-                                    (core/get-entities ..auth.. ~db ~org [(:_id parent#)] ..rt..) => [parent#]
-                                    (links/add-links ..auth.. ~db ~org [parent#] rel# [(:_id entity#)] ..rt.. :inverse-rel inverse_rel#) => {:links links#}
-                                    (core/create-values ..auth.. ~db ..rt.. ~org links#) => links#
-                                    (core/update-entities ..auth.. ~db ~org anything ..rt.. :authorize false :update-collaboration-roots true) => ..updates..
+               (against-background [(core/create-entities ..ctx.. ~db [new-entity#] :parent (:_id parent#)) => [entity#]
+                                    (core/get-entities ..ctx.. ~db [(:_id parent#)]) => [parent#]
+                                    (links/add-links ..ctx.. ~db ~org [parent#] rel# [(:_id entity#)] :inverse-rel inverse_rel#) => {:links links#}
+                                    (core/create-values ..ctx.. ~db links#) => links#
+                                    (core/update-entities ..ctx.. ~db anything :authorize false :update-collaboration-roots true) => ..updates..
                                     (r/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
@@ -226,7 +224,7 @@
                  (:status (~app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. ~db [new-entity#] ..rt.. :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..ctx.. ~db [new-entity#] :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resources-create-tests
@@ -240,7 +238,8 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
-                            (auth/identity anything) => ..auth..]
+                            (auth/identity anything) => ..auth..
+                            (request-context/make-context anything ~org) => ..ctx..]
          (facts ~(util/join-path ["" type-path])
            (facts "create"
              (let [new-entity#         {:type ~(capitalize type-name) :attributes {:foo "bar"}}
@@ -252,9 +251,9 @@
                    request#            (fn [] (mock-req (-> (mock/request :post (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path]))
                                                           (mock/body (json/write-str (walk/stringify-keys new-entities#)))) apikey#))]
 
-               (against-background [(core/create-entities ..auth.. ~db ~org [new-entity#] ..rt..) => [entity#]
-                                    (core/create-values ..auth.. ~db ..rt.. ~org []) => []
-                                    (core/update-entities ..auth.. ~db ~org [] ..rt.. :authorize false :update-collaboration-roots true) => []
+               (against-background [(core/create-entities ..ctx.. ~db [new-entity#]) => [entity#]
+                                    (core/create-values ..ctx.. ~db []) => []
+                                    (core/update-entities ..ctx.. ~db [] :authorize false :update-collaboration-roots true) => []
                                     (r/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
@@ -274,7 +273,7 @@
                  (:status (~app (request#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/create-entities ..auth.. ~db ~org [new-entity#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/create-entities ..ctx.. ~db [new-entity#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-update-tests
@@ -286,7 +285,8 @@
 
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
-                            (auth/identity anything) => ..auth..]
+                            (auth/identity anything) => ..auth..
+                            (request-context/make-context anything ~org) => ..ctx..]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
              (let [id#             (UUID/randomUUID)
@@ -307,7 +307,7 @@
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path (str entity-id#)]))
                                                                 (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
-               (against-background [(core/update-entities ..auth.. ~db ~org [update#] ..rt..) => [updated-entity#]
+               (against-background [(core/update-entities ..ctx.. ~db [update#]) => [updated-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 200"
                    (let [response# (~app (request# id#))]
@@ -325,13 +325,13 @@
                ;    (let [response# (app (request# id#))]
                ;      (:status response#) => 409
                ;      (provided
-               ;        (core/update-entities ..auth.. [update#] ..rt..) =throws=> (sling-throwable {:status 409})))))
+               ;        (core/update-entities ..ctx.. ~db [update#]) =throws=> (sling-throwable {:status 409})))))
 
                (fact "fails if not can? :update"
                  (:status (~app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/update-entities ..auth.. ~db ~org [update#] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/update-entities ..ctx.. ~db [update#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (defmacro entity-resource-deletion-tests
@@ -343,7 +343,8 @@
 
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
-                            (auth/identity anything) => ..auth..]
+                            (auth/identity anything) => ..auth..
+                            (request-context/make-context anything ~org) => ..ctx..]
 
          (facts ~(util/join-path ["" type-path])
            (facts "delete"
@@ -359,7 +360,7 @@
                                                                 :trash_root    ""})
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path (str entity-id#)]))) apikey#))]
 
-               (against-background [(core/delete-entities ..auth.. ~db ~org [(str id#)] ..rt..) => [deleted-entity#]
+               (against-background [(core/delete-entities ..ctx.. ~db [(str id#)]) => [deleted-entity#]
                                     (r/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (~app (request# id#))]
@@ -372,7 +373,7 @@
                  (:status (~app (request# id#))) => 401
                  (provided
                    (r/router anything) => ..rt..
-                   (core/delete-entities ..auth.. ~db ~org [(str id#)] ..rt..) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
+                   (core/delete-entities ..ctx.. ~db [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
 (against-background [(around :contents (test.system/system-background ?form))]
@@ -425,6 +426,7 @@
         (against-background [(teams/get-teams anything) => TEAMS
                              (auth/permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
+                             (request-context/make-context anything org-id) => ..ctx..
                              (routes/router anything) => ..rt..]
           (facts "GET /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
@@ -435,14 +437,14 @@
                          :type            "Annotation"
                          :annotation_type "tags"
                          :annotation      {:tag "--tag--"}}]]
-              (against-background [(annotations/get-annotations ..auth.. db org-id [id] "tags" ..rt..) => tags]
+              (against-background [(annotations/get-annotations ..ctx.. db [id] "tags") => tags]
                 (fact "returns annotations by entity and user"
                   (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" id "/annotations/tags")
                         {:keys [status body]} (get* app path apikey)]
                     status => 200
                     body => {:tags tags}
                     (provided
-                      (annotations/get-annotations ..auth.. db org-id [id] "tags" ..rt..) => tags))))))
+                      (annotations/get-annotations ..ctx.. db [id] "tags") => tags))))))
 
           (facts "POST /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
@@ -454,7 +456,7 @@
                          :type            "Annotation"
                          :annotation_type "tags"
                          :annotation      {:tag "--tag--"}}]]
-              (against-background [(annotations/create-annotations ..auth.. db anything org-id [id] "tags" (:tags post)) => tags]
+              (against-background [(annotations/create-annotations ..ctx.. db [id] "tags" (:tags post)) => tags]
                 (fact "creates annotations"
                   (let [path (util/join-path ["" "api/v1" ORGS org-id "entities" id "annotations/tags"])
                         {:keys [status body]} (post* app path apikey post)]
@@ -473,7 +475,7 @@
                              :annotation_type c/NOTES
                              :annotation      {:text      "--note--"
                                                :timestamp (util/iso-short-now)}}]
-              (against-background [(annotations/update-annotation ..auth.. db anything org-id (str note-id) (:annotation update)) => update]
+              (against-background [(annotations/update-annotation ..ctx.. db (str note-id) (:annotation update)) => update]
                 (fact "updates annotation"
                   (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" entity-id "/annotations/notes/" note-id)
                         {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
@@ -492,8 +494,8 @@
                                 :annotation      {:tag "--tag--"}}]]
             (against-background [(teams/get-teams anything) => TEAMS
                                  (auth/permissions anything) => PERMISSIONS
-                                 (auth/identity anything) => ..auth..
-                                 (annotations/delete-annotations ..auth.. db org-id [annotation-id] anything) => tags]
+                                 (request-context/make-context anything org-id) => ..ctx..
+                                 (annotations/delete-annotations ..ctx.. db [annotation-id]) => tags]
               (fact "deletes annotations"
                 (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" id "/annotations/tags/" annotation-id)
                       {:keys [status body]} (delete* app path apikey)]
@@ -504,7 +506,7 @@
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/permissions anything) => PERMISSIONS
-                               (auth/identity anything) => ..auth..]
+                               (request-context/make-context anything org-id) => ..ctx..]
 
             (facts "read"
               (let [id  (str (UUID/randomUUID))
@@ -516,7 +518,7 @@
                          :relationships {}
                          :attributes    {}}]
 
-                (against-background [(core/get-entities ..auth.. db org-id [id] ..rt.. :include-trashed false) => [doc]
+                (against-background [(core/get-entities ..ctx.. db [id] :include-trashed false) => [doc]
                                      (r/router anything) => ..rt..]
                   (fact "GET /entities/:id returns status 200"
                     (:status (app get)) => 200)
@@ -560,7 +562,7 @@
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/permissions anything) => PERMISSIONS
-                               (auth/identity anything) => ..auth..]
+                               (request-context/make-context anything org-id) => ..ctx..]
             (future-fact "associates created Source")))))
 
     (facts "About Activities"
@@ -598,7 +600,7 @@
               (auth/permissions anything) => PERMISSIONS
               (auth/identity anything) => ..auth..
               (r/router anything) => ..rt..
-              (revisions/get-head-revisions ..auth.. db ..rt.. id) => revs)))))
+              (revisions/get-head-revisions ..ctx.. db id) => revs)))))
 
     (facts "/move"
       (fact "moves file"
@@ -702,8 +704,8 @@
           (provided
             (teams/get-teams anything) => TEAMS
             (auth/permissions anything) => PERMISSIONS
-            (auth/identity anything) => ..auth..
-            (prov/local ..auth.. db ..rt.. org-id [id]) => expected
+            (request-context/make-context anything org-id) => ..ctx..
+            (prov/local ..ctx.. db [id]) => expected
             (r/router anything) => ..rt..))))
 
     ;(facts "About breadcrumbs"

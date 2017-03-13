@@ -27,7 +27,7 @@
               :inclusive_end true
               :reduce        false :include_docs true}]
     (tr/values-from-couch
-      (couch/get-view (auth ctx) db k/LINK-DOCS-VIEW opts)
+      (couch/get-view ctx db k/LINK-DOCS-VIEW opts)
       ctx)))
 
 (defn-traced get-link-targets
@@ -35,14 +35,13 @@
   [ctx db id rel & {:keys [label name include-trashed] :or {label           nil
                                                             name            nil
                                                             include-trashed false}}]
-  (let [{auth ::request-context/auth} ctx
-        opts {:startkey      (if name [id rel name] [id rel])
+  (let [opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
               :reduce        false :include_docs true}
         docs (if label
-               (filter (eq-doc-label label) (couch/get-view auth db k/LINKS-VIEW opts))
-               (couch/get-view auth db k/LINKS-VIEW opts))]
+               (filter (eq-doc-label label) (couch/get-view ctx db k/LINKS-VIEW opts))
+               (couch/get-view ctx db k/LINKS-VIEW opts))]
     (-> docs
       (tr/entities-from-couch ctx)
       (core/filter-trashed include-trashed))))
@@ -165,7 +164,7 @@
 
   (let [{auth ::request-context/auth} ctx
         authenticated-user-id (auth/authenticated-user-id auth)
-        targets               (core/get-entities auth db org target-ids routes)]
+        targets               (core/get-entities ctx db target-ids)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
       (throw+ {:type ::target-not-found :message "Target(s) not found"}))

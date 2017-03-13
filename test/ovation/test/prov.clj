@@ -11,7 +11,7 @@
 
     (fact "generates source provenance to downstream revisions"
       ;; source -> activity -> rev
-      (prov/local ..auth.. ..db.. ..rt.. ..org.. [..source-id..]) => [{:_id        ..source-id..
+      (prov/local ..ctx.. ..db.. ..org.. [..source-id..]) => [{:_id        ..source-id..
                                                                        :name       ..name..
                                                                        :type       "Source"
                                                                        :origins    []
@@ -57,7 +57,7 @@
 
     (fact "generates rev provenance upstream and downstream"
       ;; upstream-source -> origin activity -> rev -> activity -> downstream rev
-      (prov/local ..auth.. ..db.. ..rt.. ..org.. [..revid..]) => [{:_id        ..revid..
+      (prov/local ..ctx.. ..db.. ..org.. [..revid..]) => [{:_id        ..revid..
                                                                    :name       ..rev..
                                                                    :type       "Revision"
                                                                    :origins    [{:_id ..originid.. :type "Activity" :name ..origin..}]
@@ -142,7 +142,7 @@
 
   (facts "`global`"
     (fact "generates project provenance"
-      (prov/global ..auth.. ..db.. ..rt.. ..org.. [..project..]) => [{:_id     ..ida1..
+      (prov/global ..ctx.. ..db.. ..org.. [..project..]) => [{:_id     ..ida1..
                                                                       :name    ..namea1..
                                                                       :type    "Activity"
                                                                       :inputs  [{:_id ..idi1.. :type ..tpi1.. :name ..namei1..}

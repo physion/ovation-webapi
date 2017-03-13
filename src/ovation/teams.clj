@@ -11,8 +11,7 @@
             [ovation.request-context :as rc]
             [clojure.core.async :refer [chan >!!]]
             [slingshot.support :refer [get-throwable]]
-            [ring.util.http-predicates :as hp])
-  (:import (ovation.request_context RequestContext)))
+            [ring.util.http-predicates :as hp]))
 
 
 (defn auth-token
@@ -43,7 +42,7 @@
   [ctx team-uuid]
 
   (logging/info (str "Creating Team for " team-uuid))
-  (let [opts (request-opts (token ctx))
+  (let [opts (request-opts (rc/token ctx))
         url (make-url "teams")
         body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]

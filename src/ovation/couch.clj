@@ -54,13 +54,12 @@
              (comp
                (map :doc)
                (distinct))
-             (distinct))
-        auth (::request-context/auth ctx)]
+             (distinct))]
 
     (cl/with-db db
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
-        (let [roots          (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
+        (let [roots          (conj (rc/team-ids ctx) (rc/user-id ctx))
               view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts %))) roots))
               merged-results (map deref view-calls)]
 
