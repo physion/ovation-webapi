@@ -77,7 +77,7 @@
         {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p
+                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys          p
                                                                             :include_docs true})))
                          partitions)]
 
