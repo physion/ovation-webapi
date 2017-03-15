@@ -410,7 +410,7 @@
                   :name :all-roles
                   :return {:roles [TeamRole]}
                   :summary "Gets all team Roles for the current Organization"
-                  (ok (teams/get-roles* request))))
+                  (ok (teams/get-roles* (request-context/make-context request org)))))
 
               (context "/breadcrumbs" []
                 :tags ["ui"]
