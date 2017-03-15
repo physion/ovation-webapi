@@ -22,10 +22,7 @@
 
 (defn-traced get-annotations*
   [ctx db id annotation-key]
-  (let [{auth ::request-context/auth
-         rt   ::request-context/routes
-         org  ::request-context/org} ctx
-        annotations (annotations/get-annotations ctx db [id] annotation-key)]
+  (let [annotations (annotations/get-annotations ctx db [id] annotation-key)]
     (ok {(keyword annotation-key) annotations})))
 
 (defn-traced post-annotations*
@@ -37,10 +34,7 @@
 
 (defn-traced delete-annotations*
   [ctx db annotation-id annotation-key]
-  (let [{auth :auth
-         org  :org
-         rt   :routes} ctx]
-    (accepted {(keyword annotation-key) (annotations/delete-annotations ctx db [annotation-id])})))
+  (accepted {(keyword annotation-key) (annotations/delete-annotations ctx db [annotation-id])}))
 
 (defn-traced put-annotation*
   [ctx db annotation-key annotation-id annotation]
@@ -121,23 +115,18 @@
 
 (defn- embedded-links
   [ctx db entities rel-map]
-  (let [entities-map (util/into-id-map entities)
-        {auth :auth
-         org  :org
-         routes   :routes} ctx]
+  (let [entities-map (util/into-id-map entities)]
     (mapcat (fn [[id relationships]]
               (map (fn [[rel info]]
-                     (let [org (-> (entities-map id) :organization)]
-                       (if (:create_as_inverse info)
-                         (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
-                         (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info)))))
+                     (if (:create_as_inverse info)
+                       (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
+                       (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info))))
                 relationships))
       rel-map)))
 
 (defn-traced post-resources*
   [ctx db type-name type-kw new-entities]
-  (let [{auth   ::request-context/auth
-         routes ::request-context/routes} ctx]
+  (let [{routes ::request-context/routes} ctx]
     (if (every? #(= type-name (:type %)) new-entities)
       (try+
         (let [cleaned-entities (remove-embedded-relationships new-entities)
@@ -331,7 +320,7 @@
         (auth/check! auth ::auth/update source))
       (if source
         (let [groups      (group-by :inverse_rel new-links)
-              link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) routes :inverse-rel irel)) (seq groups))]
+              link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) :inverse-rel irel)) (seq groups))]
           (let [links   (core/create-values ctx db (flatten (map :links link-groups)))
                 updates (core/update-entities ctx db (flatten (map :updates link-groups)) :authorize false :update-collaboration-roots true)]
             (created (routes/entity-route routes id) {:updates updates
@@ -365,7 +354,7 @@
 (defn-traced post-revisions*
   [ctx db id revisions]
   (try+
-    (let [parent                   (core/get-entity ctx db id routes)
+    (let [parent                   (core/get-entity ctx db id)
           revisions-with-ids       (map #(assoc % :_id (str (util/make-uuid))) revisions)
           revisions-with-resources (revisions/make-resources ctx revisions-with-ids)
           result                   (revisions/create-revisions ctx db parent (map :revision revisions-with-resources))
@@ -401,20 +390,20 @@
 
 (defn-traced move-contents*
   [request db org id info]
-  (let [ctx (request-context/make-context request org)
+  (let [ctx    (request-context/make-context request org)
 
-        src    (core/get-entities ctx db [(:source info)] routes)
-        dest   (core/get-entities ctx db [(:destination info)] routes)
-        entity (first (core/get-entities ctx db [id] routes))]
+        src    (core/get-entities ctx db [(:source info)])
+        dest   (core/get-entities ctx db [(:destination info)])
+        entity (first (core/get-entities ctx db [id]))]
 
     (if (and
           (contains? #{k/FILE-TYPE k/FOLDER-TYPE} (:type entity))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first src)))
           (contains? #{k/FOLDER-TYPE k/PROJECT-TYPE} (:type (first dest))))
 
-      (let [added   (links/add-links ctx db dest (rel (first dest) entity) [id] routes :inverse-rel (inverse-rel (first dest) entity))
+      (let [added   (links/add-links ctx db dest (rel (first dest) entity) [id] :inverse-rel (inverse-rel (first dest) entity))
             links   (core/create-values ctx db (:links added))
-            updates (core/update-entities ctx db (:updates added) routes :authorize false :update-collaboration-roots true)]
+            updates (core/update-entities ctx db (:updates added) :authorize false :update-collaboration-roots true)]
 
         (do
           (links/delete-links ctx db(first src) (rel (first src) entity) id)
