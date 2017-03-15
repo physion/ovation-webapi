@@ -22,7 +22,7 @@
               :include_docs true
               :reduce       false}]
 
-    (read/values-from-couch (couch/get-view (:auth ctx) db k/ANNOTATIONS-VIEW opts) ctx)))
+    (read/values-from-couch (couch/get-view ctx db k/ANNOTATIONS-VIEW opts) ctx)))
 
 
 ;; WRITE
