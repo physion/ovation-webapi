@@ -40,18 +40,18 @@
                                                                                                                                         :attributes {:name ..projectname2..}}]]
 
     (fact "calculates file breadcrumbs"
-      (b/get-breadcrumbs ..ctx.. ..db.. ..org.. [..file1.. ..file2..]) => {..file1.. [[{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
-                                                                                       {:type k/FOLDER-TYPE :id ..folder1.. :name ..foldername1..}
-                                                                                       {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
-                                                                                      [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
-                                                                                       {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
-                                                                                       {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
-                                                                                      [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
-                                                                                       {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
-                                                                                       {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]
-                                                                           ..file2.. [[{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
-                                                                                       {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
-                                                                                       {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
-                                                                                      [{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
-                                                                                       {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
-                                                                                       {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]})))
+      (b/get-breadcrumbs ..ctx.. ..db.. [..file1.. ..file2..]) => {..file1.. [[{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                               {:type k/FOLDER-TYPE :id ..folder1.. :name ..foldername1..}
+                                                                               {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                              [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                               {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                               {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                              [{:type k/FILE-TYPE :id ..file1.. :name ..filename1..}
+                                                                               {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                               {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]
+                                                                   ..file2.. [[{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
+                                                                               {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                               {:type k/PROJECT-TYPE :id ..project1.. :name ..projectname1..}]
+                                                                              [{:type k/FILE-TYPE :id ..file2.. :name ..filename2..}
+                                                                               {:type k/FOLDER-TYPE :id ..folder2.. :name ..foldername2..}
+                                                                               {:type k/PROJECT-TYPE :id ..project2.. :name ..projectname2..}]]})))
