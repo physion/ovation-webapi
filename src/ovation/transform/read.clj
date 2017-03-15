@@ -101,8 +101,8 @@
 
 (defn couch-to-entity
   [ctx & {:keys [teams] :or {teams nil}}]
-  (let [{auth   :auth
-         router :routes} ctx]
+  (let [{auth   :ovation.request-context/auth
+         router :ovation.request-context/routes} ctx]
     (fn [doc]
       (case (:error doc)
         "conflict" (conflict!)
@@ -128,7 +128,7 @@
 (defn-traced entities-from-couch
   "Transform couchdb documents."
   [docs ctx]
-  (let [{auth :auth} ctx
+  (let [{auth :ovation.request-context/auth} ctx
         teams (auth/authenticated-teams auth)
         xf    (comp
                 (map (couch-to-entity ctx))
@@ -143,8 +143,8 @@
 
 (defn-traced couch-to-value
   [ctx]
-  (let [{auth   :auth
-         router :routes} ctx]
+  (let [{auth   :ovation.request-context/auth
+         routes :ovation.request-context/routes} ctx]
     (fn [doc]
       (case (:error doc)
         "conflict" (conflict! doc)
@@ -152,11 +152,11 @@
         "unauthorized" (unauthorized!)
         (condp = (util/entity-type-name doc)
           c/RELATION-TYPE-NAME (-> doc
-                                 (add-self-link router))
+                                 (add-self-link routes))
           ;(add-value-permissions auth)
 
           c/ANNOTATION-TYPE-NAME (-> doc
-                                   (add-annotation-self-link router)
+                                   (add-annotation-self-link routes)
                                    (add-value-permissions auth))
 
           ;; default
@@ -166,8 +166,7 @@
 (defn-traced values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs ctx]
-  (let [{auth   :auth
-         router :routes} ctx
+  (let [{auth :ovation.request-context/auth} ctx
         teams (auth/authenticated-teams auth)]
     (->> docs
       (map (couch-to-value ctx))
