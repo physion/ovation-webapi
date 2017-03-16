@@ -44,7 +44,7 @@
 
 (defn annotation
   "Creates an annotation type endpoint"
-  [ctx db id annotation-description annotation-key record-schema annotation-schema]
+  [db org id annotation-description annotation-key record-schema annotation-schema]
 
   (let [annotation-kw (keyword annotation-key)]
     (context (str "/" annotation-key) []
@@ -53,14 +53,14 @@
         :name (keyword (str "get-" (lower-case annotation-key)))
         :return {annotation-kw [annotation-schema]}
         :summary (str "Returns all " annotation-description " annotations associated with entity :id")
-        (get-annotations* ctx db id annotation-key))
+        (get-annotations* (request-context/make-context request org) db id annotation-key))
 
       (POST "/" request
         :name (keyword (str "create-" (lower-case annotation-key)))
         :return {(keyword annotation-key) [annotation-schema]}
         :body [new-annotations {(keyword annotation-key) [record-schema]}]
         :summary (str "Adds a new " annotation-description " annotation to entity :id")
-        (post-annotations* ctx db id annotation-key ((keyword annotation-key) new-annotations)))
+        (post-annotations* (request-context/make-context request org) db id annotation-key ((keyword annotation-key) new-annotations)))
 
       ;(if (= annotation-kw :notes))
       (context "/:annotation-id" []
@@ -69,7 +69,7 @@
           :name (keyword (str "delete-" (lower-case annotation-key)))
           :return [s/Str]
           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-          (delete-annotations* ctx db annotation-id annotation-key))
+          (delete-annotations* (request-context/make-context request org) db annotation-id annotation-key))
 
         (if (= annotation-kw :notes)
           (PUT "/" request
@@ -77,7 +77,7 @@
             :return {:note annotation-schema}
             :body [update {:note record-schema}]
             :summary (str "Updates a " annotation-description " annotation to entity :id.")
-            (put-annotation* ctx db "note" annotation-id (:note update))))))))
+            (put-annotation* (request-context/make-context request org) db "note" annotation-id (:note update))))))))
 
 
 
@@ -90,18 +90,16 @@
 
 (defmacro get-resources
   "Get all resources of type (e.g. \"Project\")"
-  [ctx db entity-type]
+  [db org entity-type]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
-        type-kw   (keyword type-path)
-        {auth :auth
-         org  :org
-         rt   :routes} ctx]
+        type-kw   (keyword type-path)]
     `(GET "/" request#
        :name ~(keyword (str "all-" (lower-case type-name)))
        :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
        :summary (str "Gets all top-level " ~type-path)
-       (let [entities# (core/of-type ~ctx ~db ~type-name)]
+       (let [ctx# (request-context/make-context request# ~org)
+             entities# (core/of-type ctx# ~db ~type-name)]
          (ok {~type-kw entities#})))))
 
 (defn remove-embedded-relationships
@@ -115,12 +113,14 @@
 
 (defn- embedded-links
   [ctx db entities rel-map]
-  (let [entities-map (util/into-id-map entities)]
+  (let [{org ::request-context/org} ctx
+        entities-map (util/into-id-map entities)]
     (mapcat (fn [[id relationships]]
               (map (fn [[rel info]]
-                     (if (:create_as_inverse info)
-                       (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
-                       (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info))))
+                     (let [org (-> (entities-map id) :organization)]
+                       (if (:create_as_inverse info)
+                         (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
+                         (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info)))))
                 relationships))
       rel-map)))
 
@@ -165,7 +165,7 @@
                 (s/optional-key :updates) [Entity]}
        :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
-       (let [ctx# (request-context/make-context request# org#)]
+       (let [ctx# (request-context/make-context request# ~org)]
          (post-resources* ctx# ~db ~type-name ~type-kw (~type-kw entities#))))))
 
 (defmacro get-resource

@@ -20,6 +20,7 @@
             [ovation.audit]
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
+            [ovation.request-context :as request-context]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
@@ -99,11 +100,11 @@
 
         (context "/api" []
           (context "/v1" []
-            (context "/o" []
+            (context "/organizations" []
               (context "/:org" []
-                :path-params [org :- s/Str]
                 (context "/entities" []
                   :tags ["entities"]
+                  :path-params [org :- s/Str]
                   (context "/:id" []
                     :path-params [id :- s/Str]
                     (GET "/" request
@@ -148,6 +149,7 @@
 
                 (context "/relationships" []
                   :tags ["links"]
+                  :path-params [org :- s/Str]
                   (context "/:id" []
                     :path-params [id :- s/Str]
                     (GET "/" request
@@ -171,10 +173,11 @@
 
                 (context "/projects" []
                   :tags ["projects"]
+                  :path-params [org :- s/Str]
                   (get-resources db org "Project")
                   (post-resources db org "Project" [NewProject])
                   (context "/:id" []
-                    :path-params [id :- s/Str]
+                    :path-params [id :- s/Str, org :- s/Str]
 
                     (get-resource db org "Project" id)
                     (post-resource db org "Project" id [NewFolder NewFile NewChildActivity])
@@ -182,7 +185,7 @@
                     (delete-resource db org "Project" id)
 
                     (context "/links/:rel" []
-                      :path-params [rel :- s/Str]
+                      :path-params [rel :- s/Str, org :- s/Str]
 
                       (rel-related db org "Project" id rel)
                       (relationships db org "Project" id rel))))
@@ -190,6 +193,7 @@
 
                 (context "/sources" []
                   :tags ["sources"]
+                  :path-params [org :- s/Str]
                   (get-resources db org "Source")
                   (post-resources db org "Source" [NewSource])
                   (context "/:id" []
@@ -209,6 +213,7 @@
 
                 (context "/activities" []
                   :tags ["activities"]
+                  :path-params [org :- s/Str]
                   (get-resources db org "Activity")
                   (post-resources db org "Activity" [NewActivity])
                   (context "/:id" []
@@ -226,6 +231,7 @@
 
                 (context "/folders" []
                   :tags ["folders"]
+                  :path-params [org :- s/Str]
                   (get-resources db org "Folder")
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -254,6 +260,7 @@
 
                 (context "/files" []
                   :tags ["files"]
+                  :path-params [org :- s/Str]
                   (get-resources db org "File")
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -296,6 +303,7 @@
 
                 (context "/revisions" []
                   :tags ["files"]
+                  :path-params [org :- s/Str]
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -337,6 +345,7 @@
 
                 (context "/prov" []
                   :tags ["provenance"]
+                  :path-params [org :- s/Str]
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -353,7 +362,7 @@
 
                 (context "/teams" []
                   :tags ["teams"]
-
+                  :path-params [org :- s/Str]
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -406,7 +415,7 @@
 
                 (context "/roles" []
                   :tags ["teams"]
-
+                  :path-params [org :- s/Str]
                   (GET "/" request
                     :name :all-roles
                     :return {:roles [TeamRole]}
@@ -415,6 +424,7 @@
 
                 (context "/breadcrumbs" []
                   :tags ["ui"]
+                  :query-params [org :- s/Str]
                   (GET "/" request
                     :query-params [id :- s/Str]
                     :name :get-breadcrumbs
@@ -434,6 +444,7 @@
 
                 (context "/zip" []
                   :tags ["zip"]
+                  :path-params [org :- s/Str]
                   (context "/folders" []
                     (GET "/:id" request
                       :path-params [id :- s/Uuid]
@@ -449,6 +460,7 @@
 
                 (context "/search" []
                   :tags ["search"]
+                  :path-params [org :- s/Str]
                   (GET "/" request
                     :query-params [q :- s/Str
                                    {bookmark :- (s/maybe s/Str) nil}
