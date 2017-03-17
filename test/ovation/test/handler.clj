@@ -68,6 +68,7 @@
   [app path apikey]
   (let [get      (mock-req (mock/request :get path) apikey)
         response (app get)
+        _ (println get "app GET response - " response)
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
     {:status (:status response)
@@ -78,6 +79,7 @@
   [app path apikey]
   (let [get      (mock-req (mock/request :delete path) apikey)
         response (app get)
+        _ (println "app DELETE response - " response)
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
     {:status (:status response)
@@ -89,6 +91,8 @@
   (let [post     (mock-req (-> (mock/request :post path)
                              (mock/body (json-post-body body))) apikey)
         response (app post)
+        _ (println "app POST response - " response)
+
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
 
@@ -101,6 +105,8 @@
   (let [post     (mock-req (-> (mock/request :put path)
                              (mock/body (json-post-body body))) apikey)
         response (app post)
+        _ (println "app response - " response)
+
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
 
@@ -216,7 +222,7 @@
                      (:status (~app post#)) => 201))
                  (fact ~(str "POST /:id inserts entity with " type-name " parent")
                    (let [post# (request#)]
-                     (body-json post#) => {:entities [entity#]
+                     (body-json ~app post#) => {:entities [entity#]
                                            :links    links#
                                            :updates  {}})))
 
@@ -260,7 +266,7 @@
                      (:status (~app post#)) => 201))
                  (fact ~(str "POST / inserts new top-level " type-name)
                    (let [post# (request#)]
-                     (body-json post#) => {~(keyword type-path) [entity#]})))
+                     (body-json ~app post#) => {~(keyword type-path) [entity#]})))
 
 
                (let [bad-entities# [{:type "Other" :attributes {:foo "bar"}}]
@@ -314,7 +320,7 @@
                      (:status response#) => 200))
                  (fact "updates single entity by ID"
                    (let [request# (request# id#)]
-                     (body-json request#)) => {~(util/entity-type-name-keyword type-name) updated-entity#})
+                     (body-json ~app request#)) => {~(util/entity-type-name-keyword type-name) updated-entity#})
                  (fact "fails if entity and path :id do not match"
                    (let [other-id# (str (UUID/randomUUID))
                          response# (~app (request# other-id#))]
@@ -367,7 +373,7 @@
                      (:status response#) => 202))
                  (fact "DELETE /:id trashes entity"
                    (let [delete-request# (request# id#)]
-                     (body-json delete-request#)) => {:entity deleted-entity#}))
+                     (body-json ~app delete-request#)) => {:entity deleted-entity#}))
 
                (fact "returns 401 if not can? :delete"
                  (:status (~app (request# id#))) => 401
@@ -375,23 +381,26 @@
                    (r/router anything) => ..rt..
                    (core/delete-entities ..ctx.. ~db [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
+(defn body-json
+  [app request]
+  (let [response (app request)
+        _ (println "app response - " response)
+        reader   (clojure.java.io/reader (:body response))
+        result   (json/read reader)]
+    (walk/keywordize-keys result)))
+
 
 (against-background [(around :contents (test.system/system-background ?form))]
-  (let [app    (test.system/get-app)
-        db     (test.system/get-db)
-        org-id 1]
+  (let [app (test.system/get-app)
+        db  (test.system/get-db)
+        org 1]
 
-    (defn body-json
-      [request]
-      (let [response (app request)
-            reader   (clojure.java.io/reader (:body response))
-            result   (json/read reader)]
-        (walk/keywordize-keys result)))
+
 
     (facts "About authorization"
       (fact "invalid API key returns 401"
         (let [apikey "12345"
-              path (util/join-path ["api" ver/version ORGS org-id "entities" "123"])
+              path   (util/join-path ["api" ver/version ORGS org "entities" "123"])
               get    (mock-req (mock/request :get path) apikey)]
           (:status (app get)) => 401)))
 
@@ -426,7 +435,7 @@
         (against-background [(teams/get-teams anything) => TEAMS
                              (auth/permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
-                             (request-context/make-context anything org-id) => ..ctx..
+                             (request-context/make-context anything org) => ..ctx..
                              (routes/router anything) => ..rt..]
           (facts "GET /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
@@ -439,7 +448,7 @@
                          :annotation      {:tag "--tag--"}}]]
               (against-background [(annotations/get-annotations ..ctx.. db [id] "tags") => tags]
                 (fact "returns annotations by entity and user"
-                  (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" id "/annotations/tags")
+                  (let [path (util/join-path ["" "api/v1" ORGS org "entities" id "annotations" "tags"])
                         {:keys [status body]} (get* app path apikey)]
                     status => 200
                     body => {:tags tags}
@@ -458,7 +467,7 @@
                          :annotation      {:tag "--tag--"}}]]
               (against-background [(annotations/create-annotations ..ctx.. db [id] "tags" (:tags post)) => tags]
                 (fact "creates annotations"
-                  (let [path (util/join-path ["" "api/v1" ORGS org-id "entities" id "annotations/tags"])
+                  (let [path (util/join-path ["" "api/v1" ORGS org "entities" id "annotations/tags"])
                         {:keys [status body]} (post* app path apikey post)]
                     status => 201
                     body => {:tags tags})))))
@@ -477,7 +486,7 @@
                                                :timestamp (util/iso-short-now)}}]
               (against-background [(annotations/update-annotation ..ctx.. db (str note-id) (:annotation update)) => update]
                 (fact "updates annotation"
-                  (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" entity-id "/annotations/notes/" note-id)
+                  (let [path (str "/api/v1/" ORGS "/" org "/entities/" entity-id "/annotations/notes/" note-id)
                         {:keys [status body]} (put* app path apikey {:note (:annotation update)})]
                     status => 200
                     body => {:note update}))))))
@@ -494,10 +503,10 @@
                                 :annotation      {:tag "--tag--"}}]]
             (against-background [(teams/get-teams anything) => TEAMS
                                  (auth/permissions anything) => PERMISSIONS
-                                 (request-context/make-context anything org-id) => ..ctx..
+                                 (request-context/make-context anything org) => ..ctx..
                                  (annotations/delete-annotations ..ctx.. db [annotation-id]) => tags]
               (fact "deletes annotations"
-                (let [path (str "/api/v1/" ORGS "/" org-id "/entities/" id "/annotations/tags/" annotation-id)
+                (let [path (str "/api/v1/" ORGS "/" org "/entities/" id "/annotations/tags/" annotation-id)
                       {:keys [status body]} (delete* app path apikey)]
                   status => 202
                   body => {:tags tags}))))))
@@ -506,11 +515,11 @@
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/permissions anything) => PERMISSIONS
-                               (request-context/make-context anything org-id) => ..ctx..]
+                               (request-context/make-context anything org) => ..ctx..]
 
             (facts "read"
               (let [id  (str (UUID/randomUUID))
-                    get (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org-id "entities" id])) apikey)
+                    get (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "entities" id])) apikey)
                     doc {:_id           id
                          :_rev          "123"
                          :type          "Entity"
@@ -523,54 +532,54 @@
                   (fact "GET /entities/:id returns status 200"
                     (:status (app get)) => 200)
                   (fact "GET /entities/:id returns doc"
-                    (body-json get) => {:entity doc}))))))))
+                    (body-json app get) => {:entity doc}))))))))
 
     (facts "About entities"
-      (entity-resource-deletion-tests app db org-id "entitie"))
+      (entity-resource-deletion-tests app db org "entitie"))
 
     (facts "About Projects"
-      (entity-resource-create-tests app db org-id "Project")
-      (entity-resources-create-tests app db org-id "Project")
+      (entity-resource-create-tests app db org "Project")
+      (entity-resources-create-tests app db org "Project")
 
-      (entity-resources-read-tests app db org-id "Project")
-      (entity-resource-read-tests app db org-id "Project")
-      (entity-resource-update-tests app db org-id "Project")
-      (entity-resource-deletion-tests app db org-id "Project"))
+      (entity-resources-read-tests app db org "Project")
+      (entity-resource-read-tests app db org "Project")
+      (entity-resource-update-tests app db org "Project")
+      (entity-resource-deletion-tests app db org "Project"))
 
     (facts "About Sources"
-      (entity-resources-read-tests app db org-id "Source")
-      (entity-resource-read-tests app db org-id "Source")
-      (entity-resource-create-tests app db org-id "Source")
-      (entity-resources-create-tests app db org-id "Source")
-      (entity-resource-update-tests app db org-id "Source")
-      (entity-resource-deletion-tests app db org-id "Source"))
+      (entity-resources-read-tests app db org "Source")
+      (entity-resource-read-tests app db org "Source")
+      (entity-resource-create-tests app db org "Source")
+      (entity-resources-create-tests app db org "Source")
+      (entity-resource-update-tests app db org "Source")
+      (entity-resource-deletion-tests app db org "Source"))
 
     (facts "About Folders"
-      (entity-resources-read-tests app db org-id "Folder")
-      (entity-resource-read-tests app db org-id "Folder")
-      (entity-resource-create-tests app db org-id "Folder")
-      (entity-resource-update-tests app db org-id "Folder")
-      (entity-resource-deletion-tests app db org-id "Folder"))
+      (entity-resources-read-tests app db org "Folder")
+      (entity-resource-read-tests app db org "Folder")
+      (entity-resource-create-tests app db org "Folder")
+      (entity-resource-update-tests app db org "Folder")
+      (entity-resource-deletion-tests app db org "Folder"))
 
     (facts "About Files"
-      (entity-resource-read-tests app db org-id "File")
-      (entity-resources-read-tests app db org-id "File")
-      (entity-resource-update-tests app db org-id "File")
-      (entity-resource-deletion-tests app db org-id "File")
+      (entity-resource-read-tests app db org "File")
+      (entity-resources-read-tests app db org "File")
+      (entity-resource-update-tests app db org "File")
+      (entity-resource-deletion-tests app db org "File")
 
       (facts "related Sources"
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/permissions anything) => PERMISSIONS
-                               (request-context/make-context anything org-id) => ..ctx..]
+                               (request-context/make-context anything org) => ..ctx..]
             (future-fact "associates created Source")))))
 
     (facts "About Activities"
-      (entity-resources-read-tests app db org-id "Activity")
+      (entity-resources-read-tests app db org "Activity")
 
-      (entity-resource-read-tests app db org-id "Activity")
-      (entity-resource-update-tests app db org-id "Activity")
-      (entity-resource-deletion-tests app db org-id "Activity"))
+      (entity-resource-read-tests app db org "Activity")
+      (entity-resource-update-tests app db org "Activity")
+      (entity-resource-deletion-tests app db org "Activity"))
 
     (facts "About revisions routes"
       (facts "/files/:id/HEAD"
@@ -593,8 +602,8 @@
                                          :url          ""
                                          :previous     [(str (util/make-uuid))]
                                          :file_id      (str (util/make-uuid))}}]
-                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org-id "files" id "heads"])) apikey)]
-            (body-json get) => {:revisions revs}
+                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "files" id "heads"])) apikey)]
+            (body-json app get) => {:revisions revs}
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/permissions anything) => PERMISSIONS
@@ -608,31 +617,31 @@
               id       (str (util/make-uuid))
               body     {:source      (str (util/make-uuid))
                         :destination (str (util/make-uuid))}
-              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version ORGS org-id "files" id "move"]))
+              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version ORGS org "files" id "move"]))
                                    (mock/body (json-post-body body))) apikey)
               expected {:something "awesome"}]
-          (body-json post) => expected
+          (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org-id id body) => expected)))
+            (rh/move-contents* anything db org id body) => expected)))
 
       (fact "moves folder"
         (let [apikey   TOKEN
               id       (str (util/make-uuid))
               body     {:source      (str (util/make-uuid))
                         :destination (str (util/make-uuid))}
-              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version ORGS org-id "folders" id "move"]))
+              post     (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version ORGS org "folders" id "move"]))
                                    (mock/body (json-post-body body))) apikey)
               expected {:something "awesome"}]
-          (body-json post) => expected
+          (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org-id id body) => expected))))
+            (rh/move-contents* anything db org id body) => expected))))
 
     (facts "About Teams API"
       (facts "GET /teams/:id"
         (fact "returns team"
           (let [apikey TOKEN
                 id     (str (util/make-uuid))
-                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org-id "teams" id])) apikey)
+                get    (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "teams" id])) apikey)
                 team   {:id                  "1"
                         :type                "Team"
                         :name                id
@@ -676,7 +685,7 @@
                                                :links               {:self "--self--"}}]
                         :links               {:self        "--url--"
                                               :memberships "--membership--url--"}}]
-            (body-json get) => {:team             team
+            (body-json app get) => {:team             team
                                 :users            []
                                 :membership_roles []}
             (provided
@@ -699,12 +708,12 @@
                          :name    "Something"
                          :inputs  []
                          :outputs []}]
-              get      (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org-id "prov" id])) apikey)]
-          (body-json get) => {:provenance expected}
+              get      (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "prov" id])) apikey)]
+          (body-json app get) => {:provenance expected}
           (provided
             (teams/get-teams anything) => TEAMS
             (auth/permissions anything) => PERMISSIONS
-            (request-context/make-context anything org-id) => ..ctx..
+            (request-context/make-context anything org) => ..ctx..
             (prov/local ..ctx.. db [id]) => expected
             (r/router anything) => ..rt..))))
 
@@ -735,7 +744,7 @@
     ;                                     [{:type k/FILE-TYPE :id id2 :name "filename2"}
     ;                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
     ;                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
-    ;        (body-json get) => {:breadcrumbs expected}
+    ;        (body-json app get) => {:breadcrumbs expected}
     ;        (provided
     ;          (auth/identity anything) => ..auth..
     ;          (ovation.routes/router anything) => ..rt..
@@ -781,7 +790,7 @@
     ;                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
     ;                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
     ;                       {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]]
-    ;        (body-json get) => {:breadcrumbs expected}
+    ;        (body-json app get) => {:breadcrumbs expected}
     ;        (provided
     ;          (auth/identity anything) => ..auth..
     ;          (ovation.routes/router anything) => ..rt..
@@ -805,4 +814,4 @@
     ;                                                                                              {:_id        project2
     ;                                                                                               :type       k/PROJECT-TYPE
     ;                                                                                               :attributes {:name "projectname2"}}]))))
-      )))
+    )) )

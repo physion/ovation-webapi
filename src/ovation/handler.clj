@@ -100,7 +100,7 @@
 
         (context "/api" []
           (context "/v1" []
-            (context "/organizations" []
+            (context "/o" []
               (context "/:org" []
                 (context "/entities" []
                   :tags ["entities"]
