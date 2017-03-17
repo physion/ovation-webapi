@@ -68,7 +68,6 @@
   [app path apikey]
   (let [get      (mock-req (mock/request :get path) apikey)
         response (app get)
-        _ (println get "app GET response - " response)
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
     {:status (:status response)
@@ -79,7 +78,6 @@
   [app path apikey]
   (let [get      (mock-req (mock/request :delete path) apikey)
         response (app get)
-        _ (println "app DELETE response - " response)
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
     {:status (:status response)
@@ -91,8 +89,6 @@
   (let [post     (mock-req (-> (mock/request :post path)
                              (mock/body (json-post-body body))) apikey)
         response (app post)
-        _ (println "app POST response - " response)
-
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]
 
