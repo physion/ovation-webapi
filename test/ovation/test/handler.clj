@@ -225,7 +225,6 @@
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (~app (request#))) => 401
                  (provided
-                   (r/router anything) => ..rt..
                    (core/create-entities ..ctx.. ~db [new-entity#] :parent (:_id parent#)) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
@@ -274,7 +273,6 @@
                (fact "POST / returns 401 if not can? :create"
                  (:status (~app (request#))) => 401
                  (provided
-                   (r/router anything) => ..rt..
                    (core/create-entities ..ctx.. ~db [new-entity#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
@@ -332,7 +330,6 @@
                (fact "fails if not can? :update"
                  (:status (~app (request# id#))) => 401
                  (provided
-                   (r/router anything) => ..rt..
                    (core/update-entities ..ctx.. ~db [update#]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 
@@ -374,7 +371,6 @@
                (fact "returns 401 if not can? :delete"
                  (:status (~app (request# id#))) => 401
                  (provided
-                   (r/router anything) => ..rt..
                    (core/delete-entities ..ctx.. ~db [(str id#)]) =throws=> (sling-throwable {:type :ovation.auth/unauthorized}))))))))))
 
 (defn body-json
