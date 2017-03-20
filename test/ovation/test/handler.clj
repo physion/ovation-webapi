@@ -136,7 +136,7 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path])) apikey#)]
-                 (against-background [(core/of-type ..ctx.. ~db ~org ~type-name) => [entity#]]
+                 (against-background [(core/of-type ..ctx.. ~db ~type-name) => [entity#]]
                    (fact ~(str "GET / gets all " type-path)
                      (body-json ~app get-req#) => {~(keyword type-path) [entity#]}))))))))))
 
