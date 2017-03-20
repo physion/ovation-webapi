@@ -209,7 +209,7 @@
 
                (against-background [(core/create-entities ..ctx.. ~db [new-entity#] :parent (:_id parent#)) => [entity#]
                                     (core/get-entities ..ctx.. ~db [(:_id parent#)]) => [parent#]
-                                    (links/add-links ..ctx.. ~db ~org [parent#] rel# [(:_id entity#)] :inverse-rel inverse_rel#) => {:links links#}
+                                    (links/add-links ..ctx.. ~db [parent#] rel# [(:_id entity#)] :inverse-rel inverse_rel#) => {:links links#}
                                     (core/create-values ..ctx.. ~db links#) => links#
                                     (core/update-entities ..ctx.. ~db anything :authorize false :update-collaboration-roots true) => ..updates..
                                     (r/router anything) => ..rt..]
