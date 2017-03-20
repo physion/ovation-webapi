@@ -161,7 +161,7 @@
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path id#])) apikey#)]
                  (against-background [(request-context/make-context anything ~org) => ..ctx..
-                                      (core/get-entities ..ctx.. ~db ~org [id#]) => [entity#]]
+                                      (core/get-entities ..ctx.. ~db [id#]) => [entity#]]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
                    (let [source# {:_id        id#
@@ -172,7 +172,7 @@
                      (fact ~(str "GET /:id returns 404 if not a " (lower-case type-name))
                        (:status (~app get-req#)) => 404
                        (provided
-                         (core/get-entities ..ctx.. ~db ~org [id#]) => [source#]))))))))))))
+                         (core/get-entities ..ctx.. ~db [id#]) => [source#]))))))))))))
 
 
 (defmacro entity-resource-create-tests
@@ -380,7 +380,6 @@
 (defn body-json
   [app request]
   (let [response (app request)
-        _ (println "app response - " response)
         reader   (clojure.java.io/reader (:body response))
         result   (json/read reader)]
     (walk/keywordize-keys result)))
@@ -603,8 +602,7 @@
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/permissions anything) => PERMISSIONS
-              (auth/identity anything) => ..auth..
-              (r/router anything) => ..rt..
+              (request-context/make-context anything org) => ..ctx..
               (revisions/get-head-revisions ..ctx.. db id) => revs)))))
 
     (facts "/move"
@@ -620,7 +618,7 @@
           (provided
             (rh/move-contents* anything db org id body) => expected
             (routes/router anything) => ..rt..
-            (routes/self-route2 ..rt.. "folder" id) => "location")))
+            (routes/self-route2 ..rt.. "file" id) => "location")))
 
       (fact "moves folder"
         (let [apikey   TOKEN
