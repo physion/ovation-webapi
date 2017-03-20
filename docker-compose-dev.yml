@@ -1,0 +1,15 @@
+  version: "3.0"
+  services:
+    web:
+      volumes:
+        - .:/app
+    repl:
+      build: .
+      command: "lein repl :headless :port 59789"
+      ports:
+        - "3000:3000"
+        - "59789:59789"
+      volumes:
+        - .:/app
+      links:
+        - db

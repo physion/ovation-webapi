@@ -389,7 +389,7 @@
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [app (test.system/get-app)
         db  (test.system/get-db)
-        org 1]
+        org "1"]
 
 
 
@@ -618,7 +618,9 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org id body) => expected)))
+            (rh/move-contents* anything db org id body) => expected
+            (routes/router anything) => ..rt..
+            (routes/self-route2 ..rt.. "folder" id) => "location")))
 
       (fact "moves folder"
         (let [apikey   TOKEN
@@ -630,7 +632,9 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org id body) => expected))))
+            (rh/move-contents* anything db org id body) => expected
+            (routes/router anything) => ..rt..
+            (routes/self-route2 ..rt.. "folder" id) => "location"))))
 
     (facts "About Teams API"
       (facts "GET /teams/:id"
@@ -710,8 +714,7 @@
             (teams/get-teams anything) => TEAMS
             (auth/permissions anything) => PERMISSIONS
             (request-context/make-context anything org) => ..ctx..
-            (prov/local ..ctx.. db [id]) => expected
-            (r/router anything) => ..rt..))))
+            (prov/local ..ctx.. db [id]) => expected))))
 
     ;(facts "About breadcrumbs"
     ;  (facts "POST"
@@ -810,4 +813,4 @@
     ;                                                                                              {:_id        project2
     ;                                                                                               :type       k/PROJECT-TYPE
     ;                                                                                               :attributes {:name "projectname2"}}]))))
-    )) )
+    ))
