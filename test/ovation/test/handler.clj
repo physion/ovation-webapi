@@ -138,7 +138,7 @@
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path])) apikey#)]
                  (against-background [(core/of-type ..ctx.. ~db ~org ~type-name) => [entity#]]
                    (fact ~(str "GET / gets all " type-path)
-                     (body-json get-req#) => {~(keyword type-path) [entity#]}))))))))))
+                     (body-json ~app get-req#) => {~(keyword type-path) [entity#]}))))))))))
 
 
 (defmacro entity-resource-read-tests
@@ -163,7 +163,7 @@
                  (against-background [(request-context/make-context anything ~org) => ..ctx..
                                       (core/get-entities ..ctx.. ~db [id#]) => [entity#]]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
-                     (body-json get-req#) => {~(keyword (lower-case type-name)) entity#})
+                     (body-json ~app get-req#) => {~(keyword (lower-case type-name)) entity#})
                    (let [source# {:_id        id#
                                   :_rev       "123"
                                   :type       "OtherType"
