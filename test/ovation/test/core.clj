@@ -97,7 +97,7 @@
       (fact "it gets the entity owner"
         (core/get-owner ..ctx.. ..db.. {:owner ..owner-id..}) => ..user..
         (provided
-          (core/get-entities ..ctx.. ..db.. [..owner-id..]) => [..user..]))))
+          (core/get-entities ..ctx.. ..db.. [..owner-id..]) => [..user..])))
 
   (facts "get-entity"
     (fact "calls get-entities"
