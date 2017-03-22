@@ -10,5 +10,6 @@
         - "59789:59789"
       volumes:
         - .:/app
-      links:
-        - db
+    db:
+      environment:
+        - MYSQL_RANDOM_ROOT_PASSWORD="1"

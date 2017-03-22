@@ -125,7 +125,8 @@
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
-                            (request-context/make-context anything ~org) => ..ctx..]
+                            (request-context/make-context anything ~org) => ..ctx..
+                            ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
              (let [id#     (str (UUID/randomUUID))
@@ -161,6 +162,7 @@
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path id#])) apikey#)]
                  (against-background [(request-context/make-context anything ~org) => ..ctx..
+                                      ..ctx.. =contains=> {::request-context/routes ..rt..}
                                       (core/get-entities ..ctx.. ~db [id#]) => [entity#]]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json ~app get-req#) => {~(keyword (lower-case type-name)) entity#})
@@ -186,7 +188,8 @@
                             (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org) => ..ctx..]
+                            (request-context/make-context anything ~org) => ..ctx..
+                            ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [source-type#  ~(util/entity-type-name-keyword type-name)
@@ -240,7 +243,8 @@
                             (auth/permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org) => ..ctx..]
+                            (request-context/make-context anything ~org) => ..ctx..
+                            ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "create"
              (let [new-entity#         {:type ~(capitalize type-name) :attributes {:foo "bar"}}
@@ -286,7 +290,8 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org) => ..ctx..]
+                            (request-context/make-context anything ~org) => ..ctx..
+                            ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
              (let [id#             (UUID/randomUUID)
@@ -343,7 +348,8 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org) => ..ctx..]
+                            (request-context/make-context anything ~org) => ..ctx..
+                            ..ctx.. =contains=> {::request-context/routes ..rt..}]
 
          (facts ~(util/join-path ["" type-path])
            (facts "delete"
@@ -391,7 +397,7 @@
     (facts "About authorization"
       (fact "invalid API key returns 401"
         (let [apikey "12345"
-              path   (util/join-path ["api" ver/version ORGS org "entities" "123"])
+              path   (util/join-path ["" "api" ver/version ORGS org "entities" "123"])
               get    (mock-req (mock/request :get path) apikey)]
           (:status (app get)) => 401)))
 
@@ -427,7 +433,7 @@
                              (auth/permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
                              (request-context/make-context anything org) => ..ctx..
-                             (routes/router anything) => ..rt..]
+                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
           (facts "GET /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
                   tags [{:_id             (str (util/make-uuid))
@@ -442,9 +448,7 @@
                   (let [path (util/join-path ["" "api/v1" ORGS org "entities" id "annotations" "tags"])
                         {:keys [status body]} (get* app path apikey)]
                     status => 200
-                    body => {:tags tags}
-                    (provided
-                      (annotations/get-annotations ..ctx.. db [id] "tags") => tags))))))
+                    body => {:tags tags})))))
 
           (facts "POST /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
@@ -599,6 +603,7 @@
               (teams/get-teams anything) => TEAMS
               (auth/permissions anything) => PERMISSIONS
               (request-context/make-context anything org) => ..ctx..
+              ..ctx.. =contains=> {::request-context/routes ..rt..}
               (revisions/get-head-revisions ..ctx.. db id) => revs)))))
 
     (facts "/move"
@@ -708,6 +713,7 @@
             (teams/get-teams anything) => TEAMS
             (auth/permissions anything) => PERMISSIONS
             (request-context/make-context anything org) => ..ctx..
+            ..ctx.. =contains=> {::request-context/routes ..rt..}
             (prov/local ..ctx.. db [id]) => expected))))
 
     ;(facts "About breadcrumbs"
