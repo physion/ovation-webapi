@@ -29,18 +29,18 @@
            :password (config/config :cloudant-password))))
 
 
-(defn- key-seq
+(defn- sequential!
   [key]
   (if (sequential? key) key [key]))
 
 (defn prefix-keys
-  [opts prefix]
+  [opts org prefix]
   (cond
-    (contains? opts :key) (assoc opts :key (cons prefix (key-seq (:key opts))))
-    (contains? opts :keys) (assoc opts :keys (vec (map #(cons prefix (key-seq %)) (:keys opts))))
+    (contains? opts :key) (assoc opts :key (concat [org prefix] (sequential! (:key opts))))
+    (contains? opts :keys) (assoc opts :keys (vec (map #(concat [org prefix] (sequential! %)) (:keys opts))))
     :else (-> opts
-            (assoc :startkey (cons prefix (key-seq (:startkey opts))))
-            (assoc :endkey (cons prefix (key-seq (:endkey opts)))))))
+            (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
+            (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
 
 
 (defn-traced get-view
@@ -50,7 +50,8 @@
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [tf (if (:include_docs opts)
+  (let [org (::rc/org ctx)
+        tf (if (:include_docs opts)
              (comp
                (map :doc)
                (distinct))
@@ -60,7 +61,7 @@
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
         (let [roots          (conj (rc/team-ids ctx) (rc/user-id ctx))
-              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts %))) roots))
+              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts org %))) roots))
               merged-results (map deref view-calls)]
 
           (into '() tf (apply concat merged-results)))

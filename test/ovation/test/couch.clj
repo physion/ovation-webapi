@@ -39,11 +39,12 @@
                                              :endkey       [..end..]
                                              :include_docs true}) => [..other.. ..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..user.. ..start..]
-                                                :endkey       [..user.. ..end..]
+        ..ctx.. =contains=> {::rc/org ..org..}
+        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..user.. ..start..]
+                                                :endkey       [..org.. ..user.. ..end..]
                                                 :include_docs true}) => [{:doc ..result..}]
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..team.. ..start..]
-                                                :endkey       [..team.. ..end..]
+        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..team.. ..start..]
+                                                :endkey       [..org.. ..team.. ..end..]
                                                 :include_docs true}) => [{:doc ..result..} {:doc ..other..}]))
 
     (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
