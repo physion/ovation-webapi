@@ -9,19 +9,19 @@
 
 
 (defn-traced get-parents
-  [auth db id routes]
-  (let [parents (links/get-link-targets auth db id k/PARENTS-REL routes)]
+  [ctx db id]
+  (let [parents (links/get-link-targets ctx db id k/PARENTS-REL)]
     parents))
 
 
 (defn-traced build-graph
   "Builds a directed graph of child -> parent nodes using loop/recur. Returns the Ubergraph."
-  [auth db routes entity-ids g]
+  [ctx db entity-ids g]
   (let [graph (apply uber/add-nodes g entity-ids)]
     (loop [ids entity-ids
            g   graph]
       (let [edges        (pmap (fn [id]
-                                 (let [parents (get-parents auth db id routes)]
+                                 (let [parents (get-parents ctx db id)]
                                    (map (fn [parent] [id (:_id parent)]) parents))) ids)
             parent-edges (apply concat edges)
             parent-ids   (set (map #(second %) parent-edges))]
@@ -48,8 +48,8 @@
 
 (defn-traced collect-paths
   "Finds all paths from ids to parents"
-  [auth db graph ids routes]
-  (let [entities (util/into-id-map (core/get-entities auth db (uber/nodes graph) routes))]
+  [ctx db graph ids]
+  (let [entities (util/into-id-map (core/get-entities ctx db (uber/nodes graph)))]
     (into {} (map (fn [id]
                     (let [paths (extend-path id graph entities [(make-node-description id entities)])]
                       [id paths]))
@@ -58,9 +58,9 @@
 
 (defn-traced get-breadcrumbs
   "Gets all breadcrumb paths to entities with IDs `ids`"
-  [auth db routes ids]
-  (let [graph  (build-graph auth db routes ids (uber/digraph))
-        result (collect-paths auth db graph ids routes)]
+  [ctx db ids]
+  (let [graph  (build-graph ctx db ids (uber/digraph))
+        result (collect-paths ctx db graph ids)]
     result))
 
 

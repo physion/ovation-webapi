@@ -9,6 +9,7 @@
             [ovation.html :as html]
             [clojure.tools.logging :as logging]
             [ovation.transform.read :as read]
+            [ovation.request-context :as request-context]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
             [ovation.config :as config]))
@@ -16,12 +17,12 @@
 
 ;; READ
 (defn get-annotations
-  [auth db ids annotation-type routes]
+  [ctx db ids annotation-type]
   (let [opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}]
 
-    (read/values-from-couch (couch/get-view auth db k/ANNOTATIONS-VIEW opts) auth routes)))
+    (read/values-from-couch (couch/get-view ctx db k/ANNOTATIONS-VIEW opts) ctx)))
 
 
 ;; WRITE
@@ -95,23 +96,26 @@
      :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
-  [auth db routes ids annotation-type records]
-  (let [auth-user-id (auth/authenticated-user-id auth)
-        entities (core/get-entities auth db ids routes)
+  [ctx db ids annotation-type records]
+  (let [{auth ::request-context/auth} ctx
+        auth-user-id (auth/authenticated-user-id auth)
+        entities (core/get-entities ctx db ids)
         entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth db routes docs))))
+    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values ctx db docs))))
 
 (defn delete-annotations
-  [auth db annotation-ids routes]
-  (core/delete-values auth db annotation-ids routes))
+  [ctx db annotation-ids]
+  (core/delete-values ctx db annotation-ids))
 
 (defn update-annotation
-  [auth db rt id annotation]
+  [ctx db id annotation]
 
-  (let [existing (first (core/get-values auth [id] :routes rt))]
+  (let [{auth ::request-context/auth
+         rt   ::request-context/routes} ctx
+        existing (first (core/get-values ctx db [id] :routes rt))]
 
     (when-not (= (str (auth/authenticated-user-id auth)) (str (:user existing)))
       (forbidden! "Update of an other user's annotations is forbidden"))
@@ -119,13 +123,13 @@
     (when-not (#{k/NOTES} (:annotation_type existing))
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (let [entity (first (core/get-entities auth db [(:entity existing)] rt))
+    (let [entity (first (core/get-entities ctx db [(:entity existing)]))
           time     (util/iso-short-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth db rt [update]))))))
+      (first (map (fn [doc] (notify auth entity doc)) (core/update-values ctx db [update]))))))
 
 
 

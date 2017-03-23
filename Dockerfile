@@ -1,7 +1,7 @@
-FROM clojure
+FROM clojure:lein-2.7.1-alpine
 MAINTAINER support@ovation.io
 
-RUN apt-get -y update
+#RUN apt-get -y update
 
 ENV PORT 3000
 EXPOSE 3000

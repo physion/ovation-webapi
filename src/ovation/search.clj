@@ -3,6 +3,7 @@
             [ovation.constants :as k]
             [ovation.core :as core]
             [ovation.breadcrumbs :as breadcrumbs]
+            [ovation.request-context :as request-context]
             [ovation.routes :as routes]
             [ovation.links :as links]
             [ovation.util :as util]))
@@ -20,11 +21,12 @@
   (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
 
 (defn get-results
-  [auth db routes rows]
+  [ctx db rows]
   (let [ids (entity-ids rows)
-        entities (core/get-entities auth db ids routes)
+        entities (core/get-entities ctx db ids)
         root-ids (mapcat #(links/collaboration-roots %) entities)
-        roots (util/into-id-map (core/get-entities auth db root-ids routes))]
+        roots (util/into-id-map (core/get-entities ctx db root-ids))
+        {routes ::request-context/routes} ctx]
     (map (fn [entity] {:id            (:_id entity)
                        :entity_type   (:type entity)
                        :name          (get-in entity [:attributes :name] (:_id entity))
@@ -37,10 +39,10 @@
 
 (def MIN-SEARCH 200)
 (defn search
-  [auth db rt q & {:keys [bookmark limit] :or {bookmark nil
+  [ctx db q & {:keys [bookmark limit] :or {bookmark nil
                                             limit 0}}]
   (let [raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
-        entities (get-results auth db rt (:rows raw))]
+        entities (get-results ctx db (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
      :search_results entities}))

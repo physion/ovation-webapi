@@ -112,9 +112,13 @@
 (s/defschema NewProject (-> NewEntity
                             (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
-                         (assoc :type (s/eq "Project"))))
+                       (assoc :type (s/eq "Project"))
+                       (assoc (s/optional-key :team) s/Int)
+                       (assoc (s/optional-key :organization) s/Int)))
 (s/defschema ProjectUpdate (-> EntityUpdate
-                               (assoc :type (s/eq "Project"))))
+                             (assoc :type (s/eq "Project"))
+                             (assoc (s/optional-key :team) s/Int)
+                             (assoc (s/optional-key :organization) s/Int)))
 
 (s/defschema NewChildActivity (-> NewEntity
                                 (assoc :type (s/eq "Activity"))

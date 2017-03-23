@@ -13,19 +13,19 @@
 
 
 (defn- relations
-  [auth db rt id rel]
-  (map #(relation-summary %) (links/get-link-targets auth db id rel rt)))
+  [ctx db id rel]
+  (map #(relation-summary %) (links/get-link-targets ctx db id rel)))
 
 (defn entity-summary
   "Asynchronously calculates a single-entity summary"
-  [auth db rt entity]
+  [ctx db entity]
   (let [id   (:_id entity)
         name (get-in entity [:attributes :name])
         type (:type entity)]
     (case type
-      "Activity" (let [inputs  (thread (relations auth db rt id k/INPUTS-REL))
-                       outputs (thread (relations auth db rt id k/OUTPUTS-REL))
-                       actions (thread (relations auth db rt id k/ACTIONS-REL))]
+      "Activity" (let [inputs  (thread (relations ctx db id k/INPUTS-REL))
+                       outputs (thread (relations ctx db id k/OUTPUTS-REL))
+                       actions (thread (relations ctx db id k/ACTIONS-REL))]
                    {:_id     id
                     :name    name
                     :type    type
@@ -33,8 +33,8 @@
                     :outputs (<?? outputs)
                     :actions (<?? actions)})
       ;;default
-      (let [origins    (thread (relations auth db rt id k/ORIGINS-REL))
-            activities (thread (relations auth db rt id k/ACTIVITIES-REL))]
+      (let [origins    (thread (relations ctx db id k/ORIGINS-REL))
+            activities (thread (relations ctx db id k/ACTIVITIES-REL))]
         {:_id        id
          :name       name
          :type       type
@@ -52,28 +52,28 @@
           ::downstream #{:activities}})))
 
 (defn local*
-  [auth db rt direction entity]
+  [ctx db direction entity]
   (if (or (nil? entity) (nil? (:_id entity)))
     []
-    (let [desc (entity-summary auth db rt entity)
+    (let [desc (entity-summary ctx db entity)
           rels (directional-rels (:type entity) direction)
-          next (apply concat (pmap #(links/get-link-targets auth db (:_id entity) (name %) rt) rels))]
+          next (apply concat (pmap #(links/get-link-targets ctx db (:_id entity) (name %)) rels))]
 
-      (concat [desc] (mapcat #(local* auth db rt direction %) next)))))
+      (concat [desc] (mapcat #(local* ctx db direction %) next)))))
 
 (defn upstream-local
-  [auth db rt entity]
-  (local* auth db rt ::upstream entity))
+  [ctx db entity]
+  (local* ctx db ::upstream entity))
 
 (defn downstream-local
-  [auth db rt entity]
-  (local* auth db rt ::downstream entity))
+  [ctx db entity]
+  (local* ctx db ::downstream entity))
 
 (defn local
-  [auth db rt ids]
-  (let [entities    (core/get-entities auth db ids rt)
-        upstream    (apply concat (pmap #(upstream-local auth db rt %) entities))
-        downstream  (apply concat (pmap #(downstream-local auth db rt %) entities))
+  [ctx db ids]
+  (let [entities    (core/get-entities ctx db ids)
+        upstream    (apply concat (pmap #(upstream-local ctx db %) entities))
+        downstream  (apply concat (pmap #(downstream-local ctx db %) entities))
         results     (concat upstream downstream)
         results-map (into {} (map (fn [s] [(:_id s) s]) results))]
 
@@ -81,10 +81,10 @@
 
 
 (defn- project-global
-  [auth db rt project]
-  (let [activities (links/get-link-targets auth db project k/ACTIVITIES-REL rt)]
-    (pmap #(entity-summary auth db rt %) activities)))
+  [ctx db project]
+  (let [activities (links/get-link-targets ctx db project k/ACTIVITIES-REL)]
+    (pmap #(entity-summary ctx db %) activities)))
 
 (defn global
-  [auth  db rt project-ids]
-  (mapcat #(project-global auth db rt %) project-ids))
+  [ctx db project-ids]
+  (mapcat #(project-global ctx db %) project-ids))
