@@ -4,7 +4,7 @@
 
 (defprotocol AuthToken
   (token [this])
-  (team-ids [thix])
+  (team-ids [this])
   (user-id [this]))
 
 (defrecord RequestContext

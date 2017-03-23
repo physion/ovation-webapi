@@ -78,9 +78,7 @@
       (fact "it gets all entities of type"
         (core/of-type ..ctx.. ..db.. ..type..) => ..result..
         (provided
-          ..ctx.. =contains=> {:auth   ..auth..
-                               :routes ..rt..}
-          (couch/get-view ..auth.. ..db.. k/ENTITIES-BY-TYPE-VIEW {:key ..type.. :reduce false :include_docs true}) => [..docs..]
+          (couch/get-view ..ctx.. ..db.. k/ENTITIES-BY-TYPE-VIEW {:key ..type.. :reduce false :include_docs true}) => [..docs..]
           (tr/entities-from-couch [..docs..] ..ctx..) => ..entities..
           (core/filter-trashed ..entities.. false) => ..result..)))
 
