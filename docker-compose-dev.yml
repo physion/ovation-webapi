@@ -3,6 +3,7 @@
     web:
       volumes:
         - .:/app
+      env_file: dev.env
     repl:
       build: .
       command: lein repl :headless :host 0.0.0.0 :port 59789
@@ -10,6 +11,7 @@
         - "59789:59789"
       volumes:
         - .:/app
+      env_file: dev.env
     db:
       environment:
         - MYSQL_RANDOM_ROOT_PASSWORD="1"
