@@ -14,7 +14,7 @@ COLLABORATION_ROOTS = '_collaboration_roots'
 def migrate(client, db_name):
     db = client[db_name]
     end_point = '{0}/{1}'.format(client.server_url, '{}/_all_docs'.format(db_name))
-    params = {'include_docs': 'false'}
+    params = {'include_docs': 'false', 'limit': 1}
 
     # Issue the request
     response = client.r_session.get(end_point, params=params)
@@ -25,7 +25,7 @@ def migrate(client, db_name):
     n_missing = 0
     for doc in tqdm(db, total=total_docs, unit='doc'):
         if 'type' in doc:
-            doc['organization'] = 0
+            doc['organization'] = "0"
             doc.save()
 
 
