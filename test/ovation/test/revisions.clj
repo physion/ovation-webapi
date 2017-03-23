@@ -151,9 +151,17 @@
             (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..]))))
 
     (facts "update-metadata"
-      (fact "returns 422 if URL is not ovation.io"
-        (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
-          (rev/update-metadata ..auth.. ..rt.. revision) => (throws ExceptionInfo)))
+      (fact "updates file metadata if URL is not ovation.io"
+        (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"
+                                                 :file_id ..fileid..}}
+              file     {:_id ..fileid..}
+              updated-rev (-> revision
+                            (assoc-in [:attributes :upload-status] k/COMPLETE))]
+          (rev/update-metadata ..auth.. ..rt.. revision) => {:_id ..id.., :result true}
+          (provided
+            (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
+            (core/get-entity ..auth.. ..fileid.. ..rt..) => file
+            (core/update-entities ..auth.. [updated-rev ..updated-file..] ..rt.. :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))
 
       (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
         (let [revid       "100"
