@@ -28,6 +28,8 @@ def migrate(client, db_name):
             doc['organization'] = "0"
             doc.save()
 
+# Copy design doc...
+# curl -X COPY https://ovation-io-dev:$PASSWORD@ovation-io-dev.cloudant.com/staging/_design/api-warm -H "Destination: _design/api?rev=12-2f8efce525a10bdc79754071bf8abd26"
 
 def main():
     parser = argparse.ArgumentParser(prog='python add_organizations.py')
