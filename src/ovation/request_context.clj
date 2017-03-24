@@ -1,6 +1,6 @@
 (ns ovation.request-context
-  (:require [ovation.routes :as routes]
-            [ovation.auth :as auth]))
+  (:require [ovation.auth :as auth]
+            [compojure.api.routes :refer [path-for*]]))
 
 (defprotocol AuthToken
   (token [this])
@@ -18,10 +18,15 @@
   (user-id [c]
     (auth/authenticated-user-id (::auth c))))
 
+(defn router
+  [request]
+  (fn [name & [params]]
+    (path-for* name request params)))
+
 (defn make-context
   "Constructs a RequestContext from a request"
   [request org]
   (map->RequestContext {::org     org
-                        ::routes  (routes/router request)
+                        ::routes  (router request)
                         ::auth    (auth/identity request)
                         ::request request}))

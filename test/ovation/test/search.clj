@@ -59,8 +59,8 @@
                                                       :project_names [..fileproject..]
                                                       :links         {:breadcrumbs ..bc2..}}]
         (provided
-          (search/breadcrumbs-url ..rt.. ..eid..) => ..bc1..
-          (search/breadcrumbs-url ..rt.. ..id1..) => ..bc2..
+          (search/breadcrumbs-url ..ctx.. ..eid..) => ..bc1..
+          (search/breadcrumbs-url ..ctx.. ..id1..) => ..bc2..
           (search/entity-ids rows) => [..eid.. ..id1..]
           (links/collaboration-roots {:_id        ..eid..
                                       :type       k/PROJECT-TYPE
@@ -93,9 +93,9 @@
                                                                                  :updated-at ..update2..}}])))
 
     (fact "Generates breadcrumbs URL"
-      (search/breadcrumbs-url ..rt.. "ENTITY") => "breadcrumbs/url?id=ENTITY"
+      (search/breadcrumbs-url ..ctx.. "ENTITY") => "breadcrumbs/url?id=ENTITY"
       (provided
-        (routes/named-route ..rt.. :get-breadcrumbs {}) => "breadcrumbs/url"))
+        (routes/named-route ..ctx.. :get-breadcrumbs {}) => "breadcrumbs/url"))
 
     (fact "Gets entity ID from annotations"
       (search/entity-ids [{:id     ..id1..

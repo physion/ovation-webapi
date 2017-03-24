@@ -9,7 +9,6 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [clojure.string :refer [lower-case capitalize join]]
             [ovation.schema :refer :all]
-            [ovation.routes :refer [router]]
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
             [ovation.core :as core]
@@ -156,8 +155,8 @@
                       :name :get-relation
                       :return {:relationship LinkInfo}
                       :summary "Relationship document"
-                      (let [auth (auth/identity request)]
-                        (ok {:relationship (first (core/get-values auth [id] :routes (r/router request)))})))
+                      (let [ctx (request-context/make-context request org)]
+                        (ok {:relationship (first (core/get-values ctx db [id] :routes (::request-context/routes ctx)))})))
                     (DELETE "/" request
                       :name :delete-relation
                       :return {:relationship LinkInfo}
@@ -244,8 +243,9 @@
                       :summary "Move folder from source folder to destination folder"
                       :body [info {:source      s/Str
                                    :destination s/Str}]
-                      (created (routes/self-route2 (routes/router request) "folder" id)
-                        (move-contents* request db org id info)))
+                      (let [ctx (request-context/make-context request org)]
+                        (created (routes/self-route ctx "folder" id)
+                          (move-contents* request db org id info))))
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
@@ -267,7 +267,7 @@
                       :body [revisions {:entities [NewRevision]}]
                       :summary "Creates a new downstream Revision from the current HEAD Revision"
                       (let [ctx (request-context/make-context request org)]
-                        (created (routes/heads-route2 (routes/router request) id)
+                        (created (routes/heads-route2 ctx id)
                           (post-revisions* ctx db id (:entities revisions)))))
 
                     (POST "/move" request
@@ -278,8 +278,9 @@
                       :summary "Move file from source folder to destination folder"
                       :body [info {:source      s/Str
                                    :destination s/Str}]
-                      (created (routes/self-route2 (routes/router request) "file" id)
-                        (move-contents* request db org id info)))
+                      (let [ctx (request-context/make-context request org)]
+                        (created (routes/self-route ctx "file" id)
+                          (move-contents* request db org id info))))
 
                     (GET "/heads" request
                       :name :file-head-revisions
@@ -310,7 +311,7 @@
                       :body [revisions [NewRevision]]
                       :summary "Creates a new downstream Revision"
                       (let [ctx (request-context/make-context request org)]
-                        (created (routes/targets-route2 (routes/router request) "revision" id "revisions")
+                        (created (routes/targets-route ctx "revision" id "revisions")
                           (post-revisions* ctx db id revisions))))
                     (PUT "/upload-complete" request
                       :name :upload-complete
@@ -371,8 +372,9 @@
                         :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
                         :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
                         :body [body {:membership NewTeamMembershipRole}]
-                        (let [membership (teams/post-membership* request id (:membership body))]
-                          (created ((routes/router request) :get-team {:id id}) membership)))
+                        (let [membership (teams/post-membership* request id (:membership body))
+                              ctx (request-context/make-context request org)]
+                          (created ((::request-context/routes ctx) :get-team {:id id}) membership)))
                       (context "/:mid" []
                         :path-params [mid :- s/Str]
 
@@ -464,7 +466,6 @@
                                                :links         {:breadcrumbs s/Str}}]
                              :meta           {:bookmark   s/Str
                                               :total_rows s/Int}}
-                    (let [auth   (auth/identity request)
-                          rt     (router request)
-                          result (search/search auth rt q :bookmark bookmark :limit limit)]
+                    (let [ctx (request-context/make-context request org)
+                          result (search/search ctx db q :bookmark bookmark :limit limit)]
                       (ok result))))))))))))

@@ -17,16 +17,15 @@
            (:id r))) rows))
 
 (defn breadcrumbs-url
-  [routes id]
-  (str (routes/named-route routes :get-breadcrumbs {}) "?id=" id))
+  [ctx id]
+  (str (routes/named-route ctx :get-breadcrumbs {}) "?id=" id))
 
 (defn get-results
   [ctx db rows]
   (let [ids (entity-ids rows)
         entities (core/get-entities ctx db ids)
         root-ids (mapcat #(links/collaboration-roots %) entities)
-        roots (util/into-id-map (core/get-entities ctx db root-ids))
-        {routes ::request-context/routes} ctx]
+        roots (util/into-id-map (core/get-entities ctx db root-ids))]
     (map (fn [entity] {:id            (:_id entity)
                        :entity_type   (:type entity)
                        :name          (get-in entity [:attributes :name] (:_id entity))
@@ -35,7 +34,7 @@
                        :project_names (if-let [collaboration-roots (links/collaboration-roots entity)]
                                         (remove nil? (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) collaboration-roots))
                                         [])
-                       :links         {:breadcrumbs (breadcrumbs-url routes (:_id entity))}}) entities)))
+                       :links         {:breadcrumbs (breadcrumbs-url ctx (:_id entity))}}) entities)))
 
 (def MIN-SEARCH 200)
 (defn search

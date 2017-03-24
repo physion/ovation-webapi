@@ -215,7 +215,7 @@
                                     (links/add-links ..ctx.. ~db [parent#] rel# [(:_id entity#)] :inverse-rel inverse_rel#) => {:links links#}
                                     (core/create-values ..ctx.. ~db links#) => links#
                                     (core/update-entities ..ctx.. ~db anything :authorize false :update-collaboration-roots true) => ..updates..
-                                    (r/router anything) => ..rt..]
+                                    (request-context/router anything) => ..rt..]
                  (fact "POST /:id returns status 201"
                    (let [post# (request#)]
                      (:status (~app post#)) => 201))
@@ -259,7 +259,7 @@
                (against-background [(core/create-entities ..ctx.. ~db [new-entity#]) => [entity#]
                                     (core/create-values ..ctx.. ~db []) => []
                                     (core/update-entities ..ctx.. ~db [] :authorize false :update-collaboration-roots true) => []
-                                    (r/router anything) => ..rt..]
+                                    (request-context/router anything) => ..rt..]
                  (fact "POST / returns status 201"
                    (let [post# (request#)]
                      (:status (~app post#)) => 201))
@@ -313,7 +313,7 @@
                                                                 (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
                (against-background [(core/update-entities ..ctx.. ~db [update#]) => [updated-entity#]
-                                    (r/router anything) => ..rt..]
+                                    (request-context/router anything) => ..rt..]
                  (fact "succeeds with status 200"
                    (let [response# (~app (request# id#))]
                      (:status response#) => 200))
@@ -325,7 +325,7 @@
                          response# (~app (request# other-id#))]
                      (:status response#) => 404)))
 
-               ;(against-background [(r/router anything) => ..rt..]
+               ;(against-background [(request-context/router anything) => ..rt..]
                ;  (fact "fails with status 409"
                ;    (let [response# (app (request# id#))]
                ;      (:status response#) => 409
@@ -366,7 +366,7 @@
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :delete (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path (str entity-id#)]))) apikey#))]
 
                (against-background [(core/delete-entities ..ctx.. ~db [(str id#)]) => [deleted-entity#]
-                                    (r/router anything) => ..rt..]
+                                    (request-context/router anything) => ..rt..]
                  (fact "succeeds with status 202"
                    (let [response# (~app (request# id#))]
                      (:status response#) => 202))
@@ -523,7 +523,7 @@
                          :attributes    {}}]
 
                 (against-background [(core/get-entities ..ctx.. db [id] :include-trashed false) => [doc]
-                                     (r/router anything) => ..rt..]
+                                     (request-context/router anything) => ..rt..]
                   (fact "GET /entities/:id returns status 200"
                     (:status (app get)) => 200)
                   (fact "GET /entities/:id returns doc"
@@ -618,8 +618,8 @@
           (body-json app post) => expected
           (provided
             (rh/move-contents* anything db org id body) => expected
-            (routes/router anything) => ..rt..
-            (routes/self-route2 ..rt.. "file" id) => "location")))
+            (request-context/make-context anything org) => ..ctx..
+            (routes/self-route ..ctx.. "file" id) => "location")))
 
       (fact "moves folder"
         (let [apikey   TOKEN
@@ -632,8 +632,8 @@
           (body-json app post) => expected
           (provided
             (rh/move-contents* anything db org id body) => expected
-            (routes/router anything) => ..rt..
-            (routes/self-route2 ..rt.. "folder" id) => "location"))))
+            (request-context/make-context anything org) => ..ctx..
+            (routes/self-route ..ctx.. "folder" id) => "location"))))
 
     (facts "About Teams API"
       (facts "GET /teams/:id"
