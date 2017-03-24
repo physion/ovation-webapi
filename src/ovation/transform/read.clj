@@ -151,11 +151,11 @@
         "unauthorized" (unauthorized!)
         (condp = (util/entity-type-name doc)
           c/RELATION-TYPE-NAME (-> doc
-                                 (add-self-link routes))
+                                 (add-self-link ctx))
           ;(add-value-permissions auth)
 
           c/ANNOTATION-TYPE-NAME (-> doc
-                                   (add-annotation-self-link routes)
+                                   (add-annotation-self-link ctx)
                                    (add-value-permissions auth))
 
           ;; default

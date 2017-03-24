@@ -6,8 +6,9 @@
   (let [type (util/entity-type-name doc)
         id (:_id doc)
         rt (:ovation.request-context/routes ctx)
-        org (:ovation.request-context/org ctx)]
-    (rt (keyword (format "get-%s-links" type)) {:org org :id id :rel name})))
+        org (:ovation.request-context/org ctx)
+        route-name (keyword (format "get-%s-links" type))]
+    (rt route-name {:org org :id id :rel name})))
 
 (defn targets-route
   ([ctx doc name]

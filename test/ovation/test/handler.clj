@@ -618,7 +618,7 @@
           (body-json app post) => expected
           (provided
             (rh/move-contents* anything db org id body) => expected
-            (request-context/router anything) => ..rt..
+            (request-context/make-context anything org) => ..ctx..
             (routes/self-route ..ctx.. "file" id) => "location")))
 
       (fact "moves folder"
@@ -632,7 +632,7 @@
           (body-json app post) => expected
           (provided
             (rh/move-contents* anything db org id body) => expected
-            (request-context/router anything) => ..rt..
+            (request-context/make-context anything org) => ..ctx..
             (routes/self-route ..ctx.. "folder" id) => "location"))))
 
     (facts "About Teams API"

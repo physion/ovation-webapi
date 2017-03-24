@@ -1,40 +1,36 @@
 (ns ovation.test.router
   (:use midje.sweet)
-  (:require [ovation.routes :as r]
+  (:require [ovation.routes :as routes]
             [ovation.util :as util]
             [ovation.request-context :as request-context]))
 
+(defn rt
+  [& args]
+  args)
+
 (against-background [..ctx.. =contains=> {::request-context/org    ..org..
-                                          ::request-context/routes ..rt..}]
+                                          ::request-context/routes rt}
+                     ..doc.. =contains=> {:_id ..id..}
+                     (util/entity-type-name ..doc..) => ..type..]
   (facts "About routes"
-    (fact "`relationship-route`"
+
+    (facts "relationship-route"
       (fact "provides relationship route for doc and name"
-        (r/relationship-route ..ctx.. ..doc.. ..name..) => ..route..
-        (provided
-          ..doc.. =contains=> {:_id ..id..}
-          (util/entity-type-name ..doc..) => ..type..
-          (..rt.. (keyword (format "get-%s-links" ..type..)) {:org ..org.. :id ..id.. :rel ..name..}) => ..route..)))
+        (routes/relationship-route ..ctx.. ..doc.. ..name..) => [(keyword (format "get-%s-links" ..type..)) {:id ..id.., :org ..org.., :rel ..name..}]))
 
-    (facts "`target-route`"
+    (facts "target-route"
       (fact "provides targets route for doc and name"
-        (r/targets-route ..ctx.. ..doc.. ..name..) => ..route..
-        (provided
-          ..doc.. =contains=> {:_id ..id..}
-          (util/entity-type-name ..doc..) => ..type..
-          (..rt.. (keyword (format "get-%s-link-targets" ..type..)) {:org ..org.. :id ..id.. :rel ..name..}) => ..route..)))
+        (routes/targets-route ..ctx.. ..doc.. ..name..) => [(keyword (format "get-%s-link-targets" ..type..)) {:org ..org.. :id ..id.. :rel ..name..}]))
 
-    (facts "`self-route`"
+    (facts "self-route"
       (fact "provides self entity route"
         (let [type "mytype"]
-          (r/self-route ..ctx.. ..doc..) => ..route..
+          (routes/self-route ..ctx.. ..doc..) => [(keyword (format "get-%s" type)) {:org ..org.. :id ..id..}]
           (provided
-            ..doc.. =contains=> {:_id ..id..}
-            (util/entity-type-name ..doc..) => type
-            (..rt.. (keyword (format "get-%s" type)) {:org ..org.. :id ..id..}) => ..route..)))
+            (util/entity-type-name ..doc..) => type)))
+
       (fact "provides self route for Relationship"
         (let [type util/RELATION_TYPE]
-          (r/self-route ..ctx.. ..doc..) => ..route..
+          (routes/self-route ..ctx.. ..doc..) => [(keyword (format "get-%s" type)) {:org ..org.. :id ..id..}]
           (provided
-            ..doc.. =contains=> {:_id ..id.. :source_id ..src..}
-            (util/entity-type-name ..doc..) => type
-            (..rt.. (keyword (format "get-%s" type)) {:org ..org.. :id ..id..}) => ..route..))))))
+            (util/entity-type-name ..doc..) => type))))))

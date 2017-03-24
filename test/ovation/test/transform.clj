@@ -77,12 +77,12 @@
       (let [type-rel {:relA {}
                       :relB {}}
             dto      {:type ..type.. :links {:_collaboration_roots [..collab..]}}]
-        (tr/add-relationship-links dto ..rt..) => (-> dto
-                                                    (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])})
-                                                    (assoc-in [:relationships] {:relA {:self    ..relA-self..
-                                                                                       :related ..relA-related..}
-                                                                                :relB {:self    ..relB-self..
-                                                                                       :related ..relB-related..}}))
+        (tr/add-relationship-links dto ..ctx..) => (-> dto
+                                                     (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])})
+                                                     (assoc-in [:relationships] {:relA {:self    ..relA-self..
+                                                                                        :related ..relA-related..}
+                                                                                 :relB {:self    ..relB-self..
+                                                                                        :related ..relB-related..}}))
         (provided
           (util/entity-type-keyword dto) => ..type..
           (s/EntityRelationships ..type..) => type-rel
