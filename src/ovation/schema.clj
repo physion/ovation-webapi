@@ -75,12 +75,14 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}})
+                        :attributes {s/Keyword s/Any}
+                        (s/optional-key :organization) (s/either s/Int s/Str)})
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
                                          (s/optional-key :api_version) s/Int
-                                         (s/optional-key :permissions) {s/Keyword s/Bool}))
+                                         (s/optional-key :permissions) {s/Keyword s/Bool}
+                                         (s/optional-key :organization) (s/either s/Int s/Str)))
 
 
 (s/defschema Entity (assoc BaseEntity
@@ -113,12 +115,10 @@
                             (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
                        (assoc :type (s/eq "Project"))
-                       (assoc (s/optional-key :team) s/Int)
-                       (assoc (s/optional-key :organization) s/Int)))
+                       (assoc (s/optional-key :team) s/Int)))
 (s/defschema ProjectUpdate (-> EntityUpdate
                              (assoc :type (s/eq "Project"))
-                             (assoc (s/optional-key :team) s/Int)
-                             (assoc (s/optional-key :organization) s/Int)))
+                             (assoc (s/optional-key :team) s/Int)))
 
 (s/defschema NewChildActivity (-> NewEntity
                                 (assoc :type (s/eq "Activity"))
