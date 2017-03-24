@@ -36,25 +36,25 @@
                                                                                     :entity          ..id..
                                                                                     :_id             ..annotation..
                                                                                     :links           {:self ..self..}}
-        (r/named-route ..rt.. :delete-tags {:id ..id.. :annotation-id ..annotation..}) => ..self..)))
+        (r/named-route ..ctx.. :delete-tags {:id ..id.. :annotation-id ..annotation..}) => ..self..)))
 
   (facts "About annotation links"
     (fact "adds annotation links to entity"
       (tr/add-annotation-links {:_id   "123"
-                                :links {:foo "bar"}} ..rt..) => {:_id   "123"
+                                :links {:foo "bar"}} ..ctx..) => {:_id  "123"
                                                                  :links {:foo             "bar"
                                                                          :properties      "/api/v1/entities/123/annotations/properties"
                                                                          :tags            "/api/v1/entities/123/annotations/tags"
                                                                          :notes           "/api/v1/entities/123/annotations/notes"
                                                                          :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
       (provided
-        (r/annotations-route ..rt.. {:_id   "123"
+        (r/annotations-route ..ctx.. {:_id  "123"
                                      :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
-        (r/annotations-route ..rt.. {:_id   "123"
+        (r/annotations-route ..ctx.. {:_id  "123"
                                      :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
-        (r/annotations-route ..rt.. {:_id   "123"
+        (r/annotations-route ..ctx.. {:_id  "123"
                                      :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
-        (r/annotations-route ..rt.. {:_id   "123"
+        (r/annotations-route ..ctx.. {:_id  "123"
                                      :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
   (facts "About error handling"
@@ -86,35 +86,35 @@
         (provided
           (util/entity-type-keyword dto) => ..type..
           (s/EntityRelationships ..type..) => type-rel
-          (r/targets-route ..rt.. dto :relA) => ..relA-related..
-          (r/targets-route ..rt.. dto :relB) => ..relB-related..
-          (r/relationship-route ..rt.. dto :relA) => ..relA-self..
-          (r/relationship-route ..rt.. dto :relB) => ..relB-self..)))
+          (r/targets-route ..ctx.. dto :relA) => ..relA-related..
+          (r/targets-route ..ctx.. dto :relB) => ..relB-related..
+          (r/relationship-route ..ctx.. dto :relA) => ..relA-self..
+          (r/relationship-route ..ctx.. dto :relB) => ..relB-self..)))
 
 
     (fact "`add-heads-link` adds heads to File entity links"
       (let [type k/FILE-TYPE
             dto  {:type type :links {:_collaboration_roots [..collab..]}}]
-        (tr/add-heads-link dto ..rt..) => (-> dto
+        (tr/add-heads-link dto ..ctx..) => (-> dto
                                             (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
                                                                 :heads                ..headrt..}))
         (provided
-          (r/heads-route ..rt.. dto) => ..headrt..)))
+          (r/heads-route ..ctx.. dto) => ..headrt..)))
 
     (facts "add-zip-link"
       (fact "adds zip link for Activity"
         (let [type k/ACTIVITY-TYPE
               dto  {:type type :links {:_collaboration_roots [..roots..]}}]
-          (tr/add-zip-link dto ..rt..) => (assoc-in dto [:links :zip] ..zip..)
+          (tr/add-zip-link dto ..ctx..) => (assoc-in dto [:links :zip] ..zip..)
           (provided
-            (r/zip-activity-route ..rt.. dto) => ..zip..)))
+            (r/zip-activity-route ..ctx.. dto) => ..zip..)))
 
       (fact "adds zip link for Folder"
         (let [type k/FOLDER-TYPE
               dto  {:type type :links {:_collaboration_roots [..roots..]}}]
-          (tr/add-zip-link dto ..rt..) => (assoc-in dto [:links :zip] ..zip..)
+          (tr/add-zip-link dto ..ctx..) => (assoc-in dto [:links :zip] ..zip..)
           (provided
-            (r/zip-folder-route ..rt.. dto) => ..zip..)))
+            (r/zip-folder-route ..ctx.. dto) => ..zip..)))
 
       (fact "does not add zip link for Project"
         (let [type k/PROJECT-TYPE
@@ -125,11 +125,11 @@
       (let [couch {:_id   ..id..
                    :type  ..type..
                    :links {}}]
-        (tr/add-self-link couch ..router..) => {:_id   ..id..
+        (tr/add-self-link couch ..ctx..) => {:_id      ..id..
                                                 :type  ..type..
                                                 :links {:self ..route..}}
         (provided
-          (r/self-route ..router.. couch) => ..route..)))
+          (r/self-route ..ctx.. couch) => ..route..)))
     ;
     (fact "`couch-to-value` adds self link to LinkInfo"
       (let [couch {:_id  ..id..
@@ -137,7 +137,7 @@
         ((tr/couch-to-value ..ctx..) couch) => (assoc-in couch [:links :self] ..url..)
         (provided
           (util/entity-type-name couch) => c/RELATION-TYPE-NAME
-          (r/self-route ..rt.. couch) => ..url..))))
+          (r/self-route ..ctx.. couch) => ..url..))))
 
   (facts "About doc-to-couch"
     (fact "skips docs without :type"

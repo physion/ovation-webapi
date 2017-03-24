@@ -27,9 +27,8 @@
 
 (defn-traced post-annotations*
   [ctx db id annotation-key annotations]
-  (let [{rt ::request-context/routes} ctx
-        annotations-kw (keyword annotation-key)]
-    (created (routes/entity-route rt id)
+  (let [annotations-kw (keyword annotation-key)]
+    (created (routes/entity-route ctx id)
       {annotations-kw (annotations/create-annotations ctx db [id] annotation-key annotations)})))
 
 (defn-traced delete-annotations*
@@ -218,9 +217,9 @@
           links            (core/create-values ctx db (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
           updates          (core/update-entities ctx db (mapcat :updates (cons child-links embedded-links)) :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
 
-      (created (routes/self-route (::request-context/routes ctx) (first entities)) {:entities entities
-                                                                                    :links    links
-                                                                                    :updates  updates}))
+      (created (routes/self-route ctx (first entities)) {:entities entities
+                                                         :links    links
+                                                         :updates  updates}))
 
     (catch [:type :ovation.auth/unauthorized] err
       (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
@@ -313,8 +312,7 @@
 (defn-traced post-relationships*
   [ctx db id new-links rel]
   (try+
-    (let [{auth   ::request-context/auth
-           routes ::request-context/routes} ctx
+    (let [{auth   ::request-context/auth} ctx
           source (first (core/get-entities ctx db [id]))]
       (when source
         (auth/check! auth ::auth/update source))
@@ -323,7 +321,7 @@
               link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) :inverse-rel irel)) (seq groups))]
           (let [links   (core/create-values ctx db (flatten (map :links link-groups)))
                 updates (core/update-entities ctx db (flatten (map :updates link-groups)) :authorize false :update-collaboration-roots true)]
-            (created (routes/entity-route routes id) {:updates updates
+            (created (routes/entity-route ctx id) {:updates updates
                                                       :links   links})))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}

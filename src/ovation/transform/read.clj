@@ -13,11 +13,11 @@
 
 (defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
-  [e rt]
-  (let [properties {:properties (r/annotations-route rt e "properties")}
-        tags {:tags (r/annotations-route rt e "tags")}
-        timeline-events {:timeline-events (r/annotations-route rt e "timeline_events")}
-        notes {:notes (r/annotations-route rt e "notes")}]
+  [e ctx]
+  (let [properties {:properties (r/annotations-route ctx e "properties")}
+        tags {:tags (r/annotations-route ctx e "tags")}
+        timeline-events {:timeline-events (r/annotations-route ctx e "timeline_events")}
+        notes {:notes (r/annotations-route ctx e "notes")}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
 (defn remove-private-links
@@ -32,50 +32,50 @@
 
 (defn add-relationship-links
   "Adds relationship links for Couch document and router"
-  [dto rt]
+  [dto ctx]
   (let [entity-type (util/entity-type-keyword dto)
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
-                              [rel {:self (r/relationship-route rt dto rel)
-                                          :related (r/targets-route rt dto rel)}])
+                              [rel {:self (r/relationship-route ctx dto rel)
+                                          :related (r/targets-route ctx dto rel)}])
                             relationships))]
 
     (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
 
 (defn add-heads-link
-  [dto rt]
+  [dto ctx]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/FILE-TYPE))
-    (assoc-in dto [:links :heads] (r/heads-route rt dto))
+    (assoc-in dto [:links :heads] (r/heads-route ctx dto))
     dto))
 
 (defn add-zip-link
-  [dto rt]
+  [dto ctx]
   (condp = (:type dto)
-    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route rt dto))
-    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route rt dto))
+    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route ctx dto))
+    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route ctx dto))
     dto))
 
 (defn add-upload-links
-  [dto rt]
+  [dto ctx]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
     (-> dto
-      (assoc-in [:links :upload-complete] (r/upload-complete-route rt dto))
-      (assoc-in [:links :upload-failed] (r/upload-failed-route rt dto)))
+      (assoc-in [:links :upload-complete] (r/upload-complete-route ctx dto))
+      (assoc-in [:links :upload-failed] (r/upload-failed-route ctx dto)))
     dto))
 
 (defn add-self-link
   "Adds self link to dto"
-  [dto rt]
-  (assoc-in dto [:links :self] (r/self-route rt dto)))
+  [dto ctx]
+  (assoc-in dto [:links :self] (r/self-route ctx dto)))
 
 (defn add-annotation-self-link
   "Adds self link to Annotation dto"
-  [dto rt]
+  [dto ctx]
   (let [annotation-key (:annotation_type dto)
         entity-id      (:entity dto)
         annotation-id  (:_id dto)
         route-name     (keyword (str "delete-" (s/lower-case annotation-key)))]
-    (assoc-in dto [:links :self] (r/named-route rt route-name {:id entity-id :annotation-id annotation-id}))))
+    (assoc-in dto [:links :self] (r/named-route ctx route-name {:id entity-id :annotation-id annotation-id}))))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"
@@ -101,8 +101,7 @@
 
 (defn couch-to-entity
   [ctx & {:keys [teams] :or {teams nil}}]
-  (let [{auth   :ovation.request-context/auth
-         router :ovation.request-context/routes} ctx]
+  (let [{auth   :ovation.request-context/auth} ctx]
     (fn [doc]
       (case (:error doc)
         "conflict" (conflict!)
@@ -114,12 +113,12 @@
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
             (dissoc :relationships)
-            (add-self-link router)
-            (add-heads-link router)
-            (add-upload-links router)
-            (add-zip-link router)
-            (add-annotation-links router)
-            (add-relationship-links router)
+            (add-self-link ctx)
+            (add-heads-link ctx)
+            (add-upload-links ctx)
+            (add-zip-link ctx)
+            (add-annotation-links ctx)
+            (add-relationship-links ctx)
             (convert-file-revision-status)
             (assoc-in [:links :_collaboration_roots] collaboration-roots)
             (add-entity-permissions auth teams)))))))

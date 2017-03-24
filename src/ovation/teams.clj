@@ -52,7 +52,7 @@
 
 
 (defn- membership-result
-  [team-uuid rt response]
+  [team-uuid ctx response]
   (let [result (util/from-json (:body response))
         pending? (:pending_membership result)
         self-route (if pending? :put-pending-membership :put-membership)
@@ -62,7 +62,7 @@
       (-> result
         (dissoc :users)
         (dissoc :membership_roles)
-        (assoc-in [:membership :links :self] (routes/named-route rt self-route {:id team-uuid :mid membership-id})))
+        (assoc-in [:membership :links :self] (routes/named-route ctx self-route {:id team-uuid :mid membership-id})))
       result)))
 
 (defn get-team*
@@ -79,7 +79,7 @@
                     :else (throw! (dissoc response :headers)))]
 
       (let [memberships (get-in team [:team :memberships])
-            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route rt :put-membership {:id team-id :mid (:id %)})) memberships)]
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %)})) memberships)]
         (-> team
           (assoc-in [:team :type] k/TEAM-TYPE)
           (update-in [:team] dissoc :project)
@@ -87,8 +87,8 @@
           (update-in [:team] dissoc :project_id)
           (update-in [:team] dissoc :organization_id)
           (assoc-in [:team :memberships] linked-memberships)
-          (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
-                                    :memberships (routes/named-route rt :post-memberships {:id team-id})}))))))
+          (assoc-in [:team :links] {:self        (routes/named-route ctx :get-team {:id team-id})
+                                    :memberships (routes/named-route ctx :post-memberships {:id team-id})}))))))
 
 
 (defn- put-membership
@@ -107,7 +107,7 @@
       (when (not (http-predicates/ok? response))
         (throw! response))
 
-      (membership-result team-uuid rt response))))
+      (membership-result team-uuid ctx response))))
 
 (defn put-membership*
   [ctx team-uuid membership membership-id]                              ;; membership is a TeamMembership
@@ -138,7 +138,7 @@
       (when (not (http-predicates/created? response))
         (throw! (dissoc response :headers)))
 
-      (membership-result team-uuid rt response))))
+      (membership-result team-uuid ctx response))))
 
 (defn delete-membership
   [ctx membership-id pending?]

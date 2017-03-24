@@ -5,7 +5,8 @@
             [ovation.routes :as routes]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util :refer [<??]]
-            [ovation.config :as config])
+            [ovation.config :as config]
+            [ovation.request-context :as request-context])
 
   (:import (clojure.lang ExceptionInfo)))
 
@@ -25,7 +26,7 @@
     (facts "get-team*"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..]
+                           (request-context/router ..request..) => ..rt..]
         (let [team-id    (str (util/make-uuid))
               team-url   (util/join-path [config/TEAMS_SERVER "teams" team-id])
               rails-team {:team {:id                  "1"
@@ -86,9 +87,9 @@
 
               (teams/get-team* ..ctx.. team-id) => expected
               (provided
-                (routes/named-route ..rt.. :get-team {:id team-id}) => ..self-url..
-                (routes/named-route ..rt.. :post-memberships {:id team-id}) => ..membership-url..
-                (routes/named-route ..rt.. :put-membership {:id team-id :mid "3"}) => ..membership-url..)))
+                (routes/named-route ..ctx.. :get-team {:id team-id}) => ..self-url..
+                (routes/named-route ..ctx.. :post-memberships {:id team-id}) => ..membership-url..
+                (routes/named-route ..ctx.. :put-membership {:id team-id :mid "3"}) => ..membership-url..)))
 
           (fact "should create new team when it doesn't exist yet"
             (with-fake-http [team-url {:status 404}]
@@ -104,7 +105,7 @@
     (facts "post-memberhsip*"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..]
+                           (request-context/router ..request..) => ..rt..]
         (let [team-uuid       (str (util/make-uuid))
               team-id         "1"
               team-url        (util/join-path [config/TEAMS_SERVER "teams" team-uuid])
@@ -117,9 +118,9 @@
               membership      {:email user-email
                                :role  {:id 1}}]
 
-          (against-background [(routes/named-route ..rt.. :put-membership {:id team-uuid :mid membership-id}) => membership-url
-                               (routes/named-route ..rt.. :get-team {:id team-uuid}) => team-url
-                               (routes/named-route ..rt.. :post-memberships {:id team-uuid}) => memberships-url]
+          (against-background [(routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id}) => membership-url
+                               (routes/named-route ..ctx.. :get-team {:id team-uuid}) => team-url
+                               (routes/named-route ..ctx.. :post-memberships {:id team-uuid}) => memberships-url]
             (fact "creates membership for existing team"
               (with-fake-http [team-url {:status 200
                                          :body   (util/to-json team)}
@@ -139,8 +140,8 @@
     (facts "create-team"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..
-                           (routes/named-route ..rt.. :post-teams {}) => teams-url]
+                           (request-context/router ..request..) => ..rt..
+                           (routes/named-route ..ctx.. :post-teams {}) => teams-url]
         (let [team-id   (str (util/make-uuid))
               teams-url (util/join-path [config/TEAMS_SERVER "teams"])
               team      {:team {:id          team-id
@@ -157,21 +158,21 @@
     (facts "put-membership*"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..]
+                           (request-context/router ..request..) => ..rt..]
         (fact "throws 422 if mid is not specified"
           (teams/put-membership* .ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
     (facts "put-pending-membership*"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..]
+                           (request-context/router ..request..) => ..rt..]
         (fact "throws 422 if mid is not specified"
           (teams/put-pending-membership* ..ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
     (facts "get-roles*"
       (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
                            ..request.. =contains=> {:identity ..auth..}
-                           (routes/router ..request..) => ..rt..]
+                           (request-context/router ..request..) => ..rt..]
         (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])
               roles     [{:id              "2323",
                           :name            "Member",
