@@ -7,11 +7,7 @@
 
 (defmethod request-details :identity-printer
   [{:keys [logger] :as options} req]
-  (info logger (str "[AUDIT] " (merge {:identity (get-in req [:identity :uuid])}
+  (info logger (str "[AUDIT] " (merge {:email (get-in req [:identity :email])
+                                       :identity (get-in req [:identity :sub])}
                                 (select-keys req [:request-method
                                                   :uri])))))
-
-(defn audit
-  "Logs audit for request"
-  [request body]
-  (clojure.tools.logging/info "[AUDIT] " {:identity (auth/authenticated-user-id (auth/identity request))} body))
