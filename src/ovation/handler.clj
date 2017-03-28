@@ -365,15 +365,16 @@
                                :users            [TeamUser],
                                :membership_roles [TeamMembershipRole]}
                       :summary "Gets Project Team"
-                      (ok (teams/get-team* request id)))
+                      (let [ctx (request-context/make-context request org)]
+                        (ok (teams/get-team* ctx id))))
                     (context "/memberships" []
                       (POST "/" request
                         :name :post-memberships
                         :return {s/Keyword (s/either TeamMembership PendingTeamMembership)}
                         :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
                         :body [body {:membership NewTeamMembershipRole}]
-                        (let [membership (teams/post-membership* request id (:membership body))
-                              ctx (request-context/make-context request org)]
+                        (let [ctx (request-context/make-context request org)
+                              membership (teams/post-membership* ctx id (:membership body))]
                           (created ((::request-context/routes ctx) :get-team {:id id}) membership)))
                       (context "/:mid" []
                         :path-params [mid :- s/Str]
@@ -383,13 +384,15 @@
                           :summary "Updates an existing membership by setting its role."
                           :return {:membership TeamMembership}
                           :body [body {:membership NewTeamMembershipRole}]
-                          (ok (teams/put-membership* request id (:membership body) mid)))
+                          (let [ctx (request-context/make-context request org)]
+                            (ok (teams/put-membership* ctx id (:membership body) mid))))
 
                         (DELETE "/" request
                           :name :delete-membership
                           :summary "Deletes a team membership, removing the team member."
-                          (teams/delete-membership* request mid)
-                          (no-content))))
+                          (let [ctx (request-context/make-context request org)]
+                            (teams/delete-membership* ctx mid)
+                            (no-content)))))
                     (context "/pending" []
                       (context "/:mid" []
                         :path-params [mid :- s/Str]
@@ -399,13 +402,15 @@
                           :summary "Updates a pending membership by setting its role."
                           :return {:membership PendingTeamMembership}
                           :body [body {:membership NewTeamMembershipRole}]
-                          (ok (teams/put-pending-membership* request id (:membership body) mid)))
+                          (let [ctx (request-context/make-context request org)]
+                            (ok (teams/put-pending-membership* ctx id (:membership body) mid))))
 
                         (DELETE "/" request
                           :name :delete-pending-membership
                           :summary "Deletes a pending membership. Upon signup, the user will no longer become a team member."
-                          (teams/delete-pending-membership* request mid)
-                          (no-content))))))
+                          (let [ctx (request-context/make-context request org)]
+                            (teams/delete-pending-membership* ctx mid)
+                            (no-content)))))))
 
                 (context "/roles" []
                   :tags ["teams"]
