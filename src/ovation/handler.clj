@@ -365,7 +365,8 @@
                                :users            [TeamUser],
                                :membership_roles [TeamMembershipRole]}
                       :summary "Gets Project Team"
-                      (ok (teams/get-team* request id)))
+                      (let [ctx (request-context/make-context request org)]
+                        (ok (teams/get-team* ctx id))))
                     (context "/memberships" []
                       (POST "/" request
                         :name :post-memberships
