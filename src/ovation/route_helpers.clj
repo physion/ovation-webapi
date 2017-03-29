@@ -124,7 +124,8 @@
 
 (defn-traced post-resources*
   [ctx db type-name type-kw new-entities]
-  (let [{routes ::request-context/routes} ctx]
+  (let [{routes ::request-context/routes
+         org    ::request-context/org} ctx]
     (if (every? #(= type-name (:type %)) new-entities)
       (try+
         (let [cleaned-entities (remove-embedded-relationships new-entities)
@@ -141,8 +142,8 @@
 
           (if (and (zero? (count links))
                 (zero? (count updates)))
-            (created (routes (keyword (format "all-%s" (lower-case type-name)))) {type-kw entities})
-            (created (routes (keyword (format "all-%s" (lower-case type-name)))) {type-kw  entities
+            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities})
+            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities
                                                                                   :links   links
                                                                                   :updates updates})))
 
