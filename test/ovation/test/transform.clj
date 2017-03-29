@@ -176,6 +176,13 @@
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
         (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..))))
 
+  (facts "About add-organization"
+    (fact "adds organization from request context"
+      (let [doc {:type ..type.. :attributes {:label ..value..}}]
+        (tw/add-organization doc ..ctx..) => (assoc doc :organization ..org..)
+        (provided
+          ..ctx.. =contains=> {::request-context/org ..org..}))))
+
   (facts "About `remove-user-attributes`"
     (fact "Removes User entity attributes"
       (let [user {:type "User" :attributes {:password ..secret..}}]

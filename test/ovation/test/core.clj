@@ -120,7 +120,7 @@
         (fact "it throws unauthorized exception if any :type is User"
           (core/create-entities ..ctx.. ..db.. [(assoc new-entity :type "User")]) => (throws Exception))
 
-        (against-background [(tw/to-couch ..owner-id.. [{:type       type
+        (against-background [(tw/to-couch ..ctx.. [{:type       type
                                                          :attributes attributes}]
                                :collaboration_roots []) => [..doc..]
                              (auth/authenticated-user-id ..auth..) => ..owner-id..
@@ -137,7 +137,7 @@
               (provided
                 (tr/entities-from-couch ..result.. ..ctx..) => ..result..
                 (core/parent-collaboration-roots ..ctx.. ..db.. ..parent..) => ..collaboration_roots..
-                (tw/to-couch ..owner-id.. [{:type       type
+                (tw/to-couch ..ctx.. [{:type       type
                                             :attributes attributes}]
                   :collaboration_roots ..collaboration_roots..) => [..doc..])))
 
@@ -151,7 +151,7 @@
                                                      :attributes attributes}] :parent nil) => [{:type "Project"
                                                                                                 :_id  ..id..}]
               (provided
-                (tw/to-couch ..owner-id.. [{:type       "Project"
+                (tw/to-couch ..ctx.. [{:type       "Project"
                                             :attributes attributes}]
                   :collaboration_roots []) => [..doc..]
                 (tr/entities-from-couch ..result.. ..ctx..) => [{:type "Project"
@@ -174,8 +174,8 @@
                              (assoc-in [:attributes :foo] ..foo..))
             updated-entity (-> entity
                              (assoc :_rev rev2))]
-        (against-background [(tw/to-couch ..owner-id.. [new-entity] :collaboration_roots nil) => [..doc..]
-                             (tw/to-couch ..owner-id.. [update]) => [update]
+        (against-background [(tw/to-couch ..ctx.. [new-entity] :collaboration_roots nil) => [..doc..]
+                             (tw/to-couch ..ctx.. [update]) => [update]
                              (auth/authenticated-user-id ..auth..) => ..owner-id..
                              (couch/bulk-docs ..db.. [..doc..]) => [entity]
                              (core/get-entities ..ctx.. ..db.. [id]) => [entity]
@@ -192,7 +192,7 @@
               (provided
                 (auth/can? ..auth.. ::auth/update anything) => true
                 (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
-                (tw/to-couch ..owner-id.. [update-with-revs]) => [update-with-revs]
+                (tw/to-couch ..ctx.. [update-with-revs]) => [update-with-revs]
                 (tr/entities-from-couch [updated-entity-with-revs] ..ctx..) => [updated-entity-with-revs])))
           (fact "it updates collaboration roots"
             (let [update2         (-> update
@@ -201,7 +201,7 @@
               (core/update-entities ..ctx.. ..db.. [update2] :update-collaboration-roots true) => [updated-entity2]
               (provided
                 (auth/can? ..auth.. ::auth/update anything) => true
-                (tw/to-couch ..owner-id.. [update2]) => [update2]
+                (tw/to-couch ..ctx.. [update2]) => [update2]
                 (couch/bulk-docs ..db.. [update2]) => [updated-entity2]
                 (tr/entities-from-couch [updated-entity2] ..ctx..) => [updated-entity2])))
 
@@ -232,7 +232,7 @@
         (provided
           (auth/authenticated-user-id ..auth..) => ..owner..
           (core/get-entities ..ctx.. ..db.. [id] :include-trashed true) => [entity]
-          (tw/to-couch ..owner.. [restored]) => ..couch-docs..
+          (tw/to-couch ..ctx.. [restored]) => ..couch-docs..
           (couch/bulk-docs ..db.. ..couch-docs..) => ..restored..
           (tr/entities-from-couch ..restored.. ..ctx..) => ..result..
           (auth/can? ..auth.. ::auth/update restored) => true)))
@@ -251,7 +251,7 @@
         (against-background [(auth/authenticated-user-id ..auth..) => ..owner-id..]
 
           (against-background [(core/get-entities ..ctx.. ..db.. [id]) => [entity]
-                               (tw/to-couch ..owner-id.. [update]) => ..update-docs..
+                               (tw/to-couch ..ctx.. [update]) => ..update-docs..
                                (couch/bulk-docs ..db.. ..update-docs..) => ..deleted..
                                (tr/entities-from-couch ..deleted.. ..ctx..) => ..result..
                                (util/iso-now) => ..date..]

@@ -116,10 +116,9 @@
         entities-map (util/into-id-map entities)]
     (mapcat (fn [[id relationships]]
               (map (fn [[rel info]]
-                     (let [org (-> (entities-map id) :organization)]
-                       (if (:create_as_inverse info)
-                         (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
-                         (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info)))))
+                     (if (:create_as_inverse info)
+                       (links/add-links ctx db (core/get-entities ctx db (:related info)) (:inverse_rel info) [id] :inverse-rel rel)
+                       (links/add-links ctx db [(get entities-map id)] rel (:related info) :inverse-rel (:inverse_rel info))))
                 relationships))
       rel-map)))
 

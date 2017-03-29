@@ -41,19 +41,16 @@
 
   (facts "About post-resource*"
     (fact "adds embedded relationships"
-      (let [project      {:type         k/PROJECT-TYPE
-                          :_id          ..projectid..
-                          :organization ..org..}
-            rev          {:type         k/REVISION-TYPE
-                          :_id          ..revid..
-                          :organization ..org..}
+      (let [project      {:type k/PROJECT-TYPE
+                          :_id  ..projectid..}
+            rev          {:type k/REVISION-TYPE
+                          :_id  ..revid..}
             new-activity {:type          k/ACTIVITY-TYPE
                           :relationships {:inputs {:related     [(:_id rev)]
                                                    :type        k/REVISION-TYPE
                                                    :inverse_rel :activities}}}
             activity     (-> new-activity
-                           (assoc :_id (util/make-uuid))
-                           (assoc :organization ..org..))]
+                           (assoc :_id (util/make-uuid)))]
         (:body (r/post-resource* ..ctx.. ..db.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
@@ -70,17 +67,15 @@
 
 
     (fact "handles embedded relationships with :create_as_inverse == true"
-      (let [project      {:type         k/PROJECT-TYPE
-                          :_id          ..projectid..
-                          :organization ..org..}
+      (let [project      {:type k/PROJECT-TYPE
+                          :_id  ..projectid..}
             new-activity {:type          k/ACTIVITY-TYPE
                           :relationships {:parents {:related           [(:_id project)]
                                                     :type              k/PROJECT-TYPE
                                                     :inverse_rel       :activities
                                                     :create_as_inverse true}}}
             activity     (-> new-activity
-                           (assoc :_id (util/make-uuid))
-                           (assoc :organization ..org..))]
+                           (assoc :_id (util/make-uuid)))]
         (:body (r/post-resource* ..ctx.. ..db.. k/PROJECT-TYPE ..projectid.. [new-activity])) => {:entities [activity]
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
@@ -97,12 +92,10 @@
           (core/update-entities ..ctx.. ..db.. anything :authorize false :update-collaboration-roots true) => ..updates..)))
 
     (fact "adds relationships for a new Source"
-      (let [source-entity {:type         "Source"
-                           :_id          ..id2..
-                           :organization ..org..}
-            file-entity   {:type         "File"
-                           :_id          ..fileid..
-                           :organization ..org..}]
+      (let [source-entity {:type "Source"
+                           :_id  ..id2..}
+            file-entity   {:type "File"
+                           :_id  ..fileid..}]
         (:body (r/post-resource* ..ctx.. ..db.. "file" ..fileid.. [{:type       "Source"
                                                                     :attributes {}}])) => {:entities (seq [source-entity])
                                                                                            :links    ..links..
@@ -116,15 +109,12 @@
 
   (facts "About move-file*"
     (fact "fails if entity not file or folder"
-      (let [src  {:type         "Folder"
-                  :_id          ..src..
-                  :organization ..org..}
-            file {:type         "Whoa"
-                  :_id          ..file..
-                  :organization ..org..}
-            dest {:type         "Folder"
-                  :_id          ..dest..
-                  :organization ..org..}]
+      (let [src  {:type "Folder"
+                  :_id  ..src..}
+            file {:type "Whoa"
+                  :_id  ..file..}
+            dest {:type "Folder"
+                  :_id  ..dest..}]
 
         (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
@@ -133,15 +123,12 @@
           (core/get-entities ..ctx.. ..db.. [..file..]) => (seq [file]))))
 
     (fact "fails if src not a folder"
-      (let [src  {:type         "Whoa"
-                  :_id          ..src..
-                  :organization ..org..}
-            file {:type         "File"
-                  :_id          ..file..
-                  :organization ..org..}
-            dest {:type         "Folder"
-                  :_id          ..dest..
-                  :organization ..org..}]
+      (let [src  {:type "Whoa"
+                  :_id  ..src..}
+            file {:type "File"
+                  :_id  ..file..}
+            dest {:type "Folder"
+                  :_id  ..dest..}]
 
         (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
@@ -150,15 +137,12 @@
           (core/get-entities ..ctx. ..db.. [..file..]) => (seq [file]))))
 
     (fact "fails if dest not a folder"
-      (let [src  {:type         "Folder"
-                  :_id          ..src..
-                  :organization ..org..}
-            file {:type         "File"
-                  :_id          ..file..
-                  :organization ..org..}
-            dest {:type         "Whoa"
-                  :_id          ..dest..
-                  :organization ..org..}]
+      (let [src  {:type "Folder"
+                  :_id  ..src..}
+            file {:type "File"
+                  :_id  ..file..}
+            dest {:type "Whoa"
+                  :_id  ..dest..}]
 
         (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
@@ -169,13 +153,13 @@
     (fact "adds relationships"
       (let [src  {:type         "Folder"
                   :_id          ..src..
-                  :organization ..org..}
+                  }
             file {:type         "File"
                   :_id          ..file..
-                  :organization ..org..}
+                  }
             dest {:type         "Folder"
                   :_id          ..dest..
-                  :organization ..org..}]
+                  }]
 
         (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
                                                                                                        :links   ..created-links..

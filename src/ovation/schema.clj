@@ -75,14 +75,12 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}
-                        (s/optional-key :organization) (s/either s/Int s/Str)})
+                        :attributes {s/Keyword s/Any}})
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
                                          (s/optional-key :api_version) s/Int
-                                         (s/optional-key :permissions) {s/Keyword s/Bool}
-                                         (s/optional-key :organization) (s/either s/Int s/Str)))
+                                         (s/optional-key :permissions) {s/Keyword s/Bool}))
 
 
 (s/defschema Entity (assoc BaseEntity

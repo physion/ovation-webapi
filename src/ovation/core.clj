@@ -75,7 +75,7 @@
 
   (let [{auth ::rc/auth} ctx
         created-entities (tr/entities-from-couch (couch/bulk-docs db
-                                                   (tw/to-couch (auth/authenticated-user-id auth)
+                                                   (tw/to-couch ctx
                                                      entities
                                                      :collaboration_roots (parent-collaboration-roots ctx db parent)))
                            ctx)]
@@ -136,7 +136,7 @@
                                 merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
                             (map merge-fn docs))
         auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
-    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
       ctx)))
 
 (defn-traced trash-entity
@@ -159,7 +159,7 @@
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
         auth-checked-docs (vec (map (auth/check! auth ::auth/update) trashed))]
-    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
       ctx)))
 
 (defn-traced delete-entities
@@ -173,7 +173,7 @@
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! auth ::auth/delete) trashed))]
-      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
                               ctx))))
 
 
