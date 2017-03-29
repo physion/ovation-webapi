@@ -8,6 +8,7 @@
             [ovation.util :as util]
             [ovation.constants :as c]
             [ovation.constants :as k]
+            [ovation.request-context :as request-context]
             [clj-time.core :as t]
             [clj-time.format :as f]
             [ovation.auth :as auth])
@@ -15,7 +16,8 @@
 
 
 (against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
-                                          :ovation.request-context/routes ..rt..}]
+                                          :ovation.request-context/routes ..rt..}
+                     (request-context/user-id ..ctx..) => ..owner-id..]
   (facts "About Annotations"
     (fact "adds self link"
       ((tr/couch-to-value ..ctx..) {:type            k/ANNOTATION-TYPE
@@ -142,33 +144,33 @@
   (facts "About doc-to-couch"
     (fact "skips docs without :type"
       (let [other {:_id "bar" :rel "some-rel"}]
-        (tw/doc-to-couch ..owner.. ..roots.. other) => other))
+        (tw/doc-to-couch ..ctx.. ..roots.. other) => other))
 
     (fact "skips docs of type Relation"
       (let [other {:_id "bar" :rel "some-rel" :type "Relation"}]
-        (tw/doc-to-couch ..owner.. ..roots.. other) => other))
+        (tw/doc-to-couch ..ctx.. ..roots.. other) => other))
 
     (fact "adds updated_at date"
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (:attributes (tw/doc-to-couch ..owner.. ..roots.. doc)) => (contains {:updated-at ..time..})
+        (:attributes (tw/doc-to-couch ..ctx.. ..roots.. doc)) => (contains {:updated-at ..time..})
         (provided
           (f/unparse (f/formatters :date-time) anything) => ..time..)))
 
     (fact "adds created_at date"
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (:attributes (tw/doc-to-couch ..owner.. ..roots.. doc)) => (contains {:created-at ..time..})
+        (:attributes (tw/doc-to-couch ..ctx.. ..roots.. doc)) => (contains {:created-at ..time..})
         (provided
           (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
 
     (fact "does not add created_at date if already present"
       (let [doc {:type ..type.. :attributes {:label ..label.. :created-at ..old..}}]
-        (get-in (tw/doc-to-couch ..owner.. ..roots.. doc) [:attributes :created-at]) => ..old..
+        (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:attributes :created-at]) => ..old..
         (provided
           (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
 
     (fact "adds collaboration roots"
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (get-in (tw/doc-to-couch ..owner.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
+        (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
 
 
   (facts "About `add-owner`"
