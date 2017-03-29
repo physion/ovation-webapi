@@ -2,6 +2,7 @@
   (:require [ovation.version :refer [version version-path]]
             [ovation.version :as ver]
             [ovation.util :as util]
+            [ovation.request-context :as request-context]
             [clojure.tools.logging :as logging]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
@@ -41,25 +42,31 @@
   [doc timestamp]
   (assoc-in doc [:attributes :updated-at] timestamp))
 
+(defn add-organization
+  [doc ctx]
+  (assoc doc :organization (::request-context/org ctx)))
+
 (defn-traced doc-to-couch
-  [owner-id collaboration-roots doc]
-  (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
-    (let [time (util/iso-short-now)
-          roots (or collaboration-roots (get-in doc [:links :_collaboration_roots] []))]
-      (-> doc
-        ensure-id
-        (ensure-created-at time)
-        add-api-version
-        (ensure-owner owner-id)
-        (add-updated-at time)
-        (dissoc :links)
-        (dissoc :relationships)
-        (dissoc :permissions)
-        (add-collaboration-roots roots)))
-    doc))
+  [ctx collaboration-roots doc]
+  (let [owner-id (request-context/user-id ctx)]
+    (if (and (:type doc) (not (= (str (:type doc)) util/RELATION_TYPE)))
+      (let [time  (util/iso-short-now)
+            roots (or collaboration-roots (get-in doc [:links :_collaboration_roots] []))]
+        (-> doc
+          ensure-id
+          (ensure-created-at time)
+          add-api-version
+          (ensure-owner owner-id)
+          (add-updated-at time)
+          (add-organization ctx)
+          (dissoc :links)
+          (dissoc :relationships)
+          (dissoc :permissions)
+          (add-collaboration-roots roots)))
+      doc)))
 
 (defn-traced to-couch
   "Transform documents for CouchDB"
-  [owner-id docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
+  [ctx docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
   (logging/info "Transforming to couch" docs)
-  (map #(doc-to-couch owner-id collaboration_roots %) docs))
+  (map #(doc-to-couch ctx collaboration_roots %) docs))

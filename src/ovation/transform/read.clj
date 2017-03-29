@@ -113,6 +113,7 @@
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
             (dissoc :relationships)
+            (dissoc :organization)
             (add-self-link ctx)
             (add-heads-link ctx)
             (add-upload-links ctx)
@@ -151,15 +152,18 @@
         "unauthorized" (unauthorized!)
         (condp = (util/entity-type-name doc)
           c/RELATION-TYPE-NAME (-> doc
+                                 (dissoc :organization)
                                  (add-self-link ctx))
           ;(add-value-permissions auth)
 
           c/ANNOTATION-TYPE-NAME (-> doc
+                                   (dissoc :organization)
                                    (add-annotation-self-link ctx)
                                    (add-value-permissions auth))
 
           ;; default
           (-> doc
+            (dissoc :organization)
             (add-value-permissions auth)))))))
 
 (defn-traced values-from-couch

@@ -92,8 +92,7 @@
 
 (defn- put-membership
   [ctx team-uuid membership membership-id pending?]                              ;; membership is a TeamMembership
-  (let [rt (::rc/routes ctx)
-        url-path (if pending? "pending_memberships" "memberships")
+  (let [url-path (if pending? "pending_memberships" "memberships")
         opts (request-opts (rc/token ctx))
         url (make-url url-path membership-id)
         role-id (get-in membership [:role :id])

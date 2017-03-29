@@ -55,8 +55,7 @@
                 rev          {:_id  ..revid..
                               :_rev ..revrev..}
                 file         {:_id          ..rsrcid..
-                              :type         k/FILE-TYPE
-                              :organization ..org..}]
+                              :type         k/FILE-TYPE}]
             (rev/create-revisions ..ctx.. ..db.. ..parent.. [new-revision]) => {:revisions [rev]
                                                                                 :links     ..links..
                                                                                 :updates   []}
@@ -64,8 +63,7 @@
               ..parent.. =contains=> {:type         k/REVISION-TYPE
                                       :_id          ..previd..
                                       :attributes   {:file_id  ..rsrcid..
-                                                     :previous [..oldprev..]}
-                                      :organization ..org..}
+                                                     :previous [..oldprev..]}}
               (core/create-entities ..ctx.. ..db.. [{:type       "Revision"
                                                      :attributes {:previous [..oldprev.. ..previd..]
                                                                   :file_id  ..rsrcid..}}]) => [rev]
@@ -90,8 +88,7 @@
               (provided
                 ..file.. =contains=> {:type         k/FILE-TYPE
                                       :_id          ..fileid..
-                                      :attributes   {}
-                                      :organization ..org..}
+                                      :attributes   {}}
                 (rev/get-head-revisions ..ctx.. ..db.. ..file..) => [{:type       k/REVISION-TYPE
                                                                       :_id        ..headid..
                                                                       :attributes {:previous []
@@ -117,8 +114,7 @@
               (provided
                 ..file.. =contains=> {:type         k/FILE-TYPE
                                       :_id          ..fileid..
-                                      :attributes   {}
-                                      :organization ..org..}
+                                      :attributes   {}}
                 (rev/get-head-revisions ..ctx.. ..db.. ..file..) => []
                 (core/create-entities ..ctx.. ..db.. [{:type       "Revision"
                                                        :attributes {:previous [] ;; <- this is key
