@@ -67,8 +67,8 @@
 
 (defn get-team*
   [ctx team-id]
-  (let [opts (request-opts (rc/token ctx))
-        url (make-url "teams" team-id)
+  (let [opts     (request-opts (rc/token ctx))
+        url      (make-url "teams" team-id)
         response @(httpkit.client/get url opts)]
 
     (if-let [team (cond
@@ -77,8 +77,8 @@
                     (http-predicates/not-found? response) (create-team ctx team-id)
                     :else (throw! (dissoc response :headers)))]
 
-      (let [memberships (get-in team [:team :memberships])
-            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %)})) memberships)]
+      (let [memberships        (get-in team [:team :memberships])
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (::rc/org ctx)})) memberships)]
         (-> team
           (assoc-in [:team :type] k/TEAM-TYPE)
           (update-in [:team] dissoc :project)
@@ -86,8 +86,8 @@
           (update-in [:team] dissoc :project_id)
           (update-in [:team] dissoc :organization_id)
           (assoc-in [:team :memberships] linked-memberships)
-          (assoc-in [:team :links] {:self        (routes/named-route ctx :get-team {:id team-id})
-                                    :memberships (routes/named-route ctx :post-memberships {:id team-id})}))))))
+          (assoc-in [:team :links] {:self        (routes/named-route ctx :get-team {:id team-id :org (::rc/org ctx)})
+                                    :memberships (routes/named-route ctx :post-memberships {:id team-id :org (::rc/org ctx)})}))))))
 
 
 (defn- put-membership
@@ -158,8 +158,8 @@
   (delete-membership ctx membership-id true))
 
 (defn get-roles*
-  [request]
-  (let [opts (request-opts (auth-token request))
+  [ctx]
+  (let [opts (request-opts (rc/token ctx))
         url (make-url "roles")]
 
     (let [response @(httpkit.client/get url opts)]
