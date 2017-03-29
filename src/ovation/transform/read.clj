@@ -163,6 +163,7 @@
 
           ;; default
           (-> doc
+            (dissoc :organization)
             (add-value-permissions auth)))))))
 
 (defn-traced values-from-couch
