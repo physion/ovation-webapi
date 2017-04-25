@@ -214,6 +214,16 @@
 (s/defschema User (-> Entity
                       (assoc :type (s/eq "User"))))
 
+
+;; -- Organizations -- ;;
+(s/defschema Organization
+  {:id    (s/either s/Str s/Int)
+   :uuid  s/Uuid
+   :name  s/Str
+   :links {:self                      s/Str
+           (s/optional-key :projects) s/Str
+           (s/optional-key :members)    s/Str}})
+
 ;; -- Teams -- ;;
 
 (s/defschema TeamRole

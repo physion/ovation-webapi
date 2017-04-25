@@ -22,3 +22,5 @@
 
 (def PORT (Integer/parseInt (str (config :port :default 3000))))
 (def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))
+
+(def ORGS_SERVER TEAMS_SERVER)

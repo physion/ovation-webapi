@@ -97,17 +97,17 @@
         (provided
           (core/get-entities ..ctx.. ..db.. [..owner-id..]) => [..user..])))
 
-  (facts "get-entity"
-    (fact "calls get-entities"
-      (core/get-entity ..ctx.. ..db.. ..id..) => ..result..
-      (provided
-        (core/get-entities ..ctx.. ..db.. [..id..] :include-trashed false) => [..result..])))
+   (facts "get-entity"
+     (fact "calls get-entities"
+       (core/get-entity ..ctx.. ..db.. ..id..) => ..result..
+       (provided
+         (core/get-entities ..ctx.. ..db.. [..id..] :include-trashed false) => [..result..])))
 
-  (facts "get-owner"
-    (fact "it gets the entity owner"
-      (core/get-owner ..ctx.. ..db.. {:owner ..owner-id..}) => ..user..
-      (provided
-        (core/get-entities ..ctx.. ..db.. [..owner-id..]) => [..user..]))))
+   (facts "get-owner"
+     (fact "it gets the entity owner"
+       (core/get-owner ..ctx.. ..db.. {:owner ..owner-id..}) => ..user..
+       (provided
+         (core/get-entities ..ctx.. ..db.. [..owner-id..]) => [..user..]))))
 
 
   (facts "About Command"
