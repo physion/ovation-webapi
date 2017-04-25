@@ -23,6 +23,14 @@
      (rt (keyword (format "get-%s-link-targets" type)) {:org org :id id :rel name}))))
 
 
+(defn org-projects-route
+  [rt org-id]
+  (rt :get-projects {:org org-id}))
+
+(defn org-members-route
+  [rt org-id]
+  (rt :get-users {:org org-id}))
+
 (defn self-route
   ([ctx doc]
    (let [type (util/entity-type-name doc)

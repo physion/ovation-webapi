@@ -121,13 +121,4 @@
       (throw returned)
       returned)))
 
-(def default-parallelism (+ (ncpus) 1))
-
-(defn pipeline
-  [in xf & {:keys [parallelism buffer] :or {parallelism default-parallelism
-                                            buffer      16}}]
-  (let [out (async/chan (async/buffer buffer))]
-    (async/pipeline parallelism out xf in)
-    out))
-
 

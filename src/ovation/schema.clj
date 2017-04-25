@@ -218,11 +218,12 @@
 ;; -- Organizations -- ;;
 (s/defschema Organization
   {:id    (s/either s/Str s/Int)
+   :type  (s/eq "Organization")
    :uuid  s/Uuid
    :name  s/Str
    :links {:self                      s/Str
            (s/optional-key :projects) s/Str
-           (s/optional-key :members)    s/Str}})
+           (s/optional-key :members)  s/Str}})
 
 ;; -- Teams -- ;;
 
