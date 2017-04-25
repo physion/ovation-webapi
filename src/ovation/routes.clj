@@ -27,9 +27,14 @@
   [rt org-id]
   (rt :get-projects {:org org-id}))
 
-(defn org-members-route
+(defn org-memberships-route
   [rt org-id]
-  (rt :get-users {:org org-id}))
+  (rt :get-org-memberships {:org org-id}))
+
+(defn org-groups-route
+  [rt org-id]
+  (rt :get-org-groups {:org org-id}))
+
 
 (defn self-route
   ([ctx doc]

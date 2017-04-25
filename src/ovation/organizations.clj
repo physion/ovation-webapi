@@ -7,6 +7,7 @@
             [ovation.request-context :as request-context]
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
+            [slingshot.slingshot :refer [try+]]
             [clojure.core.async :refer [chan go >! >!! pipeline]]))
 
 (defn request-opts
@@ -22,8 +23,10 @@
 (defn make-links
   [ctx org]
   (let [rt (::request-context/routes ctx)]
-    {:self     (routes/self-route ctx "organization" (:id org))
-     :projects (routes/org-projects-route rt (:id org))}))
+    {:self                     (routes/self-route ctx "organization" (:id org))
+     :projects                 (routes/org-projects-route rt (:id org))
+     :organization-memberships (routes/org-memberships-route rt (:id org))
+     :organization-groups      (routes/org-groups-route rt (:id org))}))
 
 (defn read-tf
   [ctx]
@@ -46,20 +49,49 @@
       (let [orgs (:organizations response)]
         (map (read-tf ctx) orgs)))))
 
+(defn read-single-tf
+  [ctx]
+  (fn [response]
+    (if (instance? Throwable response)
+      response
+      (let [org (:organization response)]
+        ((read-tf ctx) org)))))
+
 
 
 (defn get-organizations
-  "Gets all organizations for authenticated user onto provided channel.
-  If close?, channel is closed on completion (default true).
-   Conveys a list of Organizations."
+  "Gets all organizations for authenticated user onto the provided channel. If close?, channel is closed on completion (default true).
+   Conveys a list of Organizations or Throwable."
   [ctx ch & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)]
     (go
-      (http/call-http raw-ch :get (make-url "organizations") (request-opts ctx) hp/ok?)
-      (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?))))
+      (try+
+        (http/call-http raw-ch :get (make-url "organizations") (request-opts ctx) hp/ok?)
+        (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (>! ch ex))))))
 
 (defn get-organizations*
   [ctx]
   (let [ch (chan)]
     (get-organizations ctx ch)
     {:organizations (<?? ch)}))
+
+(defn get-organization
+  "Gets a single organization onto the provided channel. If close?, channel is closed on completion (default true).
+  Conveys an Organization or Throwable"
+  [ctx ch org-id & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)]
+    (go
+      (try+
+        (http/call-http raw-ch :get (make-url (util/join-path ["organizations" org-id])) (request-opts ctx) hp/ok?)
+        (pipeline 1 ch (map (read-single-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (>! ch ex))))))
+
+(defn get-memberships
+  [ctx ch & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)]
+    (go
+      (http/call-http raw-ch :get (make-url "organization-memberships") (request-opts ctx) hp/ok?)
+      (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?))))
