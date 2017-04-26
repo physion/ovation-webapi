@@ -14,7 +14,8 @@
   [ctx]
   {:timeout     10000                                       ; ms
    :oauth-token (request-context/token ctx)
-   :headers     {"Content-Type" "application/json; charset=utf-8"}})
+   :headers     {"Content-Type" "application/json; charset=utf-8"
+                 "Accept"       "application/json"}})
 
 (defn make-url
   [& comps]
@@ -79,19 +80,57 @@
 
 (defn get-organization
   "Gets a single organization onto the provided channel. If close?, channel is closed on completion (default true).
-  Conveys an Organization or Throwable"
+   Conveys an Organization or Throwable"
   [ctx ch org-id & {:keys [close?] :or {close? true}}]
-  (let [raw-ch (chan)]
+  (let [raw-ch (chan)
+        url    (make-url (util/join-path ["organizations" org-id]))]
     (go
       (try+
-        (http/call-http raw-ch :get (make-url (util/join-path ["organizations" org-id])) (request-opts ctx) hp/ok?)
+        (http/call-http raw-ch :get url (request-opts ctx) hp/ok?)
         (pipeline 1 ch (map (read-single-tf ctx)) raw-ch close?)
         (catch Object ex
           (>! ch ex))))))
+
+(defn get-organization*
+  [ctx]
+  (let [ch     (chan)
+        org-id (::request-context/org ctx)]
+    (get-organization ctx ch org-id)
+    {:organization (<?? ch)}))
+
+(defn update-organization
+  "Updates a single organization, returning the result on the provided channel.
+   Only org name is updated.
+
+   If close?, channel is closed on completion (default true).
+
+   Conveys an Organization or Throwable"
+  [ctx ch org & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)
+        {org-id :id
+         name   :name} org
+        url    (make-url (util/join-path ["organizations" org-id]))
+        opts   (assoc (request-opts ctx)
+                 :body (util/to-json {:organization {:id   org-id
+                                                     :name name}}))]
+    (go
+      (try+
+        (http/call-http raw-ch :put url opts hp/ok?)
+        (pipeline 1 ch (map (read-single-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (>! ch ex))))))
+
+(defn update-organization*
+  [ctx body]
+  (let [ch (chan)]
+    (update-organization ctx ch (:organization body))
+    (let [org (<?? ch)]
+      {:organization org})))
 
 (defn get-memberships
   [ctx ch & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)]
     (go
+      ;;TODO /api/v2/organization-memberships
       (http/call-http raw-ch :get (make-url "organization-memberships") (request-opts ctx) hp/ok?)
       (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?))))

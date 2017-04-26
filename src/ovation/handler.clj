@@ -33,7 +33,8 @@
             [ovation.revisions :as revisions]
             [ovation.util :as util]
             [ovation.routes :as routes]
-            [ovation.request-context :as request-context]))
+            [ovation.request-context :as request-context]
+            [ovation.organizations :as organizations]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -71,7 +72,9 @@
                                {:name "teams" :description "Manage collaborations"}
                                {:name "ui" :description "Support for Web UI"}
                                {:name "search" :description "Search Ovation"}
-                               {:name "zip" :description "Download ZIP archive"}]}}}
+                               {:name "zip" :description "Download ZIP archive"}
+                               {:name "organizations" :desccription "Organizations"}
+                               {:name "groups" :description "Organization Groups"}]}}}
 
 
       (middleware [[wrap-cors
@@ -100,8 +103,31 @@
         (context "/api" []
           (context "/v1" []
             (context "/o" []
+              :tags ["organizations"]
+              (GET "/" request
+                :name :get-organizations
+                :return {:organizations [Organization]}
+                :summary "Returns all organizations for the authenticated user"
+                (ok (organizations/get-organizations* (request-context/make-context request nil))))
+
               (context "/:org" []
                 :path-params [org :- s/Str]
+
+                (GET "/" request
+                  :name :get-organization
+                  :return {:organization Organization}
+                  :summary "Get an Organization"
+                  (ok (organizations/get-organization* (request-context/make-context request org))))
+
+                (PUT "/" request
+                  :name :put-organization
+                  :return {:organization Organization}
+                  :body [body {:organization Organization}]
+                  :summary "Get an Organization"
+                  (ok (organizations/update-organization* (request-context/make-context request org) body)))
+
+                (context "/memberships" [])
+
                 (context "/entities" []
                   :tags ["entities"]
                   (context "/:id" []

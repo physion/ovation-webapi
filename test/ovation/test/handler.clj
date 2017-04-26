@@ -101,7 +101,6 @@
   (let [post     (mock-req (-> (mock/request :put path)
                              (mock/body (json-post-body body))) apikey)
         response (app post)
-        _ (println "app response - " response)
 
         reader   (clojure.java.io/reader (:body response))
         body     (json/read reader)]

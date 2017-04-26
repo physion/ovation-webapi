@@ -6,7 +6,9 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.config :as config]
             [ovation.request-context :as request-context]
-            [ovation.routes :as routes]))
+            [ovation.routes :as routes]
+            [ovation.http :as http]
+            [ring.util.http-predicates :as hp]))
 
 (facts "About organizations API"
   (let [rails-org-1 {
@@ -106,10 +108,46 @@
 
       (let [orgs-url (util/join-path [config/ORGS_SERVER "organizations"])]
 
+        (facts "PUT /o/:id"
+          (let [org-id      (get rails-org-1 "id")
+                org-url     (util/join-path [config/ORGS_SERVER "organizations" org-id])
+                new-name    "AWESOME NEW NAME"
+                updated-org {:id    (get rails-org-1 "id")
+                             :type  "Organization"
+                             :name  new-name
+                             :uuid  (get rails-org-1 "uuid")
+                             :links {:self                     ..self1..
+                                     :projects                 ..projects1..
+                                     :organization-memberships ..members1..
+                                     :organization-groups      ..groups1..}}]
+            (facts "with success"
+              (against-background [(routes/self-route ..ctx.. "organization" 1) => ..self1..
+                                   (routes/org-projects-route ..rt.. org-id) => ..projects1..
+                                   (routes/org-memberships-route ..rt.. 1) => ..members1..
+                                   (routes/org-groups-route ..rt.. 1) => ..groups1..
+                                   ..ctx.. =contains=> {::request-context/org org-id}]
+
+                (with-fake-http [{:url org-url :method :put} (fn [_ {body :body} _]
+                                                               (if (= {:organization {:id org-id :name new-name}} (util/from-json body))
+                                                                 (let [result-org (assoc rails-org-1 "name" new-name)
+                                                                       result {:organization result-org}]
+                                                                   (println {:status 200
+                                                                             :body   (util/to-json result)})
+                                                                   {:status 200
+                                                                    :body   (util/to-json result)})
+                                                                 {:status 422}))]
+                  (fact "conveys transformed organizations service response"
+                    (let [c (chan)]
+                      (orgs/update-organization ..ctx.. c updated-org)
+                      (<?? c) => updated-org))
+
+                  (fact "proxies organizations service response"
+                    (orgs/update-organization* ..ctx.. {:organization updated-org}) => {:organization updated-org}))))))
+
         (facts "GET /o/:id"
           (let [org-id       (get rails-org-1 "id")
                 org-url      (util/join-path [config/ORGS_SERVER "organizations" org-id])]
-            (fact "200 response"
+            (facts "with success"
               (let [expected-org {:id    (get rails-org-1 "id")
                                   :type  "Organization"
                                   :name  (get rails-org-1 "name")
@@ -128,7 +166,12 @@
                     (fact "conveys transformed organizations service response"
                       (let [c (chan)]
                         (orgs/get-organization ..ctx.. c org-id)
-                        (<?? c)) => expected-org)))))
+                        (<?? c)) => expected-org)
+
+                    (fact "proxies organizations service response"
+                      (orgs/get-organization* ..ctx..) => {:organization expected-org}
+                      (provided
+                        ..ctx.. =contains=> {::request-context/org org-id}))))))
             (fact "with failure"
               (with-fake-http [{:url org-url :method :get} {:status 401}]
 
