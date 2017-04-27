@@ -18,8 +18,8 @@
                  "Accept"       "application/json"}})
 
 (defn make-url
-  [& comps]
-  (util/join-path (conj comps config/ORGS_SERVER)))
+  [base & comps]
+  (util/join-path (conj comps base)))
 
 (defn make-links
   [ctx org]
@@ -60,30 +60,30 @@
 
 
 
-(defn get-organizations
+(defn get-organizations-async
   "Gets all organizations for authenticated user onto the provided channel. If close?, channel is closed on completion (default true).
    Conveys a list of Organizations or Throwable."
-  [ctx ch & {:keys [close?] :or {close? true}}]
+  [ctx v1-url ch & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)]
     (go
       (try+
-        (http/call-http raw-ch :get (make-url "organizations") (request-opts ctx) hp/ok?)
+        (http/call-http raw-ch :get (make-url v1-url "organizations") (request-opts ctx) hp/ok?)
         (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?)
         (catch Object ex
           (>! ch ex))))))
 
 (defn get-organizations*
-  [ctx]
+  [ctx v1-url]
   (let [ch (chan)]
-    (get-organizations ctx ch)
+    (get-organizations-async ctx v1-url ch)
     {:organizations (<?? ch)}))
 
-(defn get-organization
+(defn get-organization-async
   "Gets a single organization onto the provided channel. If close?, channel is closed on completion (default true).
    Conveys an Organization or Throwable"
-  [ctx ch org-id & {:keys [close?] :or {close? true}}]
+  [ctx v1-url ch org-id & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)
-        url    (make-url (util/join-path ["organizations" org-id]))]
+        url    (make-url v1-url (util/join-path ["organizations" org-id]))]
     (go
       (try+
         (http/call-http raw-ch :get url (request-opts ctx) hp/ok?)
@@ -92,24 +92,24 @@
           (>! ch ex))))))
 
 (defn get-organization*
-  [ctx]
+  [ctx v1-url]
   (let [ch     (chan)
         org-id (::request-context/org ctx)]
-    (get-organization ctx ch org-id)
+    (get-organization-async ctx v1-url ch org-id)
     {:organization (<?? ch)}))
 
-(defn update-organization
+(defn update-organization-async
   "Updates a single organization, returning the result on the provided channel.
    Only org name is updated.
 
    If close?, channel is closed on completion (default true).
 
    Conveys an Organization or Throwable"
-  [ctx ch org & {:keys [close?] :or {close? true}}]
+  [ctx v1-url ch org & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)
         {org-id :id
          name   :name} org
-        url    (make-url (util/join-path ["organizations" org-id]))
+        url    (make-url v1-url (util/join-path ["organizations" org-id]))
         opts   (assoc (request-opts ctx)
                  :body (util/to-json {:organization {:id   org-id
                                                      :name name}}))]
@@ -121,9 +121,9 @@
           (>! ch ex))))))
 
 (defn update-organization*
-  [ctx body]
+  [ctx v1-url body]
   (let [ch (chan)]
-    (update-organization ctx ch (:organization body))
+    (update-organization-async ctx v1-url ch (:organization body))
     (let [org (<?? ch)]
       {:organization org})))
 

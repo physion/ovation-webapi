@@ -138,11 +138,11 @@
                                                                  {:status 422}))]
                   (fact "conveys transformed organizations service response"
                     (let [c (chan)]
-                      (orgs/update-organization ..ctx.. c updated-org)
+                      (orgs/update-organization-async ..ctx.. config/ORGS_SERVER c updated-org)
                       (<?? c) => updated-org))
 
                   (fact "proxies organizations service response"
-                    (orgs/update-organization* ..ctx.. {:organization updated-org}) => {:organization updated-org}))))))
+                    (orgs/update-organization* ..ctx.. config/ORGS_SERVER {:organization updated-org}) => {:organization updated-org}))))))
 
         (facts "GET /o/:id"
           (let [org-id       (get rails-org-1 "id")
@@ -165,11 +165,11 @@
                                                                 :body   (util/to-json {:organization rails-org-1})}]
                     (fact "conveys transformed organizations service response"
                       (let [c (chan)]
-                        (orgs/get-organization ..ctx.. c org-id)
+                        (orgs/get-organization-async ..ctx.. config/ORGS_SERVER c org-id)
                         (<?? c)) => expected-org)
 
                     (fact "proxies organizations service response"
-                      (orgs/get-organization* ..ctx..) => {:organization expected-org}
+                      (orgs/get-organization* ..ctx.. config/ORGS_SERVER) => {:organization expected-org}
                       (provided
                         ..ctx.. =contains=> {::request-context/org org-id}))))))
             (fact "with failure"
@@ -177,7 +177,7 @@
 
                 (fact "conveys throwable"
                   (let [c (chan)]
-                    (orgs/get-organization ..ctx.. c 1)
+                    (orgs/get-organization-async ..ctx.. config/ORGS_SERVER c 1)
                     (<?? c)) =throws=> anything)))))
 
         (facts "GET /o"
@@ -214,17 +214,17 @@
 
                   (fact "conveys transformed organizations service response"
                     (let [c (chan)]
-                      (orgs/get-organizations ..ctx.. c)
+                      (orgs/get-organizations-async ..ctx.. config/ORGS_SERVER c)
                       (<?? c)) => expected-orgs)
 
                   (fact "proxies organizations service response"
-                    (orgs/get-organizations* ..ctx..) => {:organizations expected-orgs})))))
+                    (orgs/get-organizations* ..ctx.. config/ORGS_SERVER) => {:organizations expected-orgs})))))
 
           (fact "with failure"
             (with-fake-http [{:url orgs-url :method :get} {:status 401}]
 
               (fact "conveys throwable"
                 (let [c (chan)]
-                  (orgs/get-organizations ..ctx.. c)
+                  (orgs/get-organizations-async ..ctx.. config/ORGS_SERVER c)
                   (<?? c)) =throws=> anything))))))))
 

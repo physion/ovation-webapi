@@ -24,3 +24,4 @@
 (def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))
 
 (def ORGS_SERVER TEAMS_SERVER)
+(def SERVICES_API (config :ovation-io-host-uri :default "https://services-staging.ovation.io"))

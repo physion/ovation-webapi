@@ -34,7 +34,8 @@
             [ovation.util :as util]
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
-            [ovation.organizations :as organizations]))
+            [ovation.organizations :as organizations]
+            [ovation.authz :as authz]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -47,7 +48,7 @@
 (defroutes static-resources
   (route/resources "/public"))
 
-(defn create-app [database]
+(defn create-app [database authz]
   (let [db (:connection database)]
     (api
       {:swagger {:ui   "/"
@@ -108,7 +109,7 @@
                 :name :get-organizations
                 :return {:organizations [Organization]}
                 :summary "Returns all organizations for the authenticated user"
-                (ok (organizations/get-organizations* (request-context/make-context request nil))))
+                (ok (authz/get-organizations authz (request-context/make-context request nil))))
 
               (context "/:org" []
                 :path-params [org :- s/Str]
@@ -117,14 +118,14 @@
                   :name :get-organization
                   :return {:organization Organization}
                   :summary "Get an Organization"
-                  (ok (organizations/get-organization* (request-context/make-context request org))))
+                  (ok (authz/get-organization authz (request-context/make-context request org))))
 
                 (PUT "/" request
                   :name :put-organization
                   :return {:organization Organization}
                   :body [body {:organization Organization}]
                   :summary "Get an Organization"
-                  (ok (organizations/update-organization* (request-context/make-context request org) body)))
+                  (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
                 (context "/memberships" [])
 
