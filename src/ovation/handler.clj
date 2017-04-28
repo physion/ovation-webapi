@@ -75,6 +75,7 @@
                                {:name "search" :description "Search Ovation"}
                                {:name "zip" :description "Download ZIP archive"}
                                {:name "organizations" :desccription "Organizations"}
+                               {:name "organization-memberships" :description "Organization users"}
                                {:name "groups" :description "Organization Groups"}]}}}
 
 
@@ -127,7 +128,41 @@
                   :summary "Get an Organization"
                   (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
-                (context "/memberships" [])
+                (context "/memberships" []
+                  :tags ["organization-meberships"]
+                  (GET "/" request
+                    :name :get-org-memberships
+                    :return {:organization-memberships [OrganizationMembership]}
+                    :summary "Get organization users"
+                    (ok (authz/get-organization-memberships authz (request-context/make-context request org))))
+
+                  (POST "/" request
+                    :name :post-org-membership
+                    :return {:organization-membership OrganizationMembership}
+                    :body [body {:organization-membership OrganizationMembership}]
+                    :summary "Add a user to the organization"
+                    (created (authz/create-organization-membership authz (request-context/make-context request org) body)))
+
+                  (context "/:id" []
+                    :path-params [id :- s/Str]
+                    (GET "/" request
+                      :name :get-org-membership
+                      :return {:organization-membership OrganizationMembership}
+                      :summary "Get the organization membership for a user"
+                      (ok (authz/get-organization-membership authz (request-context/make-context request org) id)))
+
+                    (PUT "/" request
+                      :name :put-org-membership
+                      :return {:organization-membership OrganizationMembership}
+                      :body [body {:organization-membership OrganizationMembership}]
+                      :summary "Update the organization membership for a user"
+                      (ok (authz/put-organization-membership authz (request-context/make-context request org) id body)))
+
+                    (DELETE "/" request
+                      :name :delete-org-membership
+                      :return {}
+                      :summary "Delete the organization membership for a user"
+                      (ok (authz/delete-organization-membership authz (request-context/make-context request org) id)))))
 
                 (context "/entities" []
                   :tags ["entities"]

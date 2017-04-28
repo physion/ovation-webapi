@@ -1,14 +1,12 @@
 (ns ovation.test.organizations
   (:use midje.sweet)
   (:require [ovation.organizations :as orgs]
-            [clojure.core.async :refer [chan]]
+            [clojure.core.async :as core.async :refer [chan]]
             [ovation.util :as util :refer [<??]]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.config :as config]
             [ovation.request-context :as request-context]
-            [ovation.routes :as routes]
-            [ovation.http :as http]
-            [ring.util.http-predicates :as hp]))
+            [ovation.routes :as routes]))
 
 (facts "organization-memberships"
   (let [id               1
@@ -29,6 +27,7 @@
           (fact "proxies service response"
             (let [c                   (chan)
                   expected-membership {:id              id
+                                       :type            "OrganizationMembership"
                                        :user_id         user-id
                                        :organization_id org-id}]
               (orgs/get-memberships ..ctx.. service-url c)
@@ -40,6 +39,7 @@
           (fact "proxies service response"
             (let [c                   (chan)
                   expected-membership {:id              id
+                                       :type            "OrganizationMembership"
                                        :user_id         user-id
                                        :organization_id org-id}]
               (orgs/get-membership ..ctx.. service-url id c)
@@ -58,6 +58,7 @@
           (fact "proxies service response"
             (let [c              (chan)
                   expected       {:id              id
+                                  :type            "OrganizationMembership"
                                   :user_id         user-id
                                   :organization_id org-id}
                   new-membership {:user_id         user-id
@@ -66,8 +67,9 @@
               (<?? c) => expected))))
 
       (facts "`update-membership`"
-        (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS]) :method :put} (fn [_ {body :body} _]
+        (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
                                                                                                             (if (= {:organization-membership {:id              id
+                                                                                                                                              :type            "OrganizationMembership"
                                                                                                                                               :organization_id org-id
                                                                                                                                               :user_id         user-id}} (util/from-json body))
                                                                                                               (let [result {:organization_membership {:id              id
@@ -79,15 +81,29 @@
           (fact "proxies service response"
             (let [c                  (chan)
                   expected           {:id              id
+                                      :type            "OrganizationMembership"
                                       :user_id         user-id
                                       :organization_id org-id}
                   updated-membership {:id              id
+                                      :type            "OrganizationMembership"
                                       :user_id         user-id
                                       :organization_id org-id}]
-              (orgs/update-membership ..ctx.. service-url {:organization-membership updated-membership} c)
+              (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
               (<?? c) => expected))))
+
       (facts "`delete-membership`"
-        (future-fact "proxies service response")))))
+        (facts "with 204"
+          (with-fake-http [{:url (util/join-path [service-url "organization_memberships" id]) :method :delete} {:status 204 :body "{}"}]
+            (fact "proxies service response"
+              (let [c (chan)]
+                (orgs/delete-membership ..ctx.. service-url id c)
+                (<?? c) => {}))))
+        (facts "with 200"
+          (with-fake-http [{:url (util/join-path [service-url "organization_memberships" id]) :method :delete} {:status 200 :body "{}"}]
+            (fact "proxies service response"
+              (let [c (chan)]
+                (orgs/delete-membership ..ctx.. service-url id c)
+                (<?? c) => {}))))))))
 
 (facts "organizations API"
   (let [rails-org-1 {

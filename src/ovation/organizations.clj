@@ -8,7 +8,7 @@
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
-            [clojure.core.async :refer [chan go >! >!! pipeline]]
+            [clojure.core.async :refer [chan go >! >!! pipeline pipe]]
             [clojure.tools.logging :as logging]))
 
 (defn request-opts
@@ -61,6 +61,10 @@
       (let [org (:organization response)]
         ((read-org-tf ctx) org)))))
 
+(defn read-membership-tf
+  [membership]
+  (assoc membership :type "OrganizationMembership"))
+
 (defn read-membership-single-tf
   [ctx]
   (fn
@@ -68,7 +72,7 @@
     (if (instance? Throwable response)
       response
       (let [membership (:organization_membership response)]
-        membership))))
+        (read-membership-tf membership)))))
 
 (defn read-membership-collection-tf
   [ctx]
@@ -77,7 +81,7 @@
     (if (instance? Throwable response)
       response
       (let [memberships (:organization_memberships response)]
-        memberships))))
+        (map read-membership-tf memberships)))))
 
 
 
@@ -194,15 +198,28 @@
           (>! ch ex))))))
 
 (defn update-resource
-  [ctx api-url rsrc body read-tf ch & {:keys [close?] :or {close? true}}]
+  [ctx api-url rsrc body read-tf id ch & {:keys [close?] :or {close? true}}]
   (let [raw-ch (chan)
-        url    (make-url api-url rsrc)
+        url    (make-url api-url rsrc id)
         opts   (assoc (request-opts ctx)
                  :body (util/to-json body))]
     (go
       (try+
         (http/call-http raw-ch :put url opts hp/ok?)
         (pipeline 1 ch (map (read-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (logging/error ex "Exception in go block")
+          (>! ch ex))))))
+
+(defn destroy-resource
+  [ctx api-url rsrc id read-tf ch & {:keys [close?] :or {close? true}}]
+  (let [url    (make-url api-url rsrc id)
+        opts   (request-opts ctx)]
+    (go
+      (try+
+        (http/call-http ch :delete url opts (fn [response]
+                                                  (or (hp/ok? response)
+                                                    (hp/no-content? response))))
         (catch Object ex
           (logging/error ex "Exception in go block")
           (>! ch ex))))))
@@ -222,8 +239,9 @@
   (create-resource ctx api-url ORGANIZATION-MEMBERSHIPS body read-membership-single-tf ch :close? close?))
 
 (defn update-membership
-  [ctx api-url body ch & {:keys [close?] :or {close? true}}]
-  (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS body read-membership-single-tf ch :close? close?))
+  [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
+  (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS body read-membership-single-tf id ch :close? close?))
 
 (defn delete-membership
-  [])
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (destroy-resource ctx api-url ORGANIZATION-MEMBERSHIPS id read-membership-single-tf ch :close? close?))
