@@ -70,6 +70,36 @@
     (let [ch (chan)]
       (organizations/delete-membership ctx (:v2-url this) id ch)
       (let [result (<?? ch)]
+        result)))
+
+  (get-organization-groups [this ctx]
+    (let [ch (chan)]
+      (organizations/get-groups ctx (:v2-url this) ch)
+      (let [memberships (<?? ch)]
+        {:groups memberships})))
+
+  (create-organization-group [this ctx body]
+    (let [ch (chan)]
+      (organizations/create-group ctx (:v2-url this) (:organization-membership body) ch)
+      (let [memberships (<?? ch)]
+        {:group memberships})))
+
+  (get-organization-group [this ctx id]
+    (let [ch (chan)]
+      (organizations/get-group ctx (:v2-url this) id ch)
+      (let [membership (<?? ch)]
+        {:group membership})))
+
+  (put-organization-group [this ctx id body]
+    (let [ch (chan)]
+      (organizations/update-group ctx (:v2-url this) id (:organization-membership body) ch)
+      (let [membership (<?? ch)]
+        {:group membership})))
+
+  (delete-organization-group [this ctx id]
+    (let [ch (chan)]
+      (organizations/delete-group ctx (:v2-url this) id ch)
+      (let [result (<?? ch)]
         result))))
 
 (defn new-authz-service [v1-url v2-url]

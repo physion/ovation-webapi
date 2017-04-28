@@ -164,6 +164,42 @@
                       :summary "Delete the organization membership for a user"
                       (ok (authz/delete-organization-membership authz (request-context/make-context request org) id)))))
 
+                (context "/groups" []
+                  :tags ["groups"]
+                  (GET "/" request
+                    :name :get-org-groups
+                    :return {:groups [OrganizationGroup]}
+                    :summary "Get organization groups"
+                    (ok (authz/get-organization-groups authz (request-context/make-context request org))))
+
+                  (POST "/" request
+                    :name :post-org-group
+                    :return {:group OrganizationGroup}
+                    :body [body {:group OrganizationMembership}]
+                    :summary "Add a group to the organization"
+                    (created (authz/create-organization-group authz (request-context/make-context request org) body)))
+
+                  (context "/:id" []
+                    :path-params [id :- s/Str]
+                    (GET "/" request
+                      :name :get-org-group
+                      :return {:group OrganizationGroup}
+                      :summary "Get a group"
+                      (ok (authz/get-organization-group authz (request-context/make-context request org) id)))
+
+                    (PUT "/" request
+                      :name :put-org-group
+                      :return {:group OrganizationGroup}
+                      :body [body {:group OrganizationGroup}]
+                      :summary "Update a group"
+                      (ok (authz/put-organization-group authz (request-context/make-context request org) id body)))
+
+                    (DELETE "/" request
+                      :name :delete-org-group
+                      :return {}
+                      :summary "Delete a group"
+                      (ok (authz/delete-organization-group authz (request-context/make-context request org) id)))))
+
                 (context "/entities" []
                   :tags ["entities"]
                   (context "/:id" []

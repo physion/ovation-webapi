@@ -146,10 +146,12 @@
       {:organization org})))
 
 (defn index-resource
-  [ctx api-url rsrc ch & {:keys [close? response-key make-tf] :or {close? true}}]
+  [ctx api-url rsrc ch & {:keys [close? response-key make-tf query-params] :or {close?       true
+                                                                                query-params nil}}]
   (let [raw-ch (chan)
         url    (make-url api-url rsrc)
-        opts   (request-opts ctx)]
+        opts   (assoc (request-opts ctx)
+                 :query-params query-params)]
     (go
       (try+
         (http/call-http raw-ch :get url opts hp/ok?)
@@ -160,7 +162,8 @@
 
 
 (defn show-resource
-  [ctx api-url rsrc id ch & {:keys [close? response-key make-tf] :or {close? true}}]
+  [ctx api-url rsrc id ch & {:keys [close? response-key make-tf query-params] :or {close?       true
+                                                                                   query-params nil}}]
   (let [raw-ch (chan)
         url    (make-url api-url rsrc id)
         opts   (request-opts ctx)]
@@ -249,3 +252,39 @@
   (destroy-resource ctx api-url ORGANIZATION-MEMBERSHIPS id ch :close? close?
     :response-key :organization_membership
     :make-tf make-read-membership-tf))
+
+
+(defn get-groups
+  [ctx api-url ch & {:keys [close?] :or {close? true}}]
+  (index-resource ctx api-url ORGANIZATION-GROUPS ch
+    :close? close?
+    :response-key :organization_groups
+    :make-tf make-read-membership-tf))
+
+(defn get-group
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (show-resource ctx api-url ORGANIZATION-GROUPS id ch
+    :close? close?
+    :response-key :organization_group
+    :make-tf make-read-membership-tf))
+
+(defn create-group
+  [ctx api-url body ch & {:keys [close?] :or {close? true}}]
+  (create-resource ctx api-url ORGANIZATION-GROUPS body ch
+    :close? close?
+    :response-key :organization_group
+    :make-tf make-read-membership-tf))
+
+(defn update-group
+  [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
+  (update-resource ctx api-url ORGANIZATION-GROUPS body id ch
+    :close? close?
+    :response-key :organization_group
+    :make-tf make-read-membership-tf))
+
+(defn delete-group
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (destroy-resource ctx api-url ORGANIZATION-GROUPS id ch :close? close?
+    :response-key :organization_group
+    :make-tf make-read-membership-tf))
+
