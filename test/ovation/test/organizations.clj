@@ -73,7 +73,7 @@
                                                                                                               (let [result {:organization_membership {:id              id
                                                                                                                                                       :organization_id org-id
                                                                                                                                                       :user_id         user-id}}]
-                                                                                                                {:status 201
+                                                                                                                {:status 200
                                                                                                                  :body   (util/to-json result)})
                                                                                                               {:status 422}))]
           (fact "proxies service response"
