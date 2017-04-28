@@ -225,6 +225,12 @@
            (s/optional-key :projects) s/Str
            (s/optional-key :members)  s/Str}})
 
+(s/defschema OrganizationMembership
+  {:id (s/either s/Str s/Int)
+   :type (s/eq "OrganizationMembership")
+   :user_id (s/either s/Str s/Int)
+   :organization_id (s/either s/Str s/Int)})
+
 ;; -- Teams -- ;;
 
 (s/defschema TeamRole

@@ -18,7 +18,7 @@
         (let [body (util/from-json (:body resp))]
           (>!! ch body))
         (try+
-          (logging/debug "Throwing HTTP response error")
+          (logging/debug "Throwing HTTP response error for" resp)
           (throw! resp)
           (catch Object ex
             (logging/debug "Conveying HTTP response error" ex)

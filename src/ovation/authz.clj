@@ -26,7 +26,7 @@
   (get-organization [this ctx]
     (organizations/get-organization* ctx (:v1-url this)))
   (update-organization [this ctx body]
-    (organizations/update-organization* ctx (:v1-url this) body )))
+    (organizations/update-organization* ctx (:v1-url this) body)))
 
 (defn new-authz-service [v1-url v2-url]
   (map->AuthzService {:v1-url v1-url :v2-url v2-url}))

@@ -10,7 +10,86 @@
             [ovation.http :as http]
             [ring.util.http-predicates :as hp]))
 
-(facts "About organizations API"
+(facts "organization-memberships"
+  (let [id               1
+        user-id          10
+        org-id           3
+        service-url      (util/join-path [config/SERVICES_API "api" "v2"])
+        rails-membership {"id"              id
+                          "user_id"         user-id
+                          "organization_id" org-id}]
+    (against-background [(request-context/token ..ctx..) => ..auth..
+                         ..ctx.. =contains=> {::request-context/auth   ..auth..
+                                              ::request-context/routes ..rt..
+                                              ::request-context/org    org-id}
+                         (request-context/router ..request..) => ..rt..]
+      (facts "`get-memberships`"
+        (with-fake-http [{:url (util/join-path [service-url "organization_memberships"]) :method :get} {:status 200
+                                                                                                        :body   (util/to-json {:organization_memberships [rails-membership]})}]
+          (fact "proxies service response"
+            (let [c                   (chan)
+                  expected-membership {:id              id
+                                       :user_id         user-id
+                                       :organization_id org-id}]
+              (orgs/get-memberships ..ctx.. service-url c)
+              (<?? c) => [expected-membership]))))
+
+      (facts "`get-membership`"
+        (with-fake-http [{:url (util/join-path [service-url "organization_memberships" id]) :method :get} {:status 200
+                                                                                                           :body   (util/to-json {:organization_membership rails-membership})}]
+          (fact "proxies service response"
+            (let [c                   (chan)
+                  expected-membership {:id              id
+                                       :user_id         user-id
+                                       :organization_id org-id}]
+              (orgs/get-membership ..ctx.. service-url id c)
+              (<?? c) => expected-membership))))
+
+      (facts "`create-membership`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
+                                                                                                             (if (= {:organization-membership {:organization_id org-id
+                                                                                                                                               :user_id         user-id}} (util/from-json body))
+                                                                                                               (let [result {:organization_membership {:id              id
+                                                                                                                                                       :organization_id org-id
+                                                                                                                                                       :user_id         user-id}}]
+                                                                                                                 {:status 201
+                                                                                                                  :body   (util/to-json result)})
+                                                                                                               {:status 422}))]
+          (fact "proxies service response"
+            (let [c              (chan)
+                  expected       {:id              id
+                                  :user_id         user-id
+                                  :organization_id org-id}
+                  new-membership {:user_id         user-id
+                                  :organization_id org-id}]
+              (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
+              (<?? c) => expected))))
+
+      (facts "`update-membership`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS]) :method :put} (fn [_ {body :body} _]
+                                                                                                            (if (= {:organization-membership {:id              id
+                                                                                                                                              :organization_id org-id
+                                                                                                                                              :user_id         user-id}} (util/from-json body))
+                                                                                                              (let [result {:organization_membership {:id              id
+                                                                                                                                                      :organization_id org-id
+                                                                                                                                                      :user_id         user-id}}]
+                                                                                                                {:status 201
+                                                                                                                 :body   (util/to-json result)})
+                                                                                                              {:status 422}))]
+          (fact "proxies service response"
+            (let [c                  (chan)
+                  expected           {:id              id
+                                      :user_id         user-id
+                                      :organization_id org-id}
+                  updated-membership {:id              id
+                                      :user_id         user-id
+                                      :organization_id org-id}]
+              (orgs/update-membership ..ctx.. service-url {:organization-membership updated-membership} c)
+              (<?? c) => expected))))
+      (facts "`delete-membership`"
+        (future-fact "proxies service response")))))
+
+(facts "organizations API"
   (let [rails-org-1 {
                      "id"                  1,
                      "uuid"                "1db71db5-9399-4ccb-b7b2-592ae25a810f",
@@ -131,14 +210,12 @@
                                                                (if (= {:organization {:id org-id :name new-name}} (util/from-json body))
                                                                  (let [result-org (assoc rails-org-1 "name" new-name)
                                                                        result {:organization result-org}]
-                                                                   (println {:status 200
-                                                                             :body   (util/to-json result)})
                                                                    {:status 200
                                                                     :body   (util/to-json result)})
                                                                  {:status 422}))]
                   (fact "conveys transformed organizations service response"
                     (let [c (chan)]
-                      (orgs/update-organization-async ..ctx.. config/ORGS_SERVER c updated-org)
+                      (orgs/update-organization ..ctx.. config/ORGS_SERVER c updated-org)
                       (<?? c) => updated-org))
 
                   (fact "proxies organizations service response"
@@ -165,7 +242,7 @@
                                                                 :body   (util/to-json {:organization rails-org-1})}]
                     (fact "conveys transformed organizations service response"
                       (let [c (chan)]
-                        (orgs/get-organization-async ..ctx.. config/ORGS_SERVER c org-id)
+                        (orgs/get-organization ..ctx.. config/ORGS_SERVER c org-id)
                         (<?? c)) => expected-org)
 
                     (fact "proxies organizations service response"
@@ -177,7 +254,7 @@
 
                 (fact "conveys throwable"
                   (let [c (chan)]
-                    (orgs/get-organization-async ..ctx.. config/ORGS_SERVER c 1)
+                    (orgs/get-organization ..ctx.. config/ORGS_SERVER c 1)
                     (<?? c)) =throws=> anything)))))
 
         (facts "GET /o"
@@ -214,7 +291,7 @@
 
                   (fact "conveys transformed organizations service response"
                     (let [c (chan)]
-                      (orgs/get-organizations-async ..ctx.. config/ORGS_SERVER c)
+                      (orgs/get-organizations ..ctx.. config/ORGS_SERVER c)
                       (<?? c)) => expected-orgs)
 
                   (fact "proxies organizations service response"
@@ -225,6 +302,6 @@
 
               (fact "conveys throwable"
                 (let [c (chan)]
-                  (orgs/get-organizations-async ..ctx.. config/ORGS_SERVER c)
+                  (orgs/get-organizations ..ctx.. config/ORGS_SERVER c)
                   (<?? c)) =throws=> anything))))))))
 

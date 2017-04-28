@@ -8,7 +8,8 @@
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
-            [clojure.core.async :refer [chan go >! >!! pipeline]]))
+            [clojure.core.async :refer [chan go >! >!! pipeline]]
+            [clojure.tools.logging :as logging]))
 
 (defn request-opts
   [ctx]
@@ -29,7 +30,9 @@
      :organization-memberships (routes/org-memberships-route rt (:id org))
      :organization-groups      (routes/org-groups-route rt (:id org))}))
 
-(defn read-tf
+(def ORGANIZATION-MEMBERSHIPS "organization_memberships")
+
+(defn read-org-tf
   [ctx]
   (fn
     [org]
@@ -41,26 +44,44 @@
        :name  (:name org)
        :links (make-links ctx org)})))
 
-(defn read-collection-tf
+(defn read-org-collection-tf
   [ctx]
   (fn
     [response]
     (if (instance? Throwable response)
       response
       (let [orgs (:organizations response)]
-        (map (read-tf ctx) orgs)))))
+        (map (read-org-tf ctx) orgs)))))
 
-(defn read-single-tf
+(defn read-org-single-tf
   [ctx]
   (fn [response]
     (if (instance? Throwable response)
       response
       (let [org (:organization response)]
-        ((read-tf ctx) org)))))
+        ((read-org-tf ctx) org)))))
+
+(defn read-membership-single-tf
+  [ctx]
+  (fn
+    [response]
+    (if (instance? Throwable response)
+      response
+      (let [membership (:organization_membership response)]
+        membership))))
+
+(defn read-membership-collection-tf
+  [ctx]
+  (fn
+    [response]
+    (if (instance? Throwable response)
+      response
+      (let [memberships (:organization_memberships response)]
+        memberships))))
 
 
 
-(defn get-organizations-async
+(defn get-organizations
   "Gets all organizations for authenticated user onto the provided channel. If close?, channel is closed on completion (default true).
    Conveys a list of Organizations or Throwable."
   [ctx v1-url ch & {:keys [close?] :or {close? true}}]
@@ -68,17 +89,18 @@
     (go
       (try+
         (http/call-http raw-ch :get (make-url v1-url "organizations") (request-opts ctx) hp/ok?)
-        (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?)
+        (pipeline 1 ch (map (read-org-collection-tf ctx)) raw-ch close?)
         (catch Object ex
+          (logging/error ex "Exception in async loop")
           (>! ch ex))))))
 
 (defn get-organizations*
   [ctx v1-url]
   (let [ch (chan)]
-    (get-organizations-async ctx v1-url ch)
+    (get-organizations ctx v1-url ch)
     {:organizations (<?? ch)}))
 
-(defn get-organization-async
+(defn get-organization
   "Gets a single organization onto the provided channel. If close?, channel is closed on completion (default true).
    Conveys an Organization or Throwable"
   [ctx v1-url ch org-id & {:keys [close?] :or {close? true}}]
@@ -87,18 +109,19 @@
     (go
       (try+
         (http/call-http raw-ch :get url (request-opts ctx) hp/ok?)
-        (pipeline 1 ch (map (read-single-tf ctx)) raw-ch close?)
+        (pipeline 1 ch (map (read-org-single-tf ctx)) raw-ch close?)
         (catch Object ex
+          (logging/error ex "Exception in go block")
           (>! ch ex))))))
 
 (defn get-organization*
   [ctx v1-url]
   (let [ch     (chan)
         org-id (::request-context/org ctx)]
-    (get-organization-async ctx v1-url ch org-id)
+    (get-organization ctx v1-url ch org-id)
     {:organization (<?? ch)}))
 
-(defn update-organization-async
+(defn update-organization
   "Updates a single organization, returning the result on the provided channel.
    Only org name is updated.
 
@@ -116,21 +139,91 @@
     (go
       (try+
         (http/call-http raw-ch :put url opts hp/ok?)
-        (pipeline 1 ch (map (read-single-tf ctx)) raw-ch close?)
+        (pipeline 1 ch (map (read-org-single-tf ctx)) raw-ch close?)
         (catch Object ex
+          (logging/error ex "Exception in go block")
           (>! ch ex))))))
 
 (defn update-organization*
   [ctx v1-url body]
   (let [ch (chan)]
-    (update-organization-async ctx v1-url ch (:organization body))
+    (update-organization ctx v1-url ch (:organization body))
     (let [org (<?? ch)]
       {:organization org})))
 
-(defn get-memberships
-  [ctx ch & {:keys [close?] :or {close? true}}]
-  (let [raw-ch (chan)]
+(defn index-resource
+  [ctx api-url rsrc collection-tf ch & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)
+        url    (make-url api-url rsrc)
+        opts   (request-opts ctx)]
     (go
-      ;;TODO /api/v2/organization-memberships
-      (http/call-http raw-ch :get (make-url "organization-memberships") (request-opts ctx) hp/ok?)
-      (pipeline 1 ch (map (read-collection-tf ctx)) raw-ch close?))))
+      (try+
+        (http/call-http raw-ch :get url opts hp/ok?)
+        (pipeline 1 ch (map (collection-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (logging/error ex "Exception in go block")
+          (>! ch ex))))))
+
+
+(defn show-resource
+  [ctx api-url rsrc id read-tf ch & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)
+        url    (make-url api-url rsrc id)
+        opts   (request-opts ctx)]
+    (go
+      (try+
+        (http/call-http raw-ch :get url opts hp/ok?)
+        (pipeline 1 ch (map (read-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (logging/error ex "Exception in go block")
+          (>! ch ex))))))
+
+
+(defn create-resource
+  [ctx api-url rsrc body read-tf ch & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)
+        url    (make-url api-url rsrc)
+        opts   (assoc (request-opts ctx)
+                 :body (util/to-json body))]
+    (go
+      (try+
+        (http/call-http raw-ch :post url opts hp/created?)
+        (pipeline 1 ch (map (read-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (logging/error ex "Exception in go block")
+          (>! ch ex))))))
+
+(defn update-resource
+  [ctx api-url rsrc body read-tf ch & {:keys [close?] :or {close? true}}]
+  (let [raw-ch (chan)
+        url    (make-url api-url rsrc)
+        opts   (assoc (request-opts ctx)
+                 :body (util/to-json body))]
+    (go
+      (try+
+        (http/call-http raw-ch :put url opts hp/ok?)
+        (pipeline 1 ch (map (read-tf ctx)) raw-ch close?)
+        (catch Object ex
+          (logging/error ex "Exception in go block")
+          (>! ch ex))))))
+
+
+
+(defn get-memberships
+  [ctx api-url ch & {:keys [close?] :or {close? true}}]
+  (index-resource ctx api-url ORGANIZATION-MEMBERSHIPS read-membership-collection-tf ch :close? close?))
+
+(defn get-membership
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (show-resource ctx api-url ORGANIZATION-MEMBERSHIPS id read-membership-single-tf ch :close? close?))
+
+(defn create-membership
+  [ctx api-url body ch & {:keys [close?] :or {close? true}}]
+  (create-resource ctx api-url ORGANIZATION-MEMBERSHIPS body read-membership-single-tf ch :close? close?))
+
+(defn update-membership
+  [ctx api-url body ch & {:keys [close?] :or {close? true}}]
+  (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS body read-membership-single-tf ch :close? close?))
+
+(defn delete-membership
+  [])
