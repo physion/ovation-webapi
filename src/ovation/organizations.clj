@@ -234,18 +234,18 @@
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
   (create-resource ctx api-url ORGANIZATION-MEMBERSHIPS body ch
     :close? close?
-    :response-key :organization_memberships
+    :response-key :organization_membership
     :make-tf make-read-membership-tf))
 
 (defn update-membership
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
   (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS body id ch
     :close? close?
-    :response-key :organization_memberships
+    :response-key :organization_membership
     :make-tf make-read-membership-tf))
 
 (defn delete-membership
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]
   (destroy-resource ctx api-url ORGANIZATION-MEMBERSHIPS id ch :close? close?
-    :response-key :organization_memberships
+    :response-key :organization_membership
     :make-tf make-read-membership-tf))
