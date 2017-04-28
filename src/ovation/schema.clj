@@ -4,6 +4,8 @@
             [ovation.constants :as k]
             [ovation.util :as util]))
 
+(s/defschema Id (s/either s/Int s/Str))
+
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any
                                     (s/optional-key :detail) s/Str}})
@@ -217,7 +219,7 @@
 
 ;; -- Organizations -- ;;
 (s/defschema Organization
-  {:id    (s/either s/Str s/Int)
+  {:id    Id
    :type  (s/eq "Organization")
    :uuid  s/Uuid
    :name  s/Str
@@ -226,22 +228,30 @@
            (s/optional-key :members)  s/Str}})
 
 (s/defschema OrganizationMembership
-  {:id (s/either s/Str s/Int)
+  {:id Id
    :type (s/eq "OrganizationMembership")
-   :user_id (s/either s/Str s/Int)
-   :organization_id (s/either s/Str s/Int)})
+   :user_id Id
+   :organization_id Id})
+
+;; -- Organization groups -- ;;
+(s/defschema OrganizationGroup
+  {:id Id
+   :type (s/eq "OrganizationGroup")
+   :name s/Str
+   :organization_id Id})
+
 
 ;; -- Teams -- ;;
 
 (s/defschema TeamRole
-  {:id                     (s/either s/Str s/Int)
-   :organization_id        (s/either s/Str s/Int)
+  {:id                     Id
+   :organization_id        Id
    :name                   s/Str
    (s/optional-key :links) {s/Keyword s/Str}})
 
 (s/defschema TeamMembership
-  {:id                     (s/either s/Str s/Int)
-   :team_id                (s/either s/Str s/Int)
+  {:id                     Id
+   :team_id                Id
    :type                   s/Str
    :added                  s/Str
    :role                   TeamRole
@@ -253,7 +263,7 @@
 
 
 (s/defschema PendingTeamMembership
-  {:id        (s/either s/Str s/Int)
+  {:id        Id
    :role      TeamRole
    :added     s/Str
    (s/optional-key :email)      s/Str
@@ -287,7 +297,7 @@
    :role_id       s/Int})
 
 (s/defschema Team
-  {:id                  (s/either s/Str s/Int)
+  {:id                  Id
    :type                (s/eq "Team")
    :uuid                s/Uuid
    :name                s/Str

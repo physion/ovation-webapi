@@ -15,7 +15,13 @@
   (create-organization-membership [this ctx body])
   (get-organization-membership [this ctx id])
   (put-organization-membership [this ctx id body])
-  (delete-organization-membership [this ctx id]))
+  (delete-organization-membership [this ctx id])
+
+  (get-organization-groups [this ctx])
+  (create-organization-group [this ctx body])
+  (get-organization-group [this ctx id])
+  (put-organization-group [this ctx id body])
+  (delete-organization-group [this ctx id]))
 
 ;; Organizations, Groups
 (defrecord AuthzService [v1-url v2-url]
@@ -30,11 +36,11 @@
 
   AuthzApi
   (get-organizations [this ctx]
-    (organizations/get-organizations* ctx (:v1-url this)))
+    (organizations/get-organizations* ctx (:v2-url this)))
   (get-organization [this ctx]
-    (organizations/get-organization* ctx (:v1-url this)))
+    (organizations/get-organization* ctx (:v2-url this)))
   (update-organization [this ctx body]
-    (organizations/update-organization* ctx (:v1-url this) body))
+    (organizations/update-organization* ctx (:v2-url this) body))
 
   (get-organization-memberships [this ctx]
     (let [ch (chan)]
