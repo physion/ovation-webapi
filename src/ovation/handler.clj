@@ -76,7 +76,8 @@
                                {:name "zip" :description "Download ZIP archive"}
                                {:name "organizations" :desccription "Organizations"}
                                {:name "organization-memberships" :description "Organization users"}
-                               {:name "groups" :description "Organization Groups"}]}}}
+                               {:name "groups" :description "User Groups within an Organization"}
+                               {:name "group-memberships" :description "Group members"}]}}}
 
 
       (middleware [[wrap-cors
@@ -198,7 +199,12 @@
                       :name :delete-org-group
                       :return {}
                       :summary "Delete a group"
-                      (ok (authz/delete-organization-group authz (request-context/make-context request org) id)))))
+                      (ok (authz/delete-organization-group authz (request-context/make-context request org) id)))
+
+                    (context "/memberships" []
+                      :tags ["group-memberships"]
+                      ;; TODO
+                      )))
 
                 (context "/entities" []
                   :tags ["entities"]

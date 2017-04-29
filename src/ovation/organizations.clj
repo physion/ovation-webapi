@@ -14,6 +14,7 @@
 
 (def ORGANIZATION-MEMBERSHIPS "organization_memberships")
 (def ORGANIZATION-GROUPS "organization_groups")
+(def GROUP-MEMBERSHIPS "group_memberships")
 
 
 (defn request-opts
@@ -53,6 +54,16 @@
   (fn
     [membership]
     (assoc membership :type "OrganizationMembership")))
+
+(defn make-read-group-tf
+  [ctx]
+  (fn [group]
+    (assoc group :type "OrganizationGroup")))
+
+(defn make-read-group-membership-tf
+  [ctx]
+  (fn [group]
+    (assoc group :type "OrganizationGroupMembership")))
 
 
 
@@ -259,32 +270,69 @@
   (index-resource ctx api-url ORGANIZATION-GROUPS ch
     :close? close?
     :response-key :organization_groups
-    :make-tf make-read-membership-tf))
+    :make-tf make-read-group-tf))
 
 (defn get-group
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]
   (show-resource ctx api-url ORGANIZATION-GROUPS id ch
     :close? close?
     :response-key :organization_group
-    :make-tf make-read-membership-tf))
+    :make-tf make-read-group-tf))
 
 (defn create-group
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
   (create-resource ctx api-url ORGANIZATION-GROUPS body ch
     :close? close?
     :response-key :organization_group
-    :make-tf make-read-membership-tf))
+    :make-tf make-read-group-tf))
 
 (defn update-group
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
   (update-resource ctx api-url ORGANIZATION-GROUPS body id ch
     :close? close?
     :response-key :organization_group
-    :make-tf make-read-membership-tf))
+    :make-tf make-read-group-tf))
 
 (defn delete-group
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]
   (destroy-resource ctx api-url ORGANIZATION-GROUPS id ch :close? close?
     :response-key :organization_group
-    :make-tf make-read-membership-tf))
+    :make-tf make-read-group-tf))
+
+
+
+(defn get-group-memberships
+  [ctx api-url group-id ch & {:keys [close?] :or {close? true}}]
+  (index-resource ctx api-url GROUP-MEMBERSHIPS ch
+    :query-params {:group_id group-id}
+    :close? close?
+    :response-key :group_memberships                        ;; TODO
+    :make-tf make-read-group-membership-tf))
+
+(defn get-group-membership
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (show-resource ctx api-url GROUP-MEMBERSHIPS id ch
+    :close? close?
+    :response-key :group_membership                         ;; TODO
+    :make-tf make-read-group-membership-tf))
+
+(defn create-group-membership
+  [ctx api-url body ch & {:keys [close?] :or {close? true}}]
+  (create-resource ctx api-url GROUP-MEMBERSHIPS body ch
+    :close? close?
+    :response-key :group_membership
+    :make-tf make-read-group-membership-tf))
+
+(defn update-group-membership
+  [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
+  (update-resource ctx api-url GROUP-MEMBERSHIPS body id ch
+    :close? close?
+    :response-key :group_membership
+    :make-tf make-read-group-membership-tf))
+
+(defn delete-group-membership
+  [ctx api-url id ch & {:keys [close?] :or {close? true}}]
+  (destroy-resource ctx api-url GROUP-MEMBERSHIPS id ch :close? close?
+    :response-key :group_membership
+    :make-tf make-read-group-membership-tf))
 
