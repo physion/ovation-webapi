@@ -214,7 +214,7 @@
                         :return {:group-membership OrganizationGroupMembership}
                         :body [body {:group OrganizationMembership}]
                         :summary "Add a user to the group"
-                        (created (authz/create-organization-membership authz (request-context/make-context request org) body)))
+                        (created (authz/create-organization-group-membership authz (request-context/make-context request org) body)))
 
                       (context "/:membership-id" []
                         :path-params [membership-id :- s/Str]

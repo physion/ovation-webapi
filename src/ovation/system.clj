@@ -3,7 +3,7 @@
             [clojure.tools.logging :as logging]
             [ovation.handler :as handler]
             (system.components
-              [jetty :refer [new-web-server]])
+              [http-kit :refer [new-web-server]])
             [cemerick.url :as url]
             [ovation.authz :as authz]))
 
@@ -26,12 +26,12 @@
 
 
 ;; API
-(defrecord Api [api db authz-service]
+(defrecord Api [db authz]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db authz-service)))
+    (assoc this :handler (handler/create-app db authz)))
 
   (stop [this]
     (logging/info "Stopping API")
@@ -64,5 +64,5 @@
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
       :api (component/using
              (new-api)
-             {:db            :database
-              :authz-serivce :authz}))))
+             {:db    :database
+              :authz :authz}))))
