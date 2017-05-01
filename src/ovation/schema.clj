@@ -240,8 +240,8 @@
    :type                   (s/eq "OrganizationGroup")
    :name                   s/Str
    :organization_id        Id
-   (s/optional-key :links) {:self    s/Str
-                            :members s/Str}})
+   (s/optional-key :links) {:self              s/Str
+                            :group-memberships s/Str}})
 
 
 ;; -- Organization group memberships -- ;;

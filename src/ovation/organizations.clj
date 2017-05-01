@@ -64,8 +64,8 @@
     (fn [group]
       (-> group
         (assoc :type "OrganizationGroup")
-        (assoc :links {:self    (routes/self-route ctx "group-membership" (:id group))
-                       :members (routes/group-memberships-route rt org-id (:id group))})))))
+        (assoc :links {:self              (routes/self-route ctx "group-membership" (:id group))
+                       :group-memberships (routes/group-memberships-route rt org-id (:id group))})))))
 
 (defn make-read-group-membership-tf
   [ctx]
