@@ -8,6 +8,110 @@
             [ovation.request-context :as request-context]
             [ovation.routes :as routes]))
 
+(facts "groups-memberships"
+  (let [id               1
+        user-id          10
+        org-id           3
+        group-id         21
+        service-url      (util/join-path [config/SERVICES_API "api" "v2"])
+        rails-membership {"id"              id
+                          "user_id"         user-id
+                          "organization_id" org-id}]
+    (against-background [(request-context/token ..ctx..) => ..auth..
+                         ..ctx.. =contains=> {::request-context/auth   ..auth..
+                                              ::request-context/routes ..rt..
+                                              ::request-context/org    org-id}
+                         (request-context/router ..request..) => ..rt..]
+      (facts "`get-memberships`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
+                                                                                                     (if (= group-id (:group_id query-params))
+                                                                                                       {:status 200
+                                                                                                        :body   (util/to-json {:group_memberships [rails-membership]})}
+                                                                                                       {:status 422
+                                                                                                        :body   "{}"}))]
+          (fact "proxies service response"
+            (let [c              (chan)
+                  expected-group {:id              id
+                                  :type            "OrganizationGroupMembership"
+                                  :user_id         user-id
+                                  :organization_id org-id}]
+              (orgs/get-group-memberships ..ctx.. service-url group-id c)
+              (<?? c) => [expected-group]))))
+
+      (facts "`get-membership`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :get} {:status 200
+                                                                                                       :body   (util/to-json {:group_membership rails-membership})}]
+          (fact "proxies service response"
+            (let [c                   (chan)
+                  expected-membership {:id              id
+                                       :type            "OrganizationGroupMembership"
+                                       :user_id         user-id
+                                       :organization_id org-id}]
+              (orgs/get-group-membership ..ctx.. service-url id c)
+              (<?? c) => expected-membership))))
+
+      (facts "`create-group-membership`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
+                                                                                                      (if (= {:group-membership {:type            "OrganizationGroupMembership"
+                                                                                                                                 :user_id         user-id
+                                                                                                                                 :organization_id org-id}} (util/from-json body))
+                                                                                                        (let [result {:group_membership {:id              id
+                                                                                                                                         :user_id         user-id
+                                                                                                                                         :organization_id org-id}}]
+                                                                                                          {:status 201
+                                                                                                           :body   (util/to-json result)})
+                                                                                                        {:status 422}))]
+          (fact "proxies service response"
+            (let [c        (chan)
+                  expected {:id              id
+                            :type            "OrganizationGroupMembership"
+                            :user_id         user-id
+                            :organization_id org-id}
+                  new      {:type            "OrganizationGroupMembership"
+                            :user_id         user-id
+                            :organization_id org-id}]
+              (orgs/create-group-membership ..ctx.. service-url {:group-membership new} c)
+              (<?? c) => expected))))
+
+      (facts "`update-group`"
+        (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
+                                                                                                        (if (= {:group-membership {:id              id
+                                                                                                                                   :type            "OrganizationGroupMembership"
+                                                                                                                                   :user_id         user-id
+                                                                                                                                   :organization_id org-id}} (util/from-json body))
+                                                                                                          (let [result {:group_membership {:id              id
+                                                                                                                                           :user_id         user-id
+                                                                                                                                           :organization_id org-id}}]
+                                                                                                            {:status 200
+                                                                                                             :body   (util/to-json result)})
+                                                                                                          {:status 422}))]
+          (fact "proxies service response"
+            (let [c        (chan)
+                  expected {:id              id
+                            :type            "OrganizationGroupMembership"
+                            :user_id         user-id
+                            :organization_id org-id}
+                  updated  {:id              id
+                            :type            "OrganizationGroupMembership"
+                            :user_id         user-id
+                            :organization_id org-id}]
+              (orgs/update-group-membership ..ctx.. service-url id {:group-membership updated} c)
+              (<?? c) => expected))))
+
+      (facts "`delete-group`"
+        (facts "with 204"
+          (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :delete} {:status 204 :body "{}"}]
+            (fact "proxies service response"
+              (let [c (chan)]
+                (orgs/delete-group-membership ..ctx.. service-url id c)
+                (<?? c) => {}))))
+        (facts "with 200"
+          (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :delete} {:status 200 :body "{}"}]
+            (fact "proxies service response"
+              (let [c (chan)]
+                (orgs/delete-group-membership ..ctx.. service-url id c)
+                (<?? c) => {}))))))))
+
 (facts "organization-groups"
   (let [id          1
         user-id     10
@@ -104,7 +208,6 @@
               (let [c (chan)]
                 (orgs/delete-group ..ctx.. service-url id c)
                 (<?? c) => {}))))))))
-
 
 (facts "organization-memberships"
   (let [id               1
