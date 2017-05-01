@@ -35,6 +35,10 @@
   [rt org-id]
   (rt :get-org-groups {:org org-id}))
 
+(defn group-memberships-route
+  [rt org-id group-id]
+  (rt :get-groups-memberships {:org org-id :id group-id}))
+
 
 (defn self-route
   ([ctx doc]

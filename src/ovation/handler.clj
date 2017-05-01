@@ -203,8 +203,40 @@
 
                     (context "/memberships" []
                       :tags ["group-memberships"]
-                      ;; TODO
-                      )))
+                      (GET "/" request
+                        :name :get-groups-memberships
+                        :return {:group-memberships [OrganizationGroupMembership]}
+                        :summary "Get groups members"
+                        (ok (authz/get-organization-groups-memberships authz (request-context/make-context request org) id)))
+
+                      (POST "/" request
+                        :name :post-group-membership
+                        :return {:group-membership OrganizationGroupMembership}
+                        :body [body {:group OrganizationMembership}]
+                        :summary "Add a user to the group"
+                        (created (authz/create-organization-membership authz (request-context/make-context request org) body)))
+
+                      (context "/:membership-id" []
+                        :path-params [membership-id :- s/Str]
+                        ;;TODO
+                        (GET "/" request
+                          :name :get-group-membership
+                          :return {:group-membership OrganizationGroupMembership}
+                          :summary "Get a group membership"
+                          (ok (authz/get-organization-group-membership authz (request-context/make-context request org) id)))
+
+                        (PUT "/" request
+                          :name :put-group-membership
+                          :return {:group-membership OrganizationGroupMembership}
+                          :body [body {:group-membership OrganizationGroupMembership}]
+                          :summary "Update a membership"
+                          (ok (authz/put-organization-group-membership authz (request-context/make-context request org) id body)))
+
+                        (DELETE "/" request
+                          :name :delete-group-membership
+                          :return {}
+                          :summary "Delete a group membereship to remove the associated user from the group"
+                          (ok (authz/delete-organization-group-membership authz (request-context/make-context request org) id)))))))
 
                 (context "/entities" []
                   :tags ["entities"]

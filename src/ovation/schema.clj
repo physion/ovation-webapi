@@ -228,18 +228,29 @@
            (s/optional-key :members)  s/Str}})
 
 (s/defschema OrganizationMembership
-  {:id Id
-   :type (s/eq "OrganizationMembership")
-   :user_id Id
-   :organization_id Id})
+  {:id                     Id
+   :type                   (s/eq "OrganizationMembership")
+   :user_id                Id
+   :organization_id        Id
+   (s/optional-key :links) {:self s/Str}})
 
 ;; -- Organization groups -- ;;
 (s/defschema OrganizationGroup
-  {:id Id
-   :type (s/eq "OrganizationGroup")
-   :name s/Str
-   :organization_id Id})
+  {:id                     Id
+   :type                   (s/eq "OrganizationGroup")
+   :name                   s/Str
+   :organization_id        Id
+   (s/optional-key :links) {:self    s/Str
+                            :members s/Str}})
 
+
+;; -- Organization group memberships -- ;;
+(s/defschema OrganizationGroupMembership
+  {:id                     Id
+   :type                   (s/eq "OrganizationGroupMembership")
+   :user_id                Id
+   :group_id               Id
+   (s/optional-key :links) {:self s/Str}})
 
 ;; -- Teams -- ;;
 

@@ -28,7 +28,7 @@
   [base & comps]
   (util/join-path (conj comps base)))
 
-(defn make-links
+(defn make-org-links
   [ctx org]
   (let [rt (::request-context/routes ctx)]
     {:self                     (routes/self-route ctx "organization" (:id org))
@@ -47,23 +47,32 @@
        :type  "Organization"
        :uuid  (:uuid org)
        :name  (:name org)
-       :links (make-links ctx org)})))
+       :links (make-org-links ctx org)})))
 
 (defn make-read-membership-tf
   [ctx]
   (fn
     [membership]
-    (assoc membership :type "OrganizationMembership")))
+    (-> membership
+      (assoc :type "OrganizationMembership")
+      (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))}))))
 
 (defn make-read-group-tf
   [ctx]
-  (fn [group]
-    (assoc group :type "OrganizationGroup")))
+  (let [rt (::request-context/routes ctx)
+        org-id (::request-context/org ctx)]
+    (fn [group]
+      (-> group
+        (assoc :type "OrganizationGroup")
+        (assoc :links {:self    (routes/self-route ctx "group-membership" (:id group))
+                       :members (routes/group-memberships-route rt org-id (:id group))})))))
 
 (defn make-read-group-membership-tf
   [ctx]
   (fn [group]
-    (assoc group :type "OrganizationGroupMembership")))
+    (-> group
+      (assoc :type "OrganizationGroupMembership")
+      (assoc :links {:self (routes/self-route ctx "group-membership" (:id group))}))))
 
 
 
@@ -222,8 +231,8 @@
     (go
       (try+
         (http/call-http ch :delete url opts (fn [response]
-                                                  (or (hp/ok? response)
-                                                    (hp/no-content? response))))
+                                                (or (hp/ok? response)
+                                                  (hp/no-content? response))))
         (catch Object ex
           (logging/error ex "Exception in go block")
           (>! ch ex))))))

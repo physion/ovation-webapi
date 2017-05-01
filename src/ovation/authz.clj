@@ -21,7 +21,13 @@
   (create-organization-group [this ctx body])
   (get-organization-group [this ctx id])
   (put-organization-group [this ctx id body])
-  (delete-organization-group [this ctx id]))
+  (delete-organization-group [this ctx id])
+
+  (get-organization-groups-memberships [this ctx group-id])
+  (create-organization-group-membership [this ctx body])
+  (get-organization-group-membership [this ctx id])
+  (put-organization-group-membership [this ctx id body])
+  (delete-organization-group-membership [this ctx id]))
 
 ;; Organizations, Groups
 (defrecord AuthzService [v1-url v2-url]
@@ -35,6 +41,8 @@
     this)
 
   AuthzApi
+
+  ;; ORGANIZATIONS
   (get-organizations [this ctx]
     (organizations/get-organizations* ctx (:v2-url this)))
   (get-organization [this ctx]
@@ -42,6 +50,7 @@
   (update-organization [this ctx body]
     (organizations/update-organization* ctx (:v2-url this) body))
 
+  ;; ORGANIZATION MEMBERSHIPS
   (get-organization-memberships [this ctx]
     (let [ch (chan)]
       (organizations/get-memberships ctx (:v2-url this) ch)
@@ -72,33 +81,66 @@
       (let [result (<?? ch)]
         result)))
 
+  ;; GROUPS
   (get-organization-groups [this ctx]
     (let [ch (chan)]
       (organizations/get-groups ctx (:v2-url this) ch)
-      (let [memberships (<?? ch)]
-        {:groups memberships})))
+      (let [groups (<?? ch)]
+        {:groups groups})))
 
   (create-organization-group [this ctx body]
     (let [ch (chan)]
       (organizations/create-group ctx (:v2-url this) (:organization-membership body) ch)
-      (let [memberships (<?? ch)]
-        {:group memberships})))
+      (let [group (<?? ch)]
+        {:group group})))
 
   (get-organization-group [this ctx id]
     (let [ch (chan)]
       (organizations/get-group ctx (:v2-url this) id ch)
-      (let [membership (<?? ch)]
-        {:group membership})))
+      (let [group (<?? ch)]
+        {:group group})))
 
   (put-organization-group [this ctx id body]
     (let [ch (chan)]
       (organizations/update-group ctx (:v2-url this) id (:organization-membership body) ch)
-      (let [membership (<?? ch)]
-        {:group membership})))
+      (let [group (<?? ch)]
+        {:group group})))
 
   (delete-organization-group [this ctx id]
     (let [ch (chan)]
       (organizations/delete-group ctx (:v2-url this) id ch)
+      (let [result (<?? ch)]
+        result)))
+
+  ;; GROUP MEMBERSHIPS
+  (get-organization-groups-memberships [this ctx group-id]
+    (let [ch (chan)]
+      (organizations/get-group-memberships ctx (:v2-url this) group-id ch)
+      (let [memberships (<?? ch)]
+        {:group-memberships memberships})))
+
+  (create-organization-group-membership [this ctx body]
+    (let [ch (chan)]
+      (organizations/create-group-membership ctx (:v2-url this) (:group-membership body) ch)
+      (let [group (<?? ch)]
+        {:group-membership group})))
+
+  (get-organization-group-membership [this ctx id]
+    (let [ch (chan)]
+      (organizations/get-group-membership ctx (:v2-url this) id ch)
+      (let [group (<?? ch)]
+        {:group-membership group})))
+
+
+  (put-organization-group-membership [this ctx id body]
+    (let [ch (chan)]
+      (organizations/update-group-membership ctx (:v2-url this) id (:group-membership body) ch)
+      (let [group (<?? ch)]
+        {:group-membership group})))
+
+  (delete-organization-group-membership [this ctx id]
+    (let [ch (chan)]
+      (organizations/delete-group-membership ctx (:v2-url this) id ch)
       (let [result (<?? ch)]
         result))))
 
