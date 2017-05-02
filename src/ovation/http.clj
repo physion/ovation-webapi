@@ -4,7 +4,8 @@
             [org.httpkit.client :as httpkit.client]
             [clojure.core.async :refer [chan go >! >!! pipeline]]
             [slingshot.slingshot :refer [try+]]
-            [ring.util.http-response :refer [throw!]]))
+            [ring.util.http-response :refer [throw!]])
+  (:import (java.io EOFException)))
 
 (defn call-http
   "Makes http-client async request onto the provided channel.
@@ -16,11 +17,13 @@
       (logging/info "Received HTTP response:" method url "-" (:status resp))
       (logging/debug "Raw:" (:body resp))
       (if (success-fn resp)
-        (if-let [body-json (:body resp)]
+        (try+
           (let [body (util/from-json body-json)]
             (logging/debug "Response:" body)
             (>!! ch body))
-          (>!! ch {}))
+          (catch EOFException _
+            (logging/info "Response is empty")
+            (>!! ch {})))
         (try+
           (logging/debug "Throwing HTTP response error for" resp)
           (throw! resp)
