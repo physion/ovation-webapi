@@ -14,9 +14,13 @@
   (httpkit.client/request (merge {:method method :url url} opts)
     (fn [resp]
       (logging/info "Received HTTP response:" method url "-" (:status resp))
+      (logging/debug "Raw:" (:body resp))
       (if (success-fn resp)
-        (let [body (util/from-json (:body resp))]
-          (>!! ch body))
+        (if-let [body-json (:body resp)]
+          (let [body (util/from-json body-json)]
+            (logging/debug "Response:" body)
+            (>!! ch body))
+          (>!! ch {}))
         (try+
           (logging/debug "Throwing HTTP response error for" resp)
           (throw! resp)

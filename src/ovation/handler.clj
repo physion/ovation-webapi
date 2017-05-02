@@ -75,9 +75,7 @@
                                {:name "search" :description "Search Ovation"}
                                {:name "zip" :description "Download ZIP archive"}
                                {:name "organizations" :desccription "Organizations"}
-                               {:name "organization-memberships" :description "Organization users"}
-                               {:name "groups" :description "User Groups within an Organization"}
-                               {:name "group-memberships" :description "Group members"}]}}}
+                               {:name "groups" :description "User Groups within an Organization"}]}}}
 
 
       (middleware [[wrap-cors
@@ -130,7 +128,7 @@
                   (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
                 (context "/memberships" []
-                  :tags ["organization-meberships"]
+                  :tags ["organizations"]
                   (GET "/" request
                     :name :get-org-memberships
                     :return {:organization-memberships [OrganizationMembership]}
@@ -140,9 +138,11 @@
                   (POST "/" request
                     :name :post-org-membership
                     :return {:organization-membership OrganizationMembership}
-                    :body [body {:organization-membership OrganizationMembership}]
+                    :body [body {:organization-membership NewOrganizationMembership}]
                     :summary "Add a user to the organization"
-                    (created (authz/create-organization-membership authz (request-context/make-context request org) body)))
+                    (let [ctx (request-context/make-context request org)
+                          membership (authz/create-organization-membership authz ctx body)]
+                      (created (routes/self-route ctx "org-membership" (:id membership)) membership)))
 
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -176,9 +176,11 @@
                   (POST "/" request
                     :name :post-org-group
                     :return {:group OrganizationGroup}
-                    :body [body {:group OrganizationMembership}]
+                    :body [body {:group NewOrganizationGroup}]
                     :summary "Add a group to the organization"
-                    (created (authz/create-organization-group authz (request-context/make-context request org) body)))
+                    (let [ctx (request-context/make-context request org)
+                          group (authz/create-organization-group authz ctx body)]
+                      (created (get-in group [:links :self]) group)))
 
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -202,7 +204,7 @@
                       (ok (authz/delete-organization-group authz (request-context/make-context request org) id)))
 
                     (context "/memberships" []
-                      :tags ["group-memberships"]
+                      :tags ["groups"]
                       (GET "/" request
                         :name :get-groups-memberships
                         :return {:group-memberships [OrganizationGroupMembership]}
@@ -212,9 +214,11 @@
                       (POST "/" request
                         :name :post-group-membership
                         :return {:group-membership OrganizationGroupMembership}
-                        :body [body {:group OrganizationMembership}]
+                        :body [body {:group NewOrganizationMembership}]
                         :summary "Add a user to the group"
-                        (created (authz/create-organization-group-membership authz (request-context/make-context request org) body)))
+                        (let [ctx    (request-context/make-context request org)
+                              result (authz/create-organization-group-membership authz ctx body)]
+                          (created (get-in result [:links :self]) result)))
 
                       (context "/:membership-id" []
                         :path-params [membership-id :- s/Str]
@@ -223,20 +227,20 @@
                           :name :get-group-membership
                           :return {:group-membership OrganizationGroupMembership}
                           :summary "Get a group membership"
-                          (ok (authz/get-organization-group-membership authz (request-context/make-context request org) id)))
+                          (ok (authz/get-organization-group-membership authz (request-context/make-context request org) membership-id)))
 
                         (PUT "/" request
                           :name :put-group-membership
                           :return {:group-membership OrganizationGroupMembership}
                           :body [body {:group-membership OrganizationGroupMembership}]
                           :summary "Update a membership"
-                          (ok (authz/put-organization-group-membership authz (request-context/make-context request org) id body)))
+                          (ok (authz/put-organization-group-membership authz (request-context/make-context request org) membership-id body)))
 
                         (DELETE "/" request
                           :name :delete-group-membership
                           :return {}
                           :summary "Delete a group membereship to remove the associated user from the group"
-                          (ok (authz/delete-organization-group-membership authz (request-context/make-context request org) id)))))))
+                          (ok (authz/delete-organization-group-membership authz (request-context/make-context request org) membership-id)))))))
 
                 (context "/entities" []
                   :tags ["entities"]

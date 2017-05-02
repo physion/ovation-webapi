@@ -64,15 +64,19 @@
     (fn [group]
       (-> group
         (assoc :type "OrganizationGroup")
-        (assoc :links {:self              (routes/self-route ctx "group-membership" (:id group))
+        (assoc :links {:self              (routes/self-route ctx "org-group" (:id group))
                        :group-memberships (routes/group-memberships-route rt org-id (:id group))})))))
 
 (defn make-read-group-membership-tf
   [ctx]
-  (fn [group]
-    (-> group
-      (assoc :type "OrganizationGroupMembership")
-      (assoc :links {:self (routes/self-route ctx "group-membership" (:id group))}))))
+  (let [params   (::request-context/query-params ctx)
+        group-id (:group_id params)
+        rt       (:ovation.request-context/routes ctx)
+        org      (:ovation.request-context/org ctx)]
+    (fn [group]
+      (-> group
+        (assoc :type "OrganizationGroupMembership")
+        (assoc :links {:self (rt :get-group-membership {:org org :id group-id :membership-id (:id group)})})))))
 
 
 
@@ -87,11 +91,13 @@
 
 (defn read-single-tf
   [ctx key make-tf]
-  (fn [response]
-    (if (instance? Throwable response)
-      response
-      (let [org (key response)]
-        ((make-tf ctx) org)))))
+  (let [tf (make-tf ctx)]
+    (fn [response]
+      (if (instance? Throwable response)
+        response
+        (let [obj    (key response)
+              result (tf obj)]
+          result)))))
 
 
 

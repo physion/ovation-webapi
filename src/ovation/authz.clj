@@ -90,7 +90,7 @@
 
   (create-organization-group [this ctx body]
     (let [ch (chan)]
-      (organizations/create-group ctx (:v2-url this) (:organization-membership body) ch)
+      (organizations/create-group ctx (:v2-url this) (:group body) ch)
       (let [group (<?? ch)]
         {:group group})))
 
@@ -102,7 +102,7 @@
 
   (put-organization-group [this ctx id body]
     (let [ch (chan)]
-      (organizations/update-group ctx (:v2-url this) id (:organization-membership body) ch)
+      (organizations/update-group ctx (:v2-url this) id (:group body) ch)
       (let [group (<?? ch)]
         {:group group})))
 
