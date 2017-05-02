@@ -18,7 +18,7 @@
       (logging/debug "Raw:" (:body resp))
       (if (success-fn resp)
         (try+
-          (let [body (util/from-json body-json)]
+          (let [body (util/from-json (:body resp))]
             (logging/debug "Response:" body)
             (>!! ch body))
           (catch EOFException _
