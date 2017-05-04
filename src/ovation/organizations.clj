@@ -90,6 +90,7 @@
   [ctx key make-tf]
   (let [tf (make-tf ctx)]
     (fn [response]
+      (logging/debug "read-single-tf" response)
       (if (util/response-exception? response)
         response
         (let [obj    (key response)

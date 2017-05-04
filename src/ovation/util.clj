@@ -118,7 +118,7 @@
   [response]
   (or
     (instance? Throwable response)
-    (= (:type response) (str :ring.util.http-response/response))))
+    (#{(str :ring.util.http-response/response) :ring.util.http-response/response} (:type response))))
 
 
 (defn <??
