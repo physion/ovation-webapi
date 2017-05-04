@@ -23,10 +23,10 @@
             (>!! ch body))
           (catch EOFException _
             (logging/info "Response is empty")
-            (>!! ch {})))
-        (try+
-          (logging/debug "Throwing HTTP response error for" resp)
-          (throw! resp)
-          (catch Object ex
-            (logging/debug "Conveying HTTP response error" ex)
-            (>!! ch ex)))))))
+            (let [err {:type :ring.util.http-response/response :response resp}]
+              (logging/debug "Conveying HTTP response error " err)
+              (>!! ch err))))
+
+        (let [err {:type :ring.util.http-response/response :response resp}]
+          (logging/debug "Conveying HTTP response error " err)
+          (>!! ch err))))))

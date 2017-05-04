@@ -26,7 +26,7 @@
             [ovation.routes :as routes]
             [compojure.api.validator]
             [ovation.test.system :as test.system]
-            [ovation.system :as system]
+            [ovation.test.helpers :refer [sling-throwable]]
             [ovation.request-context :as request-context])
   (:import (java.util UUID)))
 
@@ -41,15 +41,6 @@
 
 (def PERMISSIONS (promise))
 (deliver PERMISSIONS {})
-
-
-(defn sling-throwable
-  [exception-map]
-  (slingshot.support/get-throwable (slingshot.support/make-context
-                                     exception-map
-                                     (str "throw+: " map)
-                                     nil
-                                     (slingshot.support/stack-trace))))
 
 
 (defn mock-req

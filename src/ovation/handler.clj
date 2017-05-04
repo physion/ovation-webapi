@@ -214,7 +214,7 @@
                       (POST "/" request
                         :name :post-group-membership
                         :return {:group-membership OrganizationGroupMembership}
-                        :body [body {:group NewOrganizationMembership}]
+                        :body [body {:group NewOrganizationGroupMembership}]
                         :summary "Add a user to the group"
                         (let [ctx    (request-context/make-context request org)
                               result (authz/create-organization-group-membership authz ctx body)]

@@ -252,8 +252,7 @@
 
 ;; -- Organization group memberships -- ;;
 (s/defschema NewOrganizationGroupMembership
-  {:id                     Id
-   :type                   (s/eq "OrganizationGroupMembership")
+  {:type                   (s/eq "OrganizationGroupMembership")
    :user_id                Id
    :group_id               Id
    (s/optional-key :links) {:self s/Str}})

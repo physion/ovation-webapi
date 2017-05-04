@@ -6,7 +6,9 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.config :as config]
             [ovation.request-context :as request-context]
-            [ovation.routes :as routes]))
+            [ovation.routes :as routes]
+            [ovation.test.helpers :refer [sling-throwable]]
+            [slingshot.slingshot :refer [try+]]))
 
 (facts "groups-memberships"
   (let [id               1
@@ -18,9 +20,10 @@
                           "user_id"         user-id
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..
-                                              ::request-context/org    org-id}
+                         ..ctx.. =contains=> {::request-context/auth    ..auth..
+                                              ::request-context/routes  ..rt..
+                                              ::request-context/org     org-id
+                                              ::request-context/request {:params {:id group-id}}}
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-memberships`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
@@ -35,7 +38,7 @@
                                   :type            "OrganizationGroupMembership"
                                   :user_id         user-id
                                   :organization_id org-id
-                                  :links           {:self {:id id, :org org-id}}}]
+                                  :links           {:self {:id group-id, :membership-id id, :org org-id}}}]
               (orgs/get-group-memberships ..ctx.. service-url group-id c)
               (<?? c) => [expected-group]))))
 
@@ -48,7 +51,7 @@
                                        :type            "OrganizationGroupMembership"
                                        :user_id         user-id
                                        :organization_id org-id
-                                       :links           {:self {:id id, :org org-id}}}]
+                                       :links           {:self {:id group-id, :membership-id id :org org-id}}}]
               (orgs/get-group-membership ..ctx.. service-url id c)
               (<?? c) => expected-membership))))
 
@@ -69,7 +72,7 @@
                             :type            "OrganizationGroupMembership"
                             :user_id         user-id
                             :organization_id org-id
-                            :links           {:self {:id id, :org org-id}}}
+                            :links           {:self {:id group-id, :membership-id id :org org-id}}}
                   new      {:type            "OrganizationGroupMembership"
                             :user_id         user-id
                             :organization_id org-id}]
@@ -94,7 +97,7 @@
                             :type            "OrganizationGroupMembership"
                             :user_id         user-id
                             :organization_id org-id
-                            :links           {:self {:id id, :org org-id}}}
+                            :links           {:self {:id group-id, :membership-id id, :org org-id}}}
                   updated  {:id              id
                             :type            "OrganizationGroupMembership"
                             :user_id         user-id
@@ -480,13 +483,17 @@
                       (orgs/get-organization* ..ctx.. config/ORGS_SERVER) => {:organization expected-org}
                       (provided
                         ..ctx.. =contains=> {::request-context/org org-id}))))))
+
             (fact "with failure"
               (with-fake-http [{:url org-url :method :get} {:status 401}]
-
                 (fact "conveys throwable"
-                  (let [c (chan)]
-                    (orgs/get-organization ..ctx.. config/ORGS_SERVER c 1)
-                    (<?? c)) =throws=> anything)))))
+                  (try+
+                    (let [c (chan)]
+                      (orgs/get-organization ..ctx.. config/ORGS_SERVER c org-id)
+                      (<?? c))
+                    (catch [:type :ring.util.http-response/response] _
+                      true)) => true)))
+            ))
 
         (facts "GET /o"
           (fact "200 response"
@@ -530,9 +537,12 @@
 
           (fact "with failure"
             (with-fake-http [{:url orgs-url :method :get} {:status 401}]
-
               (fact "conveys throwable"
-                (let [c (chan)]
-                  (orgs/get-organizations ..ctx.. config/ORGS_SERVER c)
-                  (<?? c)) =throws=> anything))))))))
+                (try+
+                  (let [c (chan)]
+                    (orgs/get-organizations ..ctx.. config/ORGS_SERVER c)
+                    (<?? c))
+                  (catch [:type :ring.util.http-response/response] _
+                    true)) => true)))
+          )))))
 
