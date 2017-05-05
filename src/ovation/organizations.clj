@@ -47,12 +47,15 @@
      :name  (:name org)
      :links (make-org-links ctx org)}))
 
+
 (defn make-read-membership-tf
   [ctx]
   (fn [membership]
-    (-> membership
-      (assoc :type "OrganizationMembership")
-      (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))}))))
+    (let [membership-without-nil-values (into {} (filter second membership))]
+      (-> membership-without-nil-values
+        (dissoc :emergency_contact)
+        (assoc :type "OrganizationMembership")
+        (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))})))))
 
 (defn make-read-group-tf
   [ctx]
@@ -83,14 +86,13 @@
     [response]
     (if (util/response-exception? response)
       response
-      (let [orgs (key response)]
-        (map (make-tf ctx) orgs)))))
+      (let [entities (key response)]
+        (map (make-tf ctx) entities)))))
 
 (defn read-single-tf
   [ctx key make-tf]
   (let [tf (make-tf ctx)]
     (fn [response]
-      (logging/debug "read-single-tf" response)
       (if (util/response-exception? response)
         response
         (let [obj    (key response)
@@ -230,10 +232,12 @@
 
 (defn get-memberships
   [ctx api-url ch & {:keys [close?] :or {close? true}}]
-  (index-resource ctx api-url ORGANIZATION-MEMBERSHIPS ch
-    :close? close?
-    :response-key :organization_memberships
-    :make-tf make-read-membership-tf))
+  (let [org-id (::request-context/org ctx)]
+    (index-resource ctx api-url ORGANIZATION-MEMBERSHIPS ch
+      :close? close?
+      :query-params {:organization_id org-id}
+      :response-key :organization_memberships
+      :make-tf make-read-membership-tf)))
 
 (defn get-membership
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]

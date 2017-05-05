@@ -229,14 +229,24 @@
            (s/optional-key :organization-groups)  s/Str}})
 
 (s/defschema NewOrganizationMembership
-  {:type                   (s/eq "OrganizationMembership")
-   :user_id                Id
-   :organization_id        Id
-   (s/optional-key :links) {:self s/Str}})
+  {:type                                 (s/eq "OrganizationMembership")
+   :user_id                              Id
+   :organization_id                      Id
+   :role                                 s/Str
+   (s/optional-key :email)               s/Str
+   (s/optional-key :first_name)          s/Str
+   (s/optional-key :profile_image_url)   s/Str
+   (s/optional-key :name)                s/Str
+   (s/optional-key :job_title)           s/Str
+   (s/optional-key :last_name)           s/Str
+   (s/optional-key :contact_information) s/Str
+   (s/optional-key :links)               {:self s/Str}})
 
 
 (s/defschema OrganizationMembership
-  (assoc NewOrganizationMembership :id Id))
+  (-> NewOrganizationMembership
+    (assoc :id Id)
+    (assoc (s/optional-key :user_id) Id)))
 
 ;; -- Organization groups -- ;;
 (s/defschema NewOrganizationGroup
