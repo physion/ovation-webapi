@@ -74,7 +74,7 @@
                                {:name "ui" :description "Support for Web UI"}
                                {:name "search" :description "Search Ovation"}
                                {:name "zip" :description "Download ZIP archive"}
-                               {:name "organizations" :desccription "Organizations"}
+                               {:name "organizations" :description "Organizations"}
                                {:name "groups" :description "User Groups within an Organization"}]}}}
 
 

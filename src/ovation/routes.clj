@@ -25,7 +25,7 @@
 
 (defn org-projects-route
   [rt org-id]
-  (rt :get-projects {:org org-id}))
+  (rt :all-project {:org org-id}))
 
 (defn org-memberships-route
   [rt org-id]
@@ -50,6 +50,9 @@
   ([ctx type-name id]
    (let [rt  (:ovation.request-context/routes ctx)
          org (:ovation.request-context/org ctx)]
+     (rt (keyword (format "get-%s" type-name)) {:org org :id id})))
+  ([ctx type-name org id]
+   (let [rt  (:ovation.request-context/routes ctx)]
      (rt (keyword (format "get-%s" type-name)) {:org org :id id}))))
 
 (defn entity-route

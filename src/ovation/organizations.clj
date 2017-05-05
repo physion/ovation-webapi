@@ -32,7 +32,7 @@
 (defn make-org-links
   [ctx org]
   (let [rt (::request-context/routes ctx)]
-    {:self                     (routes/self-route ctx "organization" (:id org))
+    {:self                     (routes/self-route ctx "organization" (:id org) (:id org))
      :projects                 (routes/org-projects-route rt (:id org))
      :organization-memberships (routes/org-memberships-route rt (:id org))
      :organization-groups      (routes/org-groups-route rt (:id org))}))

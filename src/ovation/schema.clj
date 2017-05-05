@@ -225,7 +225,8 @@
    :name  s/Str
    :links {:self                      s/Str
            (s/optional-key :projects) s/Str
-           (s/optional-key :members)  s/Str}})
+           (s/optional-key :organization-memberships)  s/Str
+           (s/optional-key :organization-groups)  s/Str}})
 
 (s/defschema NewOrganizationMembership
   {:type                   (s/eq "OrganizationMembership")
