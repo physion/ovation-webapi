@@ -434,7 +434,7 @@
                                      :organization-memberships ..members1..
                                      :organization-groups      ..groups1..}}]
             (facts "with success"
-              (against-background [(routes/self-route ..ctx.. "organization" 1) => ..self1..
+              (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                    (routes/org-projects-route ..rt.. org-id) => ..projects1..
                                    (routes/org-memberships-route ..rt.. 1) => ..members1..
                                    (routes/org-groups-route ..rt.. 1) => ..groups1..
@@ -468,7 +468,7 @@
                                           :organization-memberships ..members1..
                                           :organization-groups      ..groups1..}}]
 
-                (against-background [(routes/self-route ..ctx.. "organization" 1) => ..self1..
+                (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                      (routes/org-projects-route ..rt.. org-id) => ..projects1..
                                      (routes/org-memberships-route ..rt.. 1) => ..members1..
                                      (routes/org-groups-route ..rt.. 1) => ..groups1..]
@@ -515,8 +515,8 @@
                                           :organization-memberships ..members2..
                                           :organization-groups      ..groups2..}}]]
 
-              (against-background [(routes/self-route ..ctx.. "organization" 1) => ..self1..
-                                   (routes/self-route ..ctx.. "organization" 2) => ..self2..
+              (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
+                                   (routes/self-route ..ctx.. "organization" 2 2) => ..self2..
                                    (routes/org-projects-route ..rt.. (get rails-org-1 "id")) => ..projects1..
                                    (routes/org-projects-route ..rt.. (get rails-org-2 "id")) => ..projects2..
                                    (routes/org-memberships-route ..rt.. 1) => ..members1..
