@@ -58,8 +58,6 @@
                  [ubergraph "0.2.2"]]
 
 
-  :plugins [[lein-elastic-beanstalk "0.2.8-SNAPSHOT"]]
-
   :ring {:handler ovation.handler/app
          :main    ovation.main}
 

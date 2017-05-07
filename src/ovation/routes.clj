@@ -23,6 +23,23 @@
      (rt (keyword (format "get-%s-link-targets" type)) {:org org :id id :rel name}))))
 
 
+(defn org-projects-route
+  [rt org-id]
+  (rt :all-project {:org org-id}))
+
+(defn org-memberships-route
+  [rt org-id]
+  (rt :get-org-memberships {:org org-id}))
+
+(defn org-groups-route
+  [rt org-id]
+  (rt :get-org-groups {:org org-id}))
+
+(defn group-memberships-route
+  [rt org-id group-id]
+  (rt :get-groups-memberships {:org org-id :id group-id}))
+
+
 (defn self-route
   ([ctx doc]
    (let [type (util/entity-type-name doc)
@@ -33,6 +50,9 @@
   ([ctx type-name id]
    (let [rt  (:ovation.request-context/routes ctx)
          org (:ovation.request-context/org ctx)]
+     (rt (keyword (format "get-%s" type-name)) {:org org :id id})))
+  ([ctx type-name org id]
+   (let [rt  (:ovation.request-context/routes ctx)]
      (rt (keyword (format "get-%s" type-name)) {:org org :id id}))))
 
 (defn entity-route

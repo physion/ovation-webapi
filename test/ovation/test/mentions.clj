@@ -106,12 +106,14 @@
                          :_id             note-id
                          :entity          (str "project://" entity-id "/" note-id)
                          :annotation_type c/NOTES
-                         :annotation      {:text "text"}}]
+                         :annotation      {:text "text"}}
+              user-id   (str (util/make-uuid))]
           (a/notify ..auth.. ..entity.. note) => note
           (provided
             ..entity.. =contains=> {:type k/PROJECT-TYPE
                                     :_id  entity-id}
-            (a/mentions note) => [{:name ..name.. :uuid (str (util/make-uuid))}]))))
+            (a/mentions note) => [{:name ..name.. :uuid user-id}]
+            (a/send-mention-notification ..auth.. user-id ..entity.. note-id "text") => []))))
 
     (facts "notified-users"
       (fact "finds notified users"
