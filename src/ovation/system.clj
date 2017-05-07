@@ -3,7 +3,8 @@
             [clojure.tools.logging :as logging]
             [ovation.handler :as handler]
             (system.components
-              [http-kit :refer [new-web-server]])
+              [http-kit :as system-http-kit]
+              [jetty :as system-jetty])
             [cemerick.url :as url]
             [ovation.authz :as authz]))
 
@@ -59,7 +60,7 @@
     (component/system-map
       :database (new-database (:host db) (:username db) (:password db))
       :web (component/using
-             (new-web-server (:port web))
+             (system-jetty/new-web-server (:port web))
              {:handler :api})
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
       :api (component/using
