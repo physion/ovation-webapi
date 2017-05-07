@@ -8,7 +8,8 @@
             [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.core.async :refer [<!!] :as async]))
+            [clojure.core.async :refer [<!!] :as async]
+            [slingshot.slingshot :refer [throw+]]))
 
 (def RELATION_TYPE "Relation")
 
@@ -112,22 +113,21 @@
 (defn ncpus []
   (.availableProcessors (Runtime/getRuntime)))
 
+(defn response-exception?
+  "Tests response for Throwable or :ring.util.http-response/response"
+  [response]
+  (or
+    (instance? Throwable response)
+    (#{(str :ring.util.http-response/response) :ring.util.http-response/response} (:type response))))
+
+
 (defn <??
   "Async pop that throws an exception if item returned is throwable
    This function comes from David Nolen"
   [c]
   (let [returned (<!! c)]
-    (if (instance? Throwable returned)
-      (throw returned)
+    (if (response-exception? returned)
+      (throw+ returned)
       returned)))
-
-(def default-parallelism (+ (ncpus) 1))
-
-(defn pipeline
-  [in xf & {:keys [parallelism buffer] :or {parallelism default-parallelism
-                                            buffer      16}}]
-  (let [out (async/chan (async/buffer buffer))]
-    (async/pipeline parallelism out xf in)
-    out))
 
 

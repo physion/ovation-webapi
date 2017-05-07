@@ -3,10 +3,9 @@
             [clojure.tools.logging :as logging]
             [ovation.handler :as handler]
             (system.components
-              [jetty :refer [new-web-server]])
+              [http-kit :refer [new-web-server]])
             [cemerick.url :as url]
-            [ovation.config :as config]))
-
+            [ovation.authz :as authz]))
 
 ;; Database
 (defrecord CouchDb [host username password connection]
@@ -27,12 +26,12 @@
 
 
 ;; API
-(defrecord Api [api db]
+(defrecord Api [db authz]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db)))
+    (assoc this :handler (handler/create-app db authz)))
 
   (stop [this]
     (logging/info "Stopping API")
@@ -54,15 +53,16 @@
     (logging/info "Stopping notifications component")
     this))
 
-
 ;; System
 (defn create-system [config-options]
-  (let [{:keys [web db]} config-options]
+  (let [{:keys [web db authz]} config-options]
     (component/system-map
       :database (new-database (:host db) (:username db) (:password db))
       :web (component/using
              (new-web-server (:port web))
              {:handler :api})
+      :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
       :api (component/using
              (new-api)
-             {:db :database}))))
+             {:db    :database
+              :authz :authz}))))

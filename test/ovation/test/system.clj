@@ -1,13 +1,16 @@
 (ns ovation.test.system
   (:require [com.stuartsierra.component :as component]
             [ovation.config :as config]
-            [ovation.system :as system]))
+            [ovation.system :as system]
+            [ovation.util :as util]))
 
 (def system-config
-  {:web {:port 3000}
-   :db  {:host     (config/config :cloudant-db-url :default "https://db-host")
-         :username (config/config :cloudant-username :default "db-username")
-         :password (config/config :cloudant-password :default "db-password")}})
+  {:web   {:port 3000}
+   :authz {:v1-url (util/join-path [config/SERVICES_API "api" "v1"])
+           :v2-url (util/join-path [config/SERVICES_API "api" "v2"])}
+   :db    {:host     (config/config :cloudant-db-url :default "https://db-host")
+           :username (config/config :cloudant-username :default "db-username")
+           :password (config/config :cloudant-password :default "db-password")}})
 
 (def test-system nil)
 

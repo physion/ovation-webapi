@@ -144,8 +144,8 @@
                 (zero? (count updates)))
             (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities})
             (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities
-                                                                                  :links   links
-                                                                                  :updates updates})))
+                                                                                             :links   links
+                                                                                             :updates updates})))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
