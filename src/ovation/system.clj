@@ -60,7 +60,7 @@
     (component/system-map
       :database (new-database (:host db) (:username db) (:password db))
       :web (component/using
-             (system-jetty/new-web-server (:port web))
+             (system-http-kit/new-web-server (:port web))
              {:handler :api})
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
       :api (component/using
