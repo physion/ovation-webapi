@@ -2,7 +2,6 @@
   (:require [ovation.routes :as routes]
             [ovation.http :as http]
             [ovation.util :as util :refer [<??]]
-            [ovation.config :as config]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.request-context :as request-context]
             [slingshot.support :refer [get-throwable]]
@@ -270,6 +269,7 @@
 (defn get-groups
   [ctx api-url ch & {:keys [close?] :or {close? true}}]
   (index-resource ctx api-url ORGANIZATION-GROUPS ch
+    :query-params {:organization_id (::request-context/org ctx)}
     :close? close?
     :response-key :organization_groups
     :make-tf make-read-group-tf))

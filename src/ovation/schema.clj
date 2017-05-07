@@ -245,8 +245,7 @@
 
 (s/defschema OrganizationMembership
   (-> NewOrganizationMembership
-    (assoc :id Id)
-    (assoc (s/optional-key :user_id) Id)))
+    (assoc :id Id)))
 
 ;; -- Organization groups -- ;;
 (s/defschema NewOrganizationGroup
