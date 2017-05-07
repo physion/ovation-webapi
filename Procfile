@@ -1,1 +1,1 @@
-web: lein with-profile newrelic run
+web: lein run
