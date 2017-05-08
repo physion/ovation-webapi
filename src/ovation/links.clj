@@ -132,7 +132,7 @@
 
 
 (defn-traced make-links
-  [authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]
+  [org-id authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]
 
   (for [source sources
         target targets]
@@ -142,6 +142,7 @@
           target-id    (:_id target)
           base         {:_id       (link-id source-id rel target-id :name name)
                         :type      util/RELATION_TYPE
+                        :org       org-id
                         :target_id (:_id target)
                         :source_id (:_id source)
                         :rel       (clojure.core/name rel)
@@ -162,14 +163,15 @@
                                                                          name nil
                                                                          strict false]}]
 
-  (let [{auth ::request-context/auth} ctx
+  (let [{auth   ::request-context/auth
+         org-id ::request-context/org} ctx
         authenticated-user-id (auth/authenticated-user-id auth)
         targets               (core/get-entities ctx db target-ids)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
       (throw+ {:type ::target-not-found :message "Target(s) not found"}))
 
-    (let [links   (make-links authenticated-user-id sources rel targets inverse-rel :name name)
+    (let [links   (make-links org-id authenticated-user-id sources rel targets inverse-rel :name name)
           updates (update-collaboration-roots sources targets)]
       {:links   links
        :updates (concat (:sources updates) (:targets updates))})))
