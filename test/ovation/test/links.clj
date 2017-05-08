@@ -12,7 +12,8 @@
 
 (facts "About links"
   (against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
-                                            :ovation.request-context/routes ..rt..}]
+                                            :ovation.request-context/routes ..rt..
+                                            :ovation.request-context/org    ..org..}]
 
     (facts "`get-link-targets`"
       (let [doc1 {:attributes {:label ..label1..}}
@@ -62,6 +63,7 @@
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id] :inverse-rel ..inverse..)) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                                                        :user_id     ..id..
                                                                                                                        :type        "Relation"
+                                                                                                                       :org         ..org..
                                                                                                                        :source_id   (:_id doc)
                                                                                                                        :target_id   target-id
                                                                                                                        :rel         (clojure.core/name ..rel..)
@@ -71,7 +73,8 @@
           (fact "creates link document without inverse"
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id])) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                               :user_id   ..id..
-                                                                                              `:type     "Relation"
+                                                                                              :org         ..org..
+                                                                                              :type     "Relation"
                                                                                               :source_id (:_id doc)
                                                                                               :target_id target-id
                                                                                               :rel       (clojure.core/name ..rel..)
@@ -80,6 +83,7 @@
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id] :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                                       :user_id     ..id..
                                                                                                                                       :type        "Relation"
+                                                                                                                                      :org         ..org..
                                                                                                                                       :source_id   (:_id doc)
                                                                                                                                       :target_id   target-id
                                                                                                                                       :name        ..name..
