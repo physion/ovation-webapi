@@ -27,6 +27,6 @@
               (logging/debug "Conveying HTTP response error " err)
               (>!! ch err))))
 
-        (let [err {:type :ring.util.http-response/response :response resp}]
+        (let [err {:type :ring.util.http-response/response :response (select-keys resp [:status :body])}]
           (logging/debug "Conveying HTTP response error " err)
           (>!! ch err))))))
