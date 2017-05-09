@@ -50,7 +50,7 @@
 
 
 ;; Authorization
-(defn-traced permissions
+(defn-traced get-permissions
   [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
         opts {:oauth-token   token
@@ -69,7 +69,7 @@
                 :permissions)))))
 
 
-(defn-traced get-permissions
+(defn-traced permissions
   [auth collaboration-roots]
   (let [permissions (deref (::authenticated-permissions auth) 500 [])
         root-set (set collaboration-roots)]
@@ -108,7 +108,7 @@
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
-            permissions            (get-permissions auth collaboration-root-ids)]
+            permissions            (permissions auth collaboration-root-ids)]
 
         (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
           (every? true? (collect-permissions permissions :read)))))))
@@ -122,7 +122,7 @@
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
-            permissions (get-permissions auth collaboration-root-ids)]
+            permissions            (permissions auth collaboration-root-ids)]
         ;; handle entity with collaboration roots
         (or
           ;; user is owner and can read all roots
@@ -139,12 +139,12 @@
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
       "Relation" (or (= auth-user-id (:user_id doc))
-                   (let [roots (get-in doc [:links :_collaboration_roots])
-                         permissions (get-permissions auth roots)]
+                   (let [roots       (get-in doc [:links :_collaboration_roots])
+                         permissions (permissions auth roots)]
                      (every? true? (collect-permissions permissions :write))))
 
       ;; default
-      (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
+      (let [permissions (permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
@@ -165,22 +165,23 @@
 
 
 (defn-traced can?
-  [auth op doc & {:keys [teams] :or {:teams nil}}]
-  (case op
-    ::create (can-create? auth doc)
-    ::update (can-update? auth doc)
-    ::delete (can-delete? auth doc)
-    ::read (can-read? auth doc :teams teams)
+  [ctx op doc & {:keys [teams] :or {:teams nil}}]
+  (let [auth (:ovation.request-context/auth ctx)]
+    (case op
+      ::create (can-create? auth doc)
+      ::update (can-update? auth doc)
+      ::delete (can-delete? auth doc)
+      ::read (can-read? auth doc :teams teams)
 
-    ;;default
-    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})))
+      ;;default
+      (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))
 
 
 (defn-traced check!
-  ([auth op]
+  ([ctx op]
    (fn [doc]
-     (when-not (can? auth op doc)
-               (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
+     (when-not (can? ctx op doc)
+       (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
      doc))
-  ([auth op doc]
-   ((check! auth op) doc)))
+  ([ctx op doc]
+   ((check! ctx op) doc)))

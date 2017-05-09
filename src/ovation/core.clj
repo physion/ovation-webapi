@@ -87,8 +87,7 @@
   (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-  (let [{auth ::rc/auth} ctx
-        docs (map (auth/check! auth op) values)]
+  (let [docs (map (auth/check! ctx op) values)]
     (tr/values-from-couch (couch/bulk-docs db docs) ctx)))
 
 (defn-traced create-values
@@ -130,12 +129,11 @@
   (when (some #{k/USER-ENTITY} (map :type entities))
     (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-  (let [{auth ::rc/auth} ctx
-        bulk-docs         (let [ids      (map :_id entities)
+  (let [bulk-docs         (let [ids      (map :_id entities)
                                 docs     (get-entities ctx db ids)
                                 merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
                             (map merge-fn docs))
-        auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
+        auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)]
     (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
       ctx)))
 
@@ -158,7 +156,7 @@
         docs              (get-entities ctx db ids :include-trashed true)
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
-        auth-checked-docs (vec (map (auth/check! auth ::auth/update) trashed))]
+        auth-checked-docs (vec (map (auth/check! ctx ::auth/update) trashed))]
     (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
       ctx)))
 
@@ -172,7 +170,7 @@
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
-          auth-checked-docs (vec (map (auth/check! auth ::auth/delete) trashed))]
+          auth-checked-docs (vec (map (auth/check! ctx ::auth/delete) trashed))]
       (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
                               ctx))))
 
@@ -186,5 +184,5 @@
     (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-    (let [docs (map (auth/check! auth ::auth/delete) values)]
+    (let [docs (map (auth/check! ctx ::auth/delete) values)]
       (tr/values-from-couch (couch/delete-docs db docs) ctx))))

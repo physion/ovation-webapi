@@ -30,7 +30,7 @@
           (fact "bulk-updates values"
             (core/create-values ..ctx.. ..db.. [{:type "Annotation"}]) => ..result..
             (provided
-              (auth/check! ..auth.. ::auth/create) => identity
+              (auth/check! ..ctx.. ::auth/create) => identity
               (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
               (tr/values-from-couch ..docs.. ..ctx..) => ..result..))))
       (facts "`delete-values`"
@@ -43,7 +43,7 @@
             (core/delete-values ..ctx.. ..db.. [..id..]) => ..result..
             (provided
               (couch/all-docs ..ctx.. ..db.. [..id..]) => [{:type "Annotation"}]
-              (auth/check! ..auth.. ::auth/delete) => identity
+              (auth/check! ..ctx.. ::auth/delete) => identity
               (couch/delete-docs ..db.. [{:type "Annotation"}]) => ..docs..
               (tr/values-from-couch ..docs.. ..ctx..) => ..result..))))
       (facts "update-values"
@@ -53,7 +53,7 @@
           (fact "bulk-updates values"
             (core/update-values ..ctx.. ..db.. [{:type "Annotation"}]) => ..result..
             (provided
-              (auth/check! ..auth.. ::auth/update) => identity
+              (auth/check! ..ctx.. ::auth/update) => identity
               (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
               (tr/values-from-couch ..docs.. ..ctx..) => ..result..))))))
 
@@ -184,13 +184,13 @@
           (fact "it updates attributes"
             (core/update-entities ..ctx.. ..db.. [update]) => [updated-entity]
             (provided
-              (auth/can? ..auth.. ::auth/update anything) => true))
+              (auth/can? ..ctx.. ::auth/update anything) => true))
           (fact "it updates allowed keys"
             (let [update-with-revs         (assoc update :revisions ..revs..)
                   updated-entity-with-revs (assoc updated-entity :revisions ..revs..)]
               (core/update-entities ..ctx.. ..db.. [update-with-revs] :allow-keys [:revisions]) => [updated-entity-with-revs]
               (provided
-                (auth/can? ..auth.. ::auth/update anything) => true
+                (auth/can? ..ctx.. ::auth/update anything) => true
                 (couch/bulk-docs ..db.. [update-with-revs]) => [updated-entity-with-revs]
                 (tw/to-couch ..ctx.. [update-with-revs]) => [update-with-revs]
                 (tr/entities-from-couch [updated-entity-with-revs] ..ctx..) => [updated-entity-with-revs])))
@@ -200,7 +200,7 @@
                   updated-entity2 (assoc-in updated-entity [:links :_collaboration_roots] [..roots..])]
               (core/update-entities ..ctx.. ..db.. [update2] :update-collaboration-roots true) => [updated-entity2]
               (provided
-                (auth/can? ..auth.. ::auth/update anything) => true
+                (auth/can? ..ctx.. ::auth/update anything) => true
                 (tw/to-couch ..ctx.. [update2]) => [update2]
                 (couch/bulk-docs ..db.. [update2]) => [updated-entity2]
                 (tr/entities-from-couch [updated-entity2] ..ctx..) => [updated-entity2])))
@@ -208,7 +208,7 @@
           (fact "it fails if authenticated user doesn't have write permission"
             (core/update-entities ..ctx.. ..db.. [update]) => (throws Exception)
             (provided
-              (auth/can? ..auth.. ::auth/update anything) => false))
+              (auth/can? ..ctx.. ::auth/update anything) => false))
 
           (fact "it throws unauthorized if entity is a User"
             (core/update-entities ..ctx.. ..db.. [entity]) => (throws Exception)
@@ -235,7 +235,7 @@
           (tw/to-couch ..ctx.. [restored]) => ..couch-docs..
           (couch/bulk-docs ..db.. ..couch-docs..) => ..restored..
           (tr/entities-from-couch ..restored.. ..ctx..) => ..result..
-          (auth/can? ..auth.. ::auth/update restored) => true)))
+          (auth/can? ..ctx.. ::auth/update restored) => true)))
 
     (facts "delete-entity"
       (let [type       "some-type"
@@ -258,7 +258,7 @@
             (fact "it trashes entity"
               (core/delete-entities ..ctx.. ..db.. [id]) => ..result..
               (provided
-                (auth/can? ..auth.. ::auth/delete anything) => true))
+                (auth/can? ..ctx.. ::auth/delete anything) => true))
 
             (fact "it fails if entity already trashed"
               (core/delete-entities ..ctx.. ..db.. [id]) => (throws Exception)
@@ -268,7 +268,7 @@
             (fact "it fails if authenticated user doesn't have write permission"
               (core/delete-entities ..ctx.. ..db.. [id]) => (throws Exception)
               (provided
-                (auth/can? ..auth.. ::auth/delete anything) => false)))
+                (auth/can? ..ctx.. ::auth/delete anything) => false)))
 
           (fact "it throws unauthorized if entity is a User"
             (core/delete-entities ..ctx.. ..db.. [id]) => (throws Exception)

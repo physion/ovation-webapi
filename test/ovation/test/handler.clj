@@ -114,7 +114,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
+                            (auth/get-permissions anything) => PERMISSIONS
                             (request-context/make-context anything ~org) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
@@ -140,7 +140,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS]
+                            (auth/get-permissions anything) => PERMISSIONS]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
              (let [id#     (str (UUID/randomUUID))
@@ -175,7 +175,7 @@
         type-path (typepath type-name)]
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
+                            (auth/get-permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org) => ..ctx..
@@ -230,7 +230,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
+                            (auth/get-permissions anything) => PERMISSIONS
                             (teams/create-team anything anything) => {:team ..team..}
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org) => ..ctx..
@@ -278,7 +278,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
+                            (auth/get-permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
@@ -336,7 +336,7 @@
     `(let [apikey# TOKEN]
 
        (against-background [(teams/get-teams anything) => TEAMS
-                            (auth/permissions anything) => PERMISSIONS
+                            (auth/get-permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
@@ -420,7 +420,7 @@
     (facts "About annotations"
       (let [apikey TOKEN]
         (against-background [(teams/get-teams anything) => TEAMS
-                             (auth/permissions anything) => PERMISSIONS
+                             (auth/get-permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
                              (request-context/make-context anything org) => ..ctx..
                              ..ctx.. =contains=> {::request-context/routes ..rt..}]
@@ -487,7 +487,7 @@
                                 :annotation_type "tags"
                                 :annotation      {:tag "--tag--"}}]]
             (against-background [(teams/get-teams anything) => TEAMS
-                                 (auth/permissions anything) => PERMISSIONS
+                                 (auth/get-permissions anything) => PERMISSIONS
                                  (request-context/make-context anything org) => ..ctx..
                                  (annotations/delete-annotations ..ctx.. db [annotation-id]) => tags]
               (fact "deletes annotations"
@@ -499,7 +499,7 @@
       (facts "About /entities"
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
-                               (auth/permissions anything) => PERMISSIONS
+                               (auth/get-permissions anything) => PERMISSIONS
                                (request-context/make-context anything org) => ..ctx..]
 
             (facts "read"
@@ -555,7 +555,7 @@
       (facts "related Sources"
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
-                               (auth/permissions anything) => PERMISSIONS
+                               (auth/get-permissions anything) => PERMISSIONS
                                (request-context/make-context anything org) => ..ctx..]
             (future-fact "associates created Source")))))
 
@@ -591,7 +591,7 @@
             (body-json app get) => {:revisions revs}
             (provided
               (teams/get-teams anything) => TEAMS
-              (auth/permissions anything) => PERMISSIONS
+              (auth/get-permissions anything) => PERMISSIONS
               (request-context/make-context anything org) => ..ctx..
               ..ctx.. =contains=> {::request-context/routes ..rt..}
               (revisions/get-head-revisions ..ctx.. db id) => revs)))))
@@ -679,7 +679,7 @@
                                 :membership_roles []}
             (provided
               (teams/get-teams anything) => TEAMS
-              (auth/permissions anything) => PERMISSIONS
+              (auth/get-permissions anything) => PERMISSIONS
               (teams/get-team* anything id) => {:team             team
                                                 :users            []
                                                 :membership_roles []})))))
@@ -701,7 +701,7 @@
           (body-json app get) => {:provenance expected}
           (provided
             (teams/get-teams anything) => TEAMS
-            (auth/permissions anything) => PERMISSIONS
+            (auth/get-permissions anything) => PERMISSIONS
             (request-context/make-context anything org) => ..ctx..
             ..ctx.. =contains=> {::request-context/routes ..rt..}
             (prov/local ..ctx.. db [id]) => expected))))

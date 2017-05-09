@@ -177,12 +177,12 @@
               (links/delete-links ..ctx.. ..db.. doc ..rel.. ..target..) => ..deleted..
               (provided
                 (core/delete-values ..ctx.. ..db.. [link-id]) => ..deleted..
-                (auth/can? ..auth.. ::auth/update doc) => true)))
+                (auth/can? ..ctx.. ::auth/update doc) => true)))
 
           (fact "fails if not can? :update source"
             (links/delete-links ..ctx.. ..db.. ..doc.. ..rel.. ..target..) => (throws Exception)
             (provided
-              (auth/can? ..auth.. ::auth/update ..doc..) => false))
+              (auth/can? ..ctx.. ::auth/update ..doc..) => false))
 
 
           (fact "updates entity _collaboration_roots"
@@ -191,7 +191,7 @@
               (links/delete-links ..ctx.. ..db.. doc ..rel.. ..target..) => ..deleted..
               (provided
                 (core/delete-values ..ctx.. ..db.. [link-id]) => ..deleted..
-                (auth/can? ..auth.. ::auth/update doc) => true))))))
+                (auth/can? ..ctx.. ::auth/update doc) => true))))))
 
     (facts "`get-links`"
       (against-background [(couch/get-view ..ctx.. ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]

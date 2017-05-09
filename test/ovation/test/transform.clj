@@ -33,7 +33,7 @@
                                    :annotation_type k/TAGS
                                    :entity          ..id..
                                    :_id             ..annotation..
-                                   :links           {:self ..self..}} ..auth..) => {:type            k/ANNOTATION-TYPE
+                                   :links           {:self ..self..}} ..ctx..) => {:type             k/ANNOTATION-TYPE
                                                                                     :annotation_type k/TAGS
                                                                                     :entity          ..id..
                                                                                     :_id             ..annotation..
@@ -199,6 +199,7 @@
         (tr/remove-user-attributes doc) => doc)))
 
   (facts "About permissions"
+    (against-background [..ctx.. =contains=> {::request-context/auth ..auth..}])
     (facts "for entities"
       (let [doc {:owner ..id..}]
         (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
@@ -212,7 +213,7 @@
       (let [doc {:user ..id..
                  :type "Annotation"}]
         (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
-          (tr/add-value-permissions doc ..auth..) => (assoc doc :permissions {:update true
+          (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update  true
                                                                               :delete true})
           (provided
             (auth/authenticated-user-id ..auth..) => ..id..)))))
@@ -223,5 +224,5 @@
       (provided
         (tr/couch-to-entity ..ctx..) => (fn [doc] doc)
         (auth/authenticated-teams ..auth..) => ..teams..
-        (auth/can? ..auth.. ::auth/read ..doc.. :teams ..teams..) => true
-        (auth/can? ..auth.. ::auth/read ..bad.. :teams ..teams..) => false))))
+        (auth/can? ..ctx.. ::auth/read ..doc.. :teams ..teams..) => true
+        (auth/can? ..ctx.. ::auth/read ..bad.. :teams ..teams..) => false))))

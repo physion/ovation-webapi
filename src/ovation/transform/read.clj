@@ -132,39 +132,37 @@
         teams (auth/authenticated-teams auth)
         xf    (comp
                 (map (couch-to-entity ctx))
-                (filter #(auth/can? auth ::auth/read % :teams teams)))]
+                (filter #(auth/can? ctx ::auth/read % :teams teams)))]
     (sequence xf docs)))
 
 (defn add-value-permissions
-  [doc auth]
+  [doc ctx]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? ctx ::auth/delete doc))))
 
 (defn-traced couch-to-value
   [ctx]
-  (let [{auth   :ovation.request-context/auth
-         routes :ovation.request-context/routes} ctx]
-    (fn [doc]
-      (case (:error doc)
-        "conflict" (conflict! doc)
-        "forbidden" (forbidden!)
-        "unauthorized" (unauthorized!)
-        (condp = (util/entity-type-name doc)
-          c/RELATION-TYPE-NAME (-> doc
+  (fn [doc]
+    (case (:error doc)
+      "conflict" (conflict! doc)
+      "forbidden" (forbidden!)
+      "unauthorized" (unauthorized!)
+      (condp = (util/entity-type-name doc)
+        c/RELATION-TYPE-NAME (-> doc
+                               (dissoc :organization)
+                               (add-self-link ctx))
+        ;(add-value-permissions auth)
+
+        c/ANNOTATION-TYPE-NAME (-> doc
                                  (dissoc :organization)
-                                 (add-self-link ctx))
-          ;(add-value-permissions auth)
+                                 (add-annotation-self-link ctx)
+                                 (add-value-permissions ctx))
 
-          c/ANNOTATION-TYPE-NAME (-> doc
-                                   (dissoc :organization)
-                                   (add-annotation-self-link ctx)
-                                   (add-value-permissions auth))
-
-          ;; default
-          (-> doc
-            (dissoc :organization)
-            (add-value-permissions auth)))))))
+        ;; default
+        (-> doc
+          (dissoc :organization)
+          (add-value-permissions ctx))))))
 
 (defn-traced values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"

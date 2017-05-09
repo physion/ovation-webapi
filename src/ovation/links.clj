@@ -179,9 +179,9 @@
 
 (defn-traced delete-links
   ([ctx db doc rel target-id & {:keys [name] :or [name nil]}]
-   (auth/check! (::request-context/auth ctx) ::auth/update doc)
+   (auth/check! ctx ::auth/update doc)
    (let [link-id (link-id (:_id doc) rel target-id :name name)]
      (core/delete-values ctx db [link-id])))
   ([ctx db doc link-id]
-   (auth/check! (::request-context/auth ctx) ::auth/update doc)
+   (auth/check! ctx ::auth/update doc)
    (core/delete-values ctx db [link-id])))

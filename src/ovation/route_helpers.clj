@@ -312,10 +312,9 @@
 (defn-traced post-relationships*
   [ctx db id new-links rel]
   (try+
-    (let [{auth   ::request-context/auth} ctx
-          source (first (core/get-entities ctx db [id]))]
+    (let [source (first (core/get-entities ctx db [id]))]
       (when source
-        (auth/check! auth ::auth/update source))
+        (auth/check! ctx ::auth/update source))
       (if source
         (let [groups      (group-by :inverse_rel new-links)
               link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) :inverse-rel irel)) (seq groups))]
