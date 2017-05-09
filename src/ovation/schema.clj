@@ -230,45 +230,46 @@
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
-   :user_id                              Id
    :organization_id                      Id
    :role                                 s/Str
-   (s/optional-key :email)               s/Str
-   (s/optional-key :first_name)          s/Str
-   (s/optional-key :profile_image_url)   s/Str
-   (s/optional-key :name)                s/Str
+   :email                                s/Str
+   :first_name                           s/Str
+   :last_name                            s/Str
    (s/optional-key :job_title)           s/Str
-   (s/optional-key :last_name)           s/Str
    (s/optional-key :contact_information) s/Str
    (s/optional-key :links)               {:self s/Str}})
 
 
 (s/defschema OrganizationMembership
   (-> NewOrganizationMembership
-    (assoc :id Id)))
+    (assoc :id Id)
+    (assoc (s/optional-key :name) s/Str)
+    (assoc (s/optional-key :profile_image_url) s/Str)))
 
 ;; -- Organization groups -- ;;
 (s/defschema NewOrganizationGroup
   {:type                   (s/eq "OrganizationGroup")
    :name                   s/Str
    :organization_id        Id
-   (s/optional-key :organization_group_membership_ids) [Id]
    (s/optional-key :links) {:self              s/Str
                             :group-memberships s/Str}})
 
 (s/defschema OrganizationGroup
-  (assoc NewOrganizationGroup :id Id))
+  (-> NewOrganizationGroup
+    (assoc (s/optional-key :organization_group_membership_ids) [Id])
+    (assoc :id Id)))
 
 
 ;; -- Organization group memberships -- ;;
 (s/defschema NewOrganizationGroupMembership
-  {:type                   (s/eq "OrganizationGroupMembership")
-   :user_id                Id
-   :group_id               Id
-   (s/optional-key :links) {:self s/Str}})
+  {:type                       (s/eq "OrganizationGroupMembership")
+   :organization_membership_id Id
+   :group_id                   Id
+   (s/optional-key :links)     {:self s/Str}})
 
 (s/defschema OrganizationGroupMembership
-  (assoc NewOrganizationGroupMembership :id Id))
+  (-> NewOrganizationGroupMembership
+    (assoc :id Id)))
 
 ;; -- Teams -- ;;
 
