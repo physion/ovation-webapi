@@ -8,7 +8,8 @@
             [ovation.request-context :as request-context]
             [ovation.routes :as routes]
             [ovation.test.helpers :refer [sling-throwable]]
-            [slingshot.slingshot :refer [try+]]))
+            [slingshot.slingshot :refer [try+]])
+  (:import (clojure.lang ExceptionInfo)))
 
 (facts "groups-memberships"
   (let [id               1
@@ -181,7 +182,14 @@
                   new      {:user_id         user-id
                             :organization_id org-id}]
               (orgs/create-group ..ctx.. service-url {:organization-group new} c)
-              (<?? c) => expected))))
+              (<?? c) => expected))
+
+          (fact "raises 422 for organizaiton mismatch"
+            (let [c   (chan)
+                  new {:user_id         user-id
+                       :organization_id "other-org"}]
+              (orgs/create-group ..ctx.. service-url {:organization-group new} c)
+              (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS id]) :method :put} (fn [_ {body :body} _]
@@ -208,7 +216,16 @@
                             :user_id         user-id
                             :organization_id org-id}]
               (orgs/update-group ..ctx.. service-url id {:organization-group updated} c)
-              (<?? c) => expected))))
+              (<?? c) => expected))
+
+          (fact "raises 422 for organization mismatch"
+            (let [c       (chan)
+                  updated {:id              id
+                           :type            "OrganizationGroup"
+                           :user_id         user-id
+                           :organization_id "other-org"}]
+              (orgs/update-group ..ctx.. service-url id {:organization-group updated} c)
+              (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`delete-group`"
         (facts "with 204"
