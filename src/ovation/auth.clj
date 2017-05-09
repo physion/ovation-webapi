@@ -3,7 +3,7 @@
   (:require [org.httpkit.client :as http]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw! unauthorized! forbidden! unauthorized forbidden]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden! not-found! unauthorized forbidden]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [buddy.auth]
@@ -80,11 +80,23 @@
   [permissions perm]
   (map #(-> % :permissions perm) permissions))
 
+(defn- authenticated-team-value
+  [auth k & {:keys [default] :or {default []}}]
+  (if-let [ateams (::authenticated-teams auth)]
+    (k (deref ateams 500 {k default}))
+    []))
+
 (defn-traced authenticated-teams
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
-  (if-let [ateams (::authenticated-teams auth)]
-    (:team_uuids (deref ateams 500 {:team_uuids []}))))
+  (authenticated-team-value auth :team_uuids))
+
+(defn-traced organization-ids
+  "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
+  [auth]
+  (authenticated-team-value auth :organization_ids))
+
+
 
 (defn effective-collaboration-roots
   [doc]
@@ -166,7 +178,13 @@
 
 (defn-traced can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
-  (let [auth (:ovation.request-context/auth ctx)]
+  (let [{auth :ovation.request-context/auth
+         org :ovation.request-context/org} ctx
+        organization-ids (organization-ids auth)]
+
+    (when (not (some #{org} organization-ids))
+      (not-found!))
+
     (case op
       ::create (can-create? auth doc)
       ::update (can-update? auth doc)
