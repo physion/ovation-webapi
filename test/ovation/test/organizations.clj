@@ -300,7 +300,14 @@
                   new-membership {:user_id         user-id
                                   :organization_id org-id}]
               (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
-              (<?? c) => expected))))
+              (<?? c) => expected))
+
+          (fact "throws 422 for org mismatch"
+            (let [c              (chan)
+                  new-membership {:user_id         user-id
+                                  :organization_id (+ org-id 1)}]
+              (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
+              (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`update-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
@@ -326,7 +333,16 @@
                                       :user_id         user-id
                                       :organization_id org-id}]
               (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
-              (<?? c) => expected))))
+              (<?? c) => expected))
+
+          (fact "throws 422 for organization id mismatch"
+            (let [c                  (chan)
+                  updated-membership {:id              id
+                                      :type            "OrganizationMembership"
+                                      :user_id         user-id
+                                      :organization_id (+ 1 org-id)}]
+              (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
+              (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`delete-membership`"
         (facts "with 204"
