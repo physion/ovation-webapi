@@ -169,14 +169,14 @@
                   :tags ["groups"]
                   (GET "/" request
                     :name :get-org-groups
-                    :return {:groups [OrganizationGroup]}
+                    :return {:organization-groups [OrganizationGroup]}
                     :summary "Get organization groups"
                     (ok (authz/get-organization-groups authz (request-context/make-context request org))))
 
                   (POST "/" request
                     :name :post-org-group
-                    :return {:group OrganizationGroup}
-                    :body [body {:group NewOrganizationGroup}]
+                    :return {:organization-group OrganizationGroup}
+                    :body [body {:organization-group NewOrganizationGroup}]
                     :summary "Add a group to the organization"
                     (let [ctx (request-context/make-context request org)
                           group (authz/create-organization-group authz ctx body)]
@@ -186,14 +186,14 @@
                     :path-params [id :- s/Str]
                     (GET "/" request
                       :name :get-org-group
-                      :return {:group OrganizationGroup}
+                      :return {:organization-group OrganizationGroup}
                       :summary "Get a group"
                       (ok (authz/get-organization-group authz (request-context/make-context request org) id)))
 
                     (PUT "/" request
                       :name :put-org-group
-                      :return {:group OrganizationGroup}
-                      :body [body {:group OrganizationGroup}]
+                      :return {:organization-group OrganizationGroup}
+                      :body [body {:organization-group OrganizationGroup}]
                       :summary "Update a group"
                       (ok (authz/put-organization-group authz (request-context/make-context request org) id body)))
 
