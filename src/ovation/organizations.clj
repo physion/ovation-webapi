@@ -137,6 +137,10 @@
                  :body (util/to-json body))]
     (go
       (try+
+        (if-let [body-org (:organization_id body)]
+          (when (not (= body-org (::request-context/org ctx)))
+            (unprocessable-entity! {:error "Organization ID mismatch"})))
+
         (http/call-http raw-ch :post url opts hp/created?)
         (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)
         (catch Object ex
@@ -145,12 +149,17 @@
 
 (defn update-resource
   [ctx api-url rsrc body id ch & {:keys [close? response-key make-tf] :or {close? true}}]
+
   (let [raw-ch (chan)
         url    (make-url api-url rsrc id)
         opts   (assoc (request-opts ctx)
                  :body (util/to-json body))]
     (go
       (try+
+        (if-let [body-org (:organization_id body)]
+          (when (not (= body-org (::request-context/org ctx)))
+            (unprocessable-entity! {:error "Organization ID mismatch"})))
+
         (http/call-http raw-ch :put url opts hp/ok?)
         (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)
         (catch Object ex
