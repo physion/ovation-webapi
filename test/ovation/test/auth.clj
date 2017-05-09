@@ -24,12 +24,28 @@
     (provided
       ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})})))
 
+(facts "About `organization-ids`"
+  (fact "returns organization-ids from authenticated-teams"
+    (auth/organization-ids ..auth..) => ..ids..
+    (provided
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:organization_ids ..ids..})})))
+
 
 (facts "About `can?`"
+  (fact "throws not-found! if authenticated organization not in authenticated teams"
+    (auth/can? ..ctx.. ::auth/read {:type  "Project"
+                                    :owner ..user..}) => (throws ExceptionInfo)
+    (provided
+      (auth/organization-ids ..auth..) => [..org2..]
+      ..ctx.. =contains=> {::request-context/auth ..auth..
+                           ::request-context/org  ..org..}))
+
   (facts ":read"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..}]
+                         (auth/organization-ids ..auth..) => [..org..]
+                         ..ctx.. =contains=> {::request-context/auth ..auth..
+                                              ::request-context/org  ..org..}]
       (facts "entities"
         (fact "allowed when user is owner"
           (auth/can? ..ctx.. ::auth/read {:type   "Project"
@@ -100,7 +116,9 @@
 
   (facts ":create"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
-                         ..ctx.. =contains=> {::request-context/auth ..auth..}]
+                         (auth/organization-ids ..auth..) => [..org..]
+                         ..ctx.. =contains=> {::request-context/auth ..auth..
+                                              ::request-context/org  ..org..}]
       (facts "Annotations"
         (fact "allowed when :user is authenticated user and can read all roots"
           (auth/can? ..ctx.. ::auth/create {:type    "Annotation"
@@ -195,7 +213,9 @@
 
   (facts ":update"
     (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
-                         ..ctx.. =contains=> {::request-context/auth ..auth..}]
+                         (auth/organization-ids ..auth..) => [..org..]
+                         ..ctx.. =contains=> {::request-context/auth ..auth..
+                                              ::request-context/org  ..org..}]
       (fact "Delegates to get-permissions when not owner"
         (auth/can? ..ctx.. ::auth/update {:type   "Entity"
                                            :owner (str (UUID/randomUUID))
@@ -211,7 +231,9 @@
                                                                        :admin false}}]))))
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
-                         ..ctx.. =contains=> {::request-context/auth ..auth..}]
+                         (auth/organization-ids ..auth..) => [..org..]
+                         ..ctx.. =contains=> {::request-context/auth ..auth..
+                                              ::request-context/org  ..org..}]
       (facts "Relations"
         (fact "allowed if user is owner"
           (auth/can? ..ctx.. ::auth/delete {:type     k/RELATION-TYPE

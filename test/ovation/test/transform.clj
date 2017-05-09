@@ -199,7 +199,8 @@
         (tr/remove-user-attributes doc) => doc)))
 
   (facts "About permissions"
-    (against-background [..ctx.. =contains=> {::request-context/auth ..auth..}])
+    (against-background [..ctx.. =contains=> {::request-context/auth ..auth..
+                                              ::request-context/org  ..org..}])
     (facts "for entities"
       (let [doc {:owner ..id..}]
         (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
@@ -216,7 +217,8 @@
           (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update  true
                                                                               :delete true})
           (provided
-            (auth/authenticated-user-id ..auth..) => ..id..)))))
+            (auth/authenticated-user-id ..auth..) => ..id..
+            (auth/organization-ids ..auth..) => [..org..])))))
 
   (facts "About entities-from-couch"
     (fact "removes unauthorized documents"

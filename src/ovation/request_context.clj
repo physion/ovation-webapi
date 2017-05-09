@@ -6,7 +6,8 @@
 (defprotocol AuthToken
   (token [this])
   (team-ids [this])
-  (user-id [this]))
+  (user-id [this])
+  (organization-ids [this]))
 
 (defrecord RequestContext
   [auth org routes query-params]
@@ -17,7 +18,9 @@
   (team-ids [c]
     (auth/authenticated-teams (::auth c)))
   (user-id [c]
-    (auth/authenticated-user-id (::auth c))))
+    (auth/authenticated-user-id (::auth c)))
+  (organization-ids [c]
+    (auth/organization-ids (::request c))))
 
 (defn router
   [request]
