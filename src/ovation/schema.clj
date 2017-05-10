@@ -77,7 +77,8 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}})
+                        :attributes {s/Keyword s/Any}
+                        (s/optional-key :organization) s/Int})
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid

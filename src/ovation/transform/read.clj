@@ -86,11 +86,11 @@
     dto))
 
 (defn add-entity-permissions
-  [doc auth teams]
+  [doc ctx teams]
   (-> doc
     (assoc-in [:permissions :create] true)
-    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? ctx ::auth/delete doc))))
 
 (defn convert-file-revision-status
   [doc]
@@ -122,7 +122,7 @@
             (add-relationship-links ctx)
             (convert-file-revision-status)
             (assoc-in [:links :_collaboration_roots] collaboration-roots)
-            (add-entity-permissions auth teams)))))))
+            (add-entity-permissions ctx teams)))))))
 
 
 (defn-traced entities-from-couch
