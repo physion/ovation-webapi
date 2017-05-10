@@ -16,7 +16,8 @@
 
 
 (against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
-                                          :ovation.request-context/routes ..rt..}
+                                          :ovation.request-context/routes ..rt..
+                                          :ovation.request-context/org ..org..}
                      (request-context/user-id ..ctx..) => ..owner-id..]
   (facts "About Annotations"
     (fact "adds self link"
@@ -38,7 +39,7 @@
                                                                                     :entity          ..id..
                                                                                     :_id             ..annotation..
                                                                                     :links           {:self ..self..}}
-        (r/named-route ..ctx.. :delete-tags {:id ..id.. :annotation-id ..annotation..}) => ..self..)))
+        (r/named-route ..ctx.. :delete-tags {:org ..org.. :id ..id.. :annotation-id ..annotation..}) => ..self..)))
 
   (facts "About annotation links"
     (fact "adds annotation links to entity"
