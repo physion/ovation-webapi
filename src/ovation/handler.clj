@@ -180,7 +180,7 @@
                     :summary "Add a group to the organization"
                     (let [ctx (request-context/make-context request org)
                           group (authz/create-organization-group authz ctx body)]
-                      (created (get-in group [:links :self]) group)))
+                      (created (get-in group [:organization-group :links :self]) group)))
 
                   (context "/:id" []
                     :path-params [id :- s/Str]

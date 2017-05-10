@@ -86,25 +86,25 @@
     (let [ch (chan)]
       (organizations/get-groups ctx (:v2-url this) ch)
       (let [groups (<?? ch)]
-        {:groups groups})))
+        {:organization-groups groups})))
 
   (create-organization-group [this ctx body]
     (let [ch (chan)]
-      (organizations/create-group ctx (:v2-url this) (:group body) ch)
+      (organizations/create-group ctx (:v2-url this) (:organization-group body) ch)
       (let [group (<?? ch)]
-        {:group group})))
+        {:organization-group group})))
 
   (get-organization-group [this ctx id]
     (let [ch (chan)]
       (organizations/get-group ctx (:v2-url this) id ch)
       (let [group (<?? ch)]
-        {:group group})))
+        {:organization-group group})))
 
   (put-organization-group [this ctx id body]
     (let [ch (chan)]
-      (organizations/update-group ctx (:v2-url this) id (:group body) ch)
+      (organizations/update-group ctx (:v2-url this) id (:organization-group body) ch)
       (let [group (<?? ch)]
-        {:group group})))
+        {:organization-group group})))
 
   (delete-organization-group [this ctx id]
     (let [ch (chan)]
