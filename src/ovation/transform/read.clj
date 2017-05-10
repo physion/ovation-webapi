@@ -166,7 +166,7 @@
           (dissoc :organization)
           (add-value-permissions ctx))))))
 
-(defn-traced values-from-couch
+(defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs ctx]
   (let [{auth :ovation.request-context/auth} ctx

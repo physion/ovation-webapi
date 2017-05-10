@@ -82,12 +82,19 @@
 
     created-entities))
 
+(defn add-organization
+  [ctx]
+  (let [org (::rc/org ctx)]
+    (fn [doc]
+      (assoc doc :organization org))))
+
 (defn- write-values
   [ctx db values op]
   (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-  (let [docs (map (auth/check! ctx op) values)]
+  (let [values-with-org (map (add-organization ctx) values)
+        docs (map (auth/check! ctx op) values-with-org)]
     (tr/values-from-couch (couch/bulk-docs db docs) ctx)))
 
 (defn-traced create-values
