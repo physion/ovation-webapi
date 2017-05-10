@@ -515,7 +515,7 @@
                         :body [body {:membership NewTeamMembershipRole}]
                         (let [ctx (request-context/make-context request org)
                               membership (teams/post-membership* ctx id (:membership body))]
-                          (created ((::request-context/routes ctx) :get-team {:id id}) membership)))
+                          (created (get-in [:membership :links :self] membership) membership)))
                       (context "/:mid" []
                         :path-params [mid :- s/Str]
 
