@@ -178,11 +178,13 @@
 
 (defn-traced can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
+
   (let [{auth :ovation.request-context/auth
-         org :ovation.request-context/org} ctx
+         org  :ovation.request-context/org} ctx
         organization-ids (organization-ids auth)]
 
     (when (not (some #{org} organization-ids))
+      (logging/info org "not in" organization-ids)
       (not-found!))
 
     (case op

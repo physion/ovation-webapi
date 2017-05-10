@@ -112,7 +112,7 @@
                 (ok (authz/get-organizations authz (request-context/make-context request nil))))
 
               (context "/:org" []
-                :path-params [org :- s/Str]
+                :path-params [org :- s/Int]
 
                 (GET "/" request
                   :name :get-organization
@@ -142,7 +142,7 @@
                     :summary "Add a user to the organization"
                     (let [ctx (request-context/make-context request org)
                           membership (authz/create-organization-membership authz ctx body)]
-                      (created (routes/self-route ctx "org-membership" (:id membership)) membership)))
+                      (created (get-in membership [:organization-membership :links :self]) membership)))
 
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -180,7 +180,7 @@
                     :summary "Add a group to the organization"
                     (let [ctx (request-context/make-context request org)
                           group (authz/create-organization-group authz ctx body)]
-                      (created (get-in group [:links :self]) group)))
+                      (created (get-in group [:organization-group :links :self]) group)))
 
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -600,7 +600,7 @@
                     :query-params [q :- s/Str
                                    {bookmark :- (s/maybe s/Str) nil}
                                    {limit :- s/Int 25}]
-                    :summary "Searches the Ovation database" 149
+                    :summary "Searches the organization data"
 
                     :return {:search_results [{:id            s/Uuid
                                                :entity_type   s/Str

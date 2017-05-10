@@ -123,13 +123,14 @@
 (defn-traced search
   [db q & {:keys [bookmark limit] :or [bookmark nil
                                        limit nil]}]
+
   (let [query-params {:q q :bookmark bookmark :limit limit}
         opts         {:query-params (apply dissoc
                                       query-params
                                       (for [[k v] query-params :when (nil? v)] k))
                       :headers      {"Accept" "application/json"}
                       :basic-auth   [(config/config "CLOUDANT_USERNAME") (config/config "CLOUDANT_PASSWORD")]}
-        uri          (str (url/url (config/config "CLOUDANT_DB_URL") "_design" "search" "_search" "all"))
+        uri          (util/join-path [db "_design" "search" "_search" "all"])
         resp         @(httpkit.client/get uri opts)]
 
     (cond
