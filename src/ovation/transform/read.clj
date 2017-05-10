@@ -173,4 +173,4 @@
         teams (auth/authenticated-teams auth)]
     (->> docs
       (map (couch-to-value ctx))
-      (filter #(auth/can? auth ::auth/read % :teams teams)))))
+      (filter #(auth/can? ctx ::auth/read % :teams teams)))))

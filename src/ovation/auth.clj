@@ -197,7 +197,7 @@
       (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))
 
 
-(defn-traced check!
+(defn check!
   ([ctx op]
    (fn [doc]
      (when-not (can? ctx op doc)

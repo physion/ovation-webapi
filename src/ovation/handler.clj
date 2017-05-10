@@ -29,12 +29,10 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [ring.logger :as ring.logger]
-            [clojure.java.io :as io]
             [ovation.revisions :as revisions]
             [ovation.util :as util]
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
-            [ovation.organizations :as organizations]
             [ovation.authz :as authz]))
 
 
