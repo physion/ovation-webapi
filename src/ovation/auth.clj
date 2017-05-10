@@ -184,7 +184,7 @@
         organization-ids (organization-ids auth)]
 
     (when (not (some #{org} organization-ids))
-      (logging/info org "not in" organization-ids)
+      (logging/debug "Organization" org "not in users' organizations:" organization-ids)
       (not-found!))
 
     (case op
