@@ -50,9 +50,9 @@
 (defn make-read-membership-tf
   [ctx]
   (fn [membership]
-    (let [membership-without-nil-values (into {} (filter second membership))]
+    (let [filtered-membership (select-keys membership-without-nil-values [:organization_id :role :email :first_name :last_name :job_title :contact_information])
+           (into {} (filter second filtered-membership))]
       (-> membership-without-nil-values
-        (dissoc :emergency_contact)
         (assoc :type "OrganizationMembership")
         (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))})))))
 
