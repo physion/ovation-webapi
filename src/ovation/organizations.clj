@@ -50,7 +50,7 @@
 (defn make-read-membership-tf
   [ctx]
   (fn [membership]
-    (let [filtered-membership (select-keys membership [:organization_id :role :email :first_name :last_name :job_title :contact_information])
+    (let [filtered-membership (select-keys membership [:id :organization_id :role :email :first_name :last_name :job_title :contact_information])
           membership-without-nil-values (into {} (filter second filtered-membership))]
       (-> membership-without-nil-values
         (assoc :type "OrganizationMembership")
@@ -139,7 +139,9 @@
       (try+
         (if-let [body-org (:organization_id body)]
           (when (not (= body-org (::request-context/org ctx)))
-            (unprocessable-entity! {:error "Organization ID mismatch"})))
+            (do
+              (logging/info "Organization in POST body" body-org "doesn't match URL param" (::request-context/org ctx))
+              (unprocessable-entity! {:error "Organization ID mismatch"}))))
 
         (http/call-http raw-ch :post url opts hp/created?)
         (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)

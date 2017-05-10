@@ -285,10 +285,10 @@
       (facts "`create-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
                                                                                                              (if (= {:organization-membership {:organization_id org-id
-                                                                                                                                               :user_id         user-id}} (util/from-json body))
+                                                                                                                                               :email           user-email}} (util/from-json body))
                                                                                                                (let [result {:organization_membership {:id              id
                                                                                                                                                        :organization_id org-id
-                                                                                                                                                       :user_id         user-id}}]
+                                                                                                                                                       :email           user-email}}]
                                                                                                                  {:status 201
                                                                                                                   :body   (util/to-json result)})
                                                                                                                {:status 422}))]
@@ -316,10 +316,10 @@
                                                                                                                (if (= {:organization-membership {:id              id
                                                                                                                                                  :type            "OrganizationMembership"
                                                                                                                                                  :organization_id org-id
-                                                                                                                                                 :user_id         user-id}} (util/from-json body))
+                                                                                                                                                 :email           user-email}} (util/from-json body))
                                                                                                                  (let [result {:organization_membership {:id              id
                                                                                                                                                          :organization_id org-id
-                                                                                                                                                         :user_id         user-id}}]
+                                                                                                                                                         :email           user-email}}]
                                                                                                                    {:status 200
                                                                                                                     :body   (util/to-json result)})
                                                                                                                  {:status 422}))]
@@ -327,12 +327,12 @@
             (let [c                  (chan)
                   expected           {:id              id
                                       :type            "OrganizationMembership"
-                                      :user_id         user-id
+                                      :email           user-email
                                       :organization_id org-id
                                       :links           {:self {:id id, :org org-id}}}
                   updated-membership {:id              id
                                       :type            "OrganizationMembership"
-                                      :user_id         user-id
+                                      :email           user-email
                                       :organization_id org-id}]
               (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
               (<?? c) => expected))
