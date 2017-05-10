@@ -32,6 +32,7 @@
             (provided
               (auth/check! ..ctx.. ::auth/create) => identity
               (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
+              (core/add-organization ..ctx..) => (fn [doc] doc)
               (tr/values-from-couch ..docs.. ..ctx..) => ..result..))))
       (facts "`delete-values`"
         (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
@@ -55,6 +56,7 @@
             (provided
               (auth/check! ..ctx.. ::auth/update) => identity
               (couch/bulk-docs ..db.. [{:type "Annotation"}]) => ..docs..
+              (core/add-organization ..ctx..) => (fn [doc] doc)
               (tr/values-from-couch ..docs.. ..ctx..) => ..result..))))))
 
 
