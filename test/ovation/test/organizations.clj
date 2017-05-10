@@ -244,10 +244,12 @@
 (facts "organization-memberships"
   (let [id               1
         user-id          10
+        user-email       "user@example.com"
         org-id           3
         service-url      (util/join-path [config/SERVICES_API "api" "v2"])
         rails-membership {"id"              id
                           "user_id"         user-id
+                          "email"           user-email
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
                          ..ctx.. =contains=> {::request-context/auth   ..auth..
@@ -261,8 +263,8 @@
             (let [c                   (chan)
                   expected-membership {:id              id
                                        :type            "OrganizationMembership"
-                                       :user_id         user-id
                                        :organization_id org-id
+                                       :email           user-email
                                        :links           {:self {:id id, :org org-id}}}]
               (orgs/get-memberships ..ctx.. service-url c)
               (<?? c) => [expected-membership]))))
@@ -274,7 +276,7 @@
             (let [c                   (chan)
                   expected-membership {:id              id
                                        :type            "OrganizationMembership"
-                                       :user_id         user-id
+                                       :email user-email
                                        :organization_id org-id
                                        :links           {:self {:id id, :org org-id}}}]
               (orgs/get-membership ..ctx.. service-url id c)
@@ -294,17 +296,17 @@
             (let [c              (chan)
                   expected       {:id              id
                                   :type            "OrganizationMembership"
-                                  :user_id         user-id
+                                  :email user-email
                                   :organization_id org-id
                                   :links           {:self {:id id, :org org-id}}}
-                  new-membership {:user_id         user-id
+                  new-membership {:email user-email
                                   :organization_id org-id}]
               (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
               (<?? c) => expected))
 
           (fact "throws 422 for org mismatch"
             (let [c              (chan)
-                  new-membership {:user_id         user-id
+                  new-membership {:email user-email
                                   :organization_id (+ org-id 1)}]
               (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
               (<?? c) => (throws ExceptionInfo)))))

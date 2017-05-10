@@ -50,8 +50,8 @@
 (defn make-read-membership-tf
   [ctx]
   (fn [membership]
-    (let [filtered-membership (select-keys membership-without-nil-values [:organization_id :role :email :first_name :last_name :job_title :contact_information])
-           (into {} (filter second filtered-membership))]
+    (let [filtered-membership (select-keys membership [:organization_id :role :email :first_name :last_name :job_title :contact_information])
+          membership-without-nil-values (into {} (filter second filtered-membership))]
       (-> membership-without-nil-values
         (assoc :type "OrganizationMembership")
         (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))})))))
@@ -138,7 +138,7 @@
     (go
       (try+
         (if-let [body-org (:organization_id body)]
-          (when (not (= (str body-org) (::request-context/org ctx)))
+          (when (not (= body-org (::request-context/org ctx)))
             (unprocessable-entity! {:error "Organization ID mismatch"})))
 
         (http/call-http raw-ch :post url opts hp/created?)

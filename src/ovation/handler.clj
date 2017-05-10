@@ -112,7 +112,7 @@
                 (ok (authz/get-organizations authz (request-context/make-context request nil))))
 
               (context "/:org" []
-                :path-params [org :- s/Str]
+                :path-params [org :- s/Int]
 
                 (GET "/" request
                   :name :get-organization
