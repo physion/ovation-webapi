@@ -86,12 +86,12 @@
     (k (deref ateams 500 {k default}))
     []))
 
-(defn-traced authenticated-teams
+(defn authenticated-teams
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (authenticated-team-value auth :team_uuids))
 
-(defn-traced organization-ids
+(defn organization-ids
   "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
   [auth]
   (authenticated-team-value auth :organization_ids))
@@ -176,7 +176,7 @@
                  (some (set roots) authenticated-teams))))))
 
 
-(defn-traced can?
+(defn can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
 
   (let [{auth :ovation.request-context/auth
