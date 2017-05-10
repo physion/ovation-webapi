@@ -138,7 +138,7 @@
     (go
       (try+
         (if-let [body-org (:organization_id body)]
-          (when (not (= body-org (::request-context/org ctx)))
+          (when (not (= (str body-org) (::request-context/org ctx)))
             (unprocessable-entity! {:error "Organization ID mismatch"})))
 
         (http/call-http raw-ch :post url opts hp/created?)

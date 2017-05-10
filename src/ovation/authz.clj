@@ -60,8 +60,8 @@
   (create-organization-membership [this ctx body]
     (let [ch (chan)]
       (organizations/create-membership ctx (:v2-url this) (:organization-membership body) ch)
-      (let [memberships (<?? ch)]
-        {:organization-membershis memberships})))
+      (let [membership (<?? ch)]
+        {:organization-membership membership})))
 
   (get-organization-membership [this ctx id]
     (let [ch (chan)]
