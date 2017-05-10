@@ -7,6 +7,7 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [ovation.auth :as auth]
+            [ovation.request-context :as request-context]
             [clojure.string :as s]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
@@ -74,8 +75,9 @@
   (let [annotation-key (:annotation_type dto)
         entity-id      (:entity dto)
         annotation-id  (:_id dto)
-        route-name     (keyword (str "delete-" (s/lower-case annotation-key)))]
-    (assoc-in dto [:links :self] (r/named-route ctx route-name {:id entity-id :annotation-id annotation-id}))))
+        route-name     (keyword (str "delete-" (s/lower-case annotation-key)))
+        org (::request-context/org ctx)]
+    (assoc-in dto [:links :self] (r/named-route ctx route-name {:org org :id entity-id :annotation-id annotation-id}))))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"

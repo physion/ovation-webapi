@@ -25,7 +25,7 @@ def migrate(client, db_name):
     n_missing = 0
     for doc in tqdm(db, total=total_docs, unit='doc'):
         if 'type' in doc:
-            doc['organization'] = "0"
+            doc['organization'] = 0
             doc.save()
 
 # Copy design doc...
