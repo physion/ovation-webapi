@@ -1,14 +1,16 @@
 (ns ovation.organizations
   (:require [ovation.routes :as routes]
-            [ovation.http :as http]
+            [ovation.http :refer [index-resource
+                                  show-resource
+                                  create-resource
+                                  update-resource
+                                  destroy-resource]]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.request-context :as request-context]
             [slingshot.support :refer [get-throwable]]
-            [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
-            [clojure.core.async :refer [chan go >! >!! pipeline pipe]]
-            [clojure.tools.logging :as logging]))
+            [clojure.core.async :refer [chan go >! >!! pipeline pipe]]))
 
 
 (def ORGANIZATIONS "organizations")
@@ -16,17 +18,6 @@
 (def ORGANIZATION-GROUPS "organization_groups")
 (def GROUP-MEMBERSHIPS "organization_group_memberships")
 
-
-(defn request-opts
-  [ctx]
-  {:timeout     10000                                       ; ms
-   :oauth-token (request-context/token ctx)
-   :headers     {"Content-Type" "application/json; charset=utf-8"
-                 "Accept"       "application/json"}})
-
-(defn make-url
-  [base & comps]
-  (util/join-path (conj comps base)))
 
 (defn make-org-links
   [ctx org]
@@ -78,108 +69,6 @@
         (assoc :links {:self (rt :get-group-membership {:org org :id group-id :membership-id (:id membership)})})))))
 
 
-
-(defn read-collection-tf
-  [ctx key make-tf]
-  (fn
-    [response]
-    (if (util/response-exception? response)
-      response
-      (let [entities (key response)]
-        (map (make-tf ctx) entities)))))
-
-(defn read-single-tf
-  [ctx key make-tf]
-  (let [tf (make-tf ctx)]
-    (fn [response]
-      (if (util/response-exception? response)
-        response
-        (let [obj    (key response)
-              result (tf obj)]
-          result)))))
-
-(defn index-resource
-  [ctx api-url rsrc ch & {:keys [close? response-key make-tf query-params] :or {close?       true
-                                                                                query-params nil}}]
-  (let [raw-ch (chan)
-        url    (make-url api-url rsrc)
-        opts   (assoc (request-opts ctx)
-                 :query-params query-params)]
-    (go
-      (try+
-        (http/call-http raw-ch :get url opts hp/ok?)
-        (pipeline 1 ch (map (read-collection-tf ctx response-key make-tf)) raw-ch close?)
-        (catch Object ex
-          (logging/error ex "Exception in go block")
-          (>! ch ex))))))
-
-
-(defn show-resource
-  [ctx api-url rsrc id ch & {:keys [close? response-key make-tf query-params] :or {close?       true
-                                                                                   query-params nil}}]
-  (let [raw-ch (chan)
-        url    (make-url api-url rsrc id)
-        opts   (request-opts ctx)]
-    (go
-      (try+
-        (http/call-http raw-ch :get url opts hp/ok?)
-        (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)
-        (catch Object ex
-          (logging/error ex "Exception in go block")
-          (>! ch ex))))))
-
-
-(defn create-resource
-  [ctx api-url rsrc body ch & {:keys [close? response-key make-tf] :or {close? true}}]
-  (let [raw-ch (chan)
-        url    (make-url api-url rsrc)
-        opts   (assoc (request-opts ctx)
-                 :body (util/to-json body))]
-    (go
-      (try+
-        (if-let [body-org (:organization_id body)]
-          (when (not (= body-org (::request-context/org ctx)))
-            (do
-              (logging/info "Organization in POST body" body-org "doesn't match URL param" (::request-context/org ctx))
-              (unprocessable-entity! {:error "Organization ID mismatch"}))))
-
-        (http/call-http raw-ch :post url opts hp/created?)
-        (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)
-        (catch Object ex
-          (logging/error ex "Exception in go block")
-          (>! ch ex))))))
-
-(defn update-resource
-  [ctx api-url rsrc body id ch & {:keys [close? response-key make-tf] :or {close? true}}]
-
-  (let [raw-ch (chan)
-        url    (make-url api-url rsrc id)
-        opts   (assoc (request-opts ctx)
-                 :body (util/to-json body))]
-    (go
-      (try+
-        (if-let [body-org (:organization_id body)]
-          (when (not (= body-org (::request-context/org ctx)))
-            (unprocessable-entity! {:error "Organization ID mismatch"})))
-
-        (http/call-http raw-ch :put url opts hp/ok?)
-        (pipeline 1 ch (map (read-single-tf ctx response-key make-tf)) raw-ch close?)
-        (catch Object ex
-          (logging/error ex "Exception in go block")
-          (>! ch ex))))))
-
-(defn destroy-resource
-  [ctx api-url rsrc id ch & {:keys [close? response-key make-tf] :or {close? true}}]
-  (let [url    (make-url api-url rsrc id)
-        opts   (request-opts ctx)]
-    (go
-      (try+
-        (http/call-http ch :delete url opts (fn [response]
-                                                (or (hp/ok? response)
-                                                  (hp/no-content? response))))
-        (catch Object ex
-          (logging/error ex "Exception in go block")
-          (>! ch ex))))))
 
 (defn get-organizations
   "Gets all organizations for authenticated user onto the provided channel. If close?, channel is closed on completion (default true).
@@ -349,3 +238,5 @@
     :response-key :group_membership
     :make-tf make-read-group-membership-tf))
 
+(defn transfer-project
+  [ctx proj-uuid dest-org])
