@@ -55,7 +55,10 @@
                  [environ "1.1.0"]
 
                  ;; Graph
-                 [ubergraph "0.2.2"]]
+                 [ubergraph "0.2.2"]
+
+                 ;; GCP
+                 [com.google.cloud/google-cloud "0.17.2-alpha"]]
 
 
   :ring {:handler ovation.handler/app
