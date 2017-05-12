@@ -2,9 +2,9 @@
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as logging]
             [ovation.handler :as handler]
+            [ovation.pubsub :as pubsub]
             (system.components
-              [http-kit :as system-http-kit]
-              [jetty :as system-jetty])
+              [http-kit :as system-http-kit])
             [cemerick.url :as url]
             [ovation.authz :as authz]))
 
@@ -56,14 +56,16 @@
 
 ;; System
 (defn create-system [config-options]
-  (let [{:keys [web db authz]} config-options]
+  (let [{:keys [web db authz pubsub]} config-options]
     (component/system-map
       :database (new-database (:host db) (:username db) (:password db))
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
+      :pubsub (pubsub/new-pubsub (:project-id pubsub) (:topic pubsub))
       :api (component/using
              (new-api)
-             {:db    :database
-              :authz :authz}))))
+             {:db     :database
+              :authz  :authz
+              :pubsub :pubsub}))))

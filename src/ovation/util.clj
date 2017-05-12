@@ -113,7 +113,7 @@
 (defn ncpus []
   (.availableProcessors (Runtime/getRuntime)))
 
-(defn response-exception?
+(defn exception?
   "Tests response for Throwable or :ring.util.http-response/response"
   [response]
   (or
@@ -126,7 +126,7 @@
    This function comes from David Nolen"
   [c]
   (let [returned (<!! c)]
-    (if (response-exception? returned)
+    (if (exception? returned)
       (throw+ returned)
       returned)))
 

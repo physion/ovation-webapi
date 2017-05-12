@@ -51,7 +51,7 @@
   [ctx key make-tf]
   (fn
     [response]
-    (if (util/response-exception? response)
+    (if (util/exception? response)
       response
       (let [entities (key response)]
         (map (make-tf ctx) entities)))))
@@ -60,7 +60,7 @@
   [ctx key make-tf]
   (let [tf (make-tf ctx)]
     (fn [response]
-      (if (util/response-exception? response)
+      (if (util/exception? response)
         response
         (let [obj    (key response)
               result (tf obj)]
