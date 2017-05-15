@@ -124,35 +124,36 @@
                                                                                                                     :links   ..links..}))))))
 
     (facts "get-head-revisions"
-      (fact "gets HEAD revisions from couch view"
-        (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
-        (provided
-          (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. {}]
-                                                            :endkey       [..org.. ..fileid..]
-                                                            :descending   true
-                                                            :include_docs true
-                                                            :limit        2} :prefix-teams false) => [..doc..]
-          (tr/entities-from-couch [..doc..] ..ctx..) => [..rev..]
-          (core/filter-trashed [..rev..] false) => [..rev..]
-          ..doc.. =contains=> {:attributes {:previous []}}))
-
-      (fact "returns all HEAD revisions when top 2 are equal"
-        (let [doc1 {:attributes {:previous [1 2]}}
-              doc2 {:attributes {:previous [1 2]}}]
-          (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev1.. ..rev2.. ..rev3..]
+      (against-background [..ctx.. =contains=> {:ovation.request-context/org ..org..}]
+        (fact "gets HEAD revisions from couch view"
+          (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
           (provided
             (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..org.. ..fileid.. {}]
                                                              :endkey       [..org.. ..fileid..]
                                                              :descending   true
                                                              :include_docs true
-                                                             :limit        2} :prefix-teams false) => [doc1 doc2]
-            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. 2]
-                                                             :endkey        [..org.. ..fileid.. 2]
-                                                             :inclusive_end true
-                                                             :include_docs  true} :prefix-teams false) => [..doc1.. ..doc2.. ..doc3..]
+                                                             :limit        2} :prefix-teams false) => [..doc..]
+            (tr/entities-from-couch [..doc..] ..ctx..) => [..rev..]
+            (core/filter-trashed [..rev..] false) => [..rev..]
+            ..doc.. =contains=> {:attributes {:previous []}}))
 
-            (tr/entities-from-couch [..doc1.. ..doc2.. ..doc3..] ..ctx..) => [..rev1.. ..rev2.. ..rev3..]
-            (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..]))))
+        (fact "returns all HEAD revisions when top 2 are equal"
+          (let [doc1 {:attributes {:previous [1 2]}}
+                doc2 {:attributes {:previous [1 2]}}]
+            (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev1.. ..rev2.. ..rev3..]
+            (provided
+              (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..org.. ..fileid.. {}]
+                                                               :endkey       [..org.. ..fileid..]
+                                                               :descending   true
+                                                               :include_docs true
+                                                               :limit        2} :prefix-teams false) => [doc1 doc2]
+              (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. 2]
+                                                               :endkey        [..org.. ..fileid.. 2]
+                                                               :inclusive_end true
+                                                               :include_docs  true} :prefix-teams false) => [..doc1.. ..doc2.. ..doc3..]
+
+              (tr/entities-from-couch [..doc1.. ..doc2.. ..doc3..] ..ctx..) => [..rev1.. ..rev2.. ..rev3..]
+              (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..])))))
 
     (facts "update-metadata"
       (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]

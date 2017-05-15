@@ -20,7 +20,7 @@
   all Revisions with that parent count"
 
   [ctx db file-id]
-  (let [org (::request-context/org org)
+  (let [org (::request-context/org ctx)
         docs (let [tops   (couch/get-view ctx db k/REVISIONS-VIEW {:startkey      [org file-id {}]
                                                                     :endkey       [org file-id]
                                                                     :descending   true
@@ -31,8 +31,8 @@
                      (= (first counts) (second counts)))
 
                  ;; HEAD conflict
-                 (couch/get-view ctx db k/REVISIONS-VIEW {:startkey       [file-id (first counts)]
-                                                           :endkey        [file-id (first counts)]
+                 (couch/get-view ctx db k/REVISIONS-VIEW {:startkey       [org file-id (first counts)]
+                                                           :endkey        [org file-id (first counts)]
                                                            :inclusive_end true
                                                            :include_docs  true} :prefix-teams false)
 
