@@ -36,3 +36,5 @@ node_modules
 lein
 
 dev.env
+
+ovation-staging.json

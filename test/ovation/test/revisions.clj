@@ -127,8 +127,8 @@
       (fact "gets HEAD revisions from couch view"
         (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
         (provided
-          (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..fileid.. {}]
-                                                            :endkey       [..fileid..]
+          (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. {}]
+                                                            :endkey       [..org.. ..fileid..]
                                                             :descending   true
                                                             :include_docs true
                                                             :limit        2} :prefix-teams false) => [..doc..]
@@ -141,13 +141,13 @@
               doc2 {:attributes {:previous [1 2]}}]
           (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev1.. ..rev2.. ..rev3..]
           (provided
-            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..fileid.. {}]
-                                                             :endkey       [..fileid..]
+            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..org.. ..fileid.. {}]
+                                                             :endkey       [..org.. ..fileid..]
                                                              :descending   true
                                                              :include_docs true
                                                              :limit        2} :prefix-teams false) => [doc1 doc2]
-            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..fileid.. 2]
-                                                             :endkey        [..fileid.. 2]
+            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. 2]
+                                                             :endkey        [..org.. ..fileid.. 2]
                                                              :inclusive_end true
                                                              :include_docs  true} :prefix-teams false) => [..doc1.. ..doc2.. ..doc3..]
 
