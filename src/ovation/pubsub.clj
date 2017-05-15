@@ -45,32 +45,39 @@
     (add-api-callback msg-id-future (future-to-ch msg-ch))
     msg-ch))
 
-(defprotocol TopicPublisher
+(defprotocol Topics
   "Publish messages via PubSub"
-  (publish [this topic msg result-ch]))
+  (publish [this topic msg result-ch])
+  (shutdown [this]))
+
+(defrecord TopicPublisher [topics]
+  Topics
+  (publish [this topic msg result-ch]
+    (when-not (get this [:topics topic])
+      (let [publisher (make-publisher (:project-id this) topic)]
+        (update-in this [:topics] assoc topic publisher)))
+
+    (if-let [publisher (get-in this [:topics topic])]
+      (publish-message publisher msg result-ch)))
+
+  (shutdown [this]
+    (if-let [publishers (:topics this)]
+      ;; Shut down all publishers
+      (map #(.shutdown %) (vals publishers)))))
+
 
 (defrecord PubSub [project-id]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting PubSub")
-    (assoc this :publishers {}))
+    (assoc this :publisher (map->TopicPublisher {:topics {}})))
 
   (stop [this]
     (logging/info "Stopping PubSub")
-    (if-let [publishers (:publishers this)]
-      ;; Shut down all publishers
-      (map #(.shutdown %) (vals publishers)))
-    (assoc this :publishers nil))
-
-  TopicPublisher
-  (publish [this topic msg result-ch]
-    (when-not (get-in this [:publishers topic])
-      (let [publisher (make-publisher (:project-id this) topic)]
-        (update-in this [:publishers] assoc topic publisher)))
-
-    (if-let [publisher (get-in this [:publishers topic])]
-      (publish-message publisher msg result-ch))))
+    (if-let [publisher (:publisher this)]
+      (shutdown publisher))
+    (assoc this :publisher nil)))
 
 (defn new-pubsub [project-id topic]
   (map->PubSub {:project-id project-id

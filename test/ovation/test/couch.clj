@@ -7,7 +7,8 @@
             [ovation.auth :as auth]
             [ovation.constants :as k]
             [ovation.config :as config]
-            [ovation.request-context :as rc]))
+            [ovation.request-context :as rc]
+            [ovation.pubsub :as pubsub]))
 
 (facts "About `db`"
   (fact "it constructs database URL"
@@ -88,7 +89,16 @@
       (couch/bulk-docs "dburl" ..docs..) => ..result..
       (provided
         (cl/bulk-update ..docs..) => ..revs..
+        (couch/merge-updates ..docs.. ..revs..) => ..result..))
+    (fact "publishes updates"
+      (couch/bulk-docs "dburl" ..docs..) => ..result..
+      (provided
+        (cl/bulk-update ..docs..) => ..revs..
+        (couch/publish-updates ..pub.. ..revs..) => ..published..
         (couch/merge-updates ..docs.. ..revs..) => ..result..)))
+
+  (facts "About publish-updates"
+    (future-fact "publishes to :all-updates"))
 
   (facts "About `delete-docs`"
     (fact "it POSTs bulk-update"

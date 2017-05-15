@@ -18,8 +18,6 @@
 
 (def design-doc "api")
 
-(def ncpu (.availableProcessors (Runtime/getRuntime)))
-
 (defn db
   "Database URL from authorization info"
   [auth]
@@ -98,11 +96,16 @@
 
       docs)))
 
+(defn publish-updates
+  [publisher bulk-results])
+
 (defn-traced bulk-docs
   "Creates or updates documents"
   [db docs]
   (cl/with-db db
-    (merge-updates docs (cl/bulk-update docs))))
+    (let [bulk-results (cl/bulk-update docs)]
+      ;; TODO publish updates
+      (merge-updates docs bulk-results))))
 
 (defn changes
   "Writes changes to channel c.
