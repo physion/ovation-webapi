@@ -9,6 +9,11 @@
 */
 
 function(doc) {
+
+  if(doc.organization) {
+    index("organization", doc.organization, {"store": true})
+  }
+
   if(doc.type) {
     index("type", doc.type, {"store": true});
   }
