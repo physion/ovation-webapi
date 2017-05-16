@@ -8,7 +8,8 @@
             [ovation.links :as links]))
 
 
-(against-background [..ctx.. =contains=> {:ovation.request-context/routes ..rt..}]
+(against-background [..ctx.. =contains=> {:ovation.request-context/routes ..rt..
+                                          :ovation.request-context/org    ..org..}]
   (facts "About search"
     (fact "transforms Cloudant search"
       (search/search ..ctx.. ..db.. ..q..) => {:search_results [..result1.. ..result2..]
@@ -23,16 +24,18 @@
                                              :order  [3.9 107]
                                              :fields {:id   ..id2..
                                                       :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
-        (couch/search ..db.. ..q.. :bookmark nil :limit search/MIN-SEARCH) => {:total_rows ..total..
-                                                                               :bookmark   ..bookmark..
-                                                                               :rows       [{:id     ..id1..
-                                                                                             :order  [3.9 107]
-                                                                                             :fields {:id   ..id1..
-                                                                                                      :type k/PROJECT-TYPE}}
-                                                                                            {:id     ..id2..
-                                                                                             :order  [3.9 107]
-                                                                                             :fields {:id   ..id2..
-                                                                                                      :type k/REVISION-TYPE}}]}))
+        (couch/search ..db.. (format "organization:%s AND (%s)" ..org.. ..q..)
+          :bookmark nil
+          :limit search/MIN-SEARCH) => {:total_rows ..total..
+                                        :bookmark   ..bookmark..
+                                        :rows       [{:id     ..id1..
+                                                      :order  [3.9 107]
+                                                      :fields {:id   ..id1..
+                                                               :type k/PROJECT-TYPE}}
+                                                     {:id     ..id2..
+                                                      :order  [3.9 107]
+                                                      :fields {:id   ..id2..
+                                                               :type k/REVISION-TYPE}}]}))
 
     (fact "Extracts entity ids"
       (let [rows [{:id     ..id1..
