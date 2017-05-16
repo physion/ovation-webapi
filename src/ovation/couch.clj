@@ -133,6 +133,13 @@
         uri          (util/join-path [db "_design" "search" "_search" "all"])
         resp         @(httpkit.client/get uri opts)]
 
-    (cond
-      (http-predicates/ok? resp) (-> resp :body util/from-json)
-      :else (throw! resp))))
+    (let [body   (-> resp :body util/from-json)
+          status (:status resp)]
+      (if (http-predicates/ok? resp)
+        body
+        (let [err (-> body
+                    (assoc :status status)
+                    (assoc :detail (:reason body))
+                    (assoc :title (:error body)))]
+          (throw! {:status status
+                   :body   {:errors [err]}}))))))
