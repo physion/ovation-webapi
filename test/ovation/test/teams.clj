@@ -117,7 +117,7 @@
               membership      {:email user-email
                                :role  {:id 1}}]
 
-          (against-background [(routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id}) => membership-url
+          (against-background [(routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id :org ..org..}) => membership-url
                                (routes/named-route ..ctx.. :get-team {:id team-uuid}) => team-url
                                (routes/named-route ..ctx.. :post-memberships {:id team-uuid}) => memberships-url]
             (fact "creates membership for existing team"
