@@ -236,7 +236,7 @@
    :role                                 s/Str
    :email                                s/Str
    :first_name                           s/Str
-   :last_name                            s/Str
+   (s/optional-key :last_name)           s/Str
    (s/optional-key :job_title)           s/Str
    (s/optional-key :contact_information) s/Str
    (s/optional-key :links)               {:self s/Str}})
