@@ -31,11 +31,12 @@
 (defn make-read-org-tf
   [ctx]
   (fn [org]
-    {:id    (:id org)
-     :type  "Organization"
-     :uuid  (:uuid org)
-     :name  (:name org)
-     :links (make-org-links ctx org)}))
+    {:id       (:id org)
+     :type     "Organization"
+     :uuid     (:uuid org)
+     :name     (:name org)
+     :is_admin (:is_admin org)
+     :links    (make-org-links ctx org)}))
 
 
 (defn make-read-membership-tf

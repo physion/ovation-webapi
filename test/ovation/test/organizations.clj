@@ -460,11 +460,12 @@
           (let [org-id      (get rails-org-1 "id")
                 org-url     (util/join-path [config/ORGS_SERVER "organizations" org-id])
                 new-name    "AWESOME NEW NAME"
-                updated-org {:id    (get rails-org-1 "id")
-                             :type  "Organization"
-                             :name  new-name
-                             :uuid  (get rails-org-1 "uuid")
-                             :links {:self                     ..self1..
+                updated-org {:id       (get rails-org-1 "id")
+                             :type     "Organization"
+                             :name     new-name
+                             :uuid     (get rails-org-1 "uuid")
+                             :is_admin true
+                             :links    {:self                     ..self1..
                                      :projects                 ..projects1..
                                      :organization-memberships ..members1..
                                      :organization-groups      ..groups1..}}]
@@ -494,14 +495,15 @@
           (let [org-id  (get rails-org-1 "id")
                 org-url (util/join-path [config/ORGS_SERVER "organizations" org-id])]
             (facts "with success"
-              (let [expected-org {:id    (get rails-org-1 "id")
-                                  :type  "Organization"
-                                  :name  (get rails-org-1 "name")
-                                  :uuid  (get rails-org-1 "uuid")
-                                  :links {:self                     ..self1..
-                                          :projects                 ..projects1..
-                                          :organization-memberships ..members1..
-                                          :organization-groups      ..groups1..}}]
+              (let [expected-org {:id       (get rails-org-1 "id")
+                                  :type     "Organization"
+                                  :name     (get rails-org-1 "name")
+                                  :uuid     (get rails-org-1 "uuid")
+                                  :is_admin true
+                                  :links    {:self                     ..self1..
+                                             :projects                 ..projects1..
+                                             :organization-memberships ..members1..
+                                             :organization-groups      ..groups1..}}]
 
                 (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                      (routes/org-projects-route ..rt.. org-id) => ..projects1..
@@ -533,19 +535,21 @@
         (facts "GET /o"
           (fact "200 response"
             (let [orgs          [rails-org-1 rails-org-2]
-                  expected-orgs [{:id    (get rails-org-1 "id")
-                                  :type  "Organization"
-                                  :name  (get rails-org-1 "name")
-                                  :uuid  (get rails-org-1 "uuid")
-                                  :links {:self                     ..self1..
+                  expected-orgs [{:id       (get rails-org-1 "id")
+                                  :type     "Organization"
+                                  :name     (get rails-org-1 "name")
+                                  :uuid     (get rails-org-1 "uuid")
+                                  :is_admin true
+                                  :links    {:self                  ..self1..
                                           :projects                 ..projects1..
                                           :organization-memberships ..members1..
                                           :organization-groups      ..groups1..}}
-                                 {:id    (get rails-org-2 "id")
-                                  :type  "Organization"
-                                  :name  (get rails-org-2 "name")
-                                  :uuid  (get rails-org-2 "uuid")
-                                  :links {:self                     ..self2..
+                                 {:id       (get rails-org-2 "id")
+                                  :type     "Organization"
+                                  :name     (get rails-org-2 "name")
+                                  :uuid     (get rails-org-2 "uuid")
+                                  :is_admin true
+                                  :links    {:self                  ..self2..
                                           :projects                 ..projects2..
                                           :organization-memberships ..members2..
                                           :organization-groups      ..groups2..}}]]
