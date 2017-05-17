@@ -220,14 +220,15 @@
 
 ;; -- Organizations -- ;;
 (s/defschema Organization
-  {:id    Id
-   :type  (s/eq "Organization")
-   :uuid  s/Uuid
-   :name  s/Str
-   :links {:self                      s/Str
-           (s/optional-key :projects) s/Str
-           (s/optional-key :organization-memberships)  s/Str
-           (s/optional-key :organization-groups)  s/Str}})
+  {:id                        Id
+   :type                      (s/eq "Organization")
+   :uuid                      s/Uuid
+   :name                      s/Str
+   (s/optional-key :is_admin) s/Bool
+   :links                     {:self                                      s/Str
+                               (s/optional-key :projects)                 s/Str
+                               (s/optional-key :organization-memberships) s/Str
+                               (s/optional-key :organization-groups)      s/Str}})
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
