@@ -100,7 +100,7 @@
     (fact "Generates breadcrumbs URL"
       (search/breadcrumbs-url ..ctx.. "ENTITY") => "breadcrumbs/url?id=ENTITY"
       (provided
-        (routes/named-route ..ctx.. :get-breadcrumbs {}) => "breadcrumbs/url"))
+        (routes/named-route ..ctx.. :get-breadcrumbs {:org 1}) => "breadcrumbs/url"))
 
     (fact "Gets entity ID from annotations"
       (search/entity-ids [{:id     ..id1..

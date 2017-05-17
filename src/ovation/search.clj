@@ -18,7 +18,7 @@
 
 (defn breadcrumbs-url
   [ctx id]
-  (str (routes/named-route ctx :get-breadcrumbs {}) "?id=" id))
+  (str (routes/named-route ctx :get-breadcrumbs {:org (::request-context/org ctx)}) "?id=" id))
 
 (defn get-results
   [ctx db rows]
