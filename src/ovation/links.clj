@@ -140,14 +140,14 @@
           target-roots (collaboration-roots target)
           source-id    (:_id source)
           target-id    (:_id target)
-          base         {:_id       (link-id source-id rel target-id :name name)
-                        :type      util/RELATION_TYPE
-                        :org       org-id
-                        :target_id (:_id target)
-                        :source_id (:_id source)
-                        :rel       (clojure.core/name rel)
-                        :user_id   authenticated-user-id
-                        :links     {:_collaboration_roots (concat source-roots target-roots)}}
+          base         {:_id          (link-id source-id rel target-id :name name)
+                        :type         util/RELATION_TYPE
+                        :organization org-id
+                        :target_id    (:_id target)
+                        :source_id    (:_id source)
+                        :rel          (clojure.core/name rel)
+                        :user_id      authenticated-user-id
+                        :links        {:_collaboration_roots (concat source-roots target-roots)}}
           named        (if name (assoc base :name name) base)]
       (if inverse-rel (assoc named :inverse_rel (clojure.core/name inverse-rel)) named))))
 
