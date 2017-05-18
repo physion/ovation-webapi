@@ -362,90 +362,25 @@
 
 (facts "organizations API"
   (let [rails-org-1 {
-                     "id"                  1,
-                     "uuid"                "1db71db5-9399-4ccb-b7b2-592ae25a810f",
-                     "name"                "Name 1",
-                     "owner_name"          "Barry Wark",
-                     "links"               {
-                                            "tags"                        "/api/v1/organizations/201/links/tags",
-                                            "folders"                     "/api/v1/organizations/201/links/folders",
-                                            "roles"                       "/api/v1/roles?organization_id=201",
-                                            "menus"                       "/api/v1/organizations/201/links/menus",
-                                            "memberships"                 "/api/v1/organizations/201/links/memberships",
-                                            "organization_memberships"    "/api/v1/organizations/201/links/organization_memberships",
-                                            "users"                       "/api/v1/wb/users?organization_id=201",
-                                            "projects"                    "/api/v1/projects?organization_id=201",
-                                            "documents"                   "/api/v1/documents?organization_id=201",
-                                            "documents_needing_signature" "/api/v1/documents?needs_signature=true\u0026organization_id=201",
-                                            "training_packs"              "/api/v1/organizations/201/links/training_packs",
-                                            "requisitions"                "/api/v1/organizations/201/links/requisitions",
-                                            "incomplete_requisitions"     "/api/v1/organizations/201/links/requisitions?incomplete=true\u0026per_page=100\u0026sparse=true",
-                                            "requisition_templates"       "/api/v1/organizations/201/links/requisition_templates",
-                                            "plating_configurations"      "/api/v1/organizations/201/links/plating_configurations",
-                                            "insurance_providers"         "/api/v1/organizations/201/links/insurance_providers",
-                                            "physicians"                  "/api/v1/organizations/201/links/physicians",
-                                            "test_panels"                 "/api/v1/organizations/201/links/test_panels",
-                                            "workflows"                   "/api/v1/workflows?organization_id=201",
-                                            "workflow_definitions"        "/api/v1/workflow_definitions?organization_id=201",
-                                            "barcode_templates"           "/api/v1/barcode_templates?organization_id=201",
-                                            "report_configurations"       "/api/v1/report_configurations?organization_id=201"},
-                     "is_admin"            true,
-                     "training_report_url" "https//services-staging.ovation.io/api/v1/organizations/201/links/training_packs.csv",
-                     "custom_attributes"   {},
-                     "team"                {
-                                            "id"              4264,
-                                            "name"            "AccessDx Testing",
-                                            "uuid"            "ee4d971c-e3c0-4751-aeef-f44a1a25c3c8",
-                                            "organization_id" 201,
-                                            "project_id"      nil,
-                                            "role_ids"        [
-                                                               665,
-                                                               738,
-                                                               739]}}
-
-
-
+                     "id"         1,
+                     "uuid"       "1db71db5-9399-4ccb-b7b2-592ae25a810f",
+                     "name"       "Name 1",
+                     "owner_name" "Barry Wark",
+                     "is_admin"   true}
         rails-org-2 {
-                     "id"                  2,
-                     "uuid"                "1db71db5-9399-4ccb-b7b2-592ae25a810f",
-                     "name"                "Name 2",
-                     "owner_name"          "Barry Wark",
-                     "links"               {
-                                            "tags"                        "/api/v1/organizations/201/links/tags",
-                                            "folders"                     "/api/v1/organizations/201/links/folders",
-                                            "roles"                       "/api/v1/roles?organization_id=201",
-                                            "menus"                       "/api/v1/organizations/201/links/menus",
-                                            "memberships"                 "/api/v1/organizations/201/links/memberships",
-                                            "organization_memberships"    "/api/v1/organizations/201/links/organization_memberships",
-                                            "users"                       "/api/v1/wb/users?organization_id=201",
-                                            "projects"                    "/api/v1/projects?organization_id=201",
-                                            "documents"                   "/api/v1/documents?organization_id=201",
-                                            "documents_needing_signature" "/api/v1/documents?needs_signature=true\u0026organization_id=201",
-                                            "training_packs"              "/api/v1/organizations/201/links/training_packs",
-                                            "requisitions"                "/api/v1/organizations/201/links/requisitions",
-                                            "incomplete_requisitions"     "/api/v1/organizations/201/links/requisitions?incomplete=true\u0026per_page=100\u0026sparse=true",
-                                            "requisition_templates"       "/api/v1/organizations/201/links/requisition_templates",
-                                            "plating_configurations"      "/api/v1/organizations/201/links/plating_configurations",
-                                            "insurance_providers"         "/api/v1/organizations/201/links/insurance_providers",
-                                            "physicians"                  "/api/v1/organizations/201/links/physicians",
-                                            "test_panels"                 "/api/v1/organizations/201/links/test_panels",
-                                            "workflows"                   "/api/v1/workflows?organization_id=201",
-                                            "workflow_definitions"        "/api/v1/workflow_definitions?organization_id=201",
-                                            "barcode_templates"           "/api/v1/barcode_templates?organization_id=201",
-                                            "report_configurations"       "/api/v1/report_configurations?organization_id=201"},
-                     "is_admin"            true,
-                     "training_report_url" "https//services-staging.ovation.io/api/v1/organizations/201/links/training_packs.csv",
-                     "custom_attributes"   {},
-                     "team"                {
-                                            "id"              4264,
-                                            "name"            "AccessDx Testing",
-                                            "uuid"            "ee4d971c-e3c0-4751-aeef-f44a1a25c3c8",
-                                            "organization_id" 201,
-                                            "project_id"      nil,
-                                            "role_ids"        [
-                                                               665,
-                                                               738,
-                                                               739]}}]
+                     "id"         2,
+                     "uuid"       "1db71db5-9399-4ccb-b7b2-592ae25a810f",
+                     "name"       "Name 2",
+                     "owner_name" "Barry Wark",
+                     "is_admin"   true}
+        org-name    "My Org"
+        new-org     {
+                     "id"                       1,
+                     "uuid"                     "1db71db5-9399-4ccb-b7b2-592ae25a810f",
+                     "name"                     "Name 1",
+                     "owner_name"               "Barry Wark",
+                     "research_subscription_id" 3,
+                     "is_admin"                 true}]
 
 
 
@@ -455,6 +390,29 @@
                          (request-context/router ..request..) => ..rt..]
 
       (let [orgs-url (util/join-path [config/ORGS_SERVER "organizations"])]
+
+        (facts "POST /o"
+          (let [c        (chan)
+                org-id   1
+                org-url  (util/join-path [config/ORGS_SERVER "organizations"])
+                expected {:id 1, :is_admin true, :links {:organization-groups ..groups1.., :organization-memberships ..members1.., :projects ..projects1.., :self ..self1..}, :name "Name 1", :research_subscription_id 3, :type "Organization"}]
+            (facts "with success"
+              (against-background [(routes/self-route ..ctx.. "organization" org-id 1) => ..self1..
+                                   (routes/org-projects-route ..rt.. org-id) => ..projects1..
+                                   (routes/org-memberships-route ..rt.. org-id) => ..members1..
+                                   (routes/org-groups-route ..rt.. 1) => ..groups1..
+                                   ..ctx.. =contains=> {::request-context/org org-id}]
+
+                (with-fake-http [{:url org-url :method :post} (fn [_ {body :body} _]
+                                                                (if (= {:type "Organization" :name org-name} (util/from-json body))
+                                                                  (let [result {:organization new-org}]
+                                                                    {:status 201
+                                                                     :body   (util/to-json result)})
+                                                                  {:status 422}))]
+                  (fact "conveys transformed organizations service response"
+                    (let [c (chan)]
+                      (orgs/create-organization ..ctx.. config/ORGS_SERVER {:type "Organization" :name org-name} c)
+                      (select-keys (<?? c) (keys expected)) => expected)))))))
 
         (facts "PUT /o/:id"
           (let [org-id      (get rails-org-1 "id")
