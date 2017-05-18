@@ -93,7 +93,7 @@
 
                       ;; For File
                       (s/optional-key :revisions) {s/Uuid {:status                 (s/enum k/UPLOADING k/COMPLETE k/ERROR)
-                                                           :started-at             s/Str
+                                                           :started-at             s/Str ;;FIX dash
                                                            (s/optional-key :error) s/Str}}
 
                       :links {:self                                  s/Str
@@ -102,9 +102,9 @@
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
-                              (s/optional-key :timeline-events)      s/Str
-                              (s/optional-key :upload-complete)      s/Str
-                              (s/optional-key :upload-failed)        s/Str
+                              (s/optional-key :timeline-events)      s/Str ;;FIX dash
+                              (s/optional-key :upload-complete)      s/Str ;;FIX dash
+                              (s/optional-key :upload-failed)        s/Str ;;FIX dash
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
@@ -227,8 +227,8 @@
    (s/optional-key :is_admin) s/Bool
    :links                     {:self                                      s/Str
                                (s/optional-key :projects)                 s/Str
-                               (s/optional-key :organization-memberships) s/Str
-                               (s/optional-key :organization-groups)      s/Str}})
+                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
+                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
