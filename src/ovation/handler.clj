@@ -73,6 +73,7 @@
                                {:name "ui" :description "Support for Web UI"}
                                {:name "search" :description "Search Ovation"}
                                {:name "zip" :description "Download ZIP archive"}
+                               {:name "admin" :description "Manage organizations and groups"}
                                {:name "organizations" :description "Organizations"}
                                {:name "groups" :description "User Groups within an Organization"}]}}}
 
@@ -103,7 +104,7 @@
         (context "/api" []
           (context "/v1" []
             (context "/o" []
-              :tags ["organizations"]
+              :tags ["admin"]
               (GET "/" request
                 :name :get-organizations
                 :return {:organizations [Organization]}
@@ -127,7 +128,7 @@
                   (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
                 (context "/memberships" []
-                  :tags ["organizations"]
+                  :tags ["admin"]
                   (GET "/" request
                     :name :get-org-memberships
                     :return {:organization-memberships [OrganizationMembership]}
@@ -165,7 +166,7 @@
                       (ok (authz/delete-organization-membership authz (request-context/make-context request org) id)))))
 
                 (context "/groups" []
-                  :tags ["groups"]
+                  :tags ["admin"]
                   (GET "/" request
                     :name :get-org-groups
                     :return {:organization-groups [OrganizationGroup]}
@@ -203,7 +204,7 @@
                       (ok (authz/delete-organization-group authz (request-context/make-context request org) id)))
 
                     (context "/memberships" []
-                      :tags ["groups"]
+                      :tags ["admin"]
                       (GET "/" request
                         :name :get-groups-memberships
                         :return {:group-memberships [OrganizationGroupMembership]}
@@ -610,6 +611,8 @@
                                                :links         {:breadcrumbs s/Str}}]
                              :meta           {:bookmark   s/Str
                                               :total_rows s/Int}}
+                    :responses {400 {:schema JsonApiError, :description "Search error", :headers {:location s/Str}}}
+
                     (let [ctx (request-context/make-context request org)
                           result (search/search ctx db q :bookmark bookmark :limit limit)]
                       (ok result))))))))))))

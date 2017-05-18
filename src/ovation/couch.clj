@@ -123,7 +123,7 @@
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
 
-(defn-traced search
+(defn search
   [db q & {:keys [bookmark limit] :or [bookmark nil
                                        limit nil]}]
 
@@ -132,10 +132,17 @@
                                       query-params
                                       (for [[k v] query-params :when (nil? v)] k))
                       :headers      {"Accept" "application/json"}
-                      :basic-auth   [(config/config "CLOUDANT_USERNAME") (config/config "CLOUDANT_PASSWORD")]}
+                      :basic-auth   [(config/config :cloudant-username) (config/config :cloudant-password)]}
         uri          (util/join-path [db "_design" "search" "_search" "all"])
         resp         @(httpkit.client/get uri opts)]
 
-    (cond
-      (http-predicates/ok? resp) (-> resp :body util/from-json)
-      :else (throw! resp))))
+    (let [body   (-> resp :body util/from-json)
+          status (:status resp)]
+      (if (http-predicates/ok? resp)
+        body
+        (let [err (-> body
+                    (assoc :status status)
+                    (assoc :detail (:reason body))
+                    (assoc :title (:error body)))]
+          (throw! {:status status
+                   :body   {:errors [err]}}))))))

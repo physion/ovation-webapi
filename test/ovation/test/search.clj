@@ -8,31 +8,36 @@
             [ovation.links :as links]))
 
 
-(against-background [..ctx.. =contains=> {:ovation.request-context/routes ..rt..}]
+(against-background [..ctx.. =contains=> {:ovation.request-context/routes ..rt..
+                                          :ovation.request-context/org    1}]
   (facts "About search"
     (fact "transforms Cloudant search"
-      (search/search ..ctx.. ..db.. ..q..) => {:search_results [..result1.. ..result2..]
-                                               :meta           {:bookmark   ..bookmark..
-                                                                :total_rows ..total..}}
-      (provided
-        (search/get-results ..ctx.. ..db.. [{:id     ..id1..
-                                             :order  [3.9 107]
-                                             :fields {:id   ..id1..
-                                                      :type k/PROJECT-TYPE}}
-                                            {:id     ..id2..
-                                             :order  [3.9 107]
-                                             :fields {:id   ..id2..
-                                                      :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
-        (couch/search ..db.. ..q.. :bookmark nil :limit search/MIN-SEARCH) => {:total_rows ..total..
-                                                                               :bookmark   ..bookmark..
-                                                                               :rows       [{:id     ..id1..
-                                                                                             :order  [3.9 107]
-                                                                                             :fields {:id   ..id1..
-                                                                                                      :type k/PROJECT-TYPE}}
-                                                                                            {:id     ..id2..
-                                                                                             :order  [3.9 107]
-                                                                                             :fields {:id   ..id2..
-                                                                                                      :type k/REVISION-TYPE}}]}))
+      (let [query    "some-query"
+            ex-query (format "organization:%s AND (%s)" 1 query)]
+        (search/search ..ctx.. ..db.. query) => {:search_results [..result1.. ..result2..]
+                                                 :meta           {:bookmark   ..bookmark..
+                                                                  :total_rows ..total..}}
+        (provided
+          (search/get-results ..ctx.. ..db.. [{:id     ..id1..
+                                               :order  [3.9 107]
+                                               :fields {:id   ..id1..
+                                                        :type k/PROJECT-TYPE}}
+                                              {:id     ..id2..
+                                               :order  [3.9 107]
+                                               :fields {:id   ..id2..
+                                                        :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
+          (couch/search ..db.. ex-query
+            :bookmark nil
+            :limit search/MIN-SEARCH) => {:total_rows ..total..
+                                          :bookmark   ..bookmark..
+                                          :rows       [{:id     ..id1..
+                                                        :order  [3.9 107]
+                                                        :fields {:id   ..id1..
+                                                                 :type k/PROJECT-TYPE}}
+                                                       {:id     ..id2..
+                                                        :order  [3.9 107]
+                                                        :fields {:id   ..id2..
+                                                                 :type k/REVISION-TYPE}}]})))
 
     (fact "Extracts entity ids"
       (let [rows [{:id     ..id1..
@@ -95,7 +100,7 @@
     (fact "Generates breadcrumbs URL"
       (search/breadcrumbs-url ..ctx.. "ENTITY") => "breadcrumbs/url?id=ENTITY"
       (provided
-        (routes/named-route ..ctx.. :get-breadcrumbs {}) => "breadcrumbs/url"))
+        (routes/named-route ..ctx.. :get-breadcrumbs {:org 1}) => "breadcrumbs/url"))
 
     (fact "Gets entity ID from annotations"
       (search/entity-ids [{:id     ..id1..

@@ -53,7 +53,8 @@
 
 (defn- membership-result
   [team-uuid ctx response]
-  (let [result (util/from-json (:body response))
+  (let [org (::rc/org ctx)
+        result (util/from-json (:body response))
         pending? (:pending_membership result)
         self-route (if pending? :put-pending-membership :put-membership)
         membership-id (or (get-in result [:pending_membership :id])
@@ -62,7 +63,7 @@
       (-> result
         (dissoc :users)
         (dissoc :membership_roles)
-        (assoc-in [:membership :links :self] (routes/named-route ctx self-route {:id team-uuid :mid membership-id})))
+        (assoc-in [:membership :links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))
       result)))
 
 (defn get-team*

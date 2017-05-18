@@ -18,7 +18,7 @@
 
 (defn breadcrumbs-url
   [ctx id]
-  (str (routes/named-route ctx :get-breadcrumbs {}) "?id=" id))
+  (str (routes/named-route ctx :get-breadcrumbs {:org (::request-context/org ctx)}) "?id=" id))
 
 (defn get-results
   [ctx db rows]
@@ -40,8 +40,10 @@
 (defn search
   [ctx db q & {:keys [bookmark limit] :or {bookmark nil
                                             limit 0}}]
-  (let [raw      (couch/search db q :bookmark bookmark :limit (max MIN-SEARCH limit))
-        entities (get-results ctx db (:rows raw))]
+  (let [org            (::request-context/org ctx)
+        combined-query (format "organization:%d AND (%s)" org q)
+        raw            (couch/search db combined-query :bookmark bookmark :limit (max MIN-SEARCH limit))
+        entities       (get-results ctx db (:rows raw))]
     {:meta           {:total_rows (:total_rows raw)
                       :bookmark   (:bookmark raw)}
      :search_results entities}))
