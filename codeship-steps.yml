@@ -1,0 +1,13 @@
+- type: parallel
+  steps:
+    - name: test
+      service: web
+      command: lein midje
+
+- type: serial
+  steps:
+    - name: gce_push
+      tag: master
+      service: web
+      type: push
+

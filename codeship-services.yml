@@ -1,0 +1,9 @@
+web:
+  build:
+    image: webapi
+    dockerfile: Dockerfile
+  links:
+    - db
+  env_file: dev.env
+db:
+  image: mysql
