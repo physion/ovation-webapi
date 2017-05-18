@@ -31,12 +31,14 @@
 (defn make-read-org-tf
   [ctx]
   (fn [org]
-    {:id       (:id org)
-     :type     "Organization"
-     :uuid     (:uuid org)
-     :name     (:name org)
-     :is_admin (:is_admin org)
-     :links    (make-org-links ctx org)}))
+    (let [result {:id                       (:id org)
+                  :type                     "Organization"
+                  :uuid                     (:uuid org)
+                  :name                     (:name org)
+                  :is_admin                 (:is_admin org)
+                  :research_subscription_id (:research_subscription_id org)
+                  :links                    (make-org-links ctx org)}]
+      (util/remove-nil-values result))))
 
 
 (defn make-read-membership-tf
@@ -79,6 +81,14 @@
   (index-resource ctx api-url ORGANIZATIONS ch
     :close? close?
     :response-key :organizations
+    :make-tf make-read-org-tf))
+
+(defn create-organization
+  [ctx api-url new-org ch & {:keys [close?] :or {close? true}}]
+
+  (create-resource ctx api-url ORGANIZATIONS new-org ch
+    :close? close?
+    :response-key :organization
     :make-tf make-read-org-tf))
 
 (defn get-organizations*

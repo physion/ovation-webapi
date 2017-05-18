@@ -108,6 +108,13 @@
   [body]
   (json/write-str (walk/stringify-keys body)))
 
+(defn remove-nil-values
+  "Remove nil values from record"
+  [record]
+  (apply dissoc
+    record
+    (for [[k v] record :when (nil? v)] k)))
+
 ;; Async utilities
 
 (defn ncpus []

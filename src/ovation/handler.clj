@@ -110,6 +110,15 @@
                 :summary "Returns all organizations for the authenticated user"
                 (ok (authz/get-organizations authz (request-context/make-context request nil))))
 
+              (POST "/" request
+                :name :post-organization
+                :return {:organization Organization}
+                :body [body {:organization NewOrganization}]
+                :summary "Create a new Organization"
+                (let [ctx (request-context/make-context request nil)
+                      org (authz/create-organization authz ctx body)]
+                  (created (get-in org [:organization :links :self]) org)))
+
               (context "/:org" []
                 :path-params [org :- s/Int]
 
