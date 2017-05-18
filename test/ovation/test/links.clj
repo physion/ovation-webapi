@@ -63,7 +63,7 @@
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id] :inverse-rel ..inverse..)) => (contains {:_id         (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                                                        :user_id     ..id..
                                                                                                                        :type        "Relation"
-                                                                                                                       :org         ..org..
+                                                                                                                       :organization         ..org..
                                                                                                                        :source_id   (:_id doc)
                                                                                                                        :target_id   target-id
                                                                                                                        :rel         (clojure.core/name ..rel..)
@@ -73,7 +73,7 @@
           (fact "creates link document without inverse"
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id])) => (contains {:_id       (format "%s--%s-->%s" (:_id doc) ..rel.. target-id)
                                                                                               :user_id   ..id..
-                                                                                              :org         ..org..
+                                                                                              :organization         ..org..
                                                                                               :type     "Relation"
                                                                                               :source_id (:_id doc)
                                                                                               :target_id target-id
@@ -83,7 +83,7 @@
             (:links (links/add-links ..ctx.. ..db.. [doc] ..rel.. [target-id] :inverse-rel ..inverse.. :name ..name..)) => (contains {:_id         (format "%s--%s>%s-->%s" (:_id doc) ..rel.. ..name.. target-id)
                                                                                                                                       :user_id     ..id..
                                                                                                                                       :type        "Relation"
-                                                                                                                                      :org         ..org..
+                                                                                                                                      :organization         ..org..
                                                                                                                                       :source_id   (:_id doc)
                                                                                                                                       :target_id   target-id
                                                                                                                                       :name        ..name..
