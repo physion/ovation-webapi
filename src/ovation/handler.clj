@@ -577,6 +577,7 @@
                     :summary "Gets the breadcrumbs for an entity."
                     (let [ctx    (request-context/make-context request org)
                           result (breadcrumbs/get-breadcrumbs ctx db [id])]
+                      (println result)
                       (ok {:breadcrumbs (get result id)})))
 
                   (POST "/" request
