@@ -31,6 +31,7 @@
                        :name          (get-in entity [:attributes :name] (:_id entity))
                        :owner         (:owner entity)
                        :updated-at    (get-in entity [:attributes :updated-at])
+                       :organization  (::request-context/org ctx)
                        :project_names (if-let [collaboration-roots (links/collaboration-roots entity)]
                                         (remove nil? (map (fn [root-id] (get-in (get roots root-id) [:attributes :name])) collaboration-roots))
                                         [])
