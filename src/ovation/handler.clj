@@ -617,6 +617,7 @@
                                                :owner         s/Uuid
                                                :updated-at    (s/maybe s/Str) ;; allow nil updated-at
                                                :project_names [s/Str]
+                                               :organization  Id
                                                :links         {:breadcrumbs s/Str}}]
                              :meta           {:bookmark   s/Str
                                               :total_rows s/Int}}
