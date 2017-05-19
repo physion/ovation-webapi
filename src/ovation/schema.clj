@@ -220,9 +220,9 @@
 
 ;; -- Organizations -- ;;
 (s/defschema NewOrganization
-  {:type (s/eq "Organization")
-   :name s/Str
-   (s/optional-key s/Keyword) s/Any})
+  {:type     (s/eq "Organization")
+   :name     s/Str
+   s/Keyword s/Any})
 
 (s/defschema Organization
   {:id                                        Id
