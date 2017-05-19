@@ -14,7 +14,8 @@
         (links/get-link-targets ..ctx.. ..db.. ..id.. "parents") => ..parents..))))
 
 (facts "About breadcrumbs"
-  (against-background [(b/get-parents ..ctx.. ..db.. ..file1..) => [{:_id ..folder1.. } {:_id ..folder2.. }]
+  (against-background [..ctx.. =contains=> {:ovation.request-context/org ..org..}
+                       (b/get-parents ..ctx.. ..db.. ..file1..) => [{:_id ..folder1..} {:_id ..folder2..}]
                        (b/get-parents ..ctx.. ..db.. ..file2..) => [{:_id ..folder2.. }]
                        (b/get-parents ..ctx.. ..db.. ..folder1..) => [{:_id ..project1.. }]
                        (b/get-parents ..ctx.. ..db.. ..folder2..) => [{:_id ..project1.. } {:_id ..project2.. }]
