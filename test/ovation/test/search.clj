@@ -55,12 +55,14 @@
                                                       :project_names [..project..]
                                                       :owner         ..user1..
                                                       :updated-at    ..update1..
+                                                      :organization  1
                                                       :links         {:breadcrumbs ..bc1..}}
                                                      {:id            ..id1..
                                                       :entity_type   k/FILE-TYPE
                                                       :name          ..file..
                                                       :owner         ..user2..
                                                       :updated-at    ..update2..
+                                                      :organization  1
                                                       :project_names [..fileproject..]
                                                       :links         {:breadcrumbs ..bc2..}}]
         (provided
