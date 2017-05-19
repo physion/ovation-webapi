@@ -35,6 +35,7 @@
   (let [e (get entities id {})]
     {:type (:type e)
      :id id
+     :organization (:organization e)
      :name (get-in e [:attributes :name])}))
 
 (defn- extend-path
