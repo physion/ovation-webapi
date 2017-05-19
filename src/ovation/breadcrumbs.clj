@@ -31,19 +31,21 @@
           (recur parent-ids (uber/add-edges* g parent-edges)))))))
 
 (defn make-node-description
-  [id entities]
-  (let [e (get entities id {})]
+  [ctx id entities]
+  (let [org (:ovation.request-context/org ctx)
+        e (get entities id {})]
     {:type (:type e)
      :id id
+     :organization org
      :name (get-in e [:attributes :name])}))
 
 (defn- extend-path
-  [id graph entities path]
+  [ctx id graph entities path]
   (let [head       (-> path last :id)
         next-nodes (map :dest (uber/out-edges graph head))]
     (if (empty? next-nodes)
       [path]
-      (mapcat (fn [n] (extend-path id graph entities (conj path (make-node-description n entities)))) next-nodes))))
+      (mapcat (fn [n] (extend-path ctx id graph entities (conj path (make-node-description ctx n entities)))) next-nodes))))
 
 
 (defn-traced collect-paths
@@ -51,7 +53,7 @@
   [ctx db graph ids]
   (let [entities (util/into-id-map (core/get-entities ctx db (uber/nodes graph)))]
     (into {} (map (fn [id]
-                    (let [paths (extend-path id graph entities [(make-node-description id entities)])]
+                    (let [paths (extend-path ctx id graph entities [(make-node-description ctx id entities)])]
                       [id paths]))
                ids))))
 

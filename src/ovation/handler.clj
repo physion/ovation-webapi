@@ -573,10 +573,11 @@
                   (GET "/" request
                     :query-params [id :- s/Str]
                     :name :get-breadcrumbs
-                    :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
+                    :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str :organization Id}]]}
                     :summary "Gets the breadcrumbs for an entity."
                     (let [ctx    (request-context/make-context request org)
                           result (breadcrumbs/get-breadcrumbs ctx db [id])]
+                      (println result)
                       (ok {:breadcrumbs (get result id)})))
 
                   (POST "/" request
