@@ -43,12 +43,13 @@
             (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
             (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
 
-(def VIEW-PARTITION 20)
+(def VIEW-PARTITION 500)
 
 (defn get-view-batch
-  [view prefixed-opts tf]
+  [view queries tf]
+  (logging/debug (format "get-view-batch %d queries" (count queries)))
   (let [ch   (chan)
-        body (util/to-json {:queries prefixed-opts})
+        body (util/to-json {:queries queries})
         url  (util/join-path [(config/config :cloudant-db-url) "_design" design-doc "_view" view])]
     (http/call-http ch :post url {:body       body
                                   :headers    {"Content-Type" "application/json; charset=utf-8"
@@ -82,12 +83,7 @@
                    (map :doc)
                    (filter #(not (nil? %)))
                    (distinct))]
-          (let [partitions     (partition-all VIEW-PARTITION prefixed-opts)
-                thread-results (map
-                                 (fn [p]
-                                   (async/thread (get-view-batch view p tf)))
-                                 partitions)]
-            (apply concat (map <?? thread-results))))
+          (get-view-batch view prefixed-opts tf))
 
         ;; [!prefix-teams] Make single call
         (let [tf (if (:include_docs opts)
@@ -105,8 +101,8 @@
         {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys          p
-                                                                            :include_docs true})))
+                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         p
+                                                                           :include_docs true})))
                          partitions)]
 
     (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
