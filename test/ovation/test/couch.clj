@@ -34,7 +34,7 @@
         (cl/get-view couch/design-doc ..view.. ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}))
 
-    (future-fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
+    (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. {:startkey     [..start..]
                                              :endkey       [..end..]
                                              :include_docs true}) => [..other.. ..result..]

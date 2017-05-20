@@ -15,17 +15,15 @@
   "Makes http-client async request onto the provided channel.
 
   Conveys response body if success or a throw! in case of failure"
-  [ch method url opts success-fn & {:keys [log-response?] :or [log-response? true]}]
+  [ch method url opts success-fn]
   (httpkit.client/request (merge {:method method :url url} opts)
     (fn [resp]
       (logging/info "Received HTTP response:" method url (:query-params opts) "-" (:status resp))
-      (if log-response?
-        (logging/debug "Raw:" (:body resp)))
+      (logging/debug "Raw:" (:body resp))
       (if (success-fn resp)
         (try+
           (let [body (util/from-json (:body resp))]
-            (if log-response?
-              (logging/debug "Response:" body))
+            (logging/debug "Response:" body)
             (>!! ch body))
           (catch EOFException _
             (logging/info "Response is empty")
@@ -143,8 +141,8 @@
     (go
       (try+
         (call-http ch :delete url opts (fn [response]
-                                           (or (hp/ok? response)
-                                             (hp/no-content? response))))
+                                              (or (hp/ok? response)
+                                                (hp/no-content? response))))
         (catch Object ex
           (logging/error ex "Exception in go block")
           (>! ch ex))))))
