@@ -34,7 +34,7 @@
         (cl/get-view couch/design-doc ..view.. ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}))
 
-    (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
+    (future-fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. {:startkey     [..start..]
                                              :endkey       [..end..]
                                              :include_docs true}) => [..other.. ..result..]
@@ -65,7 +65,7 @@
       (provided
         (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         ..ids..
                                                         :include_docs true}) => [..doc..]
-        (partition-all couch/ALL-DOCS-PARTITION ..ids..) => [..ids..]))
+        (partition-all couch/VIEW-PARTITION ..ids..) => [..ids..]))
 
     (fact "it handles 20 ids"
       (couch/all-docs ..ctx.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
