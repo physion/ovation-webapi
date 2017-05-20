@@ -40,12 +40,12 @@
                                              :include_docs true}) => [..other.. ..result..]
       (provided
         ..ctx.. =contains=> {::rc/org ..org..}
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..user.. ..start..]
-                                                :endkey       [..org.. ..user.. ..end..]
-                                                :include_docs true}) => [{:doc ..result..}]
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..team.. ..start..]
-                                                :endkey       [..org.. ..team.. ..end..]
-                                                :include_docs true}) => [{:doc ..result..} {:doc ..other..}]))
+        (couch/get-view-batch ..view.. '({:startkey     [..org.. ..user.. ..start..]
+                                          :endkey       [..org.. ..user.. ..end..]
+                                          :include_docs true}
+                                          {:startkey     [..org.. ..team.. ..start..]
+                                           :endkey       [..org.. ..team.. ..end..]
+                                           :include_docs true}) anything) => [{:doc ..result..} {:doc ..result..} {:doc ..other..}]))
 
     (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
       (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
@@ -65,21 +65,7 @@
       (provided
         (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         ..ids..
                                                         :include_docs true}) => [..doc..]
-        (partition-all couch/VIEW-PARTITION ..ids..) => [..ids..]))
-
-    (fact "it handles 20 ids"
-      (couch/all-docs ..ctx.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
-      (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-                                                         :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]))
-
-    (fact "it handles >20 ids"
-      (couch/all-docs ..ctx.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]
-      (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-                                                         :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(21)
-                                                         :include_docs true}) => [21])))
+        (partition-all couch/VIEW-PARTITION ..ids..) => [..ids..])))
 
 
 
