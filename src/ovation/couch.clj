@@ -43,6 +43,25 @@
             (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
             (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
 
+(def VIEW-PARTITION 20)
+
+(defn get-view-batch
+  [view prefixed-opts tf]
+  (let [ch   (chan)
+        body (util/to-json {:queries prefixed-opts})
+        url  (util/join-path [(config/config :cloudant-db-url) "_design" design-doc "_view" view])]
+    (http/call-http ch :post url {:body       body
+                                  :headers    {"Content-Type" "application/json; charset=utf-8"
+                                               "Accept"       "application/json"}
+                                  :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
+      :log-response? false)
+    (try+
+      (let [response (<?? ch)
+            results  (:results response)]
+        (sequence tf results))
+      (catch [:type :ring.util.http-response/response] ex
+        (throw! (:response ex))))))
+
 
 (defn get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
@@ -57,27 +76,18 @@
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
         (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
-              prefixed-opts (map #(prefix-keys opts org %) roots)]
-          (let [ch   (chan)
-                body (util/to-json {:queries prefixed-opts})
-                url  (util/join-path [(config/config :cloudant-db-url) "_design" design-doc "_view" view])]
-            (http/call-http ch :post url {:body       body
-                                          :headers    {"Content-Type" "application/json; charset=utf-8"
-                                                       "Accept"       "application/json"}
-                                          :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
-              :log-response? false)
-            (try+
-              (let [response (<?? ch)
-                    results  (:results response)
-                    tf (comp
-                               (mapcat :rows)
-                               (map :doc)
-                               (filter #(not (nil? %)))
-                               (distinct))
-                    docs     (sequence tf results)]
-                docs)
-              (catch [:type :ring.util.http-response/response] ex
-                (throw! (:response ex))))))
+              prefixed-opts (map #(prefix-keys opts org %) roots)
+              tf (comp
+                   (mapcat :rows)
+                   (map :doc)
+                   (filter #(not (nil? %)))
+                   (distinct))]
+          (let [partitions     (partition-all VIEW-PARTITION prefixed-opts)
+                thread-results (map
+                                 (fn [p]
+                                   (async/thread (get-view-batch view p tf)))
+                                 partitions)]
+            (apply concat (map <?? thread-results))))
 
         ;; [!prefix-teams] Make single call
         (let [tf (if (:include_docs opts)
@@ -87,12 +97,11 @@
                    (distinct))]
           (into '() tf (cl/get-view design-doc view opts)))))))
 
-(def ALL-DOCS-PARTITION 20)
 
 (defn-traced all-docs
   "Gets all documents with given document IDs"
   [ctx db ids]
-  (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
+  (let [partitions     (partition-all VIEW-PARTITION ids)
         {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
