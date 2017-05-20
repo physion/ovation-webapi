@@ -59,7 +59,6 @@
     (try+
       (let [response (<?? ch)
             results  (:results response)]
-        (logging/debug (format "Foget-view-batch found %d results" (count results)))
         (sequence tf results))
       (catch [:type :ring.util.http-response/response] ex
         (throw! (:response ex))))))
