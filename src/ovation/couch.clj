@@ -2,8 +2,8 @@
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
             [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
-            [slingshot.slingshot :refer [throw+]]
-            [ovation.auth :as auth]
+            [slingshot.slingshot :refer [throw+ try+]]
+            [ovation.http :as http]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
@@ -13,7 +13,8 @@
             [ovation.util :as util]
             [ring.util.http-response :refer [throw!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [ring.util.http-predicates :as hp]))
 
 
 (def design-doc "api")
@@ -43,31 +44,48 @@
             (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
 
 
-(defn-traced get-view
+(defn get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
   each of owner and team ids, prepending to the start and end keys, and taking the aggregate unique results.
 
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [org (::rc/org ctx)
-        tf (if (:include_docs opts)
-             (comp
-               (map :doc)
-               (distinct))
-             (distinct))]
+  (let [org (::rc/org ctx)]
 
     (cl/with-db db
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
-        (let [roots          (conj (rc/team-ids ctx) (rc/user-id ctx))
-              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts org %))) roots))
-              merged-results (map deref view-calls)]
-
-          (into '() tf (apply concat merged-results)))
+        (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
+              prefixed-opts (map #(prefix-keys opts org %) roots)]
+          (let [ch   (chan)
+                body (util/to-json {:queries prefixed-opts})
+                url  (util/join-path [(config/config :cloudant-db-url) "_design" design-doc "_view" view])]
+            (http/call-http ch :post url {:body       body
+                                          :headers    {"Content-Type" "application/json; charset=utf-8"
+                                                       "Accept"       "application/json"}
+                                          :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
+              :log-response? false)
+            (try+
+              (let [response (<?? ch)
+                    results  (:results response)
+                    tf (comp
+                               (mapcat :rows)
+                               (map :doc)
+                               (filter #(not (nil? %)))
+                               (distinct))
+                    docs     (sequence tf results)]
+                docs)
+              (catch [:type :ring.util.http-response/response] ex
+                (throw! (:response ex))))))
 
         ;; [!prefix-teams] Make single call
-        (into '() tf (cl/get-view design-doc view opts))))))
+        (let [tf (if (:include_docs opts)
+                   (comp
+                     (map :doc)
+                     (distinct))
+                   (distinct))]
+          (into '() tf (cl/get-view design-doc view opts)))))))
 
 (def ALL-DOCS-PARTITION 20)
 
