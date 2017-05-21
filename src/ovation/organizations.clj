@@ -48,7 +48,7 @@
           membership-without-nil-values (into {} (filter second filtered-membership))]
       (-> membership-without-nil-values
         (assoc :type "OrganizationMembership")
-        (assoc :links {:self (routes/self-route ctx "org-membership" (:id membership))})))))
+        (assoc :links {:self (if (:id membership) (routes/self-route ctx "org-membership" (:id membership)) "")})))))
 
 (defn make-read-group-tf
   [ctx]
