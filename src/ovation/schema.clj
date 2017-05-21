@@ -271,7 +271,7 @@
 (s/defschema NewOrganizationGroupMembership
   {:type                       (s/eq "GroupMembership")
    :organization_membership_id Id
-   :group_id                   Id
+   :organization_group_id      Id
    (s/optional-key :links)     {:self s/Str}})
 
 (s/defschema OrganizationGroupMembership
