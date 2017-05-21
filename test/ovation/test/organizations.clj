@@ -28,7 +28,7 @@
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-memberships`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
-                                                                                                     (if (= group-id (:group_id query-params))
+                                                                                                     (if (= group-id (:organization_group_id query-params))
                                                                                                        {:status 200
                                                                                                         :body   (util/to-json {:organization_group_memberships [rails-membership]})}
                                                                                                        {:status 422
@@ -36,7 +36,7 @@
           (fact "proxies service response"
             (let [c              (chan)
                   expected-group {:id              id
-                                  :type            "OrganizationGroupMembership"
+                                  :type            "GroupMembership"
                                   :user_id         user-id
                                   :organization_id org-id
                                   :links           {:self {:id group-id, :membership-id id, :org org-id}}}]
@@ -49,7 +49,7 @@
           (fact "proxies service response"
             (let [c                   (chan)
                   expected-membership {:id              id
-                                       :type            "OrganizationGroupMembership"
+                                       :type            "GroupMembership"
                                        :user_id         user-id
                                        :organization_id org-id
                                        :links           {:self {:id group-id, :membership-id id :org org-id}}}]
@@ -58,7 +58,7 @@
 
       (facts "`create-group-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
-                                                                                                      (if (= {:group-membership {:type            "OrganizationGroupMembership"
+                                                                                                      (if (= {:group-membership {:type            "GroupMembership"
                                                                                                                                  :user_id         user-id
                                                                                                                                  :organization_id org-id}} (util/from-json body))
                                                                                                         (let [result {:organization_group_membership {:id id
@@ -70,11 +70,11 @@
           (fact "proxies service response"
             (let [c        (chan)
                   expected {:id              id
-                            :type            "OrganizationGroupMembership"
+                            :type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id
                             :links           {:self {:id group-id, :membership-id id :org org-id}}}
-                  new      {:type            "OrganizationGroupMembership"
+                  new      {:type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id}]
               (orgs/create-group-membership ..ctx.. service-url {:group-membership new} c)
@@ -83,7 +83,7 @@
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
                                                                                                         (if (= {:group-membership {:id              id
-                                                                                                                                   :type            "OrganizationGroupMembership"
+                                                                                                                                   :type            "GroupMembership"
                                                                                                                                    :user_id         user-id
                                                                                                                                    :organization_id org-id}} (util/from-json body))
                                                                                                           (let [result {:organization_group_membership {:id id
@@ -95,12 +95,12 @@
           (fact "proxies service response"
             (let [c        (chan)
                   expected {:id              id
-                            :type            "OrganizationGroupMembership"
+                            :type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id
                             :links           {:self {:id group-id, :membership-id id, :org org-id}}}
                   updated  {:id              id
-                            :type            "OrganizationGroupMembership"
+                            :type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id}]
               (orgs/update-group-membership ..ctx.. service-url id {:group-membership updated} c)
