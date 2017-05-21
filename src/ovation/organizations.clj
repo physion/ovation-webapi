@@ -68,7 +68,7 @@
         org      (:ovation.request-context/org ctx)]
     (fn [membership]
       (-> membership
-        (assoc :type "OrganizationGroupMembership")
+        (assoc :type "GroupMembership")
         (assoc :links {:self (rt :get-group-membership {:org org :id group-id :membership-id (:id membership)})})))))
 
 
