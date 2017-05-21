@@ -56,16 +56,19 @@
 ;; COMMAND
 
 (defn-traced parent-collaboration-roots
-  [ctx db parent]
-  (if (nil? parent)
+  [ctx db parent-id]
+  (if (nil? parent-id)
     []
-    (if-let [doc (first (get-entities ctx db [parent]))]
-      (-> doc
-        :links
-        :_collaboration_roots)
+    (if-let [doc (first (get-entities ctx db [parent-id]))]
+      (condp = (:type doc)
+        k/PROJECT-TYPE [(:_id doc)]
+        ;; default
+        (-> doc
+          :links
+          :_collaboration_roots))
       [])))
 
-(defn-traced create-entities
+(defn create-entities
   "POSTs entity(s) with the given parent and owner"
   [ctx db entities & {:keys [parent] :or {parent nil}}]
 

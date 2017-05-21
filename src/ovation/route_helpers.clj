@@ -181,7 +181,7 @@
              (ok {~single-type-kw (first filtered#)})
              (not-found {:errors {:detail "Not found"}})))))))
 
-(defn-traced make-child-link*
+(defn make-child-link*
   [ctx db sources target-ids source-type]
   (fn [target]
     (let [target-type (util/entity-type-keyword target)
@@ -192,7 +192,7 @@
         (links/add-links ctx db sources rel target-ids :inverse-rel inverse-rel)
         {}))))
 
-(defn-traced make-child-links*
+(defn make-child-links*
   [ctx db parent-id type-name targets]
   (let [target-ids (map :_id targets)
         sources    (core/get-entities ctx db [parent-id])
@@ -204,7 +204,7 @@
      :updates updates}))
 
 
-(defn-traced post-resource*
+(defn post-resource*
   [ctx db type-name id body]
 
   (try+
