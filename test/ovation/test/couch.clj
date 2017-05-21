@@ -61,11 +61,11 @@
 
   (facts "About all-docs"
     (fact "it gets docs from _all_docs"
-      (couch/all-docs ..ctx.. ..db.. ..ids..) => '(..doc..)
+      (couch/all-docs ..ctx.. ..db.. [..id..]) => '(..doc..)
       (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         ..ids..
+        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         [..id..]
                                                         :include_docs true}) => [..doc..]
-        (partition-all couch/VIEW-PARTITION ..ids..) => [..ids..])))
+        (partition-all couch/VIEW-PARTITION [..id..]) => [[..id..]])))
 
 
 

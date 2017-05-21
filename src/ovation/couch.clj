@@ -95,20 +95,20 @@
           (into '() tf (cl/get-view API-DESIGN-DOC view opts)))))))
 
 
-(defn-traced all-docs
+(defn all-docs
   "Gets all documents with given document IDs"
   [ctx db ids]
   (let [partitions     (partition-all VIEW-PARTITION ids)
         {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         p
+                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         (map util/jsonify-value p)
                                                                            :include_docs true})))
                          partitions)]
 
     (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
-(defn-traced merge-updates
+(defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
@@ -122,7 +122,7 @@
 
       docs)))
 
-(defn-traced bulk-docs
+(defn bulk-docs
   "Creates or updates documents"
   [db docs]
   (cl/with-db db
@@ -139,7 +139,7 @@
     (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
-(defn-traced delete-docs
+(defn delete-docs
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
