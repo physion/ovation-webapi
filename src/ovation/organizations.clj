@@ -219,34 +219,34 @@
   (index-resource ctx api-url GROUP-MEMBERSHIPS ch
     :query-params {:group_id group-id}
     :close? close?
-    :response-key :group_memberships                        ;; TODO
+    :response-key :organization_group_memberships
     :make-tf make-read-group-membership-tf))
 
 (defn get-group-membership
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]
   (show-resource ctx api-url GROUP-MEMBERSHIPS id ch
     :close? close?
-    :response-key :group_membership                         ;; TODO
+    :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
 (defn create-group-membership
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
   (create-resource ctx api-url GROUP-MEMBERSHIPS body ch
     :close? close?
-    :response-key :group_membership
+    :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
 (defn update-group-membership
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
   (update-resource ctx api-url GROUP-MEMBERSHIPS body id ch
     :close? close?
-    :response-key :group_membership
+    :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
 (defn delete-group-membership
   [ctx api-url id ch & {:keys [close?] :or {close? true}}]
   (destroy-resource ctx api-url GROUP-MEMBERSHIPS id ch :close? close?
-    :response-key :group_membership
+    :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
 (defn transfer-project

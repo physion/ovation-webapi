@@ -30,7 +30,7 @@
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
                                                                                                      (if (= group-id (:group_id query-params))
                                                                                                        {:status 200
-                                                                                                        :body   (util/to-json {:group_memberships [rails-membership]})}
+                                                                                                        :body   (util/to-json {:organization_group_memberships [rails-membership]})}
                                                                                                        {:status 422
                                                                                                         :body   "{}"}))]
           (fact "proxies service response"
@@ -45,7 +45,7 @@
 
       (facts "`get-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :get} {:status 200
-                                                                                                       :body   (util/to-json {:group_membership rails-membership})}]
+                                                                                                       :body   (util/to-json {:organization_group_membership rails-membership})}]
           (fact "proxies service response"
             (let [c                   (chan)
                   expected-membership {:id              id
@@ -61,7 +61,7 @@
                                                                                                       (if (= {:group-membership {:type            "OrganizationGroupMembership"
                                                                                                                                  :user_id         user-id
                                                                                                                                  :organization_id org-id}} (util/from-json body))
-                                                                                                        (let [result {:group_membership {:id              id
+                                                                                                        (let [result {:organization_group_membership {:id id
                                                                                                                                          :user_id         user-id
                                                                                                                                          :organization_id org-id}}]
                                                                                                           {:status 201
@@ -86,7 +86,7 @@
                                                                                                                                    :type            "OrganizationGroupMembership"
                                                                                                                                    :user_id         user-id
                                                                                                                                    :organization_id org-id}} (util/from-json body))
-                                                                                                          (let [result {:group_membership {:id              id
+                                                                                                          (let [result {:organization_group_membership {:id id
                                                                                                                                            :user_id         user-id
                                                                                                                                            :organization_id org-id}}]
                                                                                                             {:status 200
