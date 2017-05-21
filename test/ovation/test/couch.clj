@@ -31,32 +31,32 @@
     (fact "it returns CouchDB view result docs when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [{:doc ..result..}]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}))
 
-    (future-fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
+    (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. {:startkey     [..start..]
                                              :endkey       [..end..]
                                              :include_docs true}) => [..other.. ..result..]
       (provided
         ..ctx.. =contains=> {::rc/org ..org..}
-        (couch/get-view-batch ..view.. '({:startkey     [..org.. ..user.. ..start..]
-                                          :endkey       [..org.. ..user.. ..end..]
-                                          :include_docs true}
-                                          {:startkey     [..org.. ..team.. ..start..]
-                                           :endkey       [..org.. ..team.. ..end..]
-                                           :include_docs true}) anything) => [{:doc ..result..} {:doc ..result..} {:doc ..other..}]))
+        (couch/get-view-batch ..view.. [{:startkey     [..org.. ..team.. ..start..]
+                                         :endkey       [..org.. ..team.. ..end..]
+                                         :include_docs true}
+                                        {:startkey     [..org.. ..user.. ..start..]
+                                         :endkey       [..org.. ..user.. ..end..]
+                                         :include_docs true}] anything) => [..other.. ..result..]))
 
     (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
       (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [..result..]
         ..opts.. =contains=> {}))
 
     (fact "it returns CouchDB view result directly when include_docs=false"
       (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [..result..]
         ..opts.. =contains=> {:include_docs false})))
 
   (facts "About all-docs"

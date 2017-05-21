@@ -17,9 +17,8 @@
             [ring.util.http-predicates :as hp]))
 
 
-(def design-doc "api")
+(def API-DESIGN-DOC "api")
 
-(def ncpu (.availableProcessors (Runtime/getRuntime)))
 
 (defn db
   "Database URL from authorization info"
@@ -50,7 +49,7 @@
   (logging/debug (format "get-view-batch %d queries" (count queries)))
   (let [ch   (chan)
         body (util/to-json {:queries queries})
-        url  (util/join-path [(config/config :cloudant-db-url) "_design" design-doc "_view" view])]
+        url  (util/join-path [(config/config :cloudant-db-url) "_design" API-DESIGN-DOC "_view" view])]
     (http/call-http ch :post url {:body       body
                                   :headers    {"Content-Type" "application/json; charset=utf-8"
                                                "Accept"       "application/json"}
@@ -77,12 +76,14 @@
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
         (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
-              prefixed-opts (map #(prefix-keys opts org %) roots)
-              tf (comp
-                   (mapcat :rows)
-                   (map :doc)
-                   (filter #(not (nil? %)))
-                   (distinct))]
+              prefixed-opts (vec (map #(prefix-keys opts org %) roots))
+              tf            (if (:include_docs opts)
+                              (comp
+                                (mapcat :rows)
+                                (map :doc)
+                                (filter #(not (nil? %)))
+                                (distinct))
+                              (distinct))]
           (get-view-batch view prefixed-opts tf))
 
         ;; [!prefix-teams] Make single call
@@ -91,7 +92,7 @@
                      (map :doc)
                      (distinct))
                    (distinct))]
-          (into '() tf (cl/get-view design-doc view opts)))))))
+          (into '() tf (cl/get-view API-DESIGN-DOC view opts)))))))
 
 
 (defn-traced all-docs
