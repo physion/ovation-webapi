@@ -217,7 +217,7 @@
 (defn get-group-memberships
   [ctx api-url group-id ch & {:keys [close?] :or {close? true}}]
   (index-resource ctx api-url GROUP-MEMBERSHIPS ch
-    :query-params {:group_id group-id}
+    :query-params {:organization_group_id group-id}
     :close? close?
     :response-key :organization_group_memberships
     :make-tf make-read-group-membership-tf))
