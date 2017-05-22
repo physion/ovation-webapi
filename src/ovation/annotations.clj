@@ -50,17 +50,20 @@
 
 
 (defn mention-notification-body
-  [user-id entity note-id text]
+  [org-id user-id entity note-id text]
 
   {:user_id user-id
+   :organization_id org-id
    :url (util/join-path [(entity-uri entity) note-id])
    :notification_type k/MENTION_NOTIFICATION
    :body text})
 
 
 (defn send-mention-notification
-  [auth user-id entity note-id text]
-  (let [body    (mention-notification-body user-id entity note-id text)
+  [ctx user-id entity note-id text]
+  (let [{auth ::request-context/auth
+         org ::request-context/org} ctx
+        body    (mention-notification-body org user-id entity note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"
                            "Authorization" (auth/make-bearer auth)}}
@@ -71,11 +74,11 @@
 
 
 (defn notify
-  [auth entity record]
+  [ctx entity record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
     (let [text (sanitized-note-text record)
           user-ids (map :uuid (mentions record))]
-      (dorun (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
+      (dorun (map (fn [u] (send-mention-notification ctx u entity (:_id record) text)) user-ids))
       record)
     record))
 
@@ -104,7 +107,7 @@
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values ctx db docs))))
+    (map (fn [doc] (notify ctx (get entity-map (:entity doc)) doc)) (core/create-values ctx db docs))))
 
 (defn delete-annotations
   [ctx db annotation-ids]
@@ -129,7 +132,7 @@
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth entity doc)) (core/update-values ctx db [update]))))))
+      (first (map (fn [doc] (notify ctx entity doc)) (core/update-values ctx db [update]))))))
 
 
 
