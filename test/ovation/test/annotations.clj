@@ -95,8 +95,8 @@
                                                                  entity2]
         (core/create-values ..ctx.. ..db.. expected) => [{:entity ..id1..} {:entity ..id2..}]
         ..ctx.. =contains=> {:ovation.request-context/auth ..auth..}
-        (a/notify ..auth.. entity1 {:entity ..id1..}) => ..result1..
-        (a/notify ..auth.. entity2 {:entity ..id2..}) => ..result2..))))
+        (a/notify ..ctx.. entity1 {:entity ..id1..}) => ..result1..
+        (a/notify ..ctx.. entity2 {:entity ..id2..}) => ..result2..))))
 
 (facts "About update-annotation"
   (facts "authorized user"
