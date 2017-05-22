@@ -158,14 +158,14 @@
 
 (defn create-membership
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
-  (create-resource ctx api-url ORGANIZATION-MEMBERSHIPS body ch
+  (create-resource ctx api-url ORGANIZATION-MEMBERSHIPS {:organization_membership body} ch
     :close? close?
     :response-key :organization_membership
     :make-tf make-read-membership-tf))
 
 (defn update-membership
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
-  (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS body id ch
+  (update-resource ctx api-url ORGANIZATION-MEMBERSHIPS {:organization_membership body} id ch
     :close? close?
     :response-key :organization_membership
     :make-tf make-read-membership-tf))
@@ -194,14 +194,14 @@
 
 (defn create-group
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
-  (create-resource ctx api-url ORGANIZATION-GROUPS body ch
+  (create-resource ctx api-url ORGANIZATION-GROUPS {:organization_group body} ch
     :close? close?
     :response-key :organization_group
     :make-tf make-read-group-tf))
 
 (defn update-group
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
-  (update-resource ctx api-url ORGANIZATION-GROUPS body id ch
+  (update-resource ctx api-url ORGANIZATION-GROUPS {:organization_group body} id ch
     :close? close?
     :response-key :organization_group
     :make-tf make-read-group-tf))
@@ -231,14 +231,14 @@
 
 (defn create-group-membership
   [ctx api-url body ch & {:keys [close?] :or {close? true}}]
-  (create-resource ctx api-url GROUP-MEMBERSHIPS body ch
+  (create-resource ctx api-url GROUP-MEMBERSHIPS {:organization_group_membership body} ch
     :close? close?
     :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
 (defn update-group-membership
   [ctx api-url id body ch & {:keys [close?] :or {close? true}}]
-  (update-resource ctx api-url GROUP-MEMBERSHIPS body id ch
+  (update-resource ctx api-url GROUP-MEMBERSHIPS {:organization_group_membership body} id ch
     :close? close?
     :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
