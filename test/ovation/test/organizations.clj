@@ -58,9 +58,9 @@
 
       (facts "`create-group-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
-                                                                                                      (if (= {:group-membership {:type            "GroupMembership"
-                                                                                                                                 :user_id         user-id
-                                                                                                                                 :organization_id org-id}} (util/from-json body))
+                                                                                                      (if (= {:organization_group_membership {:type "GroupMembership"
+                                                                                                                                 :user_id           user-id
+                                                                                                                                 :organization_id   org-id}} (util/from-json body))
                                                                                                         (let [result {:organization_group_membership {:id id
                                                                                                                                          :user_id         user-id
                                                                                                                                          :organization_id org-id}}]
@@ -77,12 +77,12 @@
                   new      {:type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id}]
-              (orgs/create-group-membership ..ctx.. service-url {:group-membership new} c)
+              (orgs/create-group-membership ..ctx.. service-url new c)
               (<?? c) => expected))))
 
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
-                                                                                                        (if (= {:group-membership {:id              id
+                                                                                                        (if (= {:organization_group_membership {:id id
                                                                                                                                    :type            "GroupMembership"
                                                                                                                                    :user_id         user-id
                                                                                                                                    :organization_id org-id}} (util/from-json body))
@@ -103,7 +103,7 @@
                             :type            "GroupMembership"
                             :user_id         user-id
                             :organization_id org-id}]
-              (orgs/update-group-membership ..ctx.. service-url id {:group-membership updated} c)
+              (orgs/update-group-membership ..ctx.. service-url id updated c)
               (<?? c) => expected))))
 
       (facts "`delete-group`"
@@ -163,7 +163,7 @@
 
       (facts "`create-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :post} (fn [_ {body :body} _]
-                                                                                                        (if (= {:organization-group {:organization_id org-id
+                                                                                                        (if (= {:organization_group {:organization_id org-id
                                                                                                                                      :user_id         user-id}} (util/from-json body))
                                                                                                           (let [result {:organization_group {:id              id
                                                                                                                                              :organization_id org-id
@@ -181,19 +181,19 @@
                                               :group-memberships {:id id, :org org-id}}}
                   new      {:user_id         user-id
                             :organization_id org-id}]
-              (orgs/create-group ..ctx.. service-url {:organization-group new} c)
+              (orgs/create-group ..ctx.. service-url new c)
               (<?? c) => expected))
 
           (fact "raises 422 for organizaiton mismatch"
             (let [c   (chan)
                   new {:user_id         user-id
                        :organization_id "other-org"}]
-              (orgs/create-group ..ctx.. service-url {:organization-group new} c)
+              (orgs/create-group ..ctx.. service-url new c)
               (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS id]) :method :put} (fn [_ {body :body} _]
-                                                                                                          (if (= {:organization-group {:id              id
+                                                                                                          (if (= {:organization_group {:id              id
                                                                                                                                        :type            "OrganizationGroup"
                                                                                                                                        :organization_id org-id
                                                                                                                                        :user_id         user-id}} (util/from-json body))
@@ -215,7 +215,7 @@
                             :type            "OrganizationGroup"
                             :user_id         user-id
                             :organization_id org-id}]
-              (orgs/update-group ..ctx.. service-url id {:organization-group updated} c)
+              (orgs/update-group ..ctx.. service-url id updated c)
               (<?? c) => expected))
 
           (fact "raises 422 for organization mismatch"
@@ -224,7 +224,7 @@
                            :type            "OrganizationGroup"
                            :user_id         user-id
                            :organization_id "other-org"}]
-              (orgs/update-group ..ctx.. service-url id {:organization-group updated} c)
+              (orgs/update-group ..ctx.. service-url id updated c)
               (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`delete-group`"
@@ -284,7 +284,7 @@
 
       (facts "`create-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
-                                                                                                             (if (= {:organization-membership {:organization_id org-id
+                                                                                                             (if (= {:organization_membership {:organization_id org-id
                                                                                                                                                :email           user-email}} (util/from-json body))
                                                                                                                (let [result {:organization_membership {:id              id
                                                                                                                                                        :organization_id org-id
@@ -301,19 +301,19 @@
                                   :links           {:self {:id id, :org org-id}}}
                   new-membership {:email user-email
                                   :organization_id org-id}]
-              (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
+              (orgs/create-membership ..ctx.. service-url new-membership c)
               (<?? c) => expected))
 
           (fact "throws 422 for org mismatch"
             (let [c              (chan)
                   new-membership {:email user-email
                                   :organization_id (+ org-id 1)}]
-              (orgs/create-membership ..ctx.. service-url {:organization-membership new-membership} c)
+              (orgs/create-membership ..ctx.. service-url new-membership c)
               (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`update-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
-                                                                                                               (if (= {:organization-membership {:id              id
+                                                                                                               (if (= {:organization_membership {:id              id
                                                                                                                                                  :type            "OrganizationMembership"
                                                                                                                                                  :organization_id org-id
                                                                                                                                                  :email           user-email}} (util/from-json body))
@@ -334,7 +334,7 @@
                                       :type            "OrganizationMembership"
                                       :email           user-email
                                       :organization_id org-id}]
-              (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
+              (orgs/update-membership ..ctx.. service-url id updated-membership c)
               (<?? c) => expected))
 
           (fact "throws 422 for organization id mismatch"
@@ -343,7 +343,7 @@
                                       :type            "OrganizationMembership"
                                       :user_id         user-id
                                       :organization_id (+ 1 org-id)}]
-              (orgs/update-membership ..ctx.. service-url id {:organization-membership updated-membership} c)
+              (orgs/update-membership ..ctx.. service-url id updated-membership c)
               (<?? c) => (throws ExceptionInfo)))))
 
       (facts "`delete-membership`"
