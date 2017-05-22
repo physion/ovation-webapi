@@ -26,14 +26,14 @@
 
 
 ;; WRITE
-(defn note-text
+(defn sanitized-note-text
   [record]
   (html/escape-html (get-in record [:annotation :text])))
 
 (defn mentions
   "Finds all notified users in note record"
   [note]
-  (let [text (note-text note)
+  (let [text (sanitized-note-text note)
         matches (re-seq #"\{\{user-mention uuid=([^}]+)\}\}([^{]*)\{\{/user-mention\}\}" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
@@ -73,7 +73,7 @@
 (defn notify
   [auth entity record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
-    (let [text (note-text record)
+    (let [text (sanitized-note-text record)
           user-ids (map :uuid (mentions record))]
       (dorun (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
       record)
