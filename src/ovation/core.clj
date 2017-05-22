@@ -18,7 +18,7 @@
   (filter #(or include_trashed (nil? (:trash_info %))) entities))
 
 
-(defn-traced of-type
+(defn of-type
   "Gets all entities of the given type"
   [ctx db resource & {:keys [include-trashed] :or {include-trashed false}}]
 
