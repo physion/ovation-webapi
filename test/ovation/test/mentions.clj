@@ -17,7 +17,9 @@
 
   (facts "About @-mention notification"
     (fact "escapes html"
-      (a/note-text {:annotation {:text "<body>something</body>"}}) => "&lt;body&gt;something&lt;/body&gt;")
+      (a/sanitized-note-text {:annotation {:text "<body>something</body>"}}) => "&lt;body&gt;something&lt;/body&gt;")
+    (fact "does not escape &nbsp;"
+      (a/sanitized-note-text {:annotation {:text "something&nbsp;awesome"}}) => "something awesome")
 
     (facts "send-mention-notification"
       (fact "POSTs notification"
