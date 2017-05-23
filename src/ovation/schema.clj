@@ -34,7 +34,7 @@
 (s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type (s/eq k/PROPERTIES)
                                                       :annotation      PropertyRecord}))
 
-(s/defschema NoteRecord {:text      s/Str
+(s/defschema NoteRecord {:text      s/StrE
                          :timestamp s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type (s/eq k/NOTES)
                                                   :annotation      NoteRecord
@@ -79,6 +79,7 @@
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
+                                         (s/optional-key :organization) s/Int
                                          (s/optional-key :api_version) s/Int
                                          (s/optional-key :permissions) {s/Keyword s/Bool}))
 
