@@ -25,8 +25,9 @@ def migrate(client, db_name):
     n_missing = 0
     for doc in tqdm(db, total=total_docs, unit='doc'):
         if 'type' in doc:
-            doc['organization'] = 0
-            doc.save()
+            if not 'organization' in doc:
+                doc['organization'] = 0
+                doc.save()
 
 # Copy design doc...
 # curl -X COPY https://ovation-io-dev:$PASSWORD@ovation-io-dev.cloudant.com/staging/_design/api-warm -H "Destination: _design/api?rev=12-2f8efce525a10bdc79754071bf8abd26"
