@@ -12,6 +12,6 @@
     (if (auth/authenticated? request)
       (-> request
         (assoc-in [:identity ::auth/authenticated-teams] (teams/get-teams (auth/token request)))
-        (assoc-in [:identity ::auth/authenticated-permissions] (auth/permissions (auth/token request)))
+        (assoc-in [:identity ::auth/authenticated-permissions] (auth/get-permissions (auth/token request)))
         (handler))
       (handler request))))

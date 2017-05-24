@@ -4,6 +4,8 @@
             [ovation.constants :as k]
             [ovation.util :as util]))
 
+(s/defschema Id (s/either s/Int s/Str))
+
 ;; -- Json API -- ;;
 (s/defschema JsonApiError {:errors {s/Keyword                s/Any
                                     (s/optional-key :detail) s/Str}})
@@ -35,8 +37,9 @@
 (s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type (s/eq k/PROPERTIES)
                                                       :annotation      PropertyRecord}))
 
-(s/defschema NoteRecord {:text      s/Str
-                         :timestamp s/Str})
+(s/defschema NoteRecord {:text                             s/Str
+                         (s/optional-key :organization_id) Id
+                         :timestamp                        s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type (s/eq k/NOTES)
                                                   :annotation      NoteRecord
                                                   (s/optional-key :edited_at) s/Str}))
@@ -77,7 +80,8 @@
 ;; -- ENTITIES -- ;;
 
 (s/defschema NewEntity {:type       s/Str
-                        :attributes {s/Keyword s/Any}})
+                        :attributes {s/Keyword s/Any}
+                        (s/optional-key :organization) s/Int})
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
@@ -93,7 +97,7 @@
 
                       ;; For File
                       (s/optional-key :revisions) {s/Uuid {:status                 (s/enum k/UPLOADING k/COMPLETE k/ERROR)
-                                                           :started-at             s/Str
+                                                           :started-at             s/Str ;;FIX dash
                                                            (s/optional-key :error) s/Str}}
 
                       :links {:self                                  s/Str
@@ -102,9 +106,9 @@
                               (s/optional-key :tags)                 s/Str
                               (s/optional-key :properties)           s/Str
                               (s/optional-key :notes)                s/Str
-                              (s/optional-key :timeline-events)      s/Str
-                              (s/optional-key :upload-complete)      s/Str
-                              (s/optional-key :upload-failed)        s/Str
+                              (s/optional-key :timeline-events)      s/Str ;;FIX dash
+                              (s/optional-key :upload-complete)      s/Str ;;FIX dash
+                              (s/optional-key :upload-failed)        s/Str ;;FIX dash
                               (s/optional-key :_collaboration_roots) [s/Str]}))
 
 
@@ -115,9 +119,11 @@
 (s/defschema NewProject (-> NewEntity
                             (assoc :type (s/eq "Project"))))
 (s/defschema Project (-> Entity
-                         (assoc :type (s/eq "Project"))))
+                       (assoc :type (s/eq "Project"))
+                       (assoc (s/optional-key :team) s/Int)))
 (s/defschema ProjectUpdate (-> EntityUpdate
-                               (assoc :type (s/eq "Project"))))
+                             (assoc :type (s/eq "Project"))
+                             (assoc (s/optional-key :team) s/Int)))
 
 (s/defschema NewChildActivity (-> NewEntity
                                 (assoc :type (s/eq "Activity"))
@@ -215,17 +221,78 @@
 (s/defschema User (-> Entity
                       (assoc :type (s/eq "User"))))
 
+
+;; -- Organizations -- ;;
+(s/defschema NewOrganization
+  {:type     (s/eq "Organization")
+   :name     s/Str
+   s/Keyword s/Any})
+
+(s/defschema Organization
+  {:id                                        Id
+   :type                                      (s/eq "Organization")
+   :uuid                                      s/Uuid
+   :name                                      s/Str
+   (s/optional-key :is_admin)                 s/Bool
+   (s/optional-key :research_subscription_id) Id
+   :links                                     {:self                                      s/Str
+                               (s/optional-key :projects)                 s/Str
+                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
+                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
+
+(s/defschema NewOrganizationMembership
+  {:type                                 (s/eq "OrganizationMembership")
+   :organization_id                      Id
+   :role                                 s/Str
+   :email                                s/Str
+   :first_name                           s/Str
+   (s/optional-key :last_name)           s/Str
+   (s/optional-key :job_title)           s/Str
+   (s/optional-key :contact_information) s/Str
+   (s/optional-key :links)               {:self s/Str}})
+
+
+(s/defschema OrganizationMembership
+  (-> NewOrganizationMembership
+    (assoc :id Id)
+    (assoc (s/optional-key :profile_image_url) s/Str)))
+
+;; -- Organization groups -- ;;
+(s/defschema NewOrganizationGroup
+  {:type                   (s/eq "OrganizationGroup")
+   :name                   s/Str
+   :organization_id        Id
+   (s/optional-key :links) {:self              s/Str
+                            :group-memberships s/Str}})
+
+(s/defschema OrganizationGroup
+  (-> NewOrganizationGroup
+    (assoc (s/optional-key :organization_group_membership_ids) [Id])
+    (assoc :id Id)))
+
+
+;; -- Organization group memberships -- ;;
+(s/defschema NewOrganizationGroupMembership
+  {:type                       (s/eq "GroupMembership")
+   :organization_membership_id Id
+   :organization_group_id      Id
+   (s/optional-key :links)     {:self s/Str}})
+
+(s/defschema OrganizationGroupMembership
+  (-> NewOrganizationGroupMembership
+    (assoc :id Id)))
+
 ;; -- Teams -- ;;
 
 (s/defschema TeamRole
-  {:id                     (s/either s/Str s/Int)
-   :organization_id        (s/either s/Str s/Int)
+  {:id                     Id
+   :organization_id        Id
    :name                   s/Str
    (s/optional-key :links) {s/Keyword s/Str}})
 
 (s/defschema TeamMembership
-  {:id                     (s/either s/Str s/Int)
-   :team_id                (s/either s/Str s/Int)
+  {:id                     Id
+   :team_id                Id
    :type                   s/Str
    :added                  s/Str
    :role                   TeamRole
@@ -237,7 +304,7 @@
 
 
 (s/defschema PendingTeamMembership
-  {:id        (s/either s/Str s/Int)
+  {:id        Id
    :role      TeamRole
    :added     s/Str
    (s/optional-key :email)      s/Str
@@ -271,7 +338,7 @@
    :role_id       s/Int})
 
 (s/defschema Team
-  {:id                  (s/either s/Str s/Int)
+  {:id                  Id
    :type                (s/eq "Team")
    :uuid                s/Uuid
    :name                s/Str

@@ -6,6 +6,7 @@
             [slingshot.slingshot :refer [throw+ try+]]
             [ovation.util :as util]
             [ovation.constants :as k]
+            [ovation.request-context :as rc]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
@@ -17,93 +18,99 @@
   (filter #(or include_trashed (nil? (:trash_info %))) entities))
 
 
-(defn-traced of-type
+(defn of-type
   "Gets all entities of the given type"
-  [auth resource routes & {:keys [include-trashed] :or {include-trashed false}}]
-  (let [db (couch/db auth)]
-    (-> (couch/get-view auth db k/ENTITIES-BY-TYPE-VIEW {:key          resource
-                                                         :reduce       false
-                                                         :include_docs true})
-      (tr/entities-from-couch auth routes)
-      (filter-trashed include-trashed))))
+  [ctx db resource & {:keys [include-trashed] :or {include-trashed false}}]
+
+  (-> (couch/get-view ctx db k/ENTITIES-BY-TYPE-VIEW {:key          resource
+                                                      :reduce       false
+                                                      :include_docs true})
+    (tr/entities-from-couch ctx)
+    (filter-trashed include-trashed)))
 
 
 
 (defn-traced get-entities
   "Gets entities by ID"
-  [auth ids routes & {:keys [include-trashed] :or {include-trashed false}}]
-  (let [db (couch/db auth)]
-    (-> (couch/all-docs auth db ids)
-      (tr/entities-from-couch auth routes)
-      (filter-trashed include-trashed))))
+  [ctx db ids & {:keys [include-trashed] :or {include-trashed false}}]
+  (-> (couch/all-docs ctx db ids)
+    (tr/entities-from-couch ctx)
+    (filter-trashed include-trashed)))
 
 (defn-traced get-entity
-  [auth id routes  & {:keys [include-trashed] :or {include-trashed false}}]
-  (first (get-entities auth [id] routes :include-trashed include-trashed)))
+  [ctx db id & {:keys [include-trashed] :or {include-trashed false}}]
+  (first (get-entities ctx db [id] :include-trashed include-trashed)))
 
-(defn-traced get-values
+(defn get-values
   "Get values by ID"
-  [auth ids & {:keys [routes]}]
-  (let [db (couch/db auth)
-        docs (couch/all-docs auth db ids)]
+  [ctx db ids & {:keys [routes]}]
+  (let [docs (couch/all-docs ctx db ids)]
     (if routes
-      (tr/values-from-couch docs auth routes)
+      (tr/values-from-couch docs ctx)
       docs)))
 
 (defn-traced get-owner
-  [auth routes entity]
-  (first (get-entities auth [(:owner entity)] routes)))
+  [ctx db entity]
+  (first (get-entities ctx db [(:owner entity)])))
 
 ;; COMMAND
 
 (defn-traced parent-collaboration-roots
-  [auth parent routes]
-  (if (nil? parent)
+  [ctx db parent-id]
+  (if (nil? parent-id)
     []
-    (if-let [doc (first (get-entities auth [parent] routes))]
-      (-> doc
-        :links
-        :_collaboration_roots)
+    (if-let [doc (first (get-entities ctx db [parent-id]))]
+      (condp = (:type doc)
+        k/PROJECT-TYPE [(:_id doc)]
+        ;; default
+        (-> doc
+          :links
+          :_collaboration_roots))
       [])))
 
-(defn-traced create-entities
+(defn create-entities
   "POSTs entity(s) with the given parent and owner"
-  [auth entities routes & {:keys [parent] :or {parent nil}}]
-  (let [db (couch/db auth)]
+  [ctx db entities & {:keys [parent] :or {parent nil}}]
 
-    (when (some #{k/USER-ENTITY} (map :type entities))
-      (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
+  (when (some #{k/USER-ENTITY} (map :type entities))
+    (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
 
-    (let [created-entities (tr/entities-from-couch (couch/bulk-docs db
-                                                     (tw/to-couch (auth/authenticated-user-id auth)
-                                                       entities
-                                                       :collaboration_roots (parent-collaboration-roots auth parent routes)))
-                             auth
-                             routes)]
+  (let [{auth ::rc/auth} ctx
+        created-entities (tr/entities-from-couch (couch/bulk-docs db
+                                                   (tw/to-couch ctx
+                                                     entities
+                                                     :collaboration_roots (parent-collaboration-roots ctx db parent)))
+                           ctx)]
 
-      created-entities)))
+    created-entities))
+
+(defn add-organization
+  [ctx]
+  (let [org (::rc/org ctx)]
+    (fn [doc]
+      (assoc doc :organization org))))
 
 (defn- write-values
-  [auth routes values op]
+  [ctx db values op]
   (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
     (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-  (let [db (couch/db auth)
-        docs (map (auth/check! auth op) values)]
-    (tr/values-from-couch (couch/bulk-docs db docs) auth routes)))
+  (let [values-with-org (map (add-organization ctx) values)
+        docs (map (auth/check! ctx op) values-with-org)]
+    (tr/values-from-couch (couch/bulk-docs db docs) ctx)))
 
 (defn-traced create-values
   "POSTs value(s) direct to Couch"
-  [auth routes values]
+  [ctx db values]
 
-  (write-values auth routes values ::auth/create))
+  (write-values ctx db values ::auth/create))
 
 (defn-traced update-values
   "PUTs value(s) direct to Couch"
-  [auth routes values]
+  [ctx db values]
 
-  (write-values auth routes values ::auth/update))
+  (write-values ctx db values ::auth/update))
 
 (defn- merge-updates-fn
   [updates & {:keys [update-collaboration-roots allow-keys] :or [allow-keys []]}]
@@ -125,22 +132,20 @@
 (defn-traced update-entities
   "Updates entities{EntityUpdate} or creates entities. If :allow-keys is non-empty, allows extra keys. Otherwise,
   updates only entity attributes from lastest rev"
-  [auth entities routes & {:keys [authorize update-collaboration-roots allow-keys] :or {authorize                  true
-                                                                                        update-collaboration-roots false
-                                                                                        allow-keys                 []}}]
-  (let [db (couch/db auth)]
+  [ctx db entities & {:keys [authorize update-collaboration-roots allow-keys] :or {authorize                          true
+                                                                                           update-collaboration-roots false
+                                                                                           allow-keys                 []}}]
 
-    (when (some #{k/USER-ENTITY} (map :type entities))
-      (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
+  (when (some #{k/USER-ENTITY} (map :type entities))
+    (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-    (let [bulk-docs         (let [ids      (map :_id entities)
-                                  docs     (get-entities auth ids routes)
-                                  merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
-                              (map merge-fn docs))
-          auth-checked-docs (if authorize (doall (map (auth/check! auth ::auth/update) bulk-docs)) bulk-docs)]
-      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
-        auth
-        routes))))
+  (let [bulk-docs         (let [ids      (map :_id entities)
+                                docs     (get-entities ctx db ids)
+                                merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
+                            (map merge-fn docs))
+        auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)]
+    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
+      ctx)))
 
 (defn-traced trash-entity
   [user-id doc]
@@ -152,44 +157,42 @@
     (assoc doc :trash_info info)))
 
 (defn-traced restore-trashed-entity
-  [auth doc]
+  [ctx doc]
   (dissoc doc :trash_info))
 
 (defn-traced restore-deleted-entities
-  [auth ids routes]
-  (let [db                (couch/db auth)
-        docs              (get-entities auth ids routes :include-trashed true)
+  [ctx db ids]
+  (let [{auth ::rc/auth} ctx
+        docs              (get-entities ctx db ids :include-trashed true)
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
-        auth-checked-docs (vec (map (auth/check! auth ::auth/update) trashed))]
-    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
-      auth
-      routes)))
+        auth-checked-docs (vec (map (auth/check! ctx ::auth/update) trashed))]
+    (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
+      ctx)))
 
 (defn-traced delete-entities
-  [auth ids routes]
-  (let [db (couch/db auth)
-        docs (get-entities auth ids routes)]
+  [ctx db ids]
+  (let [{auth ::rc/auth} ctx
+        docs (get-entities ctx db ids)]
 
     (when (some #{k/USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(trash-entity user-id %) docs)
-          auth-checked-docs (vec (map (auth/check! auth ::auth/delete) trashed))]
-      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch (auth/authenticated-user-id auth) auth-checked-docs))
-                              auth
-                              routes))))
+          auth-checked-docs (vec (map (auth/check! ctx ::auth/delete) trashed))]
+      (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
+                              ctx))))
 
 
 (defn-traced delete-values
   "DELETEs value(s) direct to Couch"
-  [auth ids routes]
+  [ctx db ids]
 
-  (let [values (get-values auth ids)]
+  (let [{auth ::rc/auth} ctx
+        values (get-values ctx db ids)]
     (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))
 
-    (let [db (couch/db auth)
-          docs (map (auth/check! auth ::auth/delete) values)]
-      (tr/values-from-couch (couch/delete-docs db docs) auth routes))))
+    (let [docs (map (auth/check! ctx ::auth/delete) values)]
+      (tr/values-from-couch (couch/delete-docs db docs) ctx))))

@@ -2,84 +2,113 @@
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
             [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
-            [slingshot.slingshot :refer [throw+]]
-            [ovation.auth :as auth]
+            [slingshot.slingshot :refer [throw+ try+]]
+            [ovation.http :as http]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
+            [ovation.request-context :as rc]
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
             [ring.util.http-response :refer [throw!]]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [com.climate.newrelic.trace :refer [defn-traced]]
+            [clojure.tools.logging :as logging]
+            [ring.util.http-predicates :as hp]))
 
 
-(def design-doc "api")
+(def API-DESIGN-DOC "api")
 
-(def ncpu (.availableProcessors (Runtime/getRuntime)))
 
 (defn db
   "Database URL from authorization info"
   [auth]
-  (-> (url/url (config/config "CLOUDANT_DB_URL"))
-    (assoc :username (config/config "CLOUDANT_USERNAME")
-           :password (config/config "CLOUDANT_PASSWORD"))))
+  (logging/debug "DEPRECATED call to couch/db")
+  (-> (url/url (config/config :cloudant-db-url))
+    (assoc :username (config/config :cloudant-username)
+           :password (config/config :cloudant-password))))
 
 
-(defn- key-seq
+(defn- sequential!
   [key]
   (if (sequential? key) key [key]))
 
 (defn prefix-keys
-  [opts prefix]
+  [opts org prefix]
   (cond
-    (contains? opts :key) (assoc opts :key (cons prefix (key-seq (:key opts))))
-    (contains? opts :keys) (assoc opts :keys (vec (map #(cons prefix (key-seq %)) (:keys opts))))
+    (contains? opts :key) (assoc opts :key (concat [org prefix] (sequential! (:key opts))))
+    (contains? opts :keys) (assoc opts :keys (vec (map #(concat [org prefix] (sequential! %)) (:keys opts))))
     :else (-> opts
-            (assoc :startkey (cons prefix (key-seq (:startkey opts))))
-            (assoc :endkey (cons prefix (key-seq (:endkey opts)))))))
+            (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
+            (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
+
+(def VIEW-PARTITION 500)
+
+(defn get-view-batch
+  [view queries tf]
+  (logging/debug (format "get-view-batch %d queries" (count queries)))
+  (let [ch   (chan)
+        body (util/to-json {:queries queries})
+        url  (util/join-path [(config/config :cloudant-db-url) "_design" API-DESIGN-DOC "_view" view])]
+    (http/call-http ch :post url {:body       body
+                                  :headers    {"Content-Type" "application/json; charset=utf-8"
+                                               "Accept"       "application/json"}
+                                  :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
+      :log-response? false)
+    (try+
+      (let [response (<?? ch)
+            results  (:results response)]
+        (sequence tf results))
+      (catch [:type :ring.util.http-response/response] ex
+        (throw! (:response ex))))))
 
 
-(defn-traced get-view
+(defn get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
   each of owner and team ids, prepending to the start and end keys, and taking the aggregate unique results.
 
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
-  [auth db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
+  [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [tf (if (:include_docs opts)
-             (comp
-               (map :doc)
-               (distinct))
-             (distinct))]
+  (let [org (::rc/org ctx)]
 
     (cl/with-db db
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
-        (let [roots          (conj (auth/authenticated-teams auth) (auth/authenticated-user-id auth))
-              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts %))) roots))
-              merged-results (map deref view-calls)]
-
-          (into '() tf (apply concat merged-results)))
+        (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
+              prefixed-opts (vec (map #(prefix-keys opts org %) roots))
+              tf            (if (:include_docs opts)
+                              (comp
+                                (mapcat :rows)
+                                (map :doc)
+                                (filter #(not (nil? %)))
+                                (distinct))
+                              (distinct))]
+          (get-view-batch view prefixed-opts tf))
 
         ;; [!prefix-teams] Make single call
-        (into '() tf (cl/get-view design-doc view opts))))))
+        (let [tf (if (:include_docs opts)
+                   (comp
+                     (map :doc)
+                     (distinct))
+                   (distinct))]
+          (into '() tf (cl/get-view API-DESIGN-DOC view opts)))))))
 
-(def ALL-DOCS-PARTITION 20)
 
-(defn-traced all-docs
+(defn all-docs
   "Gets all documents with given document IDs"
-  [auth db ids]
-  (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
+  [ctx db ids]
+  (let [partitions     (partition-all VIEW-PARTITION ids)
+        {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view auth db k/ALL-DOCS-VIEW {:keys         p
-                                                                            :include_docs true})))
+                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         (map util/jsonify-value p)
+                                                                           :include_docs true})))
                          partitions)]
 
     (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
-(defn-traced merge-updates
+(defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
@@ -93,7 +122,7 @@
 
       docs)))
 
-(defn-traced bulk-docs
+(defn bulk-docs
   "Creates or updates documents"
   [db docs]
   (cl/with-db db
@@ -110,23 +139,31 @@
     (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
-(defn-traced delete-docs
+(defn delete-docs
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
 
-(defn-traced search
+(defn search
   [db q & {:keys [bookmark limit] :or [bookmark nil
                                        limit nil]}]
+
   (let [query-params {:q q :bookmark bookmark :limit limit}
         opts         {:query-params (apply dissoc
                                       query-params
                                       (for [[k v] query-params :when (nil? v)] k))
                       :headers      {"Accept" "application/json"}
-                      :basic-auth   [(config/config "CLOUDANT_USERNAME") (config/config "CLOUDANT_PASSWORD")]}
-        uri          (str (url/url (config/config "CLOUDANT_DB_URL") "_design" "search" "_search" "all"))
+                      :basic-auth   [(config/config :cloudant-username) (config/config :cloudant-password)]}
+        uri          (util/join-path [db "_design" "search" "_search" "all"])
         resp         @(httpkit.client/get uri opts)]
 
-    (cond
-      (http-predicates/ok? resp) (-> resp :body util/from-json)
-      :else (throw! resp))))
+    (let [body   (-> resp :body util/from-json)
+          status (:status resp)]
+      (if (http-predicates/ok? resp)
+        body
+        (let [err (-> body
+                    (assoc :status status)
+                    (assoc :detail (:reason body))
+                    (assoc :title (:error body)))]
+          (throw! {:status status
+                   :body   {:errors [err]}}))))))

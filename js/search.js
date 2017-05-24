@@ -9,8 +9,14 @@
 */
 
 function(doc) {
+
+
   if(doc.type) {
     index("type", doc.type, {"store": true});
+  }
+
+  if(doc.hasOwnProperty('organization')) {
+      index("organization", doc.organization, {"store": true});
   }
 
   if(doc.attributes) {

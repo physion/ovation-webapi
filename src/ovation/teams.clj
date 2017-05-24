@@ -3,11 +3,12 @@
             [ovation.util :as util]
             [ovation.config :as config]
             [org.httpkit.client :as httpkit.client]
-            [ovation.logging :as logging]
+            [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [ovation.auth :as auth]
             [ovation.constants :as k]
+            [ovation.request-context :as rc]
             [clojure.core.async :refer [chan >!!]]
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]))
@@ -28,7 +29,7 @@
    :headers     {"Content-Type" "application/json; charset=utf-8"}})
 
 (defn get-teams
-  "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2]}"
+  "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2] :organization_ids [id1 id2]}"
   [api-token]
   (let [opts (request-opts api-token)
         url  (make-url "team_uuids")]
@@ -38,10 +39,10 @@
                   :body
                   util/from-json))))))
 (defn create-team
-  [request team-uuid]
+  [ctx team-uuid]
 
   (logging/info (str "Creating Team for " team-uuid))
-  (let [opts (request-opts (auth-token request))
+  (let [opts (request-opts (rc/token ctx))
         url (make-url "teams")
         body (util/to-json {:team {:uuid (str team-uuid)}})
         response @(httpkit.client/post url (assoc opts :body body))]
@@ -51,8 +52,9 @@
 
 
 (defn- membership-result
-  [team-uuid rt response]
-  (let [result (util/from-json (:body response))
+  [team-uuid ctx response]
+  (let [org (::rc/org ctx)
+        result (util/from-json (:body response))
         pending? (:pending_membership result)
         self-route (if pending? :put-pending-membership :put-membership)
         membership-id (or (get-in result [:pending_membership :id])
@@ -61,24 +63,23 @@
       (-> result
         (dissoc :users)
         (dissoc :membership_roles)
-        (assoc-in [:membership :links :self] (routes/named-route rt self-route {:id team-uuid :mid membership-id})))
+        (assoc-in [:membership :links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))
       result)))
 
 (defn get-team*
-  [request team-id]
-  (let [rt (routes/router request)
-        opts (request-opts (auth-token request))
-        url (make-url "teams" team-id)
+  [ctx team-id]
+  (let [opts     (request-opts (rc/token ctx))
+        url      (make-url "teams" team-id)
         response @(httpkit.client/get url opts)]
 
     (if-let [team (cond
                     (http-predicates/ok? response) (util/from-json (:body response))
 
-                    (http-predicates/not-found? response) (create-team request team-id)
+                    (http-predicates/not-found? response) (create-team ctx team-id)
                     :else (throw! (dissoc response :headers)))]
 
-      (let [memberships (get-in team [:team :memberships])
-            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route rt :put-membership {:id team-id :mid (:id %)})) memberships)]
+      (let [memberships        (get-in team [:team :memberships])
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (::rc/org ctx)})) memberships)]
         (-> team
           (assoc-in [:team :type] k/TEAM-TYPE)
           (update-in [:team] dissoc :project)
@@ -86,15 +87,14 @@
           (update-in [:team] dissoc :project_id)
           (update-in [:team] dissoc :organization_id)
           (assoc-in [:team :memberships] linked-memberships)
-          (assoc-in [:team :links] {:self        (routes/named-route rt :get-team {:id team-id})
-                                    :memberships (routes/named-route rt :post-memberships {:id team-id})}))))))
+          (assoc-in [:team :links] {:self        (routes/named-route ctx :get-team {:id team-id :org (::rc/org ctx)})
+                                    :memberships (routes/named-route ctx :post-memberships {:id team-id :org (::rc/org ctx)})}))))))
 
 
 (defn- put-membership
-  [request team-uuid membership membership-id pending?]                              ;; membership is a TeamMembership
-  (let [rt (routes/router request)
-        url-path (if pending? "pending_memberships" "memberships")
-        opts (request-opts (auth-token request))
+  [ctx team-uuid membership membership-id pending?]                              ;; membership is a TeamMembership
+  (let [url-path (if pending? "pending_memberships" "memberships")
+        opts (request-opts (rc/token ctx))
         url (make-url url-path membership-id)
         role-id (get-in membership [:role :id])
         body {:membership {:role_id role-id}}]
@@ -106,23 +106,23 @@
       (when (not (http-predicates/ok? response))
         (throw! response))
 
-      (membership-result team-uuid rt response))))
+      (membership-result team-uuid ctx response))))
 
 (defn put-membership*
-  [request team-uuid membership membership-id]                              ;; membership is a TeamMembership
-  (put-membership request team-uuid membership membership-id false))
+  [ctx team-uuid membership membership-id]                              ;; membership is a TeamMembership
+  (put-membership ctx team-uuid membership membership-id false))
 
 (defn put-pending-membership*
-  [request team-uuid membership membership-id]                              ;; membership is a PendingTeamMembership
-  (put-membership request team-uuid membership membership-id true))
+  [ctx team-uuid membership membership-id]                              ;; membership is a PendingTeamMembership
+  (put-membership ctx team-uuid membership membership-id true))
 
 
 (defn post-membership*
-  [request team-uuid membership]                            ;; membership is a NewTeamMembership
-  (let [rt      (routes/router request)
-        opts    (request-opts (auth-token request))
+  [ctx team-uuid membership]                            ;; membership is a NewTeamMembership
+  (let [rt      (::rc/routes ctx)
+        opts    (request-opts (rc/token ctx))
         url     (make-url "memberships")
-        team    (get-team* request team-uuid)
+        team    (get-team* ctx team-uuid)
         team-id (get-in team [:team :id])
         role    (:role membership)
         email   (:email membership)
@@ -137,12 +137,12 @@
       (when (not (http-predicates/created? response))
         (throw! (dissoc response :headers)))
 
-      (membership-result team-uuid rt response))))
+      (membership-result team-uuid ctx response))))
 
 (defn delete-membership
-  [request membership-id pending?]
+  [ctx membership-id pending?]
   (let [url-path (if pending? "pending_memberships" "memberships")
-        opts (request-opts (auth-token request))
+        opts (request-opts (rc/token ctx))
         url (make-url url-path membership-id)]
 
     (let [response (dissoc @(httpkit.client/delete url opts) :headers)]
@@ -150,17 +150,17 @@
         (throw! response)))))
 
 (defn delete-membership*
-  [request membership-id]
-  (delete-membership request membership-id false))
+  [ctx membership-id]
+  (delete-membership ctx membership-id false))
 
 
 (defn delete-pending-membership*
-  [request membership-id]
-  (delete-membership request membership-id true))
+  [ctx membership-id]
+  (delete-membership ctx membership-id true))
 
 (defn get-roles*
-  [request]
-  (let [opts (request-opts (auth-token request))
+  [ctx]
+  (let [opts (request-opts (rc/token ctx))
         url (make-url "roles")]
 
     (let [response @(httpkit.client/get url opts)]

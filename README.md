@@ -22,31 +22,14 @@ Calls to the Ovation API are authenticated by Bearer token:
  Authorization: Bearer <api key>
  ```
 
-You can get your API key from the `api.ovation.io/services/token` service by POSTing your Ovation username and password:
-
-```
-POST /services/token HTTP/1.1
-Content-Type: application/json; charset=utf-8
-Host: api.ovation.io
-
-{"email": <email>, "password": <password>}
-```
-
-The response contains your API authorization token:
-```
-HTTP/1.1 200 OK
-Cache-Control: max-age=0, private, must-revalidate
-Content-Type: application/json; charset=utf-8
-
-{"token": api_key}
-```
+You can get your API key from your account Profile > Token.
 
 
 ## Testing
 
 To test from the command line, run:
 
-    lein midje
+    docker-compose -f docker-compose.yml -f docker-compose-dev.yml run repl lein midje
     
 Or from a REPL (with sweet, sweet autotest):
 
@@ -55,15 +38,34 @@ Or from a REPL (with sweet, sweet autotest):
 
 ## Running
 
-To start a web server for the application, run:
+To start a web server for the application on port 3000:
 
-    lein ring server
+    docker-compose -f docker-compose.yml -f docker-compose-dev.yml up
 
 Or from a REPL:
+    
+    ;; start system
+    (require 'ovation.user)
+    (ovation.user/go)
+    
+    ;; stop system
+    (ovation.user/stop)
+    
+    ;; reset/refresh repl
+    (ovation.user/reset)
+    
+    
+## REPL
 
-    (use 'ring.server.standalone)
-    (require 'ovation.handler)
-    (serve ovation.handler/app)
+To start a REPL:
+
+    docker-compose run web lein repl
+   
+or to start a headless nREPL server that can be used from, e.g. IntelliJ:
+
+    docker-compose -f docker-compose.yml -f docker-compose-dev.yml up
+    
+the nREPL port is fixed in docker-compose-dev.yml, but nREPL saves the port in `.nrepl-port`.
 
 ## License
 

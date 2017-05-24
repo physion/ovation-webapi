@@ -12,17 +12,18 @@
             [ring.util.http-response :refer [unprocessable-entity!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.transform.read :as tr]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [ovation.request-context :as request-context]))
 
 (defn-traced get-head-revisions
   "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
   they're not equal (or if there are less than 2), returns the top doc. If they're equal, returns
   all Revisions with that parent count"
 
-  [auth routes file-id]
-  (let [docs (let [db     (couch/db auth)
-                   tops   (couch/get-view auth db k/REVISIONS-VIEW {:startkey     [file-id {}]
-                                                                    :endkey       [file-id]
+  [ctx db file-id]
+  (let [org (::request-context/org ctx)
+        docs (let [tops   (couch/get-view ctx db k/REVISIONS-VIEW {:startkey      [org file-id {}]
+                                                                    :endkey       [org file-id]
                                                                     :descending   true
                                                                     :include_docs true
                                                                     :limit        2} :prefix-teams false)
@@ -31,15 +32,15 @@
                      (= (first counts) (second counts)))
 
                  ;; HEAD conflict
-                 (couch/get-view auth db k/REVISIONS-VIEW {:startkey      [file-id (first counts)]
-                                                           :endkey        [file-id (first counts)]
+                 (couch/get-view ctx db k/REVISIONS-VIEW {:startkey       [org file-id (first counts)]
+                                                           :endkey        [org file-id (first counts)]
                                                            :inclusive_end true
                                                            :include_docs  true} :prefix-teams false)
 
                  ;; Unique HEAD
                  (take 1 tops)))]
     (-> docs
-      (tr/entities-from-couch auth routes)
+      (tr/entities-from-couch ctx)
       (core/filter-trashed false))))
 
 (defn update-file-status
@@ -47,7 +48,7 @@
   (loop [revs revisions
          f    file]
     (if-let [r (first revs)]
-      (recur (rest revs) (assoc-in f [:revisions (:_id r)] {:status     status
+      (recur (rest revs) (assoc-in f [:revisions (:_id r)] {:status     (if (get-in r [:attributes :remote]) k/COMPLETE status)
                                                             :started-at (or (get-in f [:revisions (:_id r) :started-at])
                                                                           (get-in r [:attributes :created-at])
                                                                           (util/iso-now))}))
@@ -55,53 +56,55 @@
 
 
 (defn- create-revisions-from-file
-  [auth routes file parent new-revisions]
+  [ctx db file parent new-revisions]
   (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
         new-revs     (map #(-> %
-                            (assoc-in [:attributes :file_id] (:_id file))
-                            (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions    (core/create-entities auth new-revs routes)
+                             (assoc-in [:attributes :file_id] (:_id file))
+                             (assoc-in [:attributes :previous] previous)) new-revisions)
+        revisions    (core/create-entities ctx db new-revs)
         updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
-        links-result (links/add-links auth [updated-file] :revisions (map :_id revisions) routes :inverse-rel :file)]
+        links-result (links/add-links ctx db [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
     {:revisions revisions
      :links     (:links links-result)
      :updates   (:updates links-result)}))
 
 (defn- create-revisions-from-revision
-  [auth routes parent new-revisions]
-  (let [files (core/get-entities auth [(get-in parent [:attributes :file_id])] routes)]
-    (create-revisions-from-file auth routes (first files) parent new-revisions)))
+  [ctx db parent new-revisions]
+  (let [files (core/get-entities ctx db [(get-in parent [:attributes :file_id])])]
+    (create-revisions-from-file ctx db (first files) parent new-revisions)))
 
 (defn-traced create-revisions
   "Creates new Revisions. Returns result of links/add-links; you should call core/create-values and core/update-entities on the result"
-  [auth routes parent new-revisions]
+  [ctx db parent new-revisions]
 
   (condp = (:type parent)
-    k/REVISION-TYPE (create-revisions-from-revision auth routes parent new-revisions)
-    k/FILE-TYPE (let [heads (get-head-revisions auth routes parent)]
+    k/REVISION-TYPE (create-revisions-from-revision ctx db parent new-revisions)
+    k/FILE-TYPE (let [heads (get-head-revisions ctx db parent)]
                   (when (> (count heads) 1)
                     (throw+ {:type ::file-revision-conflict :message "File has multiple head revisions"}))
-                  (create-revisions-from-file auth routes parent (first heads) new-revisions))))
+                  (create-revisions-from-file ctx db parent (first heads) new-revisions))))
 
 
 (defn-traced make-resource
-  [auth revision]
+  [ctx revision]
   (if-let [existing-url (get-in revision [:attributes :url])]
-    {:revision revision
+    {:revision (-> revision
+                 (assoc-in [:attributes :remote] true)
+                 (assoc-in [:attributes :upload-status] k/COMPLETE))
      :aws      {}
      :post-url existing-url}
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:oauth-token (::auth/token auth)
+          resp (http/post config/RESOURCES_SERVER {:oauth-token (request-context/token ctx)
                                                    :body        (util/to-json body)
                                                    :headers     {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
       (let [result   (:resource (util/from-json (:body @resp)))
-            url (:public_url result)
-            aws (:aws result)
+            url      (:public_url result)
+            aws      (:aws result)
             post-url (:url result)]
         {:revision (-> revision
                      (assoc-in [:attributes :url] url)
@@ -111,26 +114,26 @@
 
 (defn-traced make-resources
   "Create Rails Resources for each revision and update attributes accordingly"
-  [auth revisions]
-  (doall (map #(make-resource auth %) revisions)))          ;;TODO this would be much better as core.async channel
+  [ctx revisions]
+  (doall (map #(make-resource ctx %) revisions)))           ;;TODO this would be much better as core.async channel
 
 
 (defn-traced update-metadata
-  [auth routes revision & {:keys [complete] :or {complete true}}]
+  [ctx db revision & {:keys [complete] :or {complete true}}]
 
   (if (re-find #"ovation.io" (get-in revision [:attributes :url]))
     ;; /api/v1/resources Resource
     (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
           resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-                    {:oauth-token (::auth/token auth)
+                    {:oauth-token (request-context/token ctx)
                      :headers     {"Content-Type" "application/json"
                                    "Accept"       "application/json"}})
           file    (if complete
-                    (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
+                    (core/get-entity ctx db (get-in revision [:attributes :file_id]))
                     nil)]
       (let [body             (if (= (:status @resp) 200)
                                (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
-                               {}) ;; if it's not 200, don't add any additional attributes
+                               {})                            ;; if it's not 200, don't add any additional attributes
             updated-revision (-> revision
                                (update-in [:attributes] merge body)
                                (assoc-in [:attributes :upload-status] k/COMPLETE))
@@ -138,11 +141,11 @@
                                [updated-revision (update-file-status file [revision] k/COMPLETE)]
                                [updated-revision])]
         (first (filter #(= (:_id %) (:_id revision))
-                 (core/update-entities auth updates routes :allow-keys [:revisions])))))
+                 (core/update-entities ctx db updates :allow-keys [:revisions])))))
 
     ;; Remote resource
     (let [file (if complete
-                    (core/get-entity auth (get-in revision [:attributes :file_id]) routes)
+                    (core/get-entity ctx db (get-in revision [:attributes :file_id]))
                     nil)]
       (logging/info "Updating file status for remote revision")
       (when file
@@ -150,15 +153,15 @@
                                  (assoc-in [:attributes :upload-status] k/COMPLETE))
               updates [updated-revision (update-file-status file [revision] k/COMPLETE)]]
           (first (filter #(= (:_id %) (:_id revision))
-                   (core/update-entities auth updates routes :allow-keys [:revisions]))))))))
+                   (core/update-entities ctx db updates :allow-keys [:revisions]))))))))
 
 
 (defn-traced record-upload-failure
-  [auth routes revision]
+  [ctx db revision]
   (let [file-id          (get-in revision [:attributes :file_id])
-        file             (core/get-entity auth file-id routes)
+        file             (core/get-entity ctx db file-id)
         updated-file     (update-file-status file [revision] k/ERROR)
         updated-revision (assoc-in revision [:attributes :upload-status] k/ERROR)
-        updates          (core/update-entities auth [updated-revision updated-file] routes :allow-keys [:revisions])]
+        updates          (core/update-entities ctx db [updated-revision updated-file] :allow-keys [:revisions])]
     {:revision (first (filter #(= (:_id %) (:_id revision)) updates))
      :file     (first (filter #(= (:_id %) (:_id file)) updates))}))

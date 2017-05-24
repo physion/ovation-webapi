@@ -6,7 +6,7 @@
             [ring.util.http-response :refer [throw!]]
             [ovation.auth :as auth]
             [ring.util.http-predicates :as hp]
-            [ovation.logging :as logging]))
+            [clojure.tools.logging :as logging]))
 
 (def auth-service-url (util/join-path [config/AUTH_SERVER "api" "v1" "sessions"]))
 

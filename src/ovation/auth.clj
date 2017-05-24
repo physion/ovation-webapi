@@ -3,7 +3,7 @@
   (:require [org.httpkit.client :as http]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-predicates :as hp]
-            [ring.util.http-response :refer [throw! unauthorized! forbidden! unauthorized forbidden]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden! not-found! unauthorized forbidden]]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [buddy.auth]
@@ -50,7 +50,7 @@
 
 
 ;; Authorization
-(defn-traced permissions
+(defn-traced get-permissions
   [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
         opts {:oauth-token   token
@@ -58,7 +58,9 @@
 
     (future (let [response @(http/get url opts)]
               (when (not (hp/ok? response))
-                (logging/error "Unable to retrieve object permissions")
+                (logging/error "Unable to retrieve object permissions" (-> response
+                                                                         :body
+                                                                         (util/from-json)))
                 (throw! response))
 
               (-> response
@@ -67,7 +69,7 @@
                 :permissions)))))
 
 
-(defn-traced get-permissions
+(defn-traced permissions
   [auth collaboration-roots]
   (let [permissions (deref (::authenticated-permissions auth) 500 [])
         root-set (set collaboration-roots)]
@@ -78,11 +80,23 @@
   [permissions perm]
   (map #(-> % :permissions perm) permissions))
 
-(defn-traced authenticated-teams
+(defn- authenticated-team-value
+  [auth k & {:keys [default] :or {default []}}]
+  (if-let [ateams (::authenticated-teams auth)]
+    (k (deref ateams 500 {k default}))
+    []))
+
+(defn authenticated-teams
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
-  (if-let [ateams (::authenticated-teams auth)]
-    (:team_uuids (deref ateams 500 {:team_uuids []}))))
+  (authenticated-team-value auth :team_uuids))
+
+(defn organization-ids
+  "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
+  [auth]
+  (authenticated-team-value auth :organization_ids))
+
+
 
 (defn effective-collaboration-roots
   [doc]
@@ -106,7 +120,7 @@
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
-            permissions            (get-permissions auth collaboration-root-ids)]
+            permissions            (permissions auth collaboration-root-ids)]
 
         (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
           (every? true? (collect-permissions permissions :read)))))))
@@ -120,7 +134,7 @@
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
-            permissions (get-permissions auth collaboration-root-ids)]
+            permissions            (permissions auth collaboration-root-ids)]
         ;; handle entity with collaboration roots
         (or
           ;; user is owner and can read all roots
@@ -137,12 +151,12 @@
     (case (:type doc)
       "Annotation" (= auth-user-id (:user doc))
       "Relation" (or (= auth-user-id (:user_id doc))
-                   (let [roots (get-in doc [:links :_collaboration_roots])
-                         permissions (get-permissions auth roots)]
+                   (let [roots       (get-in doc [:links :_collaboration_roots])
+                         permissions (permissions auth roots)]
                      (every? true? (collect-permissions permissions :write))))
 
       ;; default
-      (let [permissions (get-permissions auth (effective-collaboration-roots doc))]
+      (let [permissions (permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
           (= auth-user-id (:owner doc)))))))
 
@@ -162,23 +176,32 @@
                  (some (set roots) authenticated-teams))))))
 
 
-(defn-traced can?
-  [auth op doc & {:keys [teams] :or {:teams nil}}]
-  (case op
-    ::create (can-create? auth doc)
-    ::update (can-update? auth doc)
-    ::delete (can-delete? auth doc)
-    ::read (can-read? auth doc :teams teams)
+(defn can?
+  [ctx op doc & {:keys [teams] :or {:teams nil}}]
 
-    ;;default
-    (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"})))
+  (let [{auth :ovation.request-context/auth
+         org  :ovation.request-context/org} ctx
+        organization-ids (organization-ids auth)]
+
+    (when (not (some #{org} organization-ids))
+      (logging/debug "Organization" org "not in users' organizations:" organization-ids)
+      (not-found!))
+
+    (case op
+      ::create (can-create? auth doc)
+      ::update (can-update? auth doc)
+      ::delete (can-delete? auth doc)
+      ::read (can-read? auth doc :teams teams)
+
+      ;;default
+      (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))
 
 
-(defn-traced check!
-  ([auth op]
+(defn check!
+  ([ctx op]
    (fn [doc]
-     (when-not (can? auth op doc)
-               (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
+     (when-not (can? ctx op doc)
+       (throw+ {:type ::unauthorized :operation op :message "Operation not authorized"}))
      doc))
-  ([auth op doc]
-   ((check! auth op) doc)))
+  ([ctx op doc]
+   ((check! ctx op) doc)))

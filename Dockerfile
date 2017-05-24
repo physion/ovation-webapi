@@ -1,12 +1,15 @@
-FROM clojure
+FROM clojure:lein-2.7.1-alpine
 MAINTAINER support@ovation.io
 
-COPY . /usr/src/app
-WORKDIR /usr/src/app
+#RUN apt-get -y update
 
-ENV PORT 8080
-EXPOSE 8080
+ENV PORT 3000
+EXPOSE 3000
+
+RUN mkdir -p /app
+COPY . /app
+WORKDIR /app
 
 RUN ["lein", "deps"]
 
-CMD ["lein", "ring", "server-headless"]
+CMD ["lein", "run"]

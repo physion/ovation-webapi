@@ -1,6 +1,6 @@
 (ns ovation.util
   (:import (java.net URI)
-           (java.util UUID))
+           (java.util UUID Date))
   (:require [clojure.string :refer [join]]
             [ovation.version :refer [version]]
             [clojure.walk :as walk]
@@ -8,14 +8,15 @@
             [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.core.async :refer [<!!] :as async]))
+            [clojure.core.async :refer [<!!] :as async]
+            [slingshot.slingshot :refer [throw+]]))
 
 (def RELATION_TYPE "Relation")
 
 (defn make-uuid
   "Wraps java.util.UUID/randomUUID for test mocking."
   []
-  (java.util.UUID/randomUUID))
+  (UUID/randomUUID))
 
 (defn parse-uuid [s]
   (if (nil? (re-find #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}" s))
@@ -55,6 +56,18 @@
     id
     (URI. (format "ovation://entities/%s" id))))
 
+(defn format-iso8601
+  "Formats the date instance as an ISO-8601 string"
+  [d]
+  (tf/unparse (tf/formatters :date-hour-minute-second-ms) d))
+
+(defn jsonify-value
+  "JSON-ifies Date and UUIDs, leaving everything else as-is"
+  [v]
+  (condp instance? v
+    Date (format-iso8601 v)
+    UUID (str v)
+    v))
 
 (defn to-json
   "Converts a keywordized map to json string"
@@ -91,7 +104,7 @@
 (defn iso-now
   "Gets the ISO date time string for (t/now)"
   []
-  (tf/unparse (tf/formatters :date-hour-minute-second-ms) (t/now)))
+  (format-iso8601 (t/now)))
 
 (defn iso-short-now
   "Gets the short ISO date time string for (t/now)"
@@ -107,27 +120,33 @@
   [body]
   (json/write-str (walk/stringify-keys body)))
 
+(defn remove-nil-values
+  "Remove nil values from record"
+  [record]
+  (apply dissoc
+    record
+    (for [[k v] record :when (nil? v)] k)))
+
 ;; Async utilities
 
 (defn ncpus []
   (.availableProcessors (Runtime/getRuntime)))
+
+(defn response-exception?
+  "Tests response for Throwable or :ring.util.http-response/response"
+  [response]
+  (or
+    (instance? Throwable response)
+    (#{(str :ring.util.http-response/response) :ring.util.http-response/response} (:type response))))
+
 
 (defn <??
   "Async pop that throws an exception if item returned is throwable
    This function comes from David Nolen"
   [c]
   (let [returned (<!! c)]
-    (if (instance? Throwable returned)
-      (throw returned)
+    (if (response-exception? returned)
+      (throw+ returned)
       returned)))
-
-(def default-parallelism (+ (ncpus) 1))
-
-(defn pipeline
-  [in xf & {:keys [parallelism buffer] :or {parallelism default-parallelism
-                                            buffer      16}}]
-  (let [out (async/chan (async/buffer buffer))]
-    (async/pipeline parallelism out xf in)
-    out))
 
 

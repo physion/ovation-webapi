@@ -7,17 +7,18 @@
             [ovation.constants :as c]
             [ovation.constants :as k]
             [ovation.auth :as auth]
+            [ovation.request-context :as request-context]
             [clojure.string :as s]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 
 (defn add-annotation-links                                  ;;keep
   "Add links for annotation types to entity .links"
-  [e rt]
-  (let [properties {:properties (r/annotations-route rt e "properties")}
-        tags {:tags (r/annotations-route rt e "tags")}
-        timeline-events {:timeline-events (r/annotations-route rt e "timeline_events")}
-        notes {:notes (r/annotations-route rt e "notes")}]
+  [e ctx]
+  (let [properties {:properties (r/annotations-route ctx e "properties")}
+        tags {:tags (r/annotations-route ctx e "tags")}
+        timeline-events {:timeline-events (r/annotations-route ctx e "timeline_events")}
+        notes {:notes (r/annotations-route ctx e "notes")}]
     (assoc-in e [:links] (merge properties tags timeline-events notes (:links e)))))
 
 (defn remove-private-links
@@ -32,50 +33,51 @@
 
 (defn add-relationship-links
   "Adds relationship links for Couch document and router"
-  [dto rt]
+  [dto ctx]
   (let [entity-type (util/entity-type-keyword dto)
         relationships (EntityRelationships entity-type)
         links (into {} (map (fn [[rel _]]
-                              [rel {:self (r/relationship-route rt dto rel)
-                                          :related (r/targets-route rt dto rel)}])
+                              [rel {:self (r/relationship-route ctx dto rel)
+                                          :related (r/targets-route ctx dto rel)}])
                             relationships))]
 
     (assoc-in dto [:relationships] (merge links (get dto :relationships {})))))
 
 (defn add-heads-link
-  [dto rt]
+  [dto ctx]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/FILE-TYPE))
-    (assoc-in dto [:links :heads] (r/heads-route rt dto))
+    (assoc-in dto [:links :heads] (r/heads-route ctx dto))
     dto))
 
 (defn add-zip-link
-  [dto rt]
+  [dto ctx]
   (condp = (:type dto)
-    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route rt dto))
-    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route rt dto))
+    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route ctx dto))
+    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route ctx dto))
     dto))
 
 (defn add-upload-links
-  [dto rt]
+  [dto ctx]
   (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
     (-> dto
-      (assoc-in [:links :upload-complete] (r/upload-complete-route rt dto))
-      (assoc-in [:links :upload-failed] (r/upload-failed-route rt dto)))
+      (assoc-in [:links :upload-complete] (r/upload-complete-route ctx dto))
+      (assoc-in [:links :upload-failed] (r/upload-failed-route ctx dto)))
     dto))
 
 (defn add-self-link
   "Adds self link to dto"
-  [dto rt]
-  (assoc-in dto [:links :self] (r/self-route rt dto)))
+  [dto ctx]
+  (assoc-in dto [:links :self] (r/self-route ctx dto)))
 
 (defn add-annotation-self-link
   "Adds self link to Annotation dto"
-  [dto rt]
+  [dto ctx]
   (let [annotation-key (:annotation_type dto)
         entity-id      (:entity dto)
         annotation-id  (:_id dto)
-        route-name     (keyword (str "delete-" (s/lower-case annotation-key)))]
-    (assoc-in dto [:links :self] (r/named-route rt route-name {:id entity-id :annotation-id annotation-id}))))
+        route-name     (keyword (str "delete-" (s/lower-case annotation-key)))
+        org (::request-context/org ctx)]
+    (assoc-in dto [:links :self] (r/named-route ctx route-name {:org org :id entity-id :annotation-id annotation-id}))))
 
 (defn remove-user-attributes
   "Removes :attributes from User entities"
@@ -86,11 +88,11 @@
     dto))
 
 (defn add-entity-permissions
-  [doc auth teams]
+  [doc ctx teams]
   (-> doc
     (assoc-in [:permissions :create] true)
-    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? ctx ::auth/delete doc))))
 
 (defn convert-file-revision-status
   [doc]
@@ -100,46 +102,49 @@
     doc))
 
 (defn couch-to-entity
-  [auth router & {:keys [teams] :or {teams nil}}]
-  (fn [doc]
-    (case (:error doc)
-      "conflict" (conflict!)
-      "forbidden" (forbidden!)
-      "unauthorized" (unauthorized!)
-      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
-        (-> doc
-          (remove-user-attributes)
-          (dissoc :named_links)                           ;; For v3
-          (dissoc :links)                                 ;; For v3
-          (dissoc :relationships)
-          (add-self-link router)
-          (add-heads-link router)
-          (add-upload-links router)
-          (add-zip-link router)
-          (add-annotation-links router)
-          (add-relationship-links router)
-          (convert-file-revision-status)
-          (assoc-in [:links :_collaboration_roots] collaboration-roots)
-          (add-entity-permissions auth teams))))))
+  [ctx & {:keys [teams] :or {teams nil}}]
+  (let [{auth   :ovation.request-context/auth} ctx]
+    (fn [doc]
+      (case (:error doc)
+        "conflict" (conflict!)
+        "forbidden" (forbidden!)
+        "unauthorized" (unauthorized!)
+        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
+          (-> doc
+            (remove-user-attributes)
+            (dissoc :named_links)                           ;; For v3
+            (dissoc :links)                                 ;; For v3
+            (dissoc :relationships)
+            (dissoc :organization)
+            (add-self-link ctx)
+            (add-heads-link ctx)
+            (add-upload-links ctx)
+            (add-zip-link ctx)
+            (add-annotation-links ctx)
+            (add-relationship-links ctx)
+            (convert-file-revision-status)
+            (assoc-in [:links :_collaboration_roots] collaboration-roots)
+            (add-entity-permissions ctx teams)))))))
 
 
 (defn-traced entities-from-couch
   "Transform couchdb documents."
-  [docs auth router]
-  (let [teams (auth/authenticated-teams auth)
+  [docs ctx]
+  (let [{auth :ovation.request-context/auth} ctx
+        teams (auth/authenticated-teams auth)
         xf    (comp
-                (map (couch-to-entity auth router))
-                (filter #(auth/can? auth ::auth/read % :teams teams)))]
+                (map (couch-to-entity ctx))
+                (filter #(auth/can? ctx ::auth/read % :teams teams)))]
     (sequence xf docs)))
 
 (defn add-value-permissions
-  [doc auth]
+  [doc ctx]
   (-> doc
-    (assoc-in [:permissions :update] (auth/can? auth ::auth/update doc))
-    (assoc-in [:permissions :delete] (auth/can? auth ::auth/delete doc))))
+    (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
+    (assoc-in [:permissions :delete] (auth/can? ctx ::auth/delete doc))))
 
 (defn-traced couch-to-value
-  [auth router]
+  [ctx]
   (fn [doc]
     (case (:error doc)
       "conflict" (conflict! doc)
@@ -147,21 +152,25 @@
       "unauthorized" (unauthorized!)
       (condp = (util/entity-type-name doc)
         c/RELATION-TYPE-NAME (-> doc
-                               (add-self-link router))
+                               (dissoc :organization)
+                               (add-self-link ctx))
         ;(add-value-permissions auth)
 
         c/ANNOTATION-TYPE-NAME (-> doc
-                                 (add-annotation-self-link router)
-                                 (add-value-permissions auth))
+                                 (dissoc :organization)
+                                 (add-annotation-self-link ctx)
+                                 (add-value-permissions ctx))
 
         ;; default
         (-> doc
-          (add-value-permissions auth))))))
+          (dissoc :organization)
+          (add-value-permissions ctx))))))
 
-(defn-traced values-from-couch
+(defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
-  [docs auth router]
-  (let [teams (auth/authenticated-teams auth)]
+  [docs ctx]
+  (let [{auth :ovation.request-context/auth} ctx
+        teams (auth/authenticated-teams auth)]
     (->> docs
-      (map (couch-to-value auth router))
-      (filter #(auth/can? auth ::auth/read % :teams teams)))))
+      (map (couch-to-value ctx))
+      (filter #(auth/can? ctx ::auth/read % :teams teams)))))

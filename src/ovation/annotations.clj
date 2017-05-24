@@ -7,8 +7,9 @@
             [ovation.constants :as k]
             [ovation.util :as util]
             [ovation.html :as html]
-            [ovation.logging :as logging]
+            [clojure.tools.logging :as logging]
             [ovation.transform.read :as read]
+            [ovation.request-context :as request-context]
             [ring.util.http-response :refer [unprocessable-entity! forbidden!]]
             [ovation.constants :as c]
             [ovation.config :as config]))
@@ -16,24 +17,23 @@
 
 ;; READ
 (defn get-annotations
-  [auth ids annotation-type routes]
-  (let [db (couch/db auth)
-        opts {:keys         (vec (map #(vec [% annotation-type]) ids))
+  [ctx db ids annotation-type]
+  (let [opts {:keys         (vec (map #(vec [% annotation-type]) ids))
               :include_docs true
               :reduce       false}]
 
-    (read/values-from-couch (couch/get-view auth db k/ANNOTATIONS-VIEW opts) auth routes)))
+    (read/values-from-couch (couch/get-view ctx db k/ANNOTATIONS-VIEW opts) ctx)))
 
 
 ;; WRITE
-(defn note-text
+(defn sanitized-note-text
   [record]
   (html/escape-html (get-in record [:annotation :text])))
 
 (defn mentions
   "Finds all notified users in note record"
   [note]
-  (let [text (note-text note)
+  (let [text (sanitized-note-text note)
         matches (re-seq #"\{\{user-mention uuid=([^}]+)\}\}([^{]*)\{\{/user-mention\}\}" text)]
     (map (fn [match] {:uuid (second match)
                       :name (last match)}) matches)))
@@ -50,17 +50,20 @@
 
 
 (defn mention-notification-body
-  [user-id entity note-id text]
+  [org-id user-id entity note-id text]
 
   {:user_id user-id
+   :organization_id org-id
    :url (util/join-path [(entity-uri entity) note-id])
    :notification_type k/MENTION_NOTIFICATION
    :body text})
 
 
 (defn send-mention-notification
-  [auth user-id entity note-id text]
-  (let [body    (mention-notification-body user-id entity note-id text)
+  [ctx user-id entity note-id text]
+  (let [{auth ::request-context/auth
+         org ::request-context/org} ctx
+        body    (mention-notification-body org user-id entity note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"
                            "Authorization" (auth/make-bearer auth)}}
@@ -71,11 +74,11 @@
 
 
 (defn notify
-  [auth entity record]
+  [ctx entity record]
   (if (and (= c/ANNOTATION-TYPE (:type record)) (= c/NOTES (:annotation_type record)))
-    (let [text (note-text record)
+    (let [text (sanitized-note-text record)
           user-ids (map :uuid (mentions record))]
-      (dorun (map (fn [u] (send-mention-notification auth u entity (:_id record) text)) user-ids))
+      (dorun (map (fn [u] (send-mention-notification ctx u entity (:_id record) text)) user-ids))
       record)
     record))
 
@@ -96,23 +99,26 @@
      :links           {:_collaboration_roots roots}}))
 
 (defn create-annotations
-  [auth routes ids annotation-type records]
-  (let [auth-user-id (auth/authenticated-user-id auth)
-        entities (core/get-entities auth ids routes)
+  [ctx db ids annotation-type records]
+  (let [{auth ::request-context/auth} ctx
+        auth-user-id (auth/authenticated-user-id auth)
+        entities (core/get-entities ctx db ids)
         entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
         docs (doall (flatten (map (fn [entity]
                                     (map #(make-annotation auth-user-id entity annotation-type %) records))
                                entities)))]
-    (map (fn [doc] (notify auth (get entity-map (:entity doc)) doc)) (core/create-values auth routes docs))))
+    (map (fn [doc] (notify ctx (get entity-map (:entity doc)) doc)) (core/create-values ctx db docs))))
 
 (defn delete-annotations
-  [auth annotation-ids routes]
-  (core/delete-values auth annotation-ids routes))
+  [ctx db annotation-ids]
+  (core/delete-values ctx db annotation-ids))
 
 (defn update-annotation
-  [auth rt id annotation]
+  [ctx db id annotation]
 
-  (let [existing (first (core/get-values auth [id] :routes rt))]
+  (let [{auth ::request-context/auth
+         rt   ::request-context/routes} ctx
+        existing (first (core/get-values ctx db [id] :routes rt))]
 
     (when-not (= (str (auth/authenticated-user-id auth)) (str (:user existing)))
       (forbidden! "Update of an other user's annotations is forbidden"))
@@ -120,13 +126,13 @@
     (when-not (#{k/NOTES} (:annotation_type existing))
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
-    (let [entity (first (core/get-entities auth [(:entity existing)] rt))
+    (let [entity (first (core/get-entities ctx db [(:entity existing)]))
           time     (util/iso-short-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
 
-      (first (map (fn [doc] (notify auth entity doc)) (core/update-values auth rt [update]))))))
+      (first (map (fn [doc] (notify ctx entity doc)) (core/update-values ctx db [update]))))))
 
 
 
