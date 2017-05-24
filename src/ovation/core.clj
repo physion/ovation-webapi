@@ -41,7 +41,7 @@
   [ctx db id & {:keys [include-trashed] :or {include-trashed false}}]
   (first (get-entities ctx db [id] :include-trashed include-trashed)))
 
-(defn-traced get-values
+(defn get-values
   "Get values by ID"
   [ctx db ids & {:keys [routes]}]
   (let [docs (couch/all-docs ctx db ids)]

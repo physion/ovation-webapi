@@ -296,7 +296,7 @@
 
                 (context "/relationships" []
                   :tags ["links"]
-                  :path-params [org :- s/Str]
+                  :path-params [org :- s/Int]
                   (context "/:id" []
                     :path-params [id :- s/Str]
                     (GET "/" request
