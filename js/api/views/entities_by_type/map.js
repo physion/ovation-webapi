@@ -5,7 +5,7 @@ function(doc) {
 
     if (doc.type) {
         if(doc.owner) {
-            emit([doc.owner, doc.type], null);
+            emit([org, doc.owner, doc.type], null);
             if(doc.type === "Project") {
                 emit([org, doc._id, doc.type], null);
             }

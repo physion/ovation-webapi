@@ -157,10 +157,18 @@
 
     (facts "update-metadata"
       (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]
+        (fact "updates file metadata if URL is not ovation.io"
+          (let [revision    {:_id ..id.. :attributes {:url     "https://example.com/rsrc/1"
+                                                      :file_id ..fileid..}}
+                file        {:_id ..fileid..}
+                updated-rev (-> revision
+                              (assoc-in [:attributes :upload-status] k/COMPLETE))]
+            (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.., :result true}
+            (provided
+              (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
+              (core/get-entity ..ctx.. ..db.. ..fileid..) => file
+              (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))
 
-        (fact "returns 422 if URL is not ovation.io"
-          (let [revision {:_id ..id.. :attributes {:url "https://example.com/rsrc/1"}}]
-            (rev/update-metadata ..ctx.. ..db.. revision) => (throws ExceptionInfo)))
 
         (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
           (let [revid       "100"

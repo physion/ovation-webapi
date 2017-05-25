@@ -2,8 +2,8 @@
   (:require [cemerick.url :as url]
             [com.ashafa.clutch :as cl]
             [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
-            [slingshot.slingshot :refer [throw+]]
-            [ovation.auth :as auth]
+            [slingshot.slingshot :refer [throw+ try+]]
+            [ovation.http :as http]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
@@ -13,10 +13,12 @@
             [ovation.util :as util]
             [ring.util.http-response :refer [throw!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [ring.util.http-predicates :as hp]))
 
 
-(def design-doc "api")
+(def API-DESIGN-DOC "api")
+
 
 (defn db
   "Database URL from authorization info"
@@ -40,49 +42,73 @@
             (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
             (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
 
+(def VIEW-PARTITION 500)
 
-(defn-traced get-view
+(defn get-view-batch
+  [view queries tf]
+  (logging/debug (format "get-view-batch %d queries" (count queries)))
+  (let [ch   (chan)
+        body (util/to-json {:queries queries})
+        url  (util/join-path [(config/config :cloudant-db-url) "_design" API-DESIGN-DOC "_view" view])]
+    (http/call-http ch :post url {:body       body
+                                  :headers    {"Content-Type" "application/json; charset=utf-8"
+                                               "Accept"       "application/json"}
+                                  :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
+      :log-response? false)
+    (try+
+      (let [response (<?? ch)
+            results  (:results response)]
+        (sequence tf results))
+      (catch [:type :ring.util.http-response/response] ex
+        (throw! (:response ex))))))
+
+
+(defn get-view
   "Gets the output of a view, passing opts to clutch/get-view. Runs a query for
   each of owner and team ids, prepending to the start and end keys, and taking the aggregate unique results.
 
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [org (::rc/org ctx)
-        tf (if (:include_docs opts)
-             (comp
-               (map :doc)
-               (distinct))
-             (distinct))]
+  (let [org (::rc/org ctx)]
 
     (cl/with-db db
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
-        (let [roots          (conj (rc/team-ids ctx) (rc/user-id ctx))
-              view-calls          (doall (map #(future (cl/get-view design-doc view (prefix-keys opts org %))) roots))
-              merged-results (map deref view-calls)]
-
-          (into '() tf (apply concat merged-results)))
+        (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
+              prefixed-opts (vec (map #(prefix-keys opts org %) roots))
+              tf            (if (:include_docs opts)
+                              (comp
+                                (mapcat :rows)
+                                (map :doc)
+                                (filter #(not (nil? %)))
+                                (distinct))
+                              (distinct))]
+          (get-view-batch view prefixed-opts tf))
 
         ;; [!prefix-teams] Make single call
-        (into '() tf (cl/get-view design-doc view opts))))))
+        (let [tf (if (:include_docs opts)
+                   (comp
+                     (map :doc)
+                     (distinct))
+                   (distinct))]
+          (into '() tf (cl/get-view API-DESIGN-DOC view opts)))))))
 
-(def ALL-DOCS-PARTITION 20)
 
-(defn-traced all-docs
+(defn all-docs
   "Gets all documents with given document IDs"
   [ctx db ids]
-  (let [partitions     (partition-all ALL-DOCS-PARTITION ids)
+  (let [partitions     (partition-all VIEW-PARTITION ids)
         {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
-                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys          p
-                                                                            :include_docs true})))
+                           (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         (map util/jsonify-value p)
+                                                                           :include_docs true})))
                          partitions)]
 
     (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
 
-(defn-traced merge-updates
+(defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
@@ -118,7 +144,7 @@
     (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
-(defn-traced delete-docs
+(defn delete-docs
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))

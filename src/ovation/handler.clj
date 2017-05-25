@@ -111,6 +111,15 @@
                 :summary "Returns all organizations for the authenticated user"
                 (ok (authz/get-organizations authz (request-context/make-context request nil))))
 
+              (POST "/" request
+                :name :post-organization
+                :return {:organization Organization}
+                :body [body {:organization NewOrganization}]
+                :summary "Create a new Organization"
+                (let [ctx (request-context/make-context request nil)
+                      org (authz/create-organization authz ctx body)]
+                  (created (get-in org [:organization :links :self]) org)))
+
               (context "/:org" []
                 :path-params [org :- s/Int]
 
@@ -565,10 +574,11 @@
                   (GET "/" request
                     :query-params [id :- s/Str]
                     :name :get-breadcrumbs
-                    :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str}]]}
+                    :return {:breadcrumbs [[{:type s/Str :id s/Uuid :name s/Str :organization Id}]]}
                     :summary "Gets the breadcrumbs for an entity."
                     (let [ctx    (request-context/make-context request org)
                           result (breadcrumbs/get-breadcrumbs ctx db [id])]
+                      (println result)
                       (ok {:breadcrumbs (get result id)})))
 
                   (POST "/" request
@@ -608,6 +618,7 @@
                                                :owner         s/Uuid
                                                :updated-at    (s/maybe s/Str) ;; allow nil updated-at
                                                :project_names [s/Str]
+                                               :organization  Id
                                                :links         {:breadcrumbs s/Str}}]
                              :meta           {:bookmark   s/Str
                                               :total_rows s/Int}}

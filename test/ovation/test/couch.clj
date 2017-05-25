@@ -32,7 +32,7 @@
     (fact "it returns CouchDB view result docs when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [{:doc ..result..}]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}))
 
     (fact "it returns CouchDB view result docs for multi-tenant views when include_docs=true"
@@ -41,46 +41,32 @@
                                              :include_docs true}) => [..other.. ..result..]
       (provided
         ..ctx.. =contains=> {::rc/org ..org..}
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..user.. ..start..]
-                                                :endkey       [..org.. ..user.. ..end..]
-                                                :include_docs true}) => [{:doc ..result..}]
-        (cl/get-view couch/design-doc ..view.. {:startkey     [..org.. ..team.. ..start..]
-                                                :endkey       [..org.. ..team.. ..end..]
-                                                :include_docs true}) => [{:doc ..result..} {:doc ..other..}]))
+        (couch/get-view-batch ..view.. [{:startkey     [..org.. ..team.. ..start..]
+                                         :endkey       [..org.. ..team.. ..end..]
+                                         :include_docs true}
+                                        {:startkey     [..org.. ..user.. ..start..]
+                                         :endkey       [..org.. ..user.. ..end..]
+                                         :include_docs true}] anything) => [..other.. ..result..]))
 
     (fact "it returns CouchDB view result directly when include_docs not expclicity provided (default false)"
       (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [..result..]
         ..opts.. =contains=> {}))
 
     (fact "it returns CouchDB view result directly when include_docs=false"
       (couch/get-view ..auth.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
       (provided
-        (cl/get-view couch/design-doc ..view.. ..opts..) => [..result..]
+        (cl/get-view couch/API-DESIGN-DOC ..view.. ..opts..) => [..result..]
         ..opts.. =contains=> {:include_docs false})))
 
   (facts "About all-docs"
     (fact "it gets docs from _all_docs"
-      (couch/all-docs ..ctx.. ..db.. ..ids..) => '(..doc..)
+      (couch/all-docs ..ctx.. ..db.. [..id..]) => '(..doc..)
       (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         ..ids..
+        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         [..id..]
                                                         :include_docs true}) => [..doc..]
-        (partition-all couch/ALL-DOCS-PARTITION ..ids..) => [..ids..]))
-
-    (fact "it handles 20 ids"
-      (couch/all-docs ..ctx.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
-      (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-                                                         :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]))
-
-    (fact "it handles >20 ids"
-      (couch/all-docs ..ctx.. ..db.. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]
-      (provided
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-                                                         :include_docs true}) => [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
-        (couch/get-view ..ctx.. ..db.. k/ALL-DOCS-VIEW {:keys         '(21)
-                                                         :include_docs true}) => [21])))
+        (partition-all couch/VIEW-PARTITION [..id..]) => [[..id..]])))
 
 
 

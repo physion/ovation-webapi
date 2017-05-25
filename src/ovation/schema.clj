@@ -36,8 +36,9 @@
 (s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type (s/eq k/PROPERTIES)
                                                       :annotation      PropertyRecord}))
 
-(s/defschema NoteRecord {:text      s/Str
-                         :timestamp s/Str})
+(s/defschema NoteRecord {:text                             s/Str
+                         (s/optional-key :organization_id) Id
+                         :timestamp                        s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type (s/eq k/NOTES)
                                                   :annotation      NoteRecord
                                                   (s/optional-key :edited_at) s/Str}))
@@ -219,13 +220,19 @@
 
 
 ;; -- Organizations -- ;;
+(s/defschema NewOrganization
+  {:type     (s/eq "Organization")
+   :name     s/Str
+   s/Keyword s/Any})
+
 (s/defschema Organization
-  {:id                        Id
-   :type                      (s/eq "Organization")
-   :uuid                      s/Uuid
-   :name                      s/Str
-   (s/optional-key :is_admin) s/Bool
-   :links                     {:self                                      s/Str
+  {:id                                        Id
+   :type                                      (s/eq "Organization")
+   :uuid                                      s/Uuid
+   :name                                      s/Str
+   (s/optional-key :is_admin)                 s/Bool
+   (s/optional-key :research_subscription_id) Id
+   :links                                     {:self                                      s/Str
                                (s/optional-key :projects)                 s/Str
                                (s/optional-key :organization-memberships) s/Str ;;FIX dash
                                (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
@@ -263,9 +270,9 @@
 
 ;; -- Organization group memberships -- ;;
 (s/defschema NewOrganizationGroupMembership
-  {:type                       (s/eq "OrganizationGroupMembership")
+  {:type                       (s/eq "GroupMembership")
    :organization_membership_id Id
-   :group_id                   Id
+   :organization_group_id      Id
    (s/optional-key :links)     {:self s/Str}})
 
 (s/defschema OrganizationGroupMembership

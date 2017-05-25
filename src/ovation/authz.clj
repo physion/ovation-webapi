@@ -8,6 +8,7 @@
 (defprotocol AuthzApi
   "Authorization service"
   (get-organizations [this ctx])
+  (create-organization [this ctx body])
   (get-organization [this ctx])
   (update-organization [this ctx body])
 
@@ -45,6 +46,11 @@
   ;; ORGANIZATIONS
   (get-organizations [this ctx]
     (organizations/get-organizations* ctx (:v2-url this)))
+  (create-organization [this ctx body]
+    (let [ch (chan)]
+      (organizations/create-organization ctx (:v2-url this) (:organization body) ch)
+      (let [new-org (<?? ch)]
+        {:organization new-org})))
   (get-organization [this ctx]
     (organizations/get-organization* ctx (:v2-url this)))
   (update-organization [this ctx body]
