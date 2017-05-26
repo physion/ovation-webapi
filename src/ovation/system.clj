@@ -63,7 +63,7 @@
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
-      :pubsub (pubsub/new-pubsub (:project-id pubsub) (:topic pubsub))
+      :pubsub (pubsub/new-pubsub (:project-id pubsub))
       :api (component/using
              (new-api)
              {:db     :database

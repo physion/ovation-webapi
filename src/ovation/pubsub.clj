@@ -79,6 +79,5 @@
       (shutdown publisher))
     (assoc this :publisher nil)))
 
-(defn new-pubsub [project-id topic]
-  (map->PubSub {:project-id project-id
-                :topic      topic}))
+(defn new-pubsub [project-id]
+  (map->PubSub {:project-id project-id}))
