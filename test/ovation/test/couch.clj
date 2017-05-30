@@ -79,9 +79,9 @@
         (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
                        (async/timeout 100)]) => [..result.. ch]
         (provided
-          (pubsub/publish ..pub.. :db-updates {:id   ..id..
-                                               :rev  ..rev..
-                                               :type ..type..} anything) => pchan
+          (pubsub/publish ..pub.. :updates {:id   ..id..
+                                            :rev  ..rev..
+                                            :type ..type..} anything) => pchan
           ..doc.. =contains=> {:_id  ..id..
                                :_rev ..rev..
                                :type ..type..}))))

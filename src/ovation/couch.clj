@@ -120,7 +120,7 @@
                    {:id   (:_id doc)
                     :rev  (:_rev doc)
                     :type (:type doc)})
-        topic    (config/config :db-updates-topic :default :db-updates)
+        topic    (config/config :db-updates-topic :default :updates)
         channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
 
     (async/pipe (async/merge channels) channel close?)))
