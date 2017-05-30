@@ -1,14 +1,13 @@
 (ns ovation.test.couch
   (:use midje.sweet)
-  (:require [cemerick.url :as url]
-            [ovation.couch :as couch]
-            [clojure.core.async :refer [chan <!!] :as async]
+  (:require [ovation.couch :as couch]
+            [clojure.core.async :refer [chan <!! >!!] :as async]
             [com.ashafa.clutch :as cl]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
-            [ovation.config :as config]
             [ovation.request-context :as rc]
-            [ovation.pubsub :as pubsub]))
+            [ovation.pubsub :as pubsub]
+            [ovation.util :as util]))
 
 
 (against-background [(rc/team-ids ..ctx..) => [..team..]
@@ -69,14 +68,23 @@
         ..db.. =contains=> {:connection "db-url"
                             :publisher  ..pub..}
         (cl/bulk-update ..docs..) => ..revs..
-        (couch/publish-updates ..pub.. ..revs..) => ..published..
+        (couch/publish-updates ..pub.. ..revs.. :channel anything) => ..published..
         (couch/merge-updates ..docs.. ..revs..) => ..result..)))
 
   (facts "About publish-updates"
-    (fact "publishes to :all-updates"
-      (first (async/alts!! [(couch/publish-updates ..pub.. [..doc..]) (async/timeout 100)])) => [..doc..]
-      (provided
-        )))
+    (fact "publishes update record to publisher"
+      (let [ch    (chan)
+            pchan (chan)
+            _     (async/onto-chan pchan [..result..])]
+        (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
+                       (async/timeout 100)]) => [..result.. ch]
+        (provided
+          (pubsub/publish-message ..pub.. {:id   ..id..
+                                           :rev  ..rev..
+                                           :type ..type..}) => pchan
+          ..doc.. =contains=> {:_id  ..id..
+                               :_rev ..rev..
+                               :type ..type..}))))
 
   (facts "About `delete-docs`"
     (fact "it POSTs bulk-update"

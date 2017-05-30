@@ -14,7 +14,8 @@
             [ring.util.http-response :refer [throw!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [clojure.tools.logging :as logging]
-            [ring.util.http-predicates :as hp]))
+            [ring.util.http-predicates :as hp]
+            [ovation.pubsub :as pubsub]))
 
 
 (def API-DESIGN-DOC "api")
@@ -113,10 +114,15 @@
       docs)))
 
 (defn publish-updates
-  [publisher bulk-results & {:keys [ch] :or {ch (chan)}}]
-  (go
-    (>! ch bulk-results))
-  ch)
+  [publisher docs & {:keys [channel close?] :or {channel (chan)
+                                                 close?  true}}]
+  (let [msg-fn   (fn [doc]
+                   {:id   (:_id doc)
+                    :rev  (:_rev doc)
+                    :type (:type doc)})
+        channels (map #(pubsub/publish-message publisher (msg-fn %)) docs)]
+
+    (async/pipe (async/merge channels) channel close?)))
 
 (defn-traced bulk-docs
   "Creates or updates documents"
@@ -124,8 +130,11 @@
   (let [{publisher  :publisher
          connection :connection} db]
     (cl/with-db connection
-      (let [bulk-results (cl/bulk-update docs)]
-        (publish-updates publisher bulk-results)
+      (let [bulk-results (cl/bulk-update docs)
+            pub-ch       (chan (count bulk-results))]
+        (publish-updates publisher bulk-results :channel pub-ch)
+        ;(util/drain! pub-ch)
+
         (merge-updates docs bulk-results)))))
 
 (defn changes

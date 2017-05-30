@@ -1,7 +1,7 @@
 (ns ovation.pubsub
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as logging]
-            [clojure.core.async :refer [go >! >!! chan]]
+            [clojure.core.async :refer [go >! >!! chan close!]]
             [ovation.util :as util])
   (:import (com.google.pubsub.v1 TopicName PubsubMessage)
            (com.google.cloud.pubsub.spi.v1 Publisher)
@@ -12,16 +12,23 @@
 (defn make-publisher
   [project-id topic-name]
   (let [tn (TopicName/create project-id topic-name)]
-    (doto (Publisher/defaultBuilder tn)
+    (-> (Publisher/defaultBuilder tn)
       (.build))))
 
 (defn future-to-ch
-  [ch]
+  [ch & {:keys [close?] :or {close? false}}]
   (reify ApiFutureCallback
     (onSuccess [_ result]
-      (go (>! ch result)))
+      (go
+        (>! ch result)
+        (if close?
+          (close! ch))))
     (onFailure [_ throwable]
-      (go (>! ch throwable)))))
+      (logging/error throwable "Error publishing to pubsub")
+      (go
+        (>! ch throwable)
+        (if close?
+          (close! ch))))))
 
 (defn make-msg
   [message]
@@ -37,13 +44,14 @@
   (ApiFutures/addCallback future callback))
 
 (defn publish-message
-  [publisher message & {:keys [msg-ch] :or {msg-ch (chan)}}]
+  [publisher message & {:keys [channel close?] :or {channel (chan)
+                                                    close?  false}}]
 
   (let [msg           (make-msg message)
         msg-id-future (send-msg publisher msg)]
 
-    (add-api-callback msg-id-future (future-to-ch msg-ch))
-    msg-ch))
+    (add-api-callback msg-id-future (future-to-ch channel :close? close?))
+    channel))
 
 (defprotocol Topics
   "Publish messages via PubSub"
