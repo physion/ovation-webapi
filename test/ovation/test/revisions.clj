@@ -10,7 +10,9 @@
             [ovation.config :as config]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util]
-            [ovation.transform.read :as tr])
+            [ovation.transform.read :as tr]
+            [ovation.pubsub :as pubsub]
+            [clojure.core.async :as async])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn sling-throwable
@@ -156,22 +158,29 @@
               (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..])))))
 
     (facts "update-metadata"
-      (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]
-        (fact "updates file metadata if URL is not ovation.io"
-          (let [revision    {:_id ..id.. :attributes {:url     "https://example.com/rsrc/1"
+      (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"
+                           ..db.. =contains=> {:pubsub {:publisher ..publisher..}}]
+
+        (fact "updates file metadata if URL is not ovation.io and publishes :revisions message [#145319005]"
+          (let [c           (async/chan)
+                revision    {:_id ..id.. :attributes {:url     "https://example.com/rsrc/1"
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 updated-rev (-> revision
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.., :result true}
+            (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
               (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-              (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))
+              (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                        :rev  ..rev..
+                                                        :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
+              (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid..}])))
 
 
-        (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
-          (let [revid       "100"
+        (fact "updates metadata from Rails and sets file=>revision status to COMPLETE and publishes :revisions message [#145319005]"
+          (let [c           (async/chan)
+                revid       "100"
                 revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
@@ -184,14 +193,18 @@
                                                                                                                {:status 200
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
-              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :result true}
+              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
+                (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                          :rev  ..rev..
+                                                          :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))
+                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid.. :_rev ..filerev.. :type k/FILE-TYPE}]))))
 
         (fact "skips metadata from Rails and sets file=>revision status to COMPLETE if rails response is not 200 [#136329619]"
-          (let [revid       "100"
+          (let [c           (async/chan)
+                revid       "100"
                 revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
@@ -203,11 +216,14 @@
                                                                                                                {:status 500
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
-              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :result true}
+              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
+                (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                          :rev  ..rev..
+                                                          :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))))
+                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid..}]))))))
 
 
     (facts "record-upload-failure"

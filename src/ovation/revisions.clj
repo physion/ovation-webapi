@@ -13,7 +13,9 @@
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.transform.read :as tr]
             [clojure.tools.logging :as logging]
-            [ovation.request-context :as request-context]))
+            [ovation.request-context :as request-context]
+            [ovation.pubsub :as pubsub]
+            [clojure.core.async :as async]))
 
 (defn-traced get-head-revisions
   "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
@@ -118,7 +120,14 @@
   (doall (map #(make-resource ctx %) revisions)))           ;;TODO this would be much better as core.async channel
 
 
-(defn-traced update-metadata
+(defn publish-revision
+  [db doc]
+  (let [publisher (get-in db [:pubsub :publisher])
+        topic     (config/config :revisions-topic :default :revisions)]
+    (pubsub/publish publisher topic {:id   (:_id doc)
+                                     :rev  (:_rev doc)
+                                     :type (:type doc)} (async/chan))))
+(defn update-metadata
   [ctx db revision & {:keys [complete] :or {complete true}}]
 
   (if (re-find #"ovation.io" (get-in revision [:attributes :url]))
@@ -139,9 +148,12 @@
                                (assoc-in [:attributes :upload-status] k/COMPLETE))
             updates          (if file
                                [updated-revision (update-file-status file [revision] k/COMPLETE)]
-                               [updated-revision])]
-        (first (filter #(= (:_id %) (:_id revision))
-                 (core/update-entities ctx db updates :allow-keys [:revisions])))))
+                               [updated-revision])
+            update-result    (first (filter #(= (:_id %) (:_id revision))
+                                      (core/update-entities ctx db updates :allow-keys [:revisions])))]
+
+        (publish-revision db update-result)
+        update-result))
 
     ;; Remote resource
     (let [file (if complete
@@ -151,9 +163,12 @@
       (when file
         (let [updated-revision (-> revision
                                  (assoc-in [:attributes :upload-status] k/COMPLETE))
-              updates [updated-revision (update-file-status file [revision] k/COMPLETE)]]
-          (first (filter #(= (:_id %) (:_id revision))
-                   (core/update-entities ctx db updates :allow-keys [:revisions]))))))))
+              updates          [updated-revision (update-file-status file [revision] k/COMPLETE)]
+              update-result    (first (filter #(= (:_id %) (:_id revision))
+                                        (core/update-entities ctx db updates :allow-keys [:revisions])))]
+
+          (publish-revision db update-result)
+          update-result)))))
 
 
 (defn-traced record-upload-failure

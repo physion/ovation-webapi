@@ -2,14 +2,14 @@
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as logging]
             [ovation.handler :as handler]
+            [ovation.pubsub :as pubsub]
             (system.components
-              [http-kit :as system-http-kit]
-              [jetty :as system-jetty])
+              [http-kit :as system-http-kit])
             [cemerick.url :as url]
             [ovation.authz :as authz]))
 
 ;; Database
-(defrecord CouchDb [host username password connection]
+(defrecord CouchDb [host username password pubsub connection]
   component/Lifecycle
 
   (start [this]
@@ -56,13 +56,16 @@
 
 ;; System
 (defn create-system [config-options]
-  (let [{:keys [web db authz]} config-options]
+  (let [{:keys [web db authz pubsub]} config-options]
     (component/system-map
-      :database (new-database (:host db) (:username db) (:password db))
+      :database (component/using
+                  (new-database (:host db) (:username db) (:password db))
+                  {:pubsub :pubsub})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
       :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
+      :pubsub (pubsub/new-pubsub (:project-id pubsub))
       :api (component/using
              (new-api)
              {:db    :database

@@ -47,7 +47,7 @@
   (route/resources "/public"))
 
 (defn create-app [database authz]
-  (let [db (:connection database)]
+  (let [db database]
     (api
       {:swagger {:ui   "/"
                  :spec "/swagger.json"

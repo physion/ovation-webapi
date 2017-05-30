@@ -1,31 +1,18 @@
 (ns ovation.test.couch
   (:use midje.sweet)
-  (:require [cemerick.url :as url]
-            [ovation.couch :as couch]
-            [clojure.core.async :refer [chan <!!]]
+  (:require [ovation.couch :as couch]
+            [clojure.core.async :refer [chan <!! >!!] :as async]
             [com.ashafa.clutch :as cl]
-            [ovation.auth :as auth]
+            [ovation.util :refer [<??]]
             [ovation.constants :as k]
-            [ovation.config :as config]
-            [ovation.request-context :as rc]))
-
-(facts "About `db`"
-  (fact "it constructs database URL"
-    (let [dburl "https://db.db"
-          username "db-user"
-          password "db-pass"]
-
-      (couch/db ..auth..) => (-> (url/url dburl)
-                                 (assoc :username username
-                                        :password password))
-      (provided
-        (config/config :cloudant-db-url) => dburl
-        (config/config :cloudant-username) => username
-        (config/config :cloudant-password) => password))))
+            [ovation.request-context :as rc]
+            [ovation.pubsub :as pubsub]
+            [ovation.util :as util]))
 
 
 (against-background [(rc/team-ids ..ctx..) => [..team..]
-                     (rc/user-id ..ctx..) => ..user..]
+                     (rc/user-id ..ctx..) => ..user..
+                     ..db.. =contains=> {:connection ..db..}]
 
   (facts "About `get-view`"
     (fact "it returns CouchDB view result docs when include_docs=true"
@@ -74,7 +61,30 @@
       (couch/bulk-docs "dburl" ..docs..) => ..result..
       (provided
         (cl/bulk-update ..docs..) => ..revs..
+        (couch/merge-updates ..docs.. ..revs..) => ..result..))
+    (fact "it publishes updates"
+      (couch/bulk-docs ..db.. ..docs..) => ..result..
+      (provided
+        ..db.. =contains=> {:connection "db-url"
+                            :pubsub     {:publisher ..pub..}}
+        (cl/bulk-update ..docs..) => ..revs..
+        (couch/publish-updates ..pub.. ..revs.. :channel anything) => ..published..
         (couch/merge-updates ..docs.. ..revs..) => ..result..)))
+
+  (facts "About publish-updates"
+    (fact "publishes update record to publisher"
+      (let [ch    (chan)
+            pchan (chan)
+            _     (async/onto-chan pchan [..result..])]
+        (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
+                       (async/timeout 100)]) => [..result.. ch]
+        (provided
+          (pubsub/publish ..pub.. :updates {:id   ..id..
+                                            :rev  ..rev..
+                                            :type ..type..} anything) => pchan
+          ..doc.. =contains=> {:_id  ..id..
+                               :_rev ..rev..
+                               :type ..type..}))))
 
   (facts "About `delete-docs`"
     (fact "it POSTs bulk-update"
