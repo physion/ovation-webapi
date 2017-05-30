@@ -120,15 +120,17 @@
                    {:id   (:_id doc)
                     :rev  (:_rev doc)
                     :type (:type doc)})
-        channels (map #(pubsub/publish-message publisher (msg-fn %)) docs)]
+        topic    (config/config :db-updates-topic :default :db-updates)
+        channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
 
     (async/pipe (async/merge channels) channel close?)))
 
 (defn-traced bulk-docs
   "Creates or updates documents"
   [db docs]
-  (let [{publisher  :publisher
-         connection :connection} db]
+  (let [{pubsub     :pubsub
+         connection :connection} db
+        publisher (:publisher pubsub)]
     (cl/with-db connection
       (let [bulk-results (cl/bulk-update docs)
             pub-ch       (chan (count bulk-results))]

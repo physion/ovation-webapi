@@ -46,7 +46,7 @@
 (defroutes static-resources
   (route/resources "/public"))
 
-(defn create-app [database authz pubsub]
+(defn create-app [database authz]
   (let [db database]
     (api
       {:swagger {:ui   "/"

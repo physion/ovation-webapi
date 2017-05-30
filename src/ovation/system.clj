@@ -9,7 +9,7 @@
             [ovation.authz :as authz]))
 
 ;; Database
-(defrecord CouchDb [host username password connection]
+(defrecord CouchDb [host username password pubsub connection]
   component/Lifecycle
 
   (start [this]
@@ -27,12 +27,12 @@
 
 
 ;; API
-(defrecord Api [db authz pubsub]
+(defrecord Api [db authz]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db authz pubsub)))
+    (assoc this :handler (handler/create-app db authz)))
 
   (stop [this]
     (logging/info "Stopping API")
@@ -58,7 +58,9 @@
 (defn create-system [config-options]
   (let [{:keys [web db authz pubsub]} config-options]
     (component/system-map
-      :database (new-database (:host db) (:username db) (:password db))
+      :database (component/using
+                  (new-database (:host db) (:username db) (:password db))
+                  {:pubsub :pubsub})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
@@ -66,6 +68,5 @@
       :pubsub (pubsub/new-pubsub (:project-id pubsub))
       :api (component/using
              (new-api)
-             {:db     :database
-              :authz  :authz
-              :pubsub :pubsub}))))
+             {:db    :database
+              :authz :authz}))))

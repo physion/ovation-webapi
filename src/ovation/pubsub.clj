@@ -11,7 +11,7 @@
 
 (defn make-publisher
   [project-id topic-name]
-  (let [tn (TopicName/create project-id topic-name)]
+  (let [tn (TopicName/create project-id (name topic-name))]
     (-> (Publisher/defaultBuilder tn)
       (.build))))
 
@@ -55,18 +55,18 @@
 
 (defprotocol Topics
   "Publish messages via PubSub"
-  (publish [this topic msg result-ch])
+  (publish [this topic msg ch])
   (shutdown [this]))
 
 (defrecord TopicPublisher [topics]
   Topics
-  (publish [this topic msg result-ch]
+  (publish [this topic msg ch]
     (when-not (get this [:topics topic])
       (let [publisher (make-publisher (:project-id this) topic)]
         (update-in this [:topics] assoc topic publisher)))
 
     (if-let [publisher (get-in this [:topics topic])]
-      (publish-message publisher msg result-ch)))
+      (publish-message publisher msg :channel ch)))
 
   (shutdown [this]
     (if-let [publishers (:topics this)]

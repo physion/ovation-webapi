@@ -66,7 +66,7 @@
       (couch/bulk-docs ..db.. ..docs..) => ..result..
       (provided
         ..db.. =contains=> {:connection "db-url"
-                            :publisher  ..pub..}
+                            :pubsub     {:publisher ..pub..}}
         (cl/bulk-update ..docs..) => ..revs..
         (couch/publish-updates ..pub.. ..revs.. :channel anything) => ..published..
         (couch/merge-updates ..docs.. ..revs..) => ..result..)))
@@ -79,9 +79,9 @@
         (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
                        (async/timeout 100)]) => [..result.. ch]
         (provided
-          (pubsub/publish-message ..pub.. {:id   ..id..
-                                           :rev  ..rev..
-                                           :type ..type..}) => pchan
+          (pubsub/publish ..pub.. :db-updates {:id   ..id..
+                                               :rev  ..rev..
+                                               :type ..type..} anything) => pchan
           ..doc.. =contains=> {:_id  ..id..
                                :_rev ..rev..
                                :type ..type..}))))
