@@ -56,7 +56,7 @@
   [ctx]
   (fn [team]
     (let [team-id            (:id team)
-          memberships        (get-in team [:team :memberships])
+          memberships        (:memberships team)
           linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (::rc/org ctx)})) memberships)]
       (-> team
         (assoc :type k/TEAM-TYPE)
@@ -98,11 +98,11 @@
       (get-team ctx team-id team-ch)
       (let [team (<! team-ch)]
         (if (util/exception? team)
-          (if (hp/not-found? team)
+          (if (hp/not-found? (:response team))
             (>! ch (create-team ctx team-id))
             (>! ch team))
-          (>! ch team)))
-      (<?? ch))))
+          (>! ch team))))
+    {:team (<?? ch)}))
 
 
 (defn put-membership*
@@ -144,7 +144,7 @@
         (if (util/exception? team)
           (>! ch team)
 
-          (let [team-id (get-in team [:team :id])
+          (let [team-id (:id team)
                 role    (:role membership)
                 email   (:email membership)
                 body    {:membership {:team_id team-uuid

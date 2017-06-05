@@ -25,7 +25,7 @@
           (fact "calls /teams"
             @(teams/get-teams ..apikey..) => {:team_uuids teams}))))
 
-    (facts "get-team*"
+    (facts "get-team* "
       (against-background []
         (let [team-id    (str (util/make-uuid))
               team-url   (util/join-path [config/TEAMS_SERVER "teams" team-id])
@@ -77,9 +77,9 @@
                                                         :type                "Membership"
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]
-                                                        :links               {:self ..membership-url..}}]
-                                 :links               {:self        ..self-url..
-                                                       :memberships ..membership-url..}}}]
+                                                        :links               {:self "membership-self"}}]
+                                 :links               {:self        "team-self"
+                                                       :memberships "team-memberships"}}}]
 
           (fact "should return existing team"
             (with-fake-http [team-url {:status 200
@@ -87,16 +87,16 @@
 
               (teams/get-team* ..ctx.. team-id) => expected
               (provided
-                (request-context/token ..ctx..) => ..token..
-                (routes/named-route ..ctx.. :get-team {:id team-id :org ..org..}) => ..self-url..
-                (routes/named-route ..ctx.. :post-memberships {:id team-id :org ..org..}) => ..membership-url..
-                (routes/named-route ..ctx.. :put-membership {:id team-id :mid "3" :org ..org..}) => ..membership-url..)))
+                (routes/named-route ..ctx.. :get-team {:id "1" :org ..org..}) => "team-self"
+                (routes/named-route ..ctx.. :post-memberships {:id "1" :org ..org..}) => "team-memberships"
+                (routes/named-route ..ctx.. :put-membership {:id "1" :mid "3" :org ..org..}) => "membership-self")))
 
           (fact "should create new team when it doesn't exist yet"
             (with-fake-http [team-url {:status 404}]
-              (get-in (teams/get-team* ..ctx.. team-id) [:team :type]) => "Team"
+              (get-in (teams/get-team* ..ctx.. team-id) [:team :type]) => nil
               (provided
-                (teams/create-team ..ctx.. team-id) => {:team {:id ..id..}})))
+                (teams/create-team ..ctx.. team-id) => {:team {:id   ..id..
+                                                               :type "Team"}})))
 
           (fact "should throw! other response codes"
             (with-fake-http [team-url {:status 401}]
@@ -117,24 +117,23 @@
               membership      {:email user-email
                                :role  {:id 1}}]
 
-          (against-background [(routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id :org ..org..}) => membership-url
-                               (routes/named-route ..ctx.. :get-team {:id team-uuid}) => team-url
-                               (routes/named-route ..ctx.. :post-memberships {:id team-uuid}) => memberships-url]
-            (fact "creates membership for existing team"
-              (with-fake-http [team-url {:status 200
-                                         :body   (util/to-json team)}
-                               {:url memberships-url :method :post} {:status 201
-                                                                     :body   (util/to-json {:membership {:id      membership-id
-                                                                                                         :team_id team-id
-                                                                                                         :email   user-email
-                                                                                                         :role_id 1}})}]
-                (teams/post-membership* ..ctx.. team-uuid membership) => {:membership {:email   user-email,
-                                                                                           :id      "1",
-                                                                                           :links   {:self membership-url},
-                                                                                           :role_id 1,
-                                                                                           :team_id team-id}}
-                (provided
-                  (teams/get-team* ..ctx.. team-uuid) => {:team {:id team-id}})))))))
+          (fact "creates membership for existing team"
+            (with-fake-http [team-url {:status 200
+                                       :body   (util/to-json team)}
+                             {:url memberships-url :method :post} {:status 201
+                                                                   :body   (util/to-json {:membership {:id      membership-id
+                                                                                                       :team_id team-id
+                                                                                                       :email   user-email
+                                                                                                       :role_id 1}})}]
+              (teams/post-membership* ..ctx.. team-uuid membership) => {:membership {:email   user-email,
+                                                                                     :id      "1",
+                                                                                     :links   {:self membership-url},
+                                                                                     :role_id 1,
+                                                                                     :team_id team-id}}
+              (provided
+                (routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id :org ..org..}) => membership-url
+                (routes/named-route ..ctx.. :get-team {:id team-uuid :org ..org..}) => team-url
+                (routes/named-route ..ctx.. :post-memberships {:id team-uuid :org ..org..}) => memberships-url))))))
 
     (facts "create-team"
       (against-background [..ctx.. =contains=> {::request-context/org ..org..}
