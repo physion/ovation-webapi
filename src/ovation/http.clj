@@ -56,7 +56,9 @@
     (if (util/exception? response)
       response
       (let [entities (key response)]
-        (map (make-tf ctx) entities)))))
+        (if make-tf
+          (map (make-tf ctx) entities)
+          entities)))))
 
 (defn read-single-tf
   [ctx key make-tf]
@@ -64,9 +66,10 @@
     (fn [response]
       (if (util/exception? response)
         response
-        (let [obj    (key response)
-              result (tf obj)]
-          result)))))
+        (let [obj    (if key (key response) response)]
+          (if tf
+            (tf obj)
+            obj))))))
 
 (defn index-resource
   [ctx api-url rsrc ch & {:keys [close? response-key make-tf query-params] :or {close?       true
@@ -137,7 +140,7 @@
           (>! ch ex))))))
 
 (defn destroy-resource
-  [ctx api-url rsrc id ch & {:keys [close? response-key make-tf] :or {close? true}}]
+  [ctx api-url rsrc id ch & {:keys [close?] :or {close? true}}]
   (let [url    (make-url api-url rsrc id)
         opts   (request-opts ctx)]
     (go

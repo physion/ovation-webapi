@@ -3,7 +3,8 @@
             [clojure.tools.logging :as logging]
             [com.stuartsierra.component :as component]
             [clojure.core.async :refer [chan]]
-            [ovation.util :refer [<??]]))
+            [ovation.util :refer [<??]]
+            [ovation.teams :as teams]))
 
 (defprotocol AuthzApi
   "Authorization service"
@@ -11,6 +12,8 @@
   (create-organization [this ctx body])
   (get-organization [this ctx])
   (update-organization [this ctx body])
+
+  (get-authorizations [this ctx])
 
   (get-organization-memberships [this ctx])
   (create-organization-membership [this ctx body])
@@ -147,6 +150,12 @@
   (delete-organization-group-membership [this ctx id]
     (let [ch (chan)]
       (organizations/delete-group-membership ctx (:v2-url this) id ch)
+      (let [result (<?? ch)]
+        result)))
+
+  (get-authorizations [this ctx]
+    (let [ch (chan)]
+      (teams/get-authorizations ctx (:v2-url this) ch)      ;;TODO
       (let [result (<?? ch)]
         result))))
 

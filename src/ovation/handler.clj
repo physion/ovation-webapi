@@ -135,6 +135,14 @@
                   :summary "Get an Organization"
                   (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
+                (context "/authorizations" []
+                  :tags ["teams"]
+                  (GET "/" request
+                    :name :get-authorizations
+                    :return {}
+                    :summary "Get current user's authorizations"
+                    (ok (authz/get-authorizations authz (request-context/make-context request org)))))
+
                 (context "/memberships" []
                   :tags ["admin"]
                   (GET "/" request

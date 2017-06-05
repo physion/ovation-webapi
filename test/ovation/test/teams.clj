@@ -137,18 +137,24 @@
                   (teams/get-team* ..ctx.. team-uuid) => {:team {:id team-id}})))))))
 
     (facts "create-team"
-      (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                           ..request.. =contains=> {:identity ..auth..}
-                           (request-context/router ..request..) => ..rt..
+      (against-background [..ctx.. =contains=> {::request-context/org ..org..}
                            (routes/named-route ..ctx.. :post-teams {}) => teams-url]
-        (let [team-id   (str (util/make-uuid))
-              teams-url (util/join-path [config/TEAMS_SERVER "teams"])
-              team      {:team {:id          team-id
-                                :memberships []}}]
+        (let [team-id        (str (util/make-uuid))
+              teams-url      (util/join-path [config/TEAMS_SERVER "teams"])
+              team-rt        "team-route"
+              memberships-rt "memberships-route"
+              team           {:team {:id          team-id
+                                     :memberships []
+                                     :type        "Team"
+                                     :links       {:memberships memberships-rt
+                                                   :self        team-rt}}}]
           (fact "creates team"
             (with-fake-http [{:url teams-url :method :post} {:status 201
                                                              :body   (util/to-json team)}]
-              (teams/create-team ..ctx.. team-id) => team))
+              (teams/create-team ..ctx.. team-id) => team
+              (provided
+                (routes/named-route ..ctx.. :get-team {:id team-id :org ..org..}) => team-rt
+                (routes/named-route ..ctx.. :post-memberships {:id team-id :org ..org..}) => memberships-rt)))
 
           (fact "throws! responses not 201"
             (with-fake-http [{:url teams-url :method :post} {:status 401}]
