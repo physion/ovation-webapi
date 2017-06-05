@@ -74,7 +74,8 @@
                                {:name "zip" :description "Download ZIP archive"}
                                {:name "admin" :description "Manage organizations and groups"}
                                {:name "organizations" :description "Organizations"}
-                               {:name "groups" :description "User Groups within an Organization"}]}}}
+                               {:name "groups" :description "User Groups within an Organization"}
+                               {:name "auth" :description "Authorization & permissions"}]}}}
 
 
       (middleware [[wrap-cors
@@ -136,7 +137,7 @@
                   (ok (authz/update-organization authz (request-context/make-context request org) body)))
 
                 (context "/authorizations" []
-                  :tags ["teams"]
+                  :tags ["auth"]
                   (GET "/" request
                     :name :get-authorizations
                     :return {:authorization {:id           Id
@@ -147,8 +148,8 @@
                                              :organization {:id   Id
                                                             :role s/Str}
                                              :teams        [{:id   Id
-                                                             :uuid s/Uuid
-                                                             :role s/Str}]}}
+                                                             :uuid (s/either (s/eq nil) s/Uuid s/Str)
+                                                             :role (s/either (s/eq nil) s/Str)}]}}
                     :summary "Get current user's authorizations"
                     (ok (authz/get-authorizations authz (request-context/make-context request org)))))
 

@@ -10,7 +10,7 @@
 
   (fact "proxies authorizations"
     (let [z (authz/new-authz-service ..v1.. ..v2..)]
-      (authz/get-authorizations z ..ctx..) => ..result..
+      (authz/get-authorizations z ..ctx..) => {:authorization ..result..}
       (provided
         (async/promise-chan) => ..ch..
         (teams/get-authorizations ..ctx.. ..v2.. ..ch..) => ..nothing..

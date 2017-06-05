@@ -157,7 +157,8 @@
     (let [ch (promise-chan)]
       (teams/get-authorizations ctx (:v2-url this) ch)      ;;TODO
       (let [result (<?? ch)]
-        result))))
+        (println result)
+        {:authorization result}))))
 
 (defn new-authz-service [v1-url v2-url]
   (map->AuthzService {:v1-url v1-url :v2-url v2-url}))
