@@ -6,7 +6,9 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util :refer [<??]]
             [ovation.config :as config]
-            [ovation.request-context :as request-context])
+            [ovation.request-context :as request-context]
+            [clojure.core.async :as async]
+            [clojure.walk :as walk])
 
   (:import (clojure.lang ExceptionInfo)))
 
@@ -189,5 +191,70 @@
           (fact "gets organization roles"
             (with-fake-http [{:url roles-url :method :get} {:status 200
                                                             :body   (util/to-json {:roles roles})}]
-              (teams/get-roles* ..ctx..) => {:roles roles})))))))
+              (teams/get-roles* ..ctx..) => {:roles roles})))))
+
+    (facts "get-authorizations"
+      (fact "gets authorizations"
+        (let [org-id             3
+              rails-response     {"authorization" {"id"           3,
+                                                   "behaviors"    {"organization"                  {"read"   true,
+                                                                                                    "update" false,
+                                                                                                    "delete" false,}
+                                                                   "organization-membership"       {"create" false,
+                                                                                                    "read"   false,
+                                                                                                    "update" false,
+                                                                                                    "delete" false,}
+                                                                   "organization-group"            {"create" false,
+                                                                                                    "read"   false,
+                                                                                                    "update" false,
+                                                                                                    "delete" false,}
+                                                                   "organization-group-membership" {"create" false,
+                                                                                                    "read"   false,
+                                                                                                    "update" false,
+                                                                                                    "delete" false,}
+                                                                   "project"                       {"create" true,
+                                                                                                    "read"   true,
+                                                                                                    "update" true,
+                                                                                                    "delete" false,}
+                                                                   "research-subscription"         {"create" false,
+                                                                                                    "read"   false,
+                                                                                                    "update" false,
+                                                                                                    "delete" false},}
+                                                   "organization" {"id"   org-id,
+                                                                   "role" "Member",}
+                                                   "teams"        [{"id"   5,
+                                                                    "uuid" "3202f460-f160-0130-9ca0-22000aec9fab",}
+                                                                   {"id"   20,
+                                                                    "uuid" "52b57ad0-0377-0132-cef0-22000a7bab2e",
+                                                                    "role" "Ski instructor",}
+                                                                   {"id"   67,
+                                                                    "uuid" "9a16334e-5439-4989-9282-cec484b00f1d",
+                                                                    "role" "Manager",}
+                                                                   {"id"   69,
+                                                                    "uuid" "9ba5f421-af1f-40f1-b9cb-dbdfd7a8ecc8",
+                                                                    "role" "Manager",}
+                                                                   {"id"   75,
+                                                                    "uuid" "793ee624-b034-496b-bd2e-df03eb015c6d",
+                                                                    "role" "Manager",}
+                                                                   {"id"   66,
+                                                                    "uuid" "6c3b5b2f-0921-4d9d-bbd3-b17a81d85b95",
+                                                                    "role" "Admin"}]}}
+              url                "base-url"
+              authorizations-url (util/join-path [url "authorizations" org-id])
+              expected           (walk/keywordize-keys rails-response)]
+
+
+
+
+
+          (with-fake-http [{:url authorizations-url :method :get} {:status 200
+                                                                   :body   (util/to-json rails-response)}]
+            (let [ch (async/chan)]
+              (teams/get-authorizations ..ctx.. url org-id ch)
+              (<?? ch) => (:authorization expected)
+              (provided
+                ..ctx.. =contains=> {::request-context/org org-id}))))))))
+
+(facts "get-behaviors"
+  (future-fact "gets behaviors"))
 

@@ -32,11 +32,12 @@
 
 
 (defn get-authorizations
-  [ctx url-base ch]
+  [ctx url-base org-id ch]
 
-  (http/index-resource ctx url-base "authorizations" ch
-    :response-key :get-authorizations
-    :make-tf nil))
+  (http/show-resource ctx url-base "authorizations" org-id ch
+    :response-key :authorization)
+
+  ch)
 
 
 (defn make-read-membership-tf

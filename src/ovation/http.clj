@@ -67,13 +67,12 @@
       (if (util/exception? response)
         response
         (let [obj    (if key (key response) response)]
-          (if tf
-            (tf obj)
-            obj))))))
+          (tf obj))))))
 
 (defn index-resource
   [ctx api-url rsrc ch & {:keys [close? response-key make-tf query-params] :or {close?       true
-                                                                                query-params nil}}]
+                                                                                query-params nil
+                                                                                make-tf      (fn [_] identity)}}]
   (let [raw-ch (chan)
         url    (make-url api-url rsrc)
         opts   (assoc (request-opts ctx)
@@ -88,7 +87,8 @@
 
 (defn show-resource
   [ctx api-url rsrc id ch & {:keys [close? response-key make-tf query-params] :or {close?       true
-                                                                                   query-params nil}}]
+                                                                                   query-params nil
+                                                                                   make-tf      (fn [_] identity)}}]
   (let [raw-ch (chan)
         url    (make-url api-url rsrc id)
         opts   (request-opts ctx)]
