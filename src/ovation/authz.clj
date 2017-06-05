@@ -2,7 +2,7 @@
   (:require [ovation.organizations :as organizations]
             [clojure.tools.logging :as logging]
             [com.stuartsierra.component :as component]
-            [clojure.core.async :refer [chan]]
+            [clojure.core.async :refer [chan promise-chan]]
             [ovation.util :refer [<??]]
             [ovation.teams :as teams]))
 
@@ -154,7 +154,7 @@
         result)))
 
   (get-authorizations [this ctx]
-    (let [ch (chan)]
+    (let [ch (promise-chan)]
       (teams/get-authorizations ctx (:v2-url this) ch)      ;;TODO
       (let [result (<?? ch)]
         result))))

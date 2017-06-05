@@ -240,7 +240,7 @@
                                                                     "uuid" "6c3b5b2f-0921-4d9d-bbd3-b17a81d85b95",
                                                                     "role" "Admin"}]}}
               url                "base-url"
-              authorizations-url (util/join-path [url "authorizations" org-id])
+              authorizations-url (util/join-path [url "authorizations" ..org..])
               expected           (walk/keywordize-keys rails-response)]
 
 
@@ -250,10 +250,8 @@
           (with-fake-http [{:url authorizations-url :method :get} {:status 200
                                                                    :body   (util/to-json rails-response)}]
             (let [ch (async/chan)]
-              (teams/get-authorizations ..ctx.. url org-id ch)
-              (<?? ch) => (:authorization expected)
-              (provided
-                ..ctx.. =contains=> {::request-context/org org-id}))))))))
+              (teams/get-authorizations ..ctx.. url ch)
+              (<?? ch) => (:authorization expected))))))))
 
 (facts "get-behaviors"
   (future-fact "gets behaviors"))

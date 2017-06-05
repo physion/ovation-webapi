@@ -32,10 +32,11 @@
 
 
 (defn get-authorizations
-  [ctx url-base org-id ch]
+  [ctx url-base ch]
 
-  (http/show-resource ctx url-base "authorizations" org-id ch
-    :response-key :authorization)
+  (let [org-id (::rc/org ctx)]
+    (http/show-resource ctx url-base "authorizations" org-id ch
+      :response-key :authorization))
 
   ch)
 

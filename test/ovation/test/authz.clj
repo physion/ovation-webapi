@@ -12,6 +12,6 @@
     (let [z (authz/new-authz-service ..v1.. ..v2..)]
       (authz/get-authorizations z ..ctx..) => ..result..
       (provided
-        (async/chan) => ..ch..
+        (async/promise-chan) => ..ch..
         (teams/get-authorizations ..ctx.. ..v2.. ..ch..) => ..nothing..
         (util/<?? ..ch..) => ..result..))))

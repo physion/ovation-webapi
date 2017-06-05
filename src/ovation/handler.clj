@@ -139,7 +139,16 @@
                   :tags ["teams"]
                   (GET "/" request
                     :name :get-authorizations
-                    :return {}
+                    :return {:authorization {:id           Id
+                                             :behaviors    {s/Keyword {:create s/Bool
+                                                                       :read   s/Bool
+                                                                       :update s/Bool
+                                                                       :delete s/Bool}}
+                                             :organization {:id   Id
+                                                            :role s/Str}
+                                             :teams        [{:id   Id
+                                                             :uuid s/Uuid
+                                                             :role s/Str}]}}
                     :summary "Get current user's authorizations"
                     (ok (authz/get-authorizations authz (request-context/make-context request org)))))
 
