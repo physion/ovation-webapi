@@ -43,24 +43,29 @@
           (dissoc :membership_roles)
           (assoc-in [:links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))))))
 
-(defn can-write-team?
+(defn team-permissions
   [teams team-id]
-  false)
-
-(defn can-admin-team?
-  [teams team-id]
-  true)
+  (let [role (get-in teams [team-id :role])]
+    (condp = role
+      k/ADMIN-ROLE {:update true
+                    :delete true}
+      k/CURATOR-ROLE {:update false
+                      :delete false}
+      k/MEMBER-ROLE {:update false
+                     :delete false}
+      {:update false
+       :delete false})))
 
 (defn make-read-team-tf
   [ctx]
-  (let [authorization-ch {} ]                               ;;(request-context/authorization-ch ctx)
+  (let [authorization-ch (request-context/authorization-ch ctx)]
 
     (fn [team]
       (let [team-id            (:id team)
             memberships        (:memberships team)
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
-            teams              {}                           ; (get-in (<?? authorization-ch) [:authorization :teams])
-            ]
+            teams              (get-in (<?? authorization-ch) [:authorization :teams])]
+
         (-> team
           (assoc :type k/TEAM-TYPE)
           (dissoc :project)
@@ -68,9 +73,7 @@
           (dissoc :project_id)
           (dissoc :organization_id)
           (assoc :memberships linked-memberships)
-          (assoc :permissions {:read  true
-                               :write (can-write-team? teams team-id)
-                               :admin (can-admin-team? teams team-id)})
+          (assoc :permissions (team-permissions teams team-id))
           (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
                          :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
 
