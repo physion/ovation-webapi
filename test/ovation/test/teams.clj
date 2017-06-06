@@ -250,7 +250,7 @@
           (with-fake-http [{:url authorizations-url :method :get} {:status 200
                                                                    :body   (util/to-json rails-response)}]
             (let [ch (async/chan)]
-              (teams/get-authorizations ..ctx.. url ch)
+              (request-context/get-authorizations ..ctx.. url ch)
               (<?? ch) => (:authorization expected))))))))
 
 (facts "get-behaviors"

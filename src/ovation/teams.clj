@@ -54,21 +54,36 @@
           (dissoc :membership_roles)
           (assoc-in [:links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))))))
 
+(defn can-write-team?
+  [teams team-id]
+  false)
+
+(defn can-admin-team?
+  [teams team-id]
+  true)
+
 (defn make-read-team-tf
   [ctx]
-  (fn [team]
-    (let [team-id            (:id team)
-          memberships        (:memberships team)
-          linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (::rc/org ctx)})) memberships)]
-      (-> team
-        (assoc :type k/TEAM-TYPE)
-        (dissoc :project)
-        (dissoc :organization)
-        (dissoc :project_id)
-        (dissoc :organization_id)
-        (assoc :memberships linked-memberships)
-        (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (::rc/org ctx)})
-                       :memberships (routes/named-route ctx :post-memberships {:id team-id :org (::rc/org ctx)})})))))
+  (let [teams-ch (promise-chan)]
+    ;(auth/get-authorizations ctx (:services-url ctx) teams-ch) ;;TODO we need to find a way to do this once
+    (fn [team]
+      (let [team-id            (:id team)
+            memberships        (:memberships team)
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
+            teams {}]                                      ;;(<?? teams-ch)
+        (-> team
+          (assoc :type k/TEAM-TYPE)
+          (dissoc :project)
+          (dissoc :organization)
+          (dissoc :project_id)
+          (dissoc :organization_id)
+          (assoc :memberships linked-memberships)
+          (assoc :permissions {:read  true
+                               :write (can-write-team? teams team-id)
+                               :admin (can-admin-team? teams team-id)})
+          (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
+                         :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
+
 
 
 (defn create-team

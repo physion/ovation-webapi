@@ -1,6 +1,5 @@
 (ns ovation.http
   (:require [ovation.util :as util]
-            [ovation.request-context :as request-context]
             [clojure.tools.logging :as logging]
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
@@ -41,7 +40,7 @@
 (defn request-opts
   [ctx]
   {:timeout     10000                                       ; ms
-   :oauth-token (request-context/token ctx)
+   :oauth-token (if (string? ctx) ctx (ovation.request-context/token ctx))
    :headers     {"Content-Type" "application/json; charset=utf-8"
                  "Accept"       "application/json"}})
 
@@ -109,9 +108,9 @@
     (go
       (try+
         (if-let [body-org (:organization_id body)]
-          (when (not (= body-org (::request-context/org ctx)))
+          (when (not (= body-org (:ovation.request-context/org ctx)))
             (do
-              (logging/info "Organization in POST body" body-org "doesn't match URL param" (::request-context/org ctx))
+              (logging/info "Organization in POST body" body-org "doesn't match URL param" (:ovation.request-context/org ctx))
               (unprocessable-entity! {:error "Organization ID mismatch"}))))
 
         (call-http raw-ch :post url opts hp/created?)
@@ -130,7 +129,7 @@
     (go
       (try+
         (if-let [body-org (:organization_id body)]
-          (when (not (= body-org (::request-context/org ctx)))
+          (when (not (= body-org (:ovation.request-context/org ctx)))
             (unprocessable-entity! {:error "Organization ID mismatch"})))
 
         (call-http raw-ch :put url opts hp/ok?)

@@ -64,7 +64,7 @@
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
-      :authz (authz/new-authz-service (:v1-url authz) (:v2-url authz))
+      :authz (authz/new-authz-service (:services-url authz))
       :pubsub (pubsub/new-pubsub (:project-id pubsub))
       :api (component/using
              (new-api)

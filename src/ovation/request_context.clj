@@ -1,16 +1,22 @@
 (ns ovation.request-context
   (:require [ovation.auth :as auth]
             [compojure.api.routes :refer [path-for*]]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [ovation.authz :as authz]))
 
 (defprotocol AuthToken
   (token [this])
   (team-ids [this])
   (user-id [this])
-  (organization-ids [this]))
+  (organization-ids [this])
+  (authorization [this]))
 
-(defrecord RequestContext
-  [auth org routes query-params]
+(defn router
+  [request]
+  (fn [name & [params]]
+    (path-for* name request params)))
+
+(defrecord RequestContext [authz]
 
   AuthToken
   (token [c]
@@ -20,17 +26,17 @@
   (user-id [c]
     (auth/authenticated-user-id (::auth c)))
   (organization-ids [c]
-    (auth/organization-ids (::request c))))
-
-(defn router
-  [request]
-  (fn [name & [params]]
-    (path-for* name request params)))
+    (auth/organization-ids (::request c)))
+  (authorization [c]
+    (if authz
+      (authz/get-authorization authz c)
+      nil)))
 
 (defn make-context
   "Constructs a RequestContext from a request"
-  [request org]
-  (map->RequestContext {::org          org
+  [request org authz]
+  (map->RequestContext {:authz        authz
+                        ::org          org
                         ::routes       (router request)
                         ::auth         (auth/identity request)
                         ::request      request
