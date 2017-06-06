@@ -40,7 +40,7 @@
 (defn request-opts
   [ctx]
   {:timeout     10000                                       ; ms
-   :oauth-token (if (string? ctx) ctx (ovation.request-context/token ctx))
+   :oauth-token (if (string? ctx) ctx (get-in ctx [:ovation.request-context/auth :ovation.auth/token]))
    :headers     {"Content-Type" "application/json; charset=utf-8"
                  "Accept"       "application/json"}})
 

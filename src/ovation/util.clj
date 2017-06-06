@@ -147,21 +147,4 @@
       (throw+ returned)
       returned)))
 
-(defn <?
-  "Async pop that throws an exception if item returned is throwable. Returns nil on timeout.
-   Timeout in milliseconds (default 1000ms).
-   This function comes from David Nolen."
-  [c]
-  (let [returned (<! c)]
-    (if (exception? returned)
-      (throw+ returned)
-      returned)))
-
-(defn drain!
-  "Drains a channel until closed"
-  [channel]
-  (go-loop []
-    (when-let [_ (<! channel)]
-      (recur))))
-
 

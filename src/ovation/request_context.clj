@@ -9,7 +9,8 @@
   (team-ids [this])
   (user-id [this])
   (organization-ids [this])
-  (authorization [this]))
+  (authorization [this])
+  (authorization-ch [this]))
 
 (defn router
   [request]
@@ -27,6 +28,10 @@
     (auth/authenticated-user-id (::auth c)))
   (organization-ids [c]
     (auth/organization-ids (::request c)))
+  (authorization-ch [c]
+    (if authz
+      (authz/get-authorization-ch authz c)
+      nil))
   (authorization [c]
     (if authz
       (authz/get-authorization authz c)

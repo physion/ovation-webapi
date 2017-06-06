@@ -15,6 +15,7 @@
   (update-organization [this ctx body])
 
   (get-authorization [this ctx])
+  (get-authorization-ch [this ctx])
 
   (get-organization-memberships [this ctx])
   (create-organization-membership [this ctx body])
@@ -37,7 +38,7 @@
 (defn get-authorizations
   [ctx url-base ch]
 
-  (let [org-id (::org ctx)]
+  (let [org-id (:ovation.request-context/org ctx)]
     (http/show-resource ctx url-base "authorizations" org-id ch
       :response-key :authorization))
 
@@ -164,7 +165,8 @@
       (let [result (<?? ch)]
         result)))
 
-  (get-authorization [this ctx]
+
+  (get-authorization-ch [this ctx]
     (let [org (:ovation.request-context/org ctx)]
       (let [result-ch (if-let [existing-ch (get-in this [:authorizations org])]
                         existing-ch
@@ -172,7 +174,11 @@
                           (get-authorizations ctx services-url ch)
                           (assoc-in this [:authorizations org] ch)
                           ch))]
-        {:authorization (<?? result-ch)}))))
+        result-ch)))
+
+  (get-authorization [this ctx]
+    (let [result-ch (get-authorization-ch this ctx)]
+      {:authorization (<?? result-ch)})))
 
 
 (defn new-authz-service [services-url]

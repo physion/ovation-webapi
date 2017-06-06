@@ -4,16 +4,15 @@
             [ovation.config :as config]
             [org.httpkit.client :as httpkit.client]
             [clojure.tools.logging :as logging]
-            [ring.util.http-predicates :as http-predicates]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
-            [ovation.auth :as auth]
             [ovation.constants :as k]
             [ovation.request-context :as rc]
-            [clojure.core.async :refer [chan >!! >! <! go]]
+            [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
             [ovation.http :as http]
-            [slingshot.slingshot :refer [try+]]))
+            [slingshot.slingshot :refer [try+]]
+            [ovation.request-context :as request-context]))
 
 
 
@@ -29,16 +28,6 @@
                 (-> resp
                   :body
                   util/from-json))))))
-
-
-(defn get-authorizations
-  [ctx url-base ch]
-
-  (let [org-id (::rc/org ctx)]
-    (http/show-resource ctx url-base "authorizations" org-id ch
-      :response-key :authorization))
-
-  ch)
 
 
 (defn make-read-membership-tf
@@ -64,13 +53,14 @@
 
 (defn make-read-team-tf
   [ctx]
-  (let [teams-ch (promise-chan)]
-    ;(auth/get-authorizations ctx (:services-url ctx) teams-ch) ;;TODO we need to find a way to do this once
+  (let [authorization-ch {} ]                               ;;(request-context/authorization-ch ctx)
+
     (fn [team]
       (let [team-id            (:id team)
             memberships        (:memberships team)
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
-            teams {}]                                      ;;(<?? teams-ch)
+            teams              {}                           ; (get-in (<?? authorization-ch) [:authorization :teams])
+            ]
         (-> team
           (assoc :type k/TEAM-TYPE)
           (dissoc :project)
