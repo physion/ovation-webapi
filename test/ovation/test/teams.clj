@@ -53,7 +53,12 @@
                                                         :added               "2015-02-01"
                                                         :role_id             21
                                                         :user_id             "3"
-                                                        :membership_role_ids [1, 2, 3]}]}}
+                                                        :membership_role_ids [1, 2, 3]}]
+                                 :team_groups         [{:id                  1
+                                                        :team_id             2
+                                                        :group_id            3
+                                                        :role_id             4
+                                                        :name                "Some group"}]}}
               expected   {:team {:id                  "1"
                                  :type                "Team"
                                  :name                team-id
@@ -78,6 +83,11 @@
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]
                                                         :links               {:self ..membership-url..}}]
+                                 :team_groups         [{:id                  1
+                                                        :team_id             2
+                                                        :group_id            3
+                                                        :role_id             4
+                                                        :name                "Some group"}]
                                  :links               {:self        ..self-url..
                                                        :memberships ..membership-url..}}}]
 
