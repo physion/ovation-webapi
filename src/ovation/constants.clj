@@ -50,3 +50,8 @@
 (def UPLOADING "in-progress")
 (def COMPLETE "complete")
 (def ERROR "error")
+
+;; Role names
+(def ADMIN-ROLE "Admin")
+(def CURATOR-ROLE "Curator")
+(def MEMBER-ROLE "Member")

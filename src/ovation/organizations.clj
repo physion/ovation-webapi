@@ -7,7 +7,6 @@
                                   destroy-resource]]
             [ovation.util :as util :refer [<??]]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
-            [ovation.request-context :as request-context]
             [slingshot.support :refer [get-throwable]]
             [slingshot.slingshot :refer [try+]]
             [clojure.core.async :refer [chan go >! >!! pipeline pipe]]))
@@ -21,7 +20,7 @@
 
 (defn make-org-links
   [ctx org]
-  (let [rt (::request-context/routes ctx)]
+  (let [rt (:ovation.request-context/routes ctx)]
     {:self                     (routes/self-route ctx "organization" (:id org) (:id org))
      :projects                 (routes/org-projects-route rt (:id org))
      :organization-memberships (routes/org-memberships-route rt (:id org))
@@ -52,8 +51,8 @@
 
 (defn make-read-group-tf
   [ctx]
-  (let [rt (::request-context/routes ctx)
-        org-id (::request-context/org ctx)]
+  (let [rt (:ovation.request-context/routes ctx)
+        org-id (:ovation.request-context/org ctx)]
     (fn [group]
       (-> group
         (assoc :type "OrganizationGroup")
@@ -62,7 +61,7 @@
 
 (defn make-read-group-membership-tf
   [ctx]
-  (let [params   (:params (::request-context/request ctx))
+  (let [params   (:params (:ovation.request-context/request ctx))
         group-id (:id params)
         rt       (:ovation.request-context/routes ctx)
         org      (:ovation.request-context/org ctx)]
@@ -110,7 +109,7 @@
 (defn get-organization*
   [ctx api-url]
   (let [ch     (chan)
-        org-id (::request-context/org ctx)]
+        org-id (:ovation.request-context/org ctx)]
     (get-organization ctx api-url ch org-id)
     {:organization (<?? ch)}))
 
@@ -142,7 +141,7 @@
 
 (defn get-memberships
   [ctx api-url ch & {:keys [close?] :or {close? true}}]
-  (let [org-id (::request-context/org ctx)]
+  (let [org-id (:ovation.request-context/org ctx)]
     (index-resource ctx api-url ORGANIZATION-MEMBERSHIPS ch
       :close? close?
       :query-params {:organization_id org-id}
@@ -180,7 +179,7 @@
 (defn get-groups
   [ctx api-url ch & {:keys [close?] :or {close? true}}]
   (index-resource ctx api-url ORGANIZATION-GROUPS ch
-    :query-params {:organization_id (::request-context/org ctx)}
+    :query-params {:organization_id (:ovation.request-context/org ctx)}
     :close? close?
     :response-key :organization_groups
     :make-tf make-read-group-tf))

@@ -20,7 +20,7 @@
                                      nil
                                      (slingshot.support/stack-trace))))
 
-(against-background [(request-context/make-context ..req.. ..org..) => ..ctx..
+(against-background [(request-context/make-context ..req.. ..org.. anything) => ..ctx..
                      ..ctx.. =contains=> {::request-context/auth   ..auth..
                                           ::request-context/routes ..rt..}]
 
@@ -30,13 +30,11 @@
       (provided
         ..req.. =contains=> {:identity ..auth..}
         ..file.. =contains=> {:type "File"}
-        (ovation.request-context/make-context ..req.. ..org..) => ..ctx..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) => ..revs..))
 
     (fact "+throws not-found if HEADs throws not found"
       (r/get-head-revisions* ..req.. ..db.. ..org.. ..id..) => (throws ExceptionInfo)
       (provided
-        (ovation.request-context/make-context ..req.. ..org..) => ..ctx..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) =throws=> (sling-throwable {:type ::revisions/not-found}))))
 
   (facts "About post-resource*"
@@ -152,14 +150,14 @@
 
     (fact "adds relationships"
       (let [src  {:type         "Folder"
-                  :_id          ..src..
-                  }
+                  :_id          ..src..}
+
             file {:type         "File"
-                  :_id          ..file..
-                  }
+                  :_id          ..file..}
+
             dest {:type         "Folder"
-                  :_id          ..dest..
-                  }]
+                  :_id          ..dest..}]
+
 
         (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
                                                                                                        :links   ..created-links..

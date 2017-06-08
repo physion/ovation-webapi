@@ -147,11 +147,4 @@
       (throw+ returned)
       returned)))
 
-(defn drain!
-  "Drains a channel until closed"
-  [channel]
-  (go-loop []
-    (when-let [_ (<! channel)]
-      (recur))))
-
 

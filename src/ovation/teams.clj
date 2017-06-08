@@ -1,171 +1,196 @@
 (ns ovation.teams
   (:require [ovation.routes :as routes]
-            [ovation.util :as util]
+            [ovation.util :as util :refer [<??]]
             [ovation.config :as config]
             [org.httpkit.client :as httpkit.client]
             [clojure.tools.logging :as logging]
-            [ring.util.http-predicates :as http-predicates]
-            [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
-            [ovation.auth :as auth]
+            [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
             [ovation.constants :as k]
             [ovation.request-context :as rc]
-            [clojure.core.async :refer [chan >!!]]
+            [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
             [slingshot.support :refer [get-throwable]]
-            [ring.util.http-predicates :as hp]))
+            [ring.util.http-predicates :as hp]
+            [ovation.http :as http]
+            [slingshot.slingshot :refer [try+]]
+            [ovation.request-context :as request-context]))
 
 
-(defn auth-token
-  [request]
-  (auth/token request))
-
-(defn make-url
-  [& comps]
-  (util/join-path (conj comps config/TEAMS_SERVER)))
-
-(defn request-opts
-  [token]
-  {:timeout     10000                                          ; ms
-   :oauth-token token
-   :headers     {"Content-Type" "application/json; charset=utf-8"}})
 
 (defn get-teams
   "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2] :organization_ids [id1 id2]}"
   [api-token]
-  (let [opts (request-opts api-token)
-        url  (make-url "team_uuids")]
+  (let [opts {:timeout     10000                            ; ms
+              :oauth-token api-token
+              :headers     {"Content-Type" "application/json; charset=utf-8"}}
+        url  (util/join-path [config/TEAMS_SERVER "team_uuids"])]
     (future (let [resp @(httpkit.client/get url opts)]
               (if (hp/ok? resp)
                 (-> resp
                   :body
                   util/from-json))))))
+
+
+(defn make-read-membership-tf
+  [team-uuid]
+  (fn
+    [ctx]
+    (fn [membership]
+      (let [org           (::rc/org ctx)
+            self-route    :put-membership
+            membership-id (:id membership)]
+        (-> membership
+          (dissoc :users)
+          (dissoc :membership_roles)
+          (assoc-in [:links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))))))
+
+(defn team-permissions
+  [teams team-id]
+  (let [role (get-in teams [team-id :role])]
+    (condp = role
+      k/ADMIN-ROLE {:update true
+                    :delete true}
+      k/CURATOR-ROLE {:update false
+                      :delete false}
+      k/MEMBER-ROLE {:update false
+                     :delete false}
+      {:update false
+       :delete false})))
+
+(defn make-read-team-tf
+  [ctx]
+  (let [authorization-ch (request-context/authorization-ch ctx)]
+
+    (fn [team]
+      (let [team-id            (:id team)
+            memberships        (:memberships team)
+            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
+            teams              (get-in (<?? authorization-ch) [:authorization :teams])]
+
+        (-> team
+          (assoc :type k/TEAM-TYPE)
+          (dissoc :project)
+          (dissoc :organization)
+          (dissoc :project_id)
+          (dissoc :organization_id)
+          (assoc :memberships linked-memberships)
+          (assoc :permissions (team-permissions teams team-id))
+          (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
+                         :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
+
+
+
 (defn create-team
   [ctx team-uuid]
 
-  (logging/info (str "Creating Team for " team-uuid))
-  (let [opts (request-opts (rc/token ctx))
-        url (make-url "teams")
-        body (util/to-json {:team {:uuid (str team-uuid)}})
-        response @(httpkit.client/post url (assoc opts :body body))]
-    (when (not (http-predicates/created? response))
-      (throw! response))
-    (util/from-json (:body response))))
+  (let [ch   (chan)
+        body (util/to-json {:team {:uuid (str team-uuid)}})]
+    (logging/info (str "Creating Team for " team-uuid))
 
+    (http/create-resource ctx config/TEAMS_SERVER "teams" body ch
+      :response-key :team
+      :make-tf make-read-team-tf)
 
-(defn- membership-result
-  [team-uuid ctx response]
-  (let [org (::rc/org ctx)
-        result (util/from-json (:body response))
-        pending? (:pending_membership result)
-        self-route (if pending? :put-pending-membership :put-membership)
-        membership-id (or (get-in result [:pending_membership :id])
-                        (get-in result [:membership :id]))]
-    (if (:membership result)
-      (-> result
-        (dissoc :users)
-        (dissoc :membership_roles)
-        (assoc-in [:membership :links :self] (routes/named-route ctx self-route {:org org :id team-uuid :mid membership-id})))
-      result)))
+    {:team (<?? ch)}))
+
+(defn get-team
+  [ctx team-id ch]
+  (http/show-resource ctx config/TEAMS_SERVER "teams" team-id ch
+    :response-key :team
+    :make-tf make-read-team-tf))
+
 
 (defn get-team*
   [ctx team-id]
-  (let [opts     (request-opts (rc/token ctx))
-        url      (make-url "teams" team-id)
-        response @(httpkit.client/get url opts)]
 
-    (if-let [team (cond
-                    (http-predicates/ok? response) (util/from-json (:body response))
+  (let [ch      (chan)
+        team-ch (chan)]
+    (go
+      (get-team ctx team-id team-ch)
+      (let [team (<! team-ch)]
+        (if (util/exception? team)
+          (if (hp/not-found? (:response team))
+            (>! ch (create-team ctx team-id))
+            (>! ch team))
+          (>! ch team))))
+    {:team (<?? ch)}))
 
-                    (http-predicates/not-found? response) (create-team ctx team-id)
-                    :else (throw! (dissoc response :headers)))]
-
-      (let [memberships        (get-in team [:team :memberships])
-            linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (::rc/org ctx)})) memberships)]
-        (-> team
-          (assoc-in [:team :type] k/TEAM-TYPE)
-          (update-in [:team] dissoc :project)
-          (update-in [:team] dissoc :organization)
-          (update-in [:team] dissoc :project_id)
-          (update-in [:team] dissoc :organization_id)
-          (assoc-in [:team :memberships] linked-memberships)
-          (assoc-in [:team :links] {:self        (routes/named-route ctx :get-team {:id team-id :org (::rc/org ctx)})
-                                    :memberships (routes/named-route ctx :post-memberships {:id team-id :org (::rc/org ctx)})}))))))
-
-
-(defn- put-membership
-  [ctx team-uuid membership membership-id pending?]                              ;; membership is a TeamMembership
-  (let [url-path (if pending? "pending_memberships" "memberships")
-        opts (request-opts (rc/token ctx))
-        url (make-url url-path membership-id)
-        role-id (get-in membership [:role :id])
-        body {:membership {:role_id role-id}}]
-    (when (or (nil? role-id)
-            (nil? membership-id))
-      (unprocessable-entity!))
-
-    (let [response (dissoc @(httpkit.client/put url (assoc opts :body (util/to-json body))) :headers)]
-      (when (not (http-predicates/ok? response))
-        (throw! response))
-
-      (membership-result team-uuid ctx response))))
 
 (defn put-membership*
-  [ctx team-uuid membership membership-id]                              ;; membership is a TeamMembership
-  (put-membership ctx team-uuid membership membership-id false))
+  [ctx team-uuid membership membership-id]                  ;; membership is a TeamMembership
+
+  (when (or (nil? (get-in membership [:role :id]))
+          (nil? membership-id))
+    (unprocessable-entity!))
+
+  (let [ch (chan)]
+    (http/update-resource ctx config/TEAMS_SERVER "memberships" membership membership-id ch
+      :response-key :membership
+      :make-tf (make-read-membership-tf team-uuid))
+
+    {:membership (<?? ch)}))
 
 (defn put-pending-membership*
-  [ctx team-uuid membership membership-id]                              ;; membership is a PendingTeamMembership
-  (put-membership ctx team-uuid membership membership-id true))
+  [ctx team-uuid membership membership-id]                  ;; membership is a PendingTeamMembership
+  (when (or (nil? (get-in membership [:role :id]))
+          (nil? membership-id))
+    (unprocessable-entity!))
+
+  (let [ch (chan)]
+    (http/update-resource ctx config/TEAMS_SERVER "pending_memberships" membership membership-id ch
+      :response-key :pending_membership
+      :make-tf (make-read-membership-tf team-uuid))
+
+    {:membership (<?? ch)}))
 
 
 (defn post-membership*
-  [ctx team-uuid membership]                            ;; membership is a NewTeamMembership
-  (let [rt      (::rc/routes ctx)
-        opts    (request-opts (rc/token ctx))
-        url     (make-url "memberships")
-        team    (get-team* ctx team-uuid)
-        team-id (get-in team [:team :id])
-        role    (:role membership)
-        email   (:email membership)
-        body    {:membership {:team_id team-uuid
-                              :role_id (:id role)
-                              :email   email}}]
+  [ctx team-uuid membership]                                ;; membership is a NewTeamMembership
 
-    (when (or (nil? team-id) (nil? role) (nil? email))
-      (unprocessable-entity!))
+  (let [ch      (chan)
+        team-ch (chan)]
+    (go
+      (get-team ctx team-uuid team-ch)
+      (let [team (<! team-ch)]
+        (if (util/exception? team)
+          (>! ch team)
 
-    (let [response @(httpkit.client/post url (assoc opts :body (util/to-json body)))]
-      (when (not (http-predicates/created? response))
-        (throw! (dissoc response :headers)))
+          (let [team-id (:id team)
+                role    (:role membership)
+                email   (:email membership)
+                body    {:membership {:team_id team-uuid
+                                      :role_id (:id role)
+                                      :email   email}}]
+            (if (or (nil? team-id) (nil? role) (nil? email))
+              (>! ch (unprocessable-entity))
 
-      (membership-result team-uuid ctx response))))
+              (http/create-resource ctx config/TEAMS_SERVER "memberships" body ch
+                :response-key :membership                   ;;TODO how to handle pending memberships?
+                :make-tf (make-read-membership-tf team-uuid)))))))
 
-(defn delete-membership
-  [ctx membership-id pending?]
-  (let [url-path (if pending? "pending_memberships" "memberships")
-        opts (request-opts (rc/token ctx))
-        url (make-url url-path membership-id)]
+    {:membership (<?? ch)}))
 
-    (let [response (dissoc @(httpkit.client/delete url opts) :headers)]
-      (when (not (http-predicates/no-content? response))
-        (throw! response)))))
 
 (defn delete-membership*
   [ctx membership-id]
-  (delete-membership ctx membership-id false))
+  (let [ch (chan)]
+    (http/destroy-resource ctx config/TEAMS_SERVER "memberships" membership-id ch)
+    (<?? ch)))
 
 
 (defn delete-pending-membership*
   [ctx membership-id]
-  (delete-membership ctx membership-id true))
+  (let [ch (chan)]
+    (http/destroy-resource ctx config/TEAMS_SERVER "pending_memberships" membership-id ch)
+    (<?? ch)))
 
 (defn get-roles*
   [ctx]
-  (let [opts (request-opts (rc/token ctx))
-        url (make-url "roles")]
-
-    (let [response @(httpkit.client/get url opts)]
-      (when (not (http-predicates/ok? response))
-        (throw! response))
-      (let [body (util/from-json (:body response))
-            roles (:roles body)]
-        {:roles roles}))))
+  (let [ch        (chan)
+        read-role (fn [_]                                   ;;unused ctx
+                    (fn [role]
+                      (select-keys role [:id :name :organization_id :links])))]
+    (http/index-resource ctx config/TEAMS_SERVER "roles" ch
+      :response-key :roles
+      :make-tf read-role)
+    (let [roles (<?? ch)]
+      {:roles roles})))
