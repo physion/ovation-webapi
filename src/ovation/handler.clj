@@ -528,12 +528,16 @@
 
                     (GET "/" request
                       :name :get-team
-                      :return {:team             Team
-                               :users            [TeamUser],
-                               :membership_roles [TeamMembershipRole]}
+                      :return {:team                              Team
+                               (s/optional-key :users)            [TeamUser], ;;TODO is this present/needed anymore?
+                               (s/optional-key :membership_roles) [TeamMembershipRole]} ;; TODO is this present/needed anymore?
                       :summary "Gets Project Team"
                       (let [ctx (request-context/make-context request org authz)]
                         (ok (teams/get-team* ctx id))))
+
+                    (context "/team_groups" []
+                      )
+
                     (context "/memberships" []
                       (POST "/" request
                         :name :post-memberships

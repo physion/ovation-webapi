@@ -14,7 +14,6 @@
 
   (:import (clojure.lang ExceptionInfo)))
 
-(let [])
 (against-background [(request-context/token ..ctx..) => ..auth..
                      ..ctx.. =contains=> {::request-context/auth   ..auth..
                                           ::request-context/routes ..rt..
@@ -166,39 +165,40 @@
               (routes/named-route ..ctx.. :post-memberships {:id team-uuid :org ..org..}) => memberships-url))))))
 
   (facts "create-team"
-    (against-background [..ctx.. =contains=> {::request-context/org ..org..}
-                         (routes/named-route ..ctx.. :post-teams {}) => teams-url]
-      (let [team-id        (str (util/make-uuid))
+    (let [org-id 1]
+      (against-background [..ctx.. =contains=> {::request-context/org org-id}
+                           (routes/named-route ..ctx.. :post-teams {}) => teams-url]
+        (let [team-id        (str (util/make-uuid))
 
-            authz-ch       (async/promise-chan)
-            _              (async/go (async/>! authz-ch {:teams {team-id {:id   "1"
-                                                                          :uuid team-id
-                                                                          :role k/ADMIN-ROLE}}}))
+              authz-ch       (async/promise-chan)
+              _              (async/go (async/>! authz-ch {:teams {team-id {:id   "1"
+                                                                            :uuid team-id
+                                                                            :role k/ADMIN-ROLE}}}))
 
-            teams-url      (util/join-path [config/TEAMS_SERVER "teams"])
-            team-rt        "team-route"
-            memberships-rt "memberships-route"
-            team           {:team {:id          team-id
-                                   :memberships []
-                                   :type        "Team"
-                                   :permissions {:update false
-                                                 :delete false}
-                                   :links       {:memberships memberships-rt
-                                                 :self        team-rt}}}]
-        (fact "creates team"
-          (with-fake-http [{:url teams-url :method :post} {:status 201
-                                                           :body   (util/to-json team)}]
-            (teams/create-team ..ctx.. team-id) => team
-            (provided
-              (request-context/authorization-ch ..ctx..) => authz-ch
-              (routes/named-route ..ctx.. :get-team {:id team-id :org ..org..}) => team-rt
-              (routes/named-route ..ctx.. :post-memberships {:id team-id :org ..org..}) => memberships-rt)))
+              teams-url      (util/join-path [config/TEAMS_SERVER "teams"])
+              team-rt        "team-route"
+              memberships-rt "memberships-route"
+              team           {:team {:id          team-id
+                                     :memberships []
+                                     :type        "Team"
+                                     :permissions {:update false
+                                                   :delete false}
+                                     :links       {:memberships memberships-rt
+                                                   :self        team-rt}}}]
+          (fact "creates team"
+            (with-fake-http [{:url teams-url :method :post} {:status 201
+                                                             :body   (util/to-json team)}]
+              (teams/create-team ..ctx.. team-id) => team
+              (provided
+                (request-context/authorization-ch ..ctx..) => authz-ch
+                (routes/named-route ..ctx.. :get-team {:id team-id :org org-id}) => team-rt
+                (routes/named-route ..ctx.. :post-memberships {:id team-id :org org-id}) => memberships-rt)))
 
-        (fact "throws! responses not 201"
-          (with-fake-http [{:url teams-url :method :post} {:status 401}]
-            (teams/create-team ..ctx.. team-id) => (throws ExceptionInfo)
-            (provided
-              (request-context/authorization-ch ..ctx..) => authz-ch))))))
+          (fact "throws! responses not 201"
+            (with-fake-http [{:url teams-url :method :post} {:status 401}]
+              (teams/create-team ..ctx.. team-id) => (throws ExceptionInfo)
+              (provided
+                (request-context/authorization-ch ..ctx..) => authz-ch)))))))
 
   (facts "put-membership*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..

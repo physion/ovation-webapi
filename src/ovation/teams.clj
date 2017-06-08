@@ -6,7 +6,6 @@
             [clojure.tools.logging :as logging]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
             [ovation.constants :as k]
-            [ovation.request-context :as rc]
             [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
@@ -35,7 +34,7 @@
   (fn
     [ctx]
     (fn [membership]
-      (let [org           (::rc/org ctx)
+      (let [org           (::request-context/org ctx)
             self-route    :put-membership
             membership-id (:id membership)]
         (-> membership
@@ -83,7 +82,9 @@
   [ctx team-uuid]
 
   (let [ch   (chan)
-        body (util/to-json {:team {:uuid (str team-uuid)}})]
+        org  (::request-context/org ctx)
+        body (util/to-json {:team {:uuid            (str team-uuid)
+                                   :organization_id org}})]
     (logging/info (str "Creating Team for " team-uuid))
 
     (http/create-resource ctx config/TEAMS_SERVER "teams" body ch
