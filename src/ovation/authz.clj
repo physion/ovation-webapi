@@ -5,7 +5,9 @@
             [clojure.core.async :refer [chan]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [clojure.core.async :as async]))
+            [clojure.core.async :as async]
+            [ovation.groups :as groups]))
+
 
 (defprotocol AuthzApi
   "Authorization service"
@@ -33,7 +35,13 @@
   (create-organization-group-membership [this ctx body])
   (get-organization-group-membership [this ctx id])
   (put-organization-group-membership [this ctx id body])
-  (delete-organization-group-membership [this ctx id]))
+  (delete-organization-group-membership [this ctx id])
+
+  (get-team-groups [this ctx team-id])
+  (post-team-group [this ctx body])
+  (get-team-group [thx ctx group-id])
+  (put-team-group [this ctx group-id body])
+  (delete-team-group [this ctx group-id]))
 
 (defn get-authorizations
   [ctx url-base ch]
@@ -178,7 +186,32 @@
 
   (get-authorization [this ctx]
     (let [result-ch (get-authorization-ch this ctx)]
-      {:authorization (<?? result-ch)})))
+      {:authorization (<?? result-ch)}))
+
+  (get-team-groups [this ctx team-id]
+    (let [ch (chan)]
+      (groups/get-team-groups ctx (:services-url this) team-id ch)
+      {:team_groups (<?? ch)}))
+
+  (post-team-group [this ctx body]
+    (let [ch (chan)]
+      (groups/create-team-group ctx (:services-url this) body ch)
+      {:team_group (<?? ch)}))
+
+  (get-team-group [this ctx group-id]
+    (let [ch (chan)]
+      (groups/get-team-group ctx (:services-url this) group-id ch)
+      {:team_group (<?? ch)}))
+
+  (put-team-group [this ctx group-id body]
+    (let [ch (chan)]
+      (groups/update-team-group ctx (:services-url this) group-id body ch)
+      {:team_group (<?? ch)}))
+
+  (delete-team-group [this ctx group-id]
+    (let [ch (chan)]
+      (groups/delete-team-group ctx (:services-url this) group-id ch)
+      (<?? ch))))
 
 
 (defn new-authz-service [services-url]

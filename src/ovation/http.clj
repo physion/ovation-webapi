@@ -15,6 +15,7 @@
 
   Conveys response body if success or a throw! in case of failure"
   [ch method url opts success-fn & {:keys [log-response?] :or [log-response? true]}]
+  (logging/debug "Sending HTTP:" method url (:query-params opts))
   (httpkit.client/request (merge {:method method :url url} opts)
     (fn [resp]
       (logging/info "Received HTTP response:" method url (:query-params opts) "-" (:status resp))
