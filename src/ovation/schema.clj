@@ -300,16 +300,18 @@
    :links                  {:self s/Keyword}})
 
 (s/defschema NewTeamGroup
-  {:team_id Id
+  {:team_id               Id
+   (s/optional-key :type) s/Str
    :organization_group_id Id
-   :role Id})
+   :role                  Id})
 
 (s/defschema TeamGroup
-  {:id                     Id
-   :team_id                Id
-   :organization_group_id  Id
-   :role_id                Id
-   :name                   s/Str})
+  {:id                    Id
+   :team_id               Id
+   :organization_group_id Id
+   :role_id               Id
+   (s/optional-key :type) s/Str
+   :name                  s/Str})
 
 (s/defschema PendingTeamMembership
   {:id        Id

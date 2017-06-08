@@ -541,14 +541,25 @@
                         (let [ctx (request-context/make-context request org authz)]
                           (ok (authz/get-team-groups authz ctx id))))
 
-                      ;(POST "/" request
-                      ;  :name :create-team-group
-                      ;  :return {:team_group TeamGroup}
-                      ;  :summary "Creates a new group membership for the given team and group"
-                      ;  :body [body {:team_group NewTeamGroup}]
-                      ;  (let [ctx (request-context/make-context request org authz)]
-                      ;    (created "" {})))                 ;;TODO
-                      )
+                      (POST "/" request
+                        :name :create-team-group
+                        :return {:team_group TeamGroup}
+                        :summary "Creates a new group membership for the given team and group. Returns the created group membership."
+                        :body [body {:team_group NewTeamGroup}]
+                        (let [ctx (request-context/make-context request org authz)
+                              group (authz/post-team-group authz ctx body)]
+                          (created (routes/named-route ctx :get-team-group {:org org :id id}) group)))
+
+                      (context "/:gid" []
+                        :path-params [gid :- Id]
+
+                        (GET "/" request
+                          :name :get-team-group
+                          :return {:team_group TeamGroup}
+                          :summary "Gets a Group team membership"
+                          (let [ctx (request-context/make-context request org authz)
+                                group (authz/get-team-group authz ctx gid)]
+                            (ok group)))))
 
                     (context "/memberships" []
                       (POST "/" request

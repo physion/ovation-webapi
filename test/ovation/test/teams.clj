@@ -246,8 +246,7 @@
 
   (facts "team groups"
     (fact "get-team-groups proxies team_groups"
-      (let [org-id          1
-            team-id         3
+      (let [team-id         3
             group-id        4
             org-group-id    5
             role-id         6
@@ -258,14 +257,102 @@
                                              "name"                  "group-name"}]}
             url             "base-url"
             team-groups-url (util/join-path [url "team_groups"])
-            expected        (walk/keywordize-keys rails-response)]
+            expected        (walk/keywordize-keys {"team_groups" [{"id"                    group-id,
+                                                                   "type"                  "TeamGroup",
+                                                                   "team_id"               team-id,
+                                                                   "organization_group_id" org-group-id,
+                                                                   "role_id"               role-id,
+                                                                   "name"                  "group-name"}]})]
         (with-fake-http [{:url team-groups-url :method :get} {:status 200
                                                               :body   (util/to-json rails-response)}]
           (let [ch (async/chan)]
             (groups/get-team-groups ..ctx.. url team-id ch)
             (<?? ch) => (:team_groups expected)))))
 
-    (future-fact "create-team-group proxies team_groups"))
+    (fact "get-team-group proxies team_groups/:id"
+      (let [team-id        3
+            group-id       4
+            org-group-id   5
+            role-id        6
+            rails-response {"team_group" {"id"                    group-id,
+                                          "team_id"               team-id,
+                                          "organization_group_id" org-group-id,
+                                          "role_id"               role-id,
+                                          "name"                  "group-name"}}
+            base-url       "base-url"
+            url            (util/join-path [base-url "team_groups" group-id])
+            expected       (-> (walk/keywordize-keys rails-response)
+                             (assoc-in [:team_group :type] k/TEAM-GROUP-TYPE))]
+        (with-fake-http [{:url url :method :get} {:status 200
+                                                  :body   (util/to-json rails-response)}]
+          (let [ch (async/chan)]
+            (groups/get-team-group ..ctx.. base-url group-id ch)
+            (<?? ch) => (:team_group expected)))))
+
+    (fact "delete-team-group proxies team_groups"
+      (let [group-id        4
+            url             "base-url"
+            team-groups-url (util/join-path [url "team_groups" group-id])]
+        (with-fake-http [{:url team-groups-url :method :delete} {:status 204
+                                                                 :body   "{}"}]
+          (let [ch (async/chan)]
+            (groups/delete-team-group ..ctx.. url group-id ch)
+            (<?? ch) => {}))))
+
+    (fact "update-team-group proxies team_groups"
+      (let [team-id         3
+            group-id        4
+            org-group-id    5
+            role-id         6
+            rails-response  {"team_group" {"id"                    group-id,
+                                           "team_id"               team-id,
+                                           "organization_group_id" org-group-id,
+                                           "role_id"               role-id,
+                                           "name"                  "group-name"}}
+            url             "base-url"
+            team-groups-url (util/join-path [url "team_groups" group-id])
+            expected        (-> (walk/keywordize-keys rails-response)
+                              (assoc-in [:team_group :type] k/TEAM-GROUP-TYPE))]
+        (with-fake-http [{:url team-groups-url :method :put} (fn [_ {body :body} _]
+                                                               (if (= expected (util/from-json body))
+                                                                 (let [result rails-response]
+                                                                   {:status 200
+                                                                    :body   (util/to-json result)})
+                                                                 {:status 422}))]
+          (let [ch (async/chan)]
+            (groups/update-team-group ..ctx.. url group-id expected ch)
+            (<?? ch) => (:team_group expected)))))
+
+    (fact "create-team-group proxies team_groups"
+      (let [team-id         3
+            group-id        4
+            org-group-id    5
+            role-id         6
+            rails-response  {"team_group" {"id"                    group-id,
+                                           "team_id"               team-id,
+                                           "organization_group_id" org-group-id,
+                                           "role_id"               role-id,
+                                           "name"                  "group-name"}}
+            url             "base-url"
+            team-groups-url (util/join-path [url "team_groups"])
+            expected        (-> (walk/keywordize-keys rails-response)
+                              (assoc-in [:team_group :type] k/TEAM-GROUP-TYPE))]
+        (with-fake-http [{:url team-groups-url :method :post} (fn [_ {body :body} _]
+                                                                (if (= {:team_group {:type                  "TeamGroup"
+                                                                                     :team_id               team-id
+                                                                                     :organization_group_id org-group-id
+                                                                                     :role                  role-id}} (util/from-json body))
+                                                                  (let [result rails-response]
+                                                                    {:status 201
+                                                                     :body   (util/to-json result)})
+                                                                  {:status 422}))]
+          (let [ch   (async/chan)
+                body {:team_group {:type                  "TeamGroup"
+                                   :team_id               team-id
+                                   :organization_group_id org-group-id
+                                   :role                  role-id}}]
+            (groups/create-team-group ..ctx.. url body ch)
+            (<?? ch) => (:team_group expected))))))
 
   (facts "get-authorizations"
     (fact "gets authorizations"
