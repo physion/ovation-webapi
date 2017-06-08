@@ -91,14 +91,14 @@
                                                         :type                "Membership"
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]
-                                                        :links               {:self ..membership-url..}}]
+                                                        :links               {:self "membership-self"}}]
                                  :team_groups         [{:id                  1
                                                         :team_id             2
                                                         :group_id            3
                                                         :role_id             4
                                                         :name                "Some group"}]
-                                 :links               {:self        ..self-url..
-                                                       :memberships ..membership-url..}}}]
+                                 :links               {:self        "team-self"
+                                                       :memberships "team-memberships"}}}]
 
           (fact "should return existing team"
             (with-fake-http [team-url {:status 200
