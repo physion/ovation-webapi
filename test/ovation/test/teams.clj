@@ -10,7 +10,8 @@
             [clojure.core.async :as async]
             [clojure.walk :as walk]
             [ovation.authz :as authz]
-            [ovation.constants :as k])
+            [ovation.constants :as k]
+            [ovation.groups :as groups])
 
   (:import (clojure.lang ExceptionInfo)))
 
@@ -242,6 +243,28 @@
     (fact "for Admin"
       (teams/team-permissions {..team.. {:role k/ADMIN-ROLE}} ..team..) => {:update true
                                                                             :delete true}))
+
+  (facts "get-team-groups*"
+    (fact "gets team groups"
+      (let [org-id          1
+            team-id         3
+            group-id        4
+            org-group-id    5
+            role-id         6
+            rails-response  {"team_groups" [{"id"                    group-id,
+                                             "team_id"               team-id,
+                                             "organization_group_id" org-group-id,
+                                             "role_id"               role-id,
+                                             "name"                  "group-name"}]}
+            url             "base-url"
+            team-groups-url (util/join-path [url (format "team_groups?team_id=%d" team-id)])
+            expected        (walk/keywordize-keys rails-response)]
+        (with-fake-http [{:url team-groups-url :method :get} {:status 200
+                                                              :body   (util/to-json rails-response)}]
+          (let [ch (async/chan)]
+            (groups/get-team-groups ..ctx.. url team-id ch)
+            (<?? ch) => (:authorization expected))))))
+
   (facts "get-authorizations"
     (fact "gets authorizations"
       (let [org-id             3

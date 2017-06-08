@@ -675,15 +675,11 @@
                         :links               {:self        "--url--"
                                               :memberships "--membership--url--"}
                         :team_groups         []}]
-            (body-json app get) => {:team             team
-                                    :users            []
-                                    :membership_roles []}
+            (body-json app get) => {:team team}
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/get-permissions anything) => PERMISSIONS
-              (teams/get-team* anything id) => {:team             team
-                                                :users            []
-                                                :membership_roles []})))))
+              (teams/get-team* anything id) => {:team team})))))
 
     (facts "About activity user stories"
       (facts "create project activity")

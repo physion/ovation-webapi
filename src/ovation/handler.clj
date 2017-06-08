@@ -528,15 +528,18 @@
 
                     (GET "/" request
                       :name :get-team
-                      :return {:team                              Team
-                               (s/optional-key :users)            [TeamUser], ;;TODO is this present/needed anymore?
-                               (s/optional-key :membership_roles) [TeamMembershipRole]} ;; TODO is this present/needed anymore?
+                      :return {:team Team}
                       :summary "Gets Project Team"
                       (let [ctx (request-context/make-context request org authz)]
                         (ok (teams/get-team* ctx id))))
 
                     (context "/team_groups" []
-                      )
+                      (GET "/" request
+                        :name :get-team-groups
+                        :return {:team_groups [TeamGroup]}
+                        :summary "Gets groups that belong to this team"
+                        (let [ctx (request-context/make-context request org authz)]
+                          (ok (teams/get-team-groups* ctx id)))))
 
                     (context "/memberships" []
                       (POST "/" request
