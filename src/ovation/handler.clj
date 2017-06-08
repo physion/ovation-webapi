@@ -141,16 +141,17 @@
                   (GET "/" request
                     :name :get-authorizations
                     :return {:authorization {:id           Id
-                                             ;; TODO user UUID
+                                             :user         {:id   Id
+                                                            :uuid (s/either s/Uuid s/Str)}
                                              :behaviors    {s/Keyword {:create s/Bool
                                                                        :read   s/Bool
                                                                        :update s/Bool
                                                                        :delete s/Bool}}
                                              :organization {:id   Id
                                                             :role s/Str}
-                                             :teams        [{:id   Id
-                                                             :uuid (s/either (s/eq nil) s/Uuid s/Str)
-                                                             :role (s/either (s/eq nil) s/Str)}]}}
+                                             :teams        {s/Keyword {:id   Id
+                                                                       :uuid (s/either (s/eq nil) s/Uuid s/Str)
+                                                                       :role (s/either (s/eq nil) s/Str)}}}}
                     :summary "Get current user's authorizations"
                     (ok (authz/get-authorization authz (request-context/make-context request org authz)))))
 
