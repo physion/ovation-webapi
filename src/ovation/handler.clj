@@ -539,7 +539,16 @@
                         :return {:team_groups [TeamGroup]}
                         :summary "Gets groups that belong to this team"
                         (let [ctx (request-context/make-context request org authz)]
-                          (ok (teams/get-team-groups* ctx id)))))
+                          (ok (authz/get-team-groups authz ctx id))))
+
+                      ;(POST "/" request
+                      ;  :name :create-team-group
+                      ;  :return {:team_group TeamGroup}
+                      ;  :summary "Creates a new group membership for the given team and group"
+                      ;  :body [body {:team_group NewTeamGroup}]
+                      ;  (let [ctx (request-context/make-context request org authz)]
+                      ;    (created "" {})))                 ;;TODO
+                      )
 
                     (context "/memberships" []
                       (POST "/" request

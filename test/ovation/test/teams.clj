@@ -244,8 +244,8 @@
       (teams/team-permissions {..team.. {:role k/ADMIN-ROLE}} ..team..) => {:update true
                                                                             :delete true}))
 
-  (facts "get-team-groups*"
-    (fact "gets team groups"
+  (facts "team groups"
+    (fact "get-team-groups proxies team_groups"
       (let [org-id          1
             team-id         3
             group-id        4
@@ -257,13 +257,15 @@
                                              "role_id"               role-id,
                                              "name"                  "group-name"}]}
             url             "base-url"
-            team-groups-url (util/join-path [url (format "team_groups?team_id=%d" team-id)])
+            team-groups-url (util/join-path [url "team_groups"])
             expected        (walk/keywordize-keys rails-response)]
         (with-fake-http [{:url team-groups-url :method :get} {:status 200
                                                               :body   (util/to-json rails-response)}]
           (let [ch (async/chan)]
             (groups/get-team-groups ..ctx.. url team-id ch)
-            (<?? ch) => (:authorization expected))))))
+            (<?? ch) => (:team_groups expected)))))
+
+    (future-fact "create-team-group proxies team_groups"))
 
   (facts "get-authorizations"
     (fact "gets authorizations"

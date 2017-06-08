@@ -299,6 +299,11 @@
    :membership_role_ids    [s/Int]
    :links                  {:self s/Keyword}})
 
+(s/defschema NewTeamGroup
+  {:team_id Id
+   :organization_group_id Id
+   :role Id})
+
 (s/defschema TeamGroup
   {:id                     Id
    :team_id                Id

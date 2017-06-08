@@ -1,17 +1,9 @@
 (ns ovation.groups
-  (:require [ovation.routes :as routes]
-            [ovation.util :as util :refer [<??]]
-            [ovation.config :as config]
-            [org.httpkit.client :as httpkit.client]
-            [clojure.tools.logging :as logging]
-            [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
-            [ovation.constants :as k]
+  (:require [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
             [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
             [slingshot.support :refer [get-throwable]]
-            [ring.util.http-predicates :as hp]
             [ovation.http :as http]
-            [slingshot.slingshot :refer [try+]]
-            [ovation.request-context :as request-context]))
+            [slingshot.slingshot :refer [try+]]))
 
 (defn make-read-team-group-tf
   [_]
