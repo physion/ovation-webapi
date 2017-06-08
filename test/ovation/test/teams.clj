@@ -6,11 +6,7 @@
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util :refer [<??]]
             [ovation.config :as config]
-            [ovation.request-context :as request-context]
-            [clojure.core.async :as async]
-            [clojure.walk :as walk]
-            [ovation.authz :as authz]
-            [ovation.constants :as k])
+            [ovation.request-context :as request-context])
 
   (:import (clojure.lang ExceptionInfo)))
 
@@ -64,7 +60,12 @@
                                                         :added               "2015-02-01"
                                                         :role_id             21
                                                         :user_id             "3"
-                                                        :membership_role_ids [1, 2, 3]}]}}
+                                                        :membership_role_ids [1, 2, 3]}]
+                                 :team_groups         [{:id                  1
+                                                        :team_id             2
+                                                        :group_id            3
+                                                        :role_id             4
+                                                        :name                "Some group"}]}}
               expected   {:team {:id                  "1"
                                  :type                "Team"
                                  :name                team-id
@@ -90,9 +91,14 @@
                                                         :type                "Membership"
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]
-                                                        :links               {:self "membership-self"}}]
-                                 :links               {:self        "team-self"
-                                                       :memberships "team-memberships"}}}]
+                                                        :links               {:self ..membership-url..}}]
+                                 :team_groups         [{:id                  1
+                                                        :team_id             2
+                                                        :group_id            3
+                                                        :role_id             4
+                                                        :name                "Some group"}]
+                                 :links               {:self        ..self-url..
+                                                       :memberships ..membership-url..}}}]
 
           (fact "should return existing team"
             (with-fake-http [team-url {:status 200

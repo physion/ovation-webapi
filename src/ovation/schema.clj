@@ -299,6 +299,12 @@
    :membership_role_ids    [s/Int]
    :links                  {:self s/Keyword}})
 
+(s/defschema TeamGroup
+  {:id                     Id
+   :team_id                Id
+   :organization_group_id  Id
+   :role_id                Id
+   :name                   s/Str})
 
 (s/defschema PendingTeamMembership
   {:id        Id
@@ -342,6 +348,7 @@
    :roles               [TeamRole]
    :pending_memberships [PendingTeamMembership]
    :memberships         [TeamMembership]
+   :team_groups         [TeamGroup]
    :links               {s/Keyword s/Str}
    (s/optional-key :permissions) {s/Keyword s/Bool}})
 

@@ -673,7 +673,8 @@
 
                                                :links               {:self "--self--"}}]
                         :links               {:self        "--url--"
-                                              :memberships "--membership--url--"}}]
+                                              :memberships "--membership--url--"}
+                        :team_groups         []}]
             (body-json app get) => {:team             team
                                     :users            []
                                     :membership_roles []}
