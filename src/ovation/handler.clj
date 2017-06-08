@@ -559,7 +559,24 @@
                           :summary "Gets a Group team membership"
                           (let [ctx (request-context/make-context request org authz)
                                 group (authz/get-team-group authz ctx gid)]
-                            (ok group)))))
+                            (ok group)))
+
+                        (PUT "/" request
+                          :name :put-team-group
+                          :body [body {:team_group TeamGroup}]
+                          :return {:team_group TeamGroup}
+                          :summary "Updates a Group team membership"
+                          (let [ctx (request-context/make-context request org authz)
+                                group (authz/put-team-group authz ctx gid body)]
+                            (ok group)))
+
+
+                        (DELETE "/" request
+                          :name :delete-team-group
+                          :summary "Deletes a Group team membership"
+                          (let [ctx (request-context/make-context request org authz)
+                                _ (authz/delete-team-group authz ctx gid)]
+                            (no-content)))))
 
                     (context "/memberships" []
                       (POST "/" request
