@@ -140,7 +140,8 @@
                   :tags ["auth"]
                   (GET "/" request
                     :name :get-authorizations
-                    :return {:authorization {:user         {:id   Id
+                    :return {:authorization {:id           Id
+                                             :user         {:id   Id
                                                             :uuid (s/either s/Uuid s/Str)}
                                              :behaviors    {s/Keyword {:create s/Bool
                                                                        :read   s/Bool
