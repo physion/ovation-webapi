@@ -418,12 +418,14 @@
           (let [org-id      (get rails-org-1 "id")
                 org-url     (util/join-path [config/ORGS_SERVER "organizations" org-id])
                 new-name    "AWESOME NEW NAME"
-                updated-org {:id       (get rails-org-1 "id")
-                             :type     "Organization"
-                             :name     new-name
-                             :uuid     (get rails-org-1 "uuid")
-                             :is_admin true
-                             :links    {:self                     ..self1..
+                logo-data   "DATA!"
+                updated-org {:id         (get rails-org-1 "id")
+                             :type       "Organization"
+                             :name       new-name
+                             :uuid       (get rails-org-1 "uuid")
+                             :is_admin   true
+                             :logo_image logo-data
+                             :links      {:self                     ..self1..
                                      :projects                 ..projects1..
                                      :organization-memberships ..members1..
                                      :organization-groups      ..groups1..}}]
@@ -435,8 +437,10 @@
                                    ..ctx.. =contains=> {::request-context/org org-id}]
 
                 (with-fake-http [{:url org-url :method :put} (fn [_ {body :body} _]
-                                                               (if (= {:organization {:id org-id :name new-name}} (util/from-json body))
-                                                                 (let [result-org (assoc rails-org-1 "name" new-name)
+                                                               (if (= {:organization {:id org-id :name new-name :logo_image logo-data}} (util/from-json body))
+                                                                 (let [result-org (-> rails-org-1
+                                                                                    (assoc "name" new-name)
+                                                                                    (assoc "logo_image" logo-data))
                                                                        result     {:organization result-org}]
                                                                    {:status 200
                                                                     :body   (util/to-json result)})
