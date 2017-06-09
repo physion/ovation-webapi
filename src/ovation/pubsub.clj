@@ -66,7 +66,7 @@
   Topics
   (publish [this topic msg ch]
     (when-not (get this [:topics topic])
-      (let [publisher (make-publisher (:project-id this) topic)]
+      (if-let [publisher (make-publisher (:project-id this) topic)]
         (update-in this [:topics] assoc topic publisher)))
 
     (if-let [publisher (get-in this [:topics topic])]
