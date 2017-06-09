@@ -125,7 +125,7 @@
 
     (async/pipe (async/merge channels) channel close?)))
 
-(defn-traced bulk-docs
+(defn bulk-docs
   "Creates or updates documents"
   [db docs]
   (let [{pubsub     :pubsub
