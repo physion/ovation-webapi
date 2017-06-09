@@ -191,7 +191,8 @@
                       :name :delete-org-membership
                       :return {}
                       :summary "Delete the organization membership for a user"
-                      (ok (authz/delete-organization-membership authz (request-context/make-context request org authz) id)))))
+                      (let [_ (authz/delete-organization-membership authz (request-context/make-context request org authz) id)]
+                        (no-content)))))
 
                 (context "/groups" []
                   :tags ["admin"]
@@ -229,7 +230,8 @@
                       :name :delete-org-group
                       :return {}
                       :summary "Delete a group"
-                      (ok (authz/delete-organization-group authz (request-context/make-context request org authz) id)))
+                      (let [_ (authz/delete-organization-group authz (request-context/make-context request org authz) id)]
+                        (no-content)))
 
                     (context "/memberships" []
                       :tags ["admin"]
@@ -268,7 +270,8 @@
                           :name :delete-group-membership
                           :return {}
                           :summary "Delete a group membereship to remove the associated user from the group"
-                          (ok (authz/delete-organization-group-membership authz (request-context/make-context request org authz) membership-id)))))))
+                          (let [_ (authz/delete-organization-group-membership authz (request-context/make-context request org authz) membership-id)]
+                            (no-content)))))))
 
                 (context "/entities" []
                   :tags ["entities"]

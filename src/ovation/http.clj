@@ -23,10 +23,12 @@
         (logging/debug "Raw:" (:body resp)))
       (if (success-fn resp)
         (try+
-          (let [body (util/from-json (:body resp))]
-            (if log-response?
-              (logging/debug "Response:" body))
-            (>!! ch body))
+          (if (hp/no-content? resp)
+            (>!! ch {})
+            (let [body (util/from-json (:body resp))]
+              (if log-response?
+                (logging/debug "Response:" body))
+              (>!! ch body)))
           (catch EOFException _
             (logging/info "Response is empty")
             (let [err {:type :ring.util.http-response/response :response resp}]
