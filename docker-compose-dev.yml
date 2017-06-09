@@ -15,9 +15,9 @@
     db:
       environment:
         - MYSQL_RANDOM_ROOT_PASSWORD="1"
-    pubsub:
-      image: samnco/pubsub-emulator:2016.01.22
-      ports:
-        - "8042:8042"
-      volumes:
-        - ./logs:/var/log
+#    pubsub:
+#      image: samnco/pubsub-emulator:2016.01.22
+#      ports:
+#        - "8042:8042"
+#      volumes:
+#        - ./logs:/var/log
