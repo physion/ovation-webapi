@@ -36,6 +36,7 @@
                   :name                     (:name org)
                   :is_admin                 (:is_admin org)
                   :research_subscription_id (:research_subscription_id org)
+                  :logo_image               (:logo_image org)
                   :links                    (make-org-links ctx org)}]
       (util/remove-nil-values result))))
 
@@ -122,10 +123,8 @@
    Conveys an Organization or a response exception map"
   [ctx api-url ch org & {:keys [close?] :or {close? true}}]
 
-  (let [{org-id :id
-         name   :name} org
-        body {:organization {:id   org-id
-                             :name name}}]
+  (let [{org-id :id} org
+        body {:organization (select-keys org [:id :name :logo_image])}]
 
     (update-resource ctx api-url ORGANIZATIONS body org-id ch
       :close? close?
