@@ -44,7 +44,7 @@
 
 (defn team-permissions
   [teams team-id]
-  (let [role (get-in teams [team-id :role])]
+  (let [role (get-in teams [(keyword (str team-id)) :role])]
     (condp = role
       k/ADMIN-ROLE {:update true
                     :delete true}
@@ -63,7 +63,7 @@
       (let [team-id            (:id team)
             memberships        (:memberships team)
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
-            teams              (get-in (<?? authorization-ch) [:authorization :teams])]
+            teams              (get-in (<?? authorization-ch) [:teams])]
 
         (-> team
           (assoc :type k/TEAM-TYPE)
@@ -72,7 +72,7 @@
           (dissoc :project_id)
           (dissoc :organization_id)
           (assoc :memberships linked-memberships)
-          (assoc :permissions (team-permissions teams team-id))
+          (assoc :permissions (team-permissions teams (:uuid team)))
           (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
                          :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
 
