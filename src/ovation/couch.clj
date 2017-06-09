@@ -103,9 +103,9 @@
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
-    (map #(if-let [rev (update-map (str (:_id %)))]
-           (assoc % :_rev rev)
-           (case (:error %)
+    (map #(if-let [rev (update-map (:_id %))]
+            (assoc % :_rev rev)
+            (case (:error %)
              "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:_id %)})
              "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:_id %)})
              "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
