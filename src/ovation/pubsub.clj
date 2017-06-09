@@ -6,14 +6,18 @@
   (:import (com.google.pubsub.v1 TopicName PubsubMessage)
            (com.google.cloud.pubsub.spi.v1 Publisher)
            (com.google.protobuf ByteString)
-           (com.google.api.core ApiFutures ApiFutureCallback)))
+           (com.google.api.core ApiFutures ApiFutureCallback)
+           (java.io IOException)))
 
 
 (defn make-publisher
   [project-id topic-name]
-  (let [tn (TopicName/create project-id (name topic-name))]
-    (-> (Publisher/defaultBuilder tn)
-      (.build))))
+  (try
+    (let [tn (TopicName/create project-id (name topic-name))]
+      (-> (Publisher/defaultBuilder tn)
+        (.build)))
+    (catch IOException ex
+      (logging/error ex "Unable to load Google Cloud Credentials"))))
 
 (defn future-to-ch
   [ch & {:keys [close?] :or {close? false}}]
