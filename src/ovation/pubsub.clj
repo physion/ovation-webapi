@@ -58,7 +58,7 @@
   (publish [this topic msg ch])
   (shutdown [this]))
 
-(defrecord TopicPublisher [topics]
+(defrecord TopicPublisher [topics project-id]
   Topics
   (publish [this topic msg ch]
     (when-not (get this [:topics topic])
@@ -79,7 +79,8 @@
 
   (start [this]
     (logging/info "Starting PubSub")
-    (assoc this :publisher (map->TopicPublisher {:topics {}})))
+    (assoc this :publisher (map->TopicPublisher {:topics {}
+                                                 :project-id (:project-id this)})))
 
   (stop [this]
     (logging/info "Stopping PubSub")
