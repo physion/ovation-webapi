@@ -37,9 +37,9 @@
         (let [team-id    (str (util/make-uuid))
               team-url   (util/join-path [config/TEAMS_SERVER "teams" team-id])
               authz-ch   (async/promise-chan)
-              _          (async/go (async/>! authz-ch {:teams {team-id {:id   "1"
-                                                                        :uuid team-id
-                                                                        :role k/MEMBER-ROLE}}}))
+              _          (async/go (async/>! authz-ch {:teams {(keyword team-id) {:id   "1"
+                                                                                  :uuid team-id
+                                                                                  :role k/MEMBER-ROLE}}}))
               rails-team {:team {:id                  "1"
                                  :type                "Team"
                                  :name                team-id
@@ -241,8 +241,8 @@
       (teams/team-permissions {..team.. {:role k/CURATOR-ROLE}} ..team..) => {:update false
                                                                               :delete false})
     (fact "for Admin"
-      (teams/team-permissions {..team.. {:role k/ADMIN-ROLE}} ..team..) => {:update true
-                                                                            :delete true}))
+      (teams/team-permissions {(keyword (str ..team..)) {:role k/ADMIN-ROLE}} ..team..) => {:update true
+                                                                                            :delete true}))
 
   (facts "team groups"
     (fact "get-team-groups proxies team_groups"
