@@ -230,12 +230,13 @@
    :type                                      (s/eq "Organization")
    :uuid                                      s/Uuid
    :name                                      s/Str
+   (s/optional-key :logo_image)               s/Str
    (s/optional-key :is_admin)                 s/Bool
    (s/optional-key :research_subscription_id) Id
    :links                                     {:self                                      s/Str
-                               (s/optional-key :projects)                 s/Str
-                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
-                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
+                                               (s/optional-key :projects)                 s/Str
+                                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
+                                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
