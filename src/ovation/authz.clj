@@ -195,7 +195,7 @@
 
   (post-team-group [this ctx body]
     (let [ch (chan)]
-      (groups/create-team-group ctx (:services-url this) body ch)
+      (groups/create-team-group ctx (:services-url this) {:team_group (:team-group body)} ch)
       {:team-group (<?? ch)}))
 
   (get-team-group [this ctx group-id]
@@ -205,7 +205,7 @@
 
   (put-team-group [this ctx group-id body]
     (let [ch (chan)]
-      (groups/update-team-group ctx (:services-url this) group-id body ch)
+      (groups/update-team-group ctx (:services-url this) group-id {:team_group (:team-group body)} ch)
       {:team-group (<?? ch)}))
 
   (delete-team-group [this ctx group-id]
