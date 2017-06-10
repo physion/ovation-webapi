@@ -304,7 +304,7 @@
   {:team_id               Id
    (s/optional-key :type) s/Str
    :organization_group_id Id
-   :role                  Id})
+   :role_id               Id})
 
 (s/defschema TeamGroup
   {:id                    Id

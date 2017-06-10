@@ -341,7 +341,7 @@
                                                                 (if (= {:team_group {:type                  "TeamGroup"
                                                                                      :team_id               team-id
                                                                                      :organization_group_id org-group-id
-                                                                                     :role                  role-id}} (util/from-json body))
+                                                                                     :role_id               role-id}} (util/from-json body))
                                                                   (let [result rails-response]
                                                                     {:status 201
                                                                      :body   (util/to-json result)})
@@ -350,7 +350,7 @@
                 body {:team_group {:type                  "TeamGroup"
                                    :team_id               team-id
                                    :organization_group_id org-group-id
-                                   :role                  role-id}}]
+                                   :role_id               role-id}}]
             (groups/create-team-group ..ctx.. url body ch)
             (<?? ch) => (:team_group expected))))))
 
