@@ -552,7 +552,7 @@
                         :body [body {:team-group NewTeamGroup}]
                         (let [ctx (request-context/make-context request org authz)
                               group (authz/post-team-group authz ctx body)]
-                          (created (routes/named-route ctx :get-team-group {:org org :id id}) group)))
+                          (created (routes/named-route ctx :get-team-group {:org org :id id :gid (:id group)}) group)))
 
                       (context "/:gid" []
                         :path-params [gid :- Id]
