@@ -33,7 +33,8 @@
             [ovation.util :as util]
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
-            [ovation.authz :as authz]))
+            [ovation.authz :as authz]
+            [clojure.tools.logging :as logging]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -552,7 +553,7 @@
                         :body [body {:team-group NewTeamGroup}]
                         (let [ctx (request-context/make-context request org authz)
                               group (authz/post-team-group authz ctx body)]
-                          (created (routes/named-route ctx :get-team-group {:org org :id id :gid (:id group)}) group)))
+                          (created (routes/named-route ctx :get-team-group {:org org :id id :gid (get-in group [:team-group :id])}) group)))
 
                       (context "/:gid" []
                         :path-params [gid :- Id]
