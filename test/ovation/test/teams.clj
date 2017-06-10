@@ -267,7 +267,7 @@
                                                               :body   (util/to-json rails-response)}]
           (let [ch (async/chan)]
             (groups/get-team-groups ..ctx.. url team-id ch)
-            (<?? ch) => (:team-groups expected)))))
+            (<?? ch) => (:team_groups expected)))))
 
     (fact "get-team-group proxies team_groups/:id"
       (let [team-id        3
@@ -287,7 +287,7 @@
                                                   :body   (util/to-json rails-response)}]
           (let [ch (async/chan)]
             (groups/get-team-group ..ctx.. base-url group-id ch)
-            (<?? ch) => (:team-group expected)))))
+            (<?? ch) => (:team_group expected)))))
 
     (fact "delete-team-group proxies team_groups"
       (let [group-id        4
@@ -321,7 +321,7 @@
                                                                  {:status 422}))]
           (let [ch (async/chan)]
             (groups/update-team-group ..ctx.. url group-id expected ch)
-            (<?? ch) => (:team-group expected)))))
+            (<?? ch) => (:team_group expected)))))
 
     (fact "create-team-group proxies team_groups"
       (let [team-id         3
@@ -352,7 +352,7 @@
                                    :organization_group_id org-group-id
                                    :role_id               role-id}}]
             (groups/create-team-group ..ctx.. url body ch)
-            (<?? ch) => (:team-group expected))))))
+            (<?? ch) => (:team_group expected))))))
 
   (facts "get-authorizations"
     (fact "gets authorizations"
