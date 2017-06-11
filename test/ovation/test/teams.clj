@@ -9,6 +9,7 @@
             [ovation.request-context :as request-context]
             [clojure.core.async :as async]
             [clojure.walk :as walk]
+            [ovation.core]
             [ovation.authz :as authz]
             [ovation.constants :as k]
             [ovation.groups :as groups])
@@ -115,13 +116,16 @@
                 (routes/named-route ..ctx.. :post-memberships {:id "1" :org ..org..}) => "team-memberships"
                 (routes/named-route ..ctx.. :put-membership {:id "1" :mid "3" :org ..org..}) => "membership-self")))
 
-          (fact "should create new team when it doesn't exist yet"
-            (with-fake-http [team-url {:status 404}]
-              (get-in (teams/get-team* ..ctx.. ..db.. team-id) [:team :type]) => nil
-              (provided
-                (request-context/authorization-ch ..ctx..) => authz-ch
-                (teams/create-team ..ctx.. team-id) => {:team {:id   ..id..
-                                                               :type "Team"}})))
+          (facts "when team doesn't exist"
+            (fact "it should be created if user can update Project"
+              (with-fake-http [team-url {:status 404}]
+                (get-in (teams/get-team* ..ctx.. ..db.. team-id) [:team :type]) => nil
+                (provided
+                  (ovation.core/get-entity ..ctx.. ..db.. team-id) => ..proj..
+                  (auth/can? ..ctx.. ::auth/update ..proj..) => true
+                  (request-context/authorization-ch ..ctx..) => authz-ch
+                  (teams/create-team ..ctx.. team-id) => {:team {:id   ..id..
+                                                                 :type "Team"}}))))
 
           (fact "should throw! other response codes"
             (with-fake-http [team-url {:status 401}]

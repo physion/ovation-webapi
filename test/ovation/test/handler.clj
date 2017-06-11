@@ -679,7 +679,7 @@
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/get-permissions anything) => PERMISSIONS
-              (teams/get-team* anything anyting id) => {:team team})))))
+              (teams/get-team* anything anything id) => {:team team})))))
 
     (facts "About activity user stories"
       (facts "create project activity")
