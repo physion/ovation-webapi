@@ -176,7 +176,7 @@
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
-                            (teams/create-team anything anything) => {:team ..team..}
+                            (teams/create-team anything anything) => ..team..
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
@@ -231,7 +231,7 @@
 
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
-                            (teams/create-team anything anything) => {:team ..team..}
+                            (teams/create-team anything anything) => ..team..
                             (auth/identity anything) => ..auth..
                             (request-context/make-context anything ~org anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
@@ -679,7 +679,7 @@
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/get-permissions anything) => PERMISSIONS
-              (teams/get-team* anything id) => {:team team})))))
+              (teams/get-team* anything anything id) => {:team team})))))
 
     (facts "About activity user stories"
       (facts "create project activity")

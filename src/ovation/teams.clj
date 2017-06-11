@@ -11,7 +11,9 @@
             [ring.util.http-predicates :as hp]
             [ovation.http :as http]
             [slingshot.slingshot :refer [try+]]
-            [ovation.request-context :as request-context]))
+            [ovation.request-context :as request-context]
+            [ovation.core :as core]
+            [ovation.auth :as auth]))
 
 
 
@@ -76,22 +78,22 @@
           (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
                          :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
 
-
-
 (defn create-team
   [ctx team-uuid]
 
   (let [ch   (chan)
         org  (::request-context/org ctx)
-        body (util/to-json {:team {:uuid            team-uuid
-                                   :organization_id org}})]
+        body {:team {:uuid            team-uuid
+                     :organization_id org}}]
+
     (logging/info (str "Creating Team for " team-uuid))
 
     (http/create-resource ctx config/TEAMS_SERVER "teams" body ch
       :response-key :team
       :make-tf make-read-team-tf)
 
-    {:team (<?? ch)}))
+    (let [team (<?? ch)]
+      team)))
 
 (defn get-team
   [ctx team-id ch]
@@ -101,7 +103,7 @@
 
 
 (defn get-team*
-  [ctx team-id]
+  [ctx db team-id]
 
   (let [ch      (chan)
         team-ch (chan)]
@@ -110,7 +112,10 @@
       (let [team (<! team-ch)]
         (if (util/exception? team)
           (if (hp/not-found? (:response team))
-            (>! ch (create-team ctx team-id))
+            (if-let [project (core/get-entity ctx db team-id)]
+              (if (auth/can? ctx ::auth/update project)
+                (>! ch (create-team ctx team-id)))
+              (>! ch team))
             (>! ch team))
           (>! ch team))))
     {:team (<?? ch)}))
