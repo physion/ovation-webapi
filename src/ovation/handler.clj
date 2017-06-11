@@ -536,7 +536,7 @@
                       :return {:team Team}
                       :summary "Gets Project Team"
                       (let [ctx (request-context/make-context request org authz)]
-                        (ok (teams/get-team* ctx id))))
+                        (ok (teams/get-team* ctx db id))))
 
                     (context "/team_groups" []
                       (GET "/" request

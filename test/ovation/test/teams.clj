@@ -108,7 +108,7 @@
             (with-fake-http [team-url {:status 200
                                        :body   (util/to-json rails-team)}]
 
-              (teams/get-team* ..ctx.. team-id) => expected
+              (teams/get-team* ..ctx.. ..db.. team-id) => expected
               (provided
                 (request-context/authorization-ch ..ctx..) => authz-ch
                 (routes/named-route ..ctx.. :get-team {:id "1" :org ..org..}) => "team-self"
@@ -117,7 +117,7 @@
 
           (fact "should create new team when it doesn't exist yet"
             (with-fake-http [team-url {:status 404}]
-              (get-in (teams/get-team* ..ctx.. team-id) [:team :type]) => nil
+              (get-in (teams/get-team* ..ctx.. ..db.. team-id) [:team :type]) => nil
               (provided
                 (request-context/authorization-ch ..ctx..) => authz-ch
                 (teams/create-team ..ctx.. team-id) => {:team {:id   ..id..
@@ -125,7 +125,7 @@
 
           (fact "should throw! other response codes"
             (with-fake-http [team-url {:status 401}]
-              (teams/get-team* ..ctx.. team-id) => (throws ExceptionInfo)
+              (teams/get-team* ..ctx.. ..db.. team-id) => (throws ExceptionInfo)
               (provided
                 (request-context/authorization-ch ..ctx..) => authz-ch)))))))
 
