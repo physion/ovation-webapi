@@ -83,7 +83,7 @@
 
   (let [ch   (chan)
         org  (::request-context/org ctx)
-        body {:team {:uuid            team-uuid
+        body {:team {:uuid            (str team-uuid)
                      :organization_id org}}]
 
     (logging/info (str "Creating Team for " team-uuid))
