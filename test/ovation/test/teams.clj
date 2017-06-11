@@ -119,13 +119,13 @@
           (facts "when team doesn't exist"
             (fact "it should be created if user can update Project"
               (with-fake-http [team-url {:status 404}]
-                (get-in (teams/get-team* ..ctx.. ..db.. team-id) [:team :type]) => nil
+                (get-in (teams/get-team* ..ctx.. ..db.. team-id) [:team :type]) => k/TEAM-TYPE
                 (provided
                   (ovation.core/get-entity ..ctx.. ..db.. team-id) => ..proj..
                   (auth/can? ..ctx.. ::auth/update ..proj..) => true
                   (request-context/authorization-ch ..ctx..) => authz-ch
-                  (teams/create-team ..ctx.. team-id) => {:team {:id   ..id..
-                                                                 :type "Team"}}))))
+                  (teams/create-team ..ctx.. team-id) => {:id   ..id..
+                                                          :type "Team"}))))
 
           (fact "should throw! other response codes"
             (with-fake-http [team-url {:status 401}]
@@ -193,7 +193,7 @@
           (fact "creates team"
             (with-fake-http [{:url teams-url :method :post} {:status 201
                                                              :body   (util/to-json team)}]
-              (teams/create-team ..ctx.. team-id) => team
+              (teams/create-team ..ctx.. team-id) => (:team team)
               (provided
                 (request-context/authorization-ch ..ctx..) => authz-ch
                 (routes/named-route ..ctx.. :get-team {:id team-id :org org-id}) => team-rt

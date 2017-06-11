@@ -78,8 +78,6 @@
           (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
                          :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
 
-
-
 (defn create-team
   [ctx team-uuid]
 
@@ -94,7 +92,8 @@
       :response-key :team
       :make-tf make-read-team-tf)
 
-    {:team (<?? ch)}))
+    (let [team (<?? ch)]
+      team)))
 
 (defn get-team
   [ctx team-id ch]
