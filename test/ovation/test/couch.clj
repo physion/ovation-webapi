@@ -98,7 +98,9 @@
 
   (facts "About merge-updates"
     (fact "updates _rev"
-      (let [docs    [{:_id ..id1.. :_rev ..rev1..} {:_id ..id2.. :_rev ..rev2..}]
-            updates [{:id ..id1.. :rev ..rev3..}]]
-        (couch/merge-updates docs updates) => '({:_id ..id1.. :_rev ..rev3..} {:_id ..id2.. :_rev ..rev2..})))))
+      (let [doc1-id (util/make-uuid)
+            doc2-id (str (util/make-uuid))
+            docs    [{:_id doc1-id :_rev ..rev1..} {:_id doc2-id :_rev ..rev2..} {:_id ..doc3.. :_rev ..rev5..}]
+            updates [{:id (str doc1-id) :rev ..rev3..} {:id (str doc2-id) :rev ..rev4..}]]
+        (couch/merge-updates docs updates) => [{:_id doc1-id :_rev ..rev3..} {:_id doc2-id :_rev ..rev4..} {:_id ..doc3.. :_rev ..rev5..}]))))
 
