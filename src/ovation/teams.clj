@@ -67,7 +67,9 @@
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
             teams              (if authorization-ch
                                  (get-in (<?? authorization-ch) [:teams])
-                                 {})]
+                                 (do
+                                   (logging/error "make-read-team-tf: authorization channel is nil")
+                                   {}))]
 
         (-> team
           (assoc :type k/TEAM-TYPE)

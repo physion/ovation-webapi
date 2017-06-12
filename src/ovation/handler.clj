@@ -313,10 +313,10 @@
                     (context "/annotations" []
                       :tags ["annotations"]
                       :name :annotations
-                      (annotation db org id "keywords" "tags" TagRecord TagAnnotation)
-                      (annotation db org id "properties" "properties" PropertyRecord PropertyAnnotation)
-                      (annotation db org id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
-                      (annotation db org id "notes" "notes" NoteRecord NoteAnnotation))))
+                      (annotation db org authz id "keywords" "tags" TagRecord TagAnnotation)
+                      (annotation db org authz id "properties" "properties" PropertyRecord PropertyAnnotation)
+                      (annotation db org authz id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
+                      (annotation db org authz id "notes" "notes" NoteRecord NoteAnnotation))))
 
                 (context "/relationships" []
                   :tags ["links"]
@@ -344,69 +344,69 @@
 
                 (context "/projects" []
                   :tags ["projects"]
-                  (get-resources db org "Project")
-                  (post-resources db org "Project" [NewProject])
+                  (get-resources db org authz "Project")
+                  (post-resources db org authz "Project" [NewProject])
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "Project" id)
-                    (post-resource db org "Project" id [NewFolder NewFile NewChildActivity])
-                    (put-resource db org "Project" id)
-                    (delete-resource db org "Project" id)
+                    (get-resource db org authz "Project" id)
+                    (post-resource db org authz "Project" id [NewFolder NewFile NewChildActivity])
+                    (put-resource db org authz "Project" id)
+                    (delete-resource db org authz "Project" id)
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "Project" id rel)
-                      (relationships db org "Project" id rel))))
+                      (rel-related db org authz "Project" id rel)
+                      (relationships db org authz "Project" id rel))))
 
 
                 (context "/sources" []
                   :tags ["sources"]
-                  (get-resources db org "Source")
-                  (post-resources db org "Source" [NewSource])
+                  (get-resources db org authz "Source")
+                  (post-resources db org authz "Source" [NewSource])
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "Source" id)
-                    (post-resource db org "Source" id [NewSource])
-                    (put-resource db org "Source" id)
-                    (delete-resource db org "Source" id)
+                    (get-resource db org authz "Source" id)
+                    (post-resource db org authz "Source" id [NewSource])
+                    (put-resource db org authz "Source" id)
+                    (delete-resource db org authz "Source" id)
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "Source" id rel)
-                      (relationships db org "Source" id rel))))
+                      (rel-related db org authz "Source" id rel)
+                      (relationships db org authz "Source" id rel))))
 
 
                 (context "/activities" []
                   :tags ["activities"]
-                  (get-resources db org "Activity")
-                  (post-resources db org "Activity" [NewActivity])
+                  (get-resources db org authz "Activity")
+                  (post-resources db org authz "Activity" [NewActivity])
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "Activity" id)
-                    (put-resource db org "Activity" id)
-                    (delete-resource db org "Activity" id)
+                    (get-resource db org authz "Activity" id)
+                    (put-resource db org authz "Activity" id)
+                    (delete-resource db org authz "Activity" id)
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "Activity" id rel)
-                      (relationships db org "Activity" id rel))))
+                      (rel-related db org authz "Activity" id rel)
+                      (relationships db org authz "Activity" id rel))))
 
                 (context "/folders" []
                   :tags ["folders"]
-                  (get-resources db org "Folder")
+                  (get-resources db org authz "Folder")
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "Folder" id)
-                    (post-resource db org "Folder" id [NewFolder NewFile])
-                    (put-resource db org "Folder" id)
-                    (delete-resource db org "Folder" id)
+                    (get-resource db org authz "Folder" id)
+                    (post-resource db org authz "Folder" id [NewFolder NewFile])
+                    (put-resource db org authz "Folder" id)
+                    (delete-resource db org authz "Folder" id)
                     (POST "/move" request
                       :name :move-folder
                       :return {s/Keyword (s/either File Folder)
@@ -417,22 +417,22 @@
                                    :destination s/Str}]
                       (let [ctx (request-context/make-context request org authz)]
                         (created (routes/self-route ctx "folder" id)
-                          (move-contents* request db org id info))))
+                          (move-contents* request db org authz id info))))
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "Folder" id rel)
-                      (relationships db org "Folder" id rel))))
+                      (rel-related db org authz "Folder" id rel)
+                      (relationships db org authz "Folder" id rel))))
 
 
                 (context "/files" []
                   :tags ["files"]
-                  (get-resources db org "File")
+                  (get-resources db org authz "File")
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "File" id)
+                    (get-resource db org authz "File" id)
                     (POST "/" request
                       :name :create-file-entity
                       :return CreateRevisionResponse
@@ -452,21 +452,21 @@
                                    :destination s/Str}]
                       (let [ctx (request-context/make-context request org authz)]
                         (created (routes/self-route ctx "file" id)
-                          (move-contents* request db org id info))))
+                          (move-contents* request db org authz id info))))
 
                     (GET "/heads" request
                       :name :file-head-revisions
                       :return {:revisions [Revision]}
                       :summary "Gets the HEAD revision(s) for this file"
-                      (get-head-revisions* request db org id))
-                    (put-resource db org "File" id)
-                    (delete-resource db org "File" id)
+                      (get-head-revisions* request db org authz id))
+                    (put-resource db org authz "File" id)
+                    (delete-resource db org authz "File" id)
 
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "File" id rel)
-                      (relationships db org "File" id rel))))
+                      (rel-related db org authz "File" id rel)
+                      (relationships db org authz "File" id rel))))
 
 
                 (context "/revisions" []
@@ -474,9 +474,9 @@
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
-                    (get-resource db org "Revision" id)
-                    (put-resource db org "Revision" id)
-                    (delete-resource db org "Revision" id)
+                    (get-resource db org authz "Revision" id)
+                    (put-resource db org authz "Revision" id)
+                    (delete-resource db org authz "Revision" id)
                     (POST "/" request
                       :name :create-revision-entity
                       :return CreateRevisionResponse
@@ -505,8 +505,8 @@
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
-                      (rel-related db org "Revision" id rel)
-                      (relationships db org "Revision" id rel))))
+                      (rel-related db org authz "Revision" id rel)
+                      (relationships db org authz "Revision" id rel))))
 
 
 
