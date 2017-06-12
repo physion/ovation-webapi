@@ -122,7 +122,7 @@
                 relationships))
       rel-map)))
 
-(defn-traced post-resources*
+(defn post-resources*
   [ctx db type-name type-kw new-entities]
   (let [{routes ::request-context/routes
          org    ::request-context/org} ctx]
