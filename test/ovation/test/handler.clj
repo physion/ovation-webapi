@@ -607,7 +607,7 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org id body) => expected
+            (rh/move-contents* anything db org anything id body) => expected
             (request-context/make-context anything org anything) => ..ctx..
             (routes/self-route ..ctx.. "file" id) => "location")))
 
@@ -621,7 +621,7 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org id body) => expected
+            (rh/move-contents* anything db org anything id body) => expected
             (request-context/make-context anything org anything) => ..ctx..
             (routes/self-route ..ctx.. "folder" id) => "location"))))
 
