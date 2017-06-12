@@ -65,7 +65,9 @@
       (let [team-id            (:id team)
             memberships        (:memberships team)
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
-            teams              (get-in (<?? authorization-ch) [:teams])]
+            teams              (if authorization-ch
+                                 (get-in (<?? authorization-ch) [:teams])
+                                 {})]
 
         (-> team
           (assoc :type k/TEAM-TYPE)
