@@ -7,7 +7,8 @@
             [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
             [clojure.tools.logging :as logging]
-            [ring.util.http-response :refer [throw!]])
+            [ring.util.http-response :refer [throw!]]
+            [clojure.walk :as walk])
   (:import (java.io EOFException)))
 
 (defn call-http
@@ -36,7 +37,7 @@
               (>!! ch err))))
 
         (let [err {:type :ring.util.http-response/response :response (-> (select-keys resp [:status :body])
-                                                                       (assoc :headers (select-keys (:headers resp) [:content-type])))}]
+                                                                       (assoc :headers (walk/stringify-keys (select-keys (:headers resp) [:content-type]))))}]
           (logging/debug "Conveying HTTP response error " err)
           (>!! ch err))))))
 
