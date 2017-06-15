@@ -16,7 +16,7 @@
         user-id          10
         org-id           3
         group-id         21
-        service-url      (util/join-path [config/SERVICES_API "api" "v2"])
+        service-url      (util/join-path [config/SERVICES_API_URL "api" "v2"])
         rails-membership {"id"              id
                           "user_id"         user-id
                           "organization_id" org-id}]
@@ -124,7 +124,7 @@
   (let [id          1
         user-id     10
         org-id      3
-        service-url (util/join-path [config/SERVICES_API "api" "v2"])
+        service-url (util/join-path [config/SERVICES_API_URL "api" "v2"])
         rails-group {"id"              id
                      "user_id"         user-id
                      "organization_id" org-id}]
@@ -246,7 +246,7 @@
         user-id          10
         user-email       "user@example.com"
         org-id           3
-        service-url      (util/join-path [config/SERVICES_API "api" "v2"])
+        service-url      (util/join-path [config/SERVICES_API_URL "api" "v2"])
         rails-membership {"id"              id
                           "user_id"         user-id
                           "email"           user-email
