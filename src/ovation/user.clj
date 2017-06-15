@@ -7,8 +7,8 @@
 
 (def system-config
   {:web   {:port 3000}
-   :authz {:v1-url (util/join-path [config/SERVICES_API "api" "v1"])
-           :v2-url (util/join-path [config/SERVICES_API "api" "v2"])}
+   :pubsub {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
+   :authz {:services-url (util/join-path [config/SERVICES_API "api" "v2"])}
    :db    {:host     (config/config :cloudant-db-url)
            :port     nil
            :username (config/config :cloudant-username)

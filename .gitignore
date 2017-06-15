@@ -38,3 +38,5 @@ lein
 dev.env
 
 ovation-staging.json
+
+dev-local.env

@@ -12,7 +12,10 @@
             [ring.util.http-response :refer [unprocessable-entity!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.transform.read :as tr]
-            [ovation.request-context :as request-context]))
+            [clojure.tools.logging :as logging]
+            [ovation.request-context :as request-context]
+            [ovation.pubsub :as pubsub]
+            [clojure.core.async :as async]))
 
 (defn-traced get-head-revisions
   "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
@@ -117,31 +120,55 @@
   (doall (map #(make-resource ctx %) revisions)))           ;;TODO this would be much better as core.async channel
 
 
-(defn-traced update-metadata
+(defn publish-revision
+  [db doc]
+  (let [publisher (get-in db [:pubsub :publisher])
+        topic     (config/config :revisions-topic :default :revisions)]
+    (pubsub/publish publisher topic {:id   (:_id doc)
+                                     :rev  (:_rev doc)
+                                     :type (:type doc)} (async/chan))))
+(defn update-metadata
   [ctx db revision & {:keys [complete] :or {complete true}}]
 
-  (when-not (re-find #"ovation.io" (get-in revision [:attributes :url]))
-    (unprocessable-entity! {:errors {:detail "Unable to update metadata for URLs outside ovation.io/api/v1/resources"}}))
+  (if (re-find #"ovation.io" (get-in revision [:attributes :url]))
+    ;; /api/v1/resources Resource
+    (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
+          resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
+                    {:oauth-token (request-context/token ctx)
+                     :headers     {"Content-Type" "application/json"
+                                   "Accept"       "application/json"}})
+          file    (if complete
+                    (core/get-entity ctx db (get-in revision [:attributes :file_id]))
+                    nil)]
+      (let [body             (if (= (:status @resp) 200)
+                               (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
+                               {})                            ;; if it's not 200, don't add any additional attributes
+            updated-revision (-> revision
+                               (update-in [:attributes] merge body)
+                               (assoc-in [:attributes :upload-status] k/COMPLETE))
+            updates          (if file
+                               [updated-revision (update-file-status file [revision] k/COMPLETE)]
+                               [updated-revision])
+            update-result    (first (filter #(= (:_id %) (:_id revision))
+                                      (core/update-entities ctx db updates :allow-keys [:revisions])))]
 
-  (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
-        resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
-                  {:oauth-token (request-context/token ctx)
-                   :headers     {"Content-Type" "application/json"
-                                 "Accept"       "application/json"}})
-        file    (if complete
-                  (core/get-entity ctx db (get-in revision [:attributes :file_id]))
-                  nil)]
-    (let [body             (if (= (:status @resp) 200)
-                             (dissoc (util/from-json (:body @resp)) :etag) ;; Remove the :etag entry, since it's not useful to end user
-                             {})                            ;; if it's not 200, don't add any additional attributes
-          updated-revision (-> revision
-                             (update-in [:attributes] merge body)
-                             (assoc-in [:attributes :upload-status] k/COMPLETE))
-          updates          (if file
-                             [updated-revision (update-file-status file [revision] k/COMPLETE)]
-                             [updated-revision])]
-      (first (filter #(= (:_id %) (:_id revision))
-               (core/update-entities ctx db updates :allow-keys [:revisions]))))))
+        (publish-revision db update-result)
+        update-result))
+
+    ;; Remote resource
+    (let [file (if complete
+                    (core/get-entity ctx db (get-in revision [:attributes :file_id]))
+                    nil)]
+      (logging/info "Updating file status for remote revision")
+      (when file
+        (let [updated-revision (-> revision
+                                 (assoc-in [:attributes :upload-status] k/COMPLETE))
+              updates          [updated-revision (update-file-status file [revision] k/COMPLETE)]
+              update-result    (first (filter #(= (:_id %) (:_id revision))
+                                        (core/update-entities ctx db updates :allow-keys [:revisions])))]
+
+          (publish-revision db update-result)
+          update-result)))))
 
 
 (defn-traced record-upload-failure

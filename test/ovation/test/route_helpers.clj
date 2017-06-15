@@ -20,23 +20,21 @@
                                      nil
                                      (slingshot.support/stack-trace))))
 
-(against-background [(request-context/make-context ..req.. ..org..) => ..ctx..
+(against-background [(request-context/make-context ..req.. ..org.. anything) => ..ctx..
                      ..ctx.. =contains=> {::request-context/auth   ..auth..
                                           ::request-context/routes ..rt..}]
 
   (facts "About get-head-revisions*"
     (fact "returns HEAD revisions for file"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         ..file.. =contains=> {:type "File"}
-        (ovation.request-context/make-context ..req.. ..org..) => ..ctx..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) => ..revs..))
 
     (fact "+throws not-found if HEADs throws not found"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..id..) => (throws ExceptionInfo)
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => (throws ExceptionInfo)
       (provided
-        (ovation.request-context/make-context ..req.. ..org..) => ..ctx..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) =throws=> (sling-throwable {:type ::revisions/not-found}))))
 
   (facts "About post-resource*"
@@ -116,7 +114,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -130,7 +128,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz..  ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx. ..db.. [..dest..]) => (seq [dest])
@@ -144,7 +142,7 @@
             dest {:type "Whoa"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -152,16 +150,16 @@
 
     (fact "adds relationships"
       (let [src  {:type         "Folder"
-                  :_id          ..src..
-                  }
-            file {:type         "File"
-                  :_id          ..file..
-                  }
-            dest {:type         "Folder"
-                  :_id          ..dest..
-                  }]
+                  :_id          ..src..}
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
+            file {:type         "File"
+                  :_id          ..file..}
+
+            dest {:type         "Folder"
+                  :_id          ..dest..}]
+
+
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
                                                                                                        :links   ..created-links..
                                                                                                        :updates ..updated-entities..}
         (provided

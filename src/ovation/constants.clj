@@ -12,6 +12,8 @@
 (def SOURCE-TYPE "Source")
 (def ACTIVITY-TYPE "Activity")
 
+(def TEAM-GROUP-TYPE "TeamGroup")
+
 (def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
 (def ANNOTATION-TYPE-NAME (clojure.string/lower-case ANNOTATION-TYPE))
 
@@ -50,3 +52,11 @@
 (def UPLOADING "in-progress")
 (def COMPLETE "complete")
 (def ERROR "error")
+
+;; Role names
+(def ADMIN-ROLE "Admin")
+(def CURATOR-ROLE "Curator")
+(def MEMBER-ROLE "Member")
+
+;; Rails resources
+(def TEAM-GROUPS "team_groups")

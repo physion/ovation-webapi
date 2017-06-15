@@ -36,8 +36,9 @@
 (s/defschema PropertyAnnotation (conj AnnotationBase {:annotation_type (s/eq k/PROPERTIES)
                                                       :annotation      PropertyRecord}))
 
-(s/defschema NoteRecord {:text      s/Str
-                         :timestamp s/Str})
+(s/defschema NoteRecord {:text                             s/Str
+                         (s/optional-key :organization_id) Id
+                         :timestamp                        s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type (s/eq k/NOTES)
                                                   :annotation      NoteRecord
                                                   (s/optional-key :edited_at) s/Str}))
@@ -220,20 +221,22 @@
 
 ;; -- Organizations -- ;;
 (s/defschema NewOrganization
-  {:type (s/eq "Organization")
-   :name s/Str})
+  {:type     (s/eq "Organization")
+   :name     s/Str
+   s/Keyword s/Any})
 
 (s/defschema Organization
   {:id                                        Id
    :type                                      (s/eq "Organization")
    :uuid                                      s/Uuid
    :name                                      s/Str
+   (s/optional-key :logo_image)               s/Str
    (s/optional-key :is_admin)                 s/Bool
    (s/optional-key :research_subscription_id) Id
-   :links                                     {:self                                      s/Str
-                               (s/optional-key :projects)                 s/Str
-                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
-                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
+   (s/optional-key :links)                    {:self                                      s/Str
+                                               (s/optional-key :projects)                 s/Str
+                                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
+                                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
@@ -268,9 +271,9 @@
 
 ;; -- Organization group memberships -- ;;
 (s/defschema NewOrganizationGroupMembership
-  {:type                       (s/eq "OrganizationGroupMembership")
+  {:type                       (s/eq "GroupMembership")
    :organization_membership_id Id
-   :group_id                   Id
+   :organization_group_id      Id
    (s/optional-key :links)     {:self s/Str}})
 
 (s/defschema OrganizationGroupMembership
@@ -297,6 +300,19 @@
    :membership_role_ids    [s/Int]
    :links                  {:self s/Keyword}})
 
+(s/defschema NewTeamGroup
+  {:team_id               Id
+   (s/optional-key :type) s/Str
+   :organization_group_id Id
+   :role_id               Id})
+
+(s/defschema TeamGroup
+  {:id                    Id
+   :team_id               Id
+   :organization_group_id Id
+   :role_id               Id
+   (s/optional-key :type) s/Str
+   :name                  s/Str})
 
 (s/defschema PendingTeamMembership
   {:id        Id
@@ -340,6 +356,7 @@
    :roles               [TeamRole]
    :pending_memberships [PendingTeamMembership]
    :memberships         [TeamMembership]
+   :team_groups         [TeamGroup]
    :links               {s/Keyword s/Str}
    (s/optional-key :permissions) {s/Keyword s/Bool}})
 

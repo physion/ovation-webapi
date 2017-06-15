@@ -28,6 +28,7 @@
   "Change special characters into HTML character entities."
   [text]
   (.. ^String text
+    (replace "&nbsp;" " ")
     (replace "&"  "&amp;")
     (replace "<"  "&lt;")
     (replace ">"  "&gt;")

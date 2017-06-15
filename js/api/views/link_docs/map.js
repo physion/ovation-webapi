@@ -13,7 +13,8 @@ function (doc) {
         if (doc.links && doc.links._collaboration_roots) {
             var roots = doc.links._collaboration_roots;
             for (var i = 0; i < roots.length; i++) {
-                emit([roots[i], doc.source_id, doc.rel], null);
+                emit([org, roots[i], doc._id], null);
+                emit([org, roots[i], doc.source_id, doc.rel], null);
                 if (doc.inverse_rel) {
                     emit([org, roots[i], doc.target_id, doc.inverse_rel], null);
                 }
