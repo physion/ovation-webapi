@@ -35,7 +35,8 @@
               (logging/debug "Conveying HTTP response error " err)
               (>!! ch err))))
 
-        (let [err {:type :ring.util.http-response/response :response (select-keys resp [:status :body])}]
+        (let [err {:type :ring.util.http-response/response :response (-> (select-keys resp [:status :body])
+                                                                       (assoc :headers (select-keys (:headers resp) ["Content-Type"])))}]
           (logging/debug "Conveying HTTP response error " err)
           (>!! ch err))))))
 
