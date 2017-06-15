@@ -37,7 +37,7 @@
               (>!! ch err))))
 
         (let [err {:type :ring.util.http-response/response :response (-> (select-keys resp [:status :body])
-                                                                       (assoc :headers (walk/stringify-keys (select-keys (:headers resp) [:content-type]))))}]
+                                                                       (assoc :headers (walk/stringify-keys (select-keys (:headers resp) [:content-type :access-control-allow-credentials :access-control-allow-methods :access-control-allow-origin]))))}]
           (logging/debug "Conveying HTTP response error " err)
           (>!! ch err))))))
 
