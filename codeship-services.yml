@@ -1,0 +1,30 @@
+web:
+  build:
+    image: web
+    dockerfile: Dockerfile
+  links:
+    - db
+    - pubsub
+  env_file: dev.env
+  cached: true
+
+db:
+  image: mysql
+
+pubsub:
+  image: niallmccullagh/docker-google-cloud-emulators:latest
+  ports:
+    - "8538:8538"
+  command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
+
+google_cloud_deployment:
+  image: codeship/google-cloud-deployment
+  add_docker: true
+  encrypted_env_file: gc.env.encrypted
+  volumes:
+    - ./:/deploy
+
+gcr_dockercfg:
+  image: codeship/gcr-dockercfg-generator
+  add_docker: true
+  encrypted_env_file: gc.env.encrypted

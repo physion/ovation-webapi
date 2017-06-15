@@ -181,7 +181,7 @@
         (fact "updates metadata from Rails and sets file=>revision status to COMPLETE and publishes :revisions message [#145319005]"
           (let [c           (async/chan)
                 revid       "100"
-                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 length      100
@@ -189,7 +189,7 @@
                 updated-rev (-> revision
                               (assoc-in [:attributes :content_length] length)
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                                {:status 200
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
@@ -205,14 +205,14 @@
         (fact "skips metadata from Rails and sets file=>revision status to COMPLETE if rails response is not 200 [#136329619]"
           (let [c           (async/chan)
                 revid       "100"
-                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 length      100
                 etag        "etag"
                 updated-rev (-> revision
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                                {:status 500
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
@@ -246,10 +246,10 @@
       (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]
         (fact "creates a Rails Resource"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER {:status 201
-                                                      :body   (util/to-json {:resource {:public_url "url"
-                                                                                        :aws        "aws"
-                                                                                        :url        "post"}})}]
+            (with-fake-http [(util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:status 201
+                                                                                                :body   (util/to-json {:resource {:public_url "url"
+                                                                                                                                  :aws        "aws"
+                                                                                                                                  :url        "post"}})}]
               (rev/make-resource ..ctx.. {:_id        revid
                                           :attributes {}}) => {:revision {:_id        revid
                                                                           :attributes {:url           "url"
@@ -260,8 +260,8 @@
                 ..rsrc.. =contains=> {:url ..url..}))))
         (fact "+throws if rails API fails"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER {:status 500
-                                                      :body   "{}"}]
+            (with-fake-http [(util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:status 500
+                                                                                                :body   "{}"}]
               (rev/make-resource ..ctx.. {:_id        revid
                                           :attributes {}}) => (throws ExceptionInfo))))
         (fact "sets [:attributes :remote] to true if :url is present already"

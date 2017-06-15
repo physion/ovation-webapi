@@ -98,9 +98,9 @@
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:oauth-token (request-context/token ctx)
-                                                   :body        (util/to-json body)
-                                                   :headers     {"Content-Type" "application/json"}})]
+          resp (http/post (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:oauth-token (request-context/token ctx)
+                                                   :body                                                  (util/to-json body)
+                                                   :headers                                               {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
@@ -133,7 +133,7 @@
   (if (re-find #"ovation.io" (get-in revision [:attributes :url]))
     ;; /api/v1/resources Resource
     (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
-          resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
+          resp    (http/get (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" rsrc-id "metadata"])
                     {:oauth-token (request-context/token ctx)
                      :headers     {"Content-Type" "application/json"
                                    "Accept"       "application/json"}})
