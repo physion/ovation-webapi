@@ -59,11 +59,11 @@
       (facts "`create-group-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
                                                                                                       (if (= {:organization_group_membership {:type "GroupMembership"
-                                                                                                                                 :user_id           user-id
-                                                                                                                                 :organization_id   org-id}} (util/from-json body))
+                                                                                                                                              :user_id           user-id
+                                                                                                                                              :organization_id   org-id}} (util/from-json body))
                                                                                                         (let [result {:organization_group_membership {:id id
-                                                                                                                                         :user_id         user-id
-                                                                                                                                         :organization_id org-id}}]
+                                                                                                                                                      :user_id         user-id
+                                                                                                                                                      :organization_id org-id}}]
                                                                                                           {:status 201
                                                                                                            :body   (util/to-json result)})
                                                                                                         {:status 422}))]
@@ -83,12 +83,12 @@
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
                                                                                                         (if (= {:organization_group_membership {:id id
-                                                                                                                                   :type            "GroupMembership"
-                                                                                                                                   :user_id         user-id
-                                                                                                                                   :organization_id org-id}} (util/from-json body))
+                                                                                                                                                :type            "GroupMembership"
+                                                                                                                                                :user_id         user-id
+                                                                                                                                                :organization_id org-id}} (util/from-json body))
                                                                                                           (let [result {:organization_group_membership {:id id
-                                                                                                                                           :user_id         user-id
-                                                                                                                                           :organization_id org-id}}]
+                                                                                                                                                        :user_id         user-id
+                                                                                                                                                        :organization_id org-id}}]
                                                                                                             {:status 200
                                                                                                              :body   (util/to-json result)})
                                                                                                           {:status 422}))]
@@ -426,9 +426,9 @@
                              :is_admin   true
                              :logo_image logo-data
                              :links      {:self                     ..self1..
-                                     :projects                 ..projects1..
-                                     :organization-memberships ..members1..
-                                     :organization-groups      ..groups1..}}]
+                                          :projects                 ..projects1..
+                                          :organization-memberships ..members1..
+                                          :organization-groups      ..groups1..}}]
             (facts "with success"
               (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                    (routes/org-projects-route ..rt.. org-id) => ..projects1..
@@ -491,8 +491,34 @@
                       (orgs/get-organization ..ctx.. config/ORGS_SERVER c org-id)
                       (<?? c))
                     (catch [:type :ring.util.http-response/response] _
-                      true)) => true)))
-            ))
+                      true)) => true)))))
+
+
+        (facts "DELETE /o/:id"
+          (let [org-id  (get rails-org-1 "id")
+                org-url (util/join-path [config/ORGS_SERVER "organizations" org-id])]
+            (against-background [..ctx.. =contains=> {::request-context/org org-id}]
+              (facts "with success"
+                (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
+                                     (routes/org-projects-route ..rt.. org-id) => ..projects1..
+                                     (routes/org-memberships-route ..rt.. 1) => ..members1..
+                                     (routes/org-groups-route ..rt.. 1) => ..groups1..]
+                  (with-fake-http [{:url org-url :method :delete} {:status 204
+                                                                   :body   "{}"}]
+                    (fact "conveys organizations service response"
+                      (let [c (chan)]
+                        (orgs/delete-organization ..ctx.. config/ORGS_SERVER c)
+                        (<?? c)) => {}))))
+
+              (fact "with failure"
+                (with-fake-http [{:url org-url :method :delete} {:status 401}]
+                  (fact "conveys throwable"
+                    (try+
+                      (let [c (chan)]
+                        (orgs/delete-organization ..ctx.. config/ORGS_SERVER c)
+                        (<?? c))
+                      (catch [:type :ring.util.http-response/response] _
+                        true)) => true))))))
 
         (facts "GET /o"
           (fact "200 response"
@@ -503,18 +529,18 @@
                                   :uuid     (get rails-org-1 "uuid")
                                   :is_admin true
                                   :links    {:self                  ..self1..
-                                          :projects                 ..projects1..
-                                          :organization-memberships ..members1..
-                                          :organization-groups      ..groups1..}}
+                                             :projects                 ..projects1..
+                                             :organization-memberships ..members1..
+                                             :organization-groups      ..groups1..}}
                                  {:id       (get rails-org-2 "id")
                                   :type     "Organization"
                                   :name     (get rails-org-2 "name")
                                   :uuid     (get rails-org-2 "uuid")
                                   :is_admin true
                                   :links    {:self                  ..self2..
-                                          :projects                 ..projects2..
-                                          :organization-memberships ..members2..
-                                          :organization-groups      ..groups2..}}]]
+                                             :projects                 ..projects2..
+                                             :organization-memberships ..members2..
+                                             :organization-groups      ..groups2..}}]]
 
               (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                    (routes/self-route ..ctx.. "organization" 2 2) => ..self2..
@@ -544,6 +570,6 @@
                     (orgs/get-organizations ..ctx.. config/ORGS_SERVER c)
                     (<?? c))
                   (catch [:type :ring.util.http-response/response] _
-                    true)) => true)))
-          )))))
+                    true)) => true))))))))
+
 
