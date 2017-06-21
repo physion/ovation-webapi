@@ -10,7 +10,7 @@
 
 (def JWT_SECRET (config :jwt-secret))
 
-(def SERVICES_API_URL (config :ovation-io-host-uri :default "https://services-staging.ovation.io"))
+(def SERVICES_API_URL (config :ovation-io-host-uri :default "https://app-services-staging.ovation.io"))
 
 (def NOTIFICATIONS_SERVER SERVICES_API_URL)
 (def AUTH_SERVER SERVICES_API_URL)
