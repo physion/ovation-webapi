@@ -137,6 +137,14 @@
                   :summary "Get an Organization"
                   (ok (authz/update-organization authz (request-context/make-context request org authz) body)))
 
+                (DELETE "/" request
+                  :name :delete-organization
+                  :return {}
+                  :summary "Delete an Organization. BE CAREFUL!"
+                  (let [ctx (request-context/make-context request org authz)
+                        _ (authz/delete-organization authz ctx)]
+                    (no-content)))
+
                 (context "/authorizations" []
                   :tags ["auth"]
                   (GET "/" request

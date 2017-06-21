@@ -15,6 +15,7 @@
   (create-organization [this ctx body])
   (get-organization [this ctx])
   (update-organization [this ctx body])
+  (delete-organization [this ctx])
 
   (get-authorization [this ctx])
   (get-authorization-ch [this ctx])
@@ -76,8 +77,15 @@
         {:organization new-org})))
   (get-organization [this ctx]
     (organizations/get-organization* ctx (:services-url this)))
+
   (update-organization [this ctx body]
     (organizations/update-organization* ctx (:services-url this) body))
+
+  (delete-organization [this ctx]
+    (let [ch (chan)]
+      (organizations/delete-organization ctx (:services-url this) ch)
+      (let [result (<?? ch)]
+        result)))
 
   ;; ORGANIZATION MEMBERSHIPS
   (get-organization-memberships [this ctx]

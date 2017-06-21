@@ -138,6 +138,12 @@
     (let [org (<?? ch)]
       {:organization org})))
 
+(defn delete-organization
+  [ctx api-url ch & {:keys [close?] :or {close? true}}]
+  (let [org-id (:ovation.request-context/org ctx)]
+    (destroy-resource ctx api-url ORGANIZATIONS org-id ch
+      :close? close?)))
+
 (defn get-memberships
   [ctx api-url ch & {:keys [close?] :or {close? true}}]
   (let [org-id (:ovation.request-context/org ctx)]
