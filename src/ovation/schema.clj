@@ -265,6 +265,9 @@
 
 (s/defschema OrganizationGroup
   (-> NewOrganizationGroup
+    (assoc (s/optional-key :project_count) s/Int)
+    (assoc (s/optional-key :member_count) s/Int)
+    (assoc (s/optional-key :team_ids) [s/Uuid])
     (assoc (s/optional-key :organization_group_membership_ids) [Id])
     (assoc :id Id)))
 
