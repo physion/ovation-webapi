@@ -134,7 +134,7 @@
                 (request-context/authorization-ch ..ctx..) => authz-ch)))))))
 
 
-  (facts "post-memberhsip*"
+  (facts "post-membership*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..]
       (let [team-uuid       (str (util/make-uuid))
             team-id         "1"
@@ -206,9 +206,37 @@
                 (request-context/authorization-ch ..ctx..) => authz-ch)))))))
 
   (facts "put-membership*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {:identity ..auth..}
-                         (request-context/router ..request..) => ..rt..]
+    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..]
+      (let [team-uuid       (str (util/make-uuid))
+            team-id         "1"
+            memberships-url (util/join-path [config/TEAMS_SERVER "memberships"])
+            membership-id   "1"
+            membership-url  (util/join-path [memberships-url membership-id])
+            user-email      "example@example.com"
+            membership      {:email user-email
+                             :role  {:id 1}}
+            authz-ch        (async/promise-chan)
+            _               (async/go (async/>! authz-ch {}))
+            expected-put-body {:membership membership}]
+
+        (fact "updates membership"
+          (with-fake-http [{:url membership-url :method :put} (fn [_ {body :body} _]
+                                                                (if (= expected-put-body (util/from-json body))
+                                                                  (let [result {:membership {:id      membership-id
+                                                                                             :team_id team-id
+                                                                                             :email   user-email
+                                                                                             :role_id 1}}]
+                                                                    {:status 200
+                                                                     :body   (util/to-json result)})
+                                                                  {:status 422}))]
+            (teams/put-membership* ..ctx.. team-uuid membership membership-id) => {:membership {:email   user-email,
+                                                                                                :id      "1",
+                                                                                                :links   {:self membership-url},
+                                                                                                :role_id 1,
+                                                                                                :team_id team-id}}
+            (provided
+              (routes/named-route ..ctx.. :put-membership {:id team-uuid :mid membership-id :org ..org..}) => membership-url))))
+
       (fact "throws 422 if mid is not specified"
         (teams/put-membership* .ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 

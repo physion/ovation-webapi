@@ -133,7 +133,7 @@
     (unprocessable-entity!))
 
   (let [ch (chan)]
-    (http/update-resource ctx config/TEAMS_SERVER "memberships" membership membership-id ch
+    (http/update-resource ctx config/TEAMS_SERVER "memberships" {:membership membership} membership-id ch
       :response-key :membership
       :make-tf (make-read-membership-tf team-uuid))
 

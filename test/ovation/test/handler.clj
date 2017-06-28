@@ -636,26 +636,6 @@
                         :name                id
                         :uuid                id
                         :roles               []
-                        :pending_memberships [{
-                                               :id    "232",
-                                               :role  {
-                                                       :id              184,
-                                                       :organization_id 63,
-                                                       :name            "Member",
-                                                       :links           {:permissions "/api/v1/permissions?role_id=184"}},
-                                               :added "2016-02-01T21:00:00.000Z",
-                                               :email "newmember@example.com",
-                                               :type  "PendingMembership"},
-                                              {
-                                               :id    "2323",
-                                               :role  {
-                                                       :id              184,
-                                                       :organization_id 63,
-                                                       :name            "Member",
-                                                       :links           {:permissions "/api/v1/permissions?role_id=184"}},
-                                               :added "2016-02-01T21:00:00.000Z",
-                                               :email "newmember@example.com",
-                                               :type  "PendingMembership"}]
 
                         :memberships         [{:id                  1774,
                                                :team_id             573,
@@ -667,9 +647,7 @@
                                                                      :name            "Member",
                                                                      :links           {:permissions "/api/v1/permissions?role_id=184"}},
                                                :type                "Membership",
-                                               :user_id             8,
-                                               :membership_role_ids [
-                                                                     1526]
+                                               :user_id             8
 
                                                :links               {:self "--self--"}}]
                         :links               {:self        "--url--"
