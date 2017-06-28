@@ -292,16 +292,17 @@
    (s/optional-key :links) {s/Keyword s/Str}})
 
 (s/defschema TeamMembership
-  {:id                     Id
-   :team_id                Id
-   :type                   s/Str
-   :added                  s/Str
-   :role                   TeamRole
-   (s/optional-key :email) s/Str
-   (s/optional-key :name)  s/Str
-   :user_id                s/Int
-   :membership_role_ids    [s/Int]
-   :links                  {:self s/Keyword}})
+  {:id                          Id
+   :team_id                     Id
+   :type                        s/Str
+   :added                       s/Str
+   :role                        TeamRole
+   (s/optional-key :email)      s/Str
+   (s/optional-key :name)       s/Str
+   (s/optional-key :user_uuid)  s/Uuid
+   :user_id                     s/Int
+   :membership_role_ids         [s/Int]
+   :links                       {:self s/Keyword}})
 
 (s/defschema NewTeamGroup
   {:team_id               Id
@@ -432,5 +433,3 @@
               :activities {:schema Activity}
               :origins    {:schema Activity}
               :procedures {:schema Activity}}})
-
-
