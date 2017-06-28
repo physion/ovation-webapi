@@ -616,7 +616,8 @@
                           :summary "Deletes a team membership, removing the team member."
                           (let [ctx (request-context/make-context request org authz)]
                             (teams/delete-membership* ctx mid)
-                            (no-content)))))))
+                            (no-content)))))
+                    ))
 
                 (context "/roles" []
                   :tags ["teams"]
