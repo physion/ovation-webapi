@@ -139,19 +139,6 @@
 
     {:membership (<?? ch)}))
 
-(defn put-pending-membership*
-  [ctx team-uuid membership membership-id]                  ;; membership is a PendingTeamMembership
-  (when (or (nil? (get-in membership [:role :id]))
-          (nil? membership-id))
-    (unprocessable-entity!))
-
-  (let [ch (chan)]
-    (http/update-resource ctx config/TEAMS_SERVER "pending_memberships" membership membership-id ch
-      :response-key :pending_membership
-      :make-tf (make-read-membership-tf team-uuid))
-
-    {:membership (<?? ch)}))
-
 
 (defn post-membership*
   [ctx team-uuid membership]                                ;; membership is a NewTeamMembership

@@ -240,12 +240,6 @@
       (fact "throws 422 if mid is not specified"
         (teams/put-membership* .ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
-  (facts "put-pending-membership*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {:identity ..auth..}
-                         (request-context/router ..request..) => ..rt..]
-      (fact "throws 422 if mid is not specified"
-        (teams/put-pending-membership* ..ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..

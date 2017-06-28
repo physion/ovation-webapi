@@ -344,7 +344,7 @@
    :uuid                                 s/Uuid
    :name                                 s/Str
    :roles                                [TeamRole]
-   (s/optional-key :pending_memberships) []                 ;; Deprecated
+   (s/optional-key :pending_memberships) [TeamMembership]   ;; Deprecated
    :memberships                          [TeamMembership]
    :team_groups                          [TeamGroup]
    :links                                {s/Keyword s/Str}
