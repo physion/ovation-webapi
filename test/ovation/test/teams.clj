@@ -52,6 +52,7 @@
                                                         :type                "Membership"
                                                         :added               "2015-02-01"
                                                         :role_id             21
+                                                        :user_uuid           "dcd1ec34-0751-4a2d-b89f-d28f082bc75c"
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]}]}}
               expected   {:team {:id                  "1"
@@ -75,6 +76,7 @@
                                                         :added               "2015-02-01"
                                                         :role_id             21
                                                         :type                "Membership"
+                                                        :user_uuid           "dcd1ec34-0751-4a2d-b89f-d28f082bc75c"
                                                         :user_id             "3"
                                                         :membership_role_ids [1, 2, 3]
                                                         :links               {:self ..membership-url..}}]
@@ -185,4 +187,3 @@
             (with-fake-http [{:url roles-url :method :get} {:status 200
                                                             :body   (util/to-json {:roles roles})}]
               (teams/get-roles* ..ctx..) => {:roles roles})))))))
-
