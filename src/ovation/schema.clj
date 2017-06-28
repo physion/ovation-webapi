@@ -315,9 +315,21 @@
    (s/optional-key :name)                s/Str
    (s/optional-key :user_uuid)           s/Uuid
    :user_id                              s/Int
-   (s/optional-key :pending_memberships) []                 ;; Deprecated
    (s/optional-key :membership_role_ids) [s/Int]            ;; Deprecated
    :links                                {:self s/Keyword}})
+
+(s/defschema UpdatedTeamMembership
+  {(s/optional-key :id)                  Id
+   (s/optional-key :team_id)             Id
+   (s/optional-key :type)                s/Str
+   (s/optional-key :added)               s/Str
+   :role                                 TeamRole
+   (s/optional-key :email)               s/Str
+   (s/optional-key :name)                s/Str
+   (s/optional-key :user_uuid)           s/Uuid
+   (s/optional-key :user_id)             s/Int
+   (s/optional-key :membership_role_ids) [s/Int]            ;; Deprecated
+   (s/optional-key :links)               {:self s/Keyword}})
 
 (s/defschema NewTeamRole
   (dissoc TeamRole :links))
@@ -327,15 +339,16 @@
    :role  NewTeamRole})
 
 (s/defschema Team
-  {:id                  Id
-   :type                (s/eq "Team")
-   :uuid                s/Uuid
-   :name                s/Str
-   :roles               [TeamRole]
-   :memberships         [TeamMembership]
-   :team_groups         [TeamGroup]
-   :links               {s/Keyword s/Str}
-   (s/optional-key :permissions) {s/Keyword s/Bool}})
+  {:id                                   Id
+   :type                                 (s/eq "Team")
+   :uuid                                 s/Uuid
+   :name                                 s/Str
+   :roles                                [TeamRole]
+   (s/optional-key :pending_memberships) []                 ;; Deprecated
+   :memberships                          [TeamMembership]
+   :team_groups                          [TeamGroup]
+   :links                                {s/Keyword s/Str}
+   (s/optional-key :permissions)         {s/Keyword s/Bool}})
 
 
 

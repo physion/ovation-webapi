@@ -607,7 +607,7 @@
                           :name :put-membership
                           :summary "Updates an existing membership by setting its role."
                           :return {:membership TeamMembership}
-                          :body [body {:membership TeamMembership}]
+                          :body [body {:membership UpdatedTeamMembership}]
                           (let [ctx (request-context/make-context request org authz)]
                             (ok (teams/put-membership* ctx id (:membership body) mid))))
 
