@@ -298,6 +298,7 @@
    :role                   TeamRole
    (s/optional-key :email) s/Str
    (s/optional-key :name)  s/Str
+   :user_uuid              s/Uuid
    :user_id                s/Int
    :membership_role_ids    [s/Int]
    :links                  {:self s/Keyword}})
@@ -417,5 +418,3 @@
               :activities {:schema Activity}
               :origins    {:schema Activity}
               :procedures {:schema Activity}}})
-
-
