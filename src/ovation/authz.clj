@@ -40,7 +40,7 @@
 
   (get-team-groups [this ctx team-id])
   (post-team-group [this ctx body])
-  (get-team-group [thx ctx group-id])
+  (get-team-group [this ctx group-id])
   (put-team-group [this ctx group-id body])
   (delete-team-group [this ctx group-id]))
 

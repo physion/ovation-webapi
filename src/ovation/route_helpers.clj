@@ -87,19 +87,19 @@
     ;;default
     (lower-case (str typename "s"))))
 
-(defmacro get-resources
+(defn get-resources
   "Get all resources of type (e.g. \"Project\")"
-  [db org authz entity-type]
+  [db org authz entity-type record-schema]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
         type-kw   (keyword type-path)]
-    `(GET "/" request#
-       :name ~(keyword (str "all-" (lower-case type-name)))
-       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :summary (str "Gets all top-level " ~type-path)
-       (let [ctx# (request-context/make-context request# ~org ~authz)
-             entities# (core/of-type ctx# ~db ~type-name)]
-         (ok {~type-kw entities#})))))
+    (GET "/" request
+      :name (keyword (str "all-" (lower-case type-name)))
+      :return {type-kw [record-schema]}
+      :summary (str "Gets all top-level " type-path)
+      (let [ctx      (request-context/make-context request org authz)
+            entities (core/of-type ctx db type-name)]
+        (ok {type-kw entities})))))
 
 (defn remove-embedded-relationships
   [entities]

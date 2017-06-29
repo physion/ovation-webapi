@@ -48,3 +48,12 @@
   (http/destroy-resource ctx url k/TEAM-GROUPS group-id ch
     :response-key :team_group)
   ch)
+
+(defn get-group-projects
+  [ctx db group-id]
+  (let [ch (chan)]
+    ; authz/get-team-group-async
+    ; <?? uuids
+    ; (core/get-entities)
+    )
+  [])
