@@ -48,16 +48,6 @@
                                  :organization        {}
                                  :project             {}
                                  :roles               []
-                                 :pending_memberships [{
-                                                        :id        "232"
-                                                        :type      "PendingMembership"
-                                                        :role_name "Admin"
-                                                        :email     "newmember@example.com",}
-                                                       {
-                                                        :id        "2323"
-                                                        :type      "PendingMembership"
-                                                        :role_name "Member"
-                                                        :email     "newmember@example.com"}]
 
                                  :memberships         [{:id                  "3"
                                                         :team_id             1
@@ -78,16 +68,6 @@
                                  :roles               []
                                  :permissions         {:update false
                                                        :delete false}
-                                 :pending_memberships [{
-                                                        :id        "232"
-                                                        :role_name "Admin"
-                                                        :email     "newmember@example.com"
-                                                        :type      "PendingMembership",}
-                                                       {
-                                                        :id        "2323"
-                                                        :role_name "Member"
-                                                        :email     "newmember@example.com"
-                                                        :type      "PendingMembership"}]
 
                                  :memberships         [{:id                  "3"
                                                         :team_id             1
