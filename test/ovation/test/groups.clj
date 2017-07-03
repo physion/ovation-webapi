@@ -2,9 +2,9 @@
   (:use midje.sweet)
   (:require [ovation.groups :as groups]
             [ovation.util :as util]
-            [ovation.request-context :as request-context]
-            [clojure.core.async :as async]))
+            [ovation.authz :as authz]
+            [org.httpkit.fake :refer [with-fake-http]]
+            [ovation.core :as core]))
 
 
-(facts "About `get-group-projects`"
-  (future-fact "Gets projects by group->projects UUIDs"))
+

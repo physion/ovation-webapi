@@ -2,11 +2,11 @@
   (:require [ovation.organizations :as organizations]
             [clojure.tools.logging :as logging]
             [com.stuartsierra.component :as component]
-            [clojure.core.async :refer [chan]]
+            [clojure.core.async :as async :refer [chan go <!]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [clojure.core.async :as async]
-            [ovation.groups :as groups]))
+            [ovation.groups :as groups]
+            [ovation.util :as util]))
 
 
 (defprotocol AuthzApi
@@ -42,7 +42,8 @@
   (post-team-group [this ctx body])
   (get-team-group [this ctx group-id])
   (put-team-group [this ctx group-id body])
-  (delete-team-group [this ctx group-id]))
+  (delete-team-group [this ctx group-id])
+  (get-team-group-project-ids [this ctx group-id]))
 
 (defn get-authorizations
   [ctx url-base ch]

@@ -4,7 +4,8 @@
             [slingshot.support :refer [get-throwable]]
             [ovation.http :as http]
             [slingshot.slingshot :refer [try+]]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.core :as core]))
 
 (defn make-read-team-group-tf
   [_]
@@ -48,12 +49,3 @@
   (http/destroy-resource ctx url k/TEAM-GROUPS group-id ch
     :response-key :team_group)
   ch)
-
-(defn get-group-projects
-  [ctx db group-id]
-  (let [ch (chan)]
-    ; authz/get-team-group-async
-    ; <?? uuids
-    ; (core/get-entities)
-    )
-  [])
