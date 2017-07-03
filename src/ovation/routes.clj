@@ -25,7 +25,7 @@
 
 (defn org-projects-route
   [rt org-id]
-  (rt :all-project {:org org-id}))
+  (rt :all-projects {:org org-id}))
 
 (defn org-memberships-route
   [rt org-id]
