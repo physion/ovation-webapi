@@ -305,25 +305,29 @@
    :name                   s/Str
    (s/optional-key :links) {s/Keyword s/Str}})
 
+(s/defschema NewTeamMembership
+  {:email s/Str
+   :role  TeamRole})
+
 (s/defschema TeamMembership
   {:id                                   Id
    :team_id                              Id
    :type                                 s/Str
-   :added                                s/Str
    :role                                 TeamRole
+   :user_id                              s/Int
+   (s/optional-key :added)               s/Str
    (s/optional-key :email)               s/Str
    (s/optional-key :name)                s/Str
    (s/optional-key :user_uuid)           s/Uuid
-   :user_id                              s/Int
    (s/optional-key :membership_role_ids) [s/Int]            ;; Deprecated
    :links                                {:self s/Keyword}})
 
 (s/defschema UpdatedTeamMembership
-  {(s/optional-key :id)                  Id
+  {:role                                 TeamRole
+   (s/optional-key :id)                  Id
    (s/optional-key :team_id)             Id
    (s/optional-key :type)                s/Str
    (s/optional-key :added)               s/Str
-   :role                                 TeamRole
    (s/optional-key :email)               s/Str
    (s/optional-key :name)                s/Str
    (s/optional-key :user_uuid)           s/Uuid

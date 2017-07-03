@@ -595,8 +595,8 @@
                       (POST "/" request
                         :name :post-memberships
                         :return {s/Keyword TeamMembership}
-                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership."
-                        :body [body {:membership TeamMembership}]
+                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
+                        :body [body {:membership NewTeamMembership}]
                         (let [ctx (request-context/make-context request org authz)
                               membership (teams/post-membership* ctx id (:membership body))]
                           (created (get-in [:membership :links :self] membership) membership)))
