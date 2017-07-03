@@ -364,7 +364,8 @@
                       (if (nil? group-id)
                         (let [entities (core/of-type ctx db "Project")]
                           (ok {:projects entities}))
-                        (let [entities (groups/get-group-projects ctx db group-id)]
+                        (let [project-ids (authz/get-organization-group-project-ids authz ctx group-id)
+                              entities (core/get-entities ctx db project-ids)]
                           (ok {:projects entities})))))
 
                   (post-resources db org authz "Project" [NewProject])

@@ -260,6 +260,8 @@
     (get-group ctx url group-id group-ch)
     (go
       (let [response (<! group-ch)]
+        (println response)
         (if (util/exception? response)
           (>! ch response)
-          (>! ch (get-in response [:organization-group :team_uuids])))))))
+          (>! ch (:team_ids response)))))
+    ch))
