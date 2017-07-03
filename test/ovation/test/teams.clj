@@ -48,16 +48,6 @@
                                  :organization        {}
                                  :project             {}
                                  :roles               []
-                                 :pending_memberships [{
-                                                        :id        "232"
-                                                        :type      "PendingMembership"
-                                                        :role_name "Admin"
-                                                        :email     "newmember@example.com",}
-                                                       {
-                                                        :id        "2323"
-                                                        :type      "PendingMembership"
-                                                        :role_name "Member"
-                                                        :email     "newmember@example.com"}]
 
                                  :memberships         [{:id                  "3"
                                                         :team_id             1
@@ -78,16 +68,6 @@
                                  :roles               []
                                  :permissions         {:update false
                                                        :delete false}
-                                 :pending_memberships [{
-                                                        :id        "232"
-                                                        :role_name "Admin"
-                                                        :email     "newmember@example.com"
-                                                        :type      "PendingMembership",}
-                                                       {
-                                                        :id        "2323"
-                                                        :role_name "Member"
-                                                        :email     "newmember@example.com"
-                                                        :type      "PendingMembership"}]
 
                                  :memberships         [{:id                  "3"
                                                         :team_id             1
@@ -240,12 +220,6 @@
       (fact "throws 422 if mid is not specified"
         (teams/put-membership* .ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
-  (facts "put-pending-membership*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
-                         ..request.. =contains=> {:identity ..auth..}
-                         (request-context/router ..request..) => ..rt..]
-      (fact "throws 422 if mid is not specified"
-        (teams/put-pending-membership* ..ctx.. ..team.. {:id 1 :role {:id ..roleid..}} nil) => (throws ExceptionInfo))))
 
   (facts "get-roles*"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
