@@ -5,8 +5,7 @@
             [clojure.core.async :as async :refer [chan go <!]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [ovation.groups :as groups]
-            [ovation.util :as util]))
+            [ovation.groups :as groups]))
 
 
 (defprotocol AuthzApi
@@ -31,6 +30,7 @@
   (get-organization-group [this ctx id])
   (put-organization-group [this ctx id body])
   (delete-organization-group [this ctx id])
+  (get-organization-group-project-ids [this ctx group-id])
 
   (get-organization-groups-memberships [this ctx group-id])
   (create-organization-group-membership [this ctx body])
@@ -42,8 +42,7 @@
   (post-team-group [this ctx body])
   (get-team-group [this ctx group-id])
   (put-team-group [this ctx group-id body])
-  (delete-team-group [this ctx group-id])
-  (get-team-group-project-ids [this ctx group-id]))
+  (delete-team-group [this ctx group-id]))
 
 (defn get-authorizations
   [ctx url-base ch]
@@ -220,6 +219,11 @@
   (delete-team-group [this ctx group-id]
     (let [ch (chan)]
       (groups/delete-team-group ctx (:services-url this) group-id ch)
+      (<?? ch)))
+
+  (get-organization-group-project-ids [this ctx group-id]
+    (let [ch (chan)]
+      (organizations/group-project-ids ctx (:services-url this) group-id ch)
       (<?? ch))))
 
 

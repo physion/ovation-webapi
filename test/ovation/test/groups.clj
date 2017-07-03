@@ -5,6 +5,3 @@
             [ovation.authz :as authz]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.core :as core]))
-
-
-

@@ -9,7 +9,7 @@
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [slingshot.support :refer [get-throwable]]
             [slingshot.slingshot :refer [try+]]
-            [clojure.core.async :refer [chan go >! >!! pipeline pipe]]))
+            [clojure.core.async :refer [chan go >! <! >!! pipeline pipe]]))
 
 
 (def ORGANIZATIONS "organizations")
@@ -253,5 +253,13 @@
     :response-key :organization_group_membership
     :make-tf make-read-group-membership-tf))
 
-(defn transfer-project
-  [ctx proj-uuid dest-org])
+
+(defn group-project-ids
+  [ctx url group-id ch]
+  (let [group-ch (chan)]
+    (get-group ctx url group-id group-ch)
+    (go
+      (let [response (<! group-ch)]
+        (if (util/exception? response)
+          (>! ch response)
+          (>! ch (get-in response [:organization-group :team_uuids])))))))
