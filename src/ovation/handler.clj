@@ -357,10 +357,10 @@
                   (GET "/" request
                     :name :all-projects
                     :return {:projects [Project]}
-                    :query-params [{group_id :- Id nil}]
+                    :query-params [{organization_group_id :- Id nil}]
                     :summary "Gets all top-level projects"
                     (let [ctx      (request-context/make-context request org authz)
-                          group-id group_id]
+                          group-id organization_group_id]
                       (if (nil? group-id)
                         (let [entities (core/of-type ctx db "Project")]
                           (ok {:projects entities}))

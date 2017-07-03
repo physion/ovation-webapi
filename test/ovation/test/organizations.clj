@@ -145,7 +145,7 @@
                                   :type            "OrganizationGroup"
                                   :user_id         user-id
                                   :organization_id org-id
-                                  :team_uuids      team-uuids
+                                  :team_ids      team-uuids
                                   :links           {:self              {:id id, :org org-id}
                                                     :group-memberships {:id id, :org org-id}}}]
               (orgs/get-groups ..ctx.. service-url c)
