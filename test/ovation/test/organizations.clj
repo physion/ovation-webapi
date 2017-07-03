@@ -8,7 +8,8 @@
             [ovation.request-context :as request-context]
             [ovation.routes :as routes]
             [ovation.test.helpers :refer [sling-throwable]]
-            [slingshot.slingshot :refer [try+]])
+            [slingshot.slingshot :refer [try+]]
+            [ovation.organizations :as organizations])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "groups-memberships"
@@ -58,10 +59,10 @@
 
       (facts "`create-group-membership`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :post} (fn [_ {body :body} _]
-                                                                                                      (if (= {:organization_group_membership {:type "GroupMembership"
-                                                                                                                                              :user_id           user-id
-                                                                                                                                              :organization_id   org-id}} (util/from-json body))
-                                                                                                        (let [result {:organization_group_membership {:id id
+                                                                                                      (if (= {:organization_group_membership {:type            "GroupMembership"
+                                                                                                                                              :user_id         user-id
+                                                                                                                                              :organization_id org-id}} (util/from-json body))
+                                                                                                        (let [result {:organization_group_membership {:id              id
                                                                                                                                                       :user_id         user-id
                                                                                                                                                       :organization_id org-id}}]
                                                                                                           {:status 201
@@ -82,11 +83,11 @@
 
       (facts "`update-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS id]) :method :put} (fn [_ {body :body} _]
-                                                                                                        (if (= {:organization_group_membership {:id id
+                                                                                                        (if (= {:organization_group_membership {:id              id
                                                                                                                                                 :type            "GroupMembership"
                                                                                                                                                 :user_id         user-id
                                                                                                                                                 :organization_id org-id}} (util/from-json body))
-                                                                                                          (let [result {:organization_group_membership {:id id
+                                                                                                          (let [result {:organization_group_membership {:id              id
                                                                                                                                                         :user_id         user-id
                                                                                                                                                         :organization_id org-id}}]
                                                                                                             {:status 200
@@ -125,8 +126,10 @@
         user-id     10
         org-id      3
         service-url (util/join-path [config/SERVICES_API_URL "api" "v2"])
+        team-uuids  [(str (util/make-uuid)) (str (util/make-uuid))]
         rails-group {"id"              id
                      "user_id"         user-id
+                     "team_ids"      team-uuids
                      "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
                          ..ctx.. =contains=> {::request-context/auth   ..auth..
@@ -142,6 +145,7 @@
                                   :type            "OrganizationGroup"
                                   :user_id         user-id
                                   :organization_id org-id
+                                  :team_ids      team-uuids
                                   :links           {:self              {:id id, :org org-id}
                                                     :group-memberships {:id id, :org org-id}}}]
               (orgs/get-groups ..ctx.. service-url c)
@@ -156,10 +160,21 @@
                                   :type            "OrganizationGroup"
                                   :user_id         user-id
                                   :organization_id org-id
+                                  :team_ids        team-uuids
                                   :links           {:self              {:id id, :org org-id}
                                                     :group-memberships {:id id, :org org-id}}}]
               (orgs/get-group ..ctx.. service-url id c)
               (<?? c) => expected-group))))
+
+      (facts "`group-project-ids"
+        (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS id]) :method :get} {:status 200
+                                                                                                         :body   (util/to-json {:organization_group rails-group})}]
+          (fact "Gets project ids from group.team_uuids"
+            (let [ch (chan)]
+
+
+              (<?? (organizations/group-project-ids ..ctx.. service-url id ch)) => team-uuids))))
+
 
       (facts "`create-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :post} (fn [_ {body :body} _]
@@ -276,7 +291,7 @@
             (let [c                   (chan)
                   expected-membership {:id              id
                                        :type            "OrganizationMembership"
-                                       :email user-email
+                                       :email           user-email
                                        :organization_id org-id
                                        :links           {:self {:id id, :org org-id}}}]
               (orgs/get-membership ..ctx.. service-url id c)
@@ -296,17 +311,17 @@
             (let [c              (chan)
                   expected       {:id              id
                                   :type            "OrganizationMembership"
-                                  :email user-email
+                                  :email           user-email
                                   :organization_id org-id
                                   :links           {:self {:id id, :org org-id}}}
-                  new-membership {:email user-email
+                  new-membership {:email           user-email
                                   :organization_id org-id}]
               (orgs/create-membership ..ctx.. service-url new-membership c)
               (<?? c) => expected))
 
           (fact "throws 422 for org mismatch"
             (let [c              (chan)
-                  new-membership {:email user-email
+                  new-membership {:email           user-email
                                   :organization_id (+ org-id 1)}]
               (orgs/create-membership ..ctx.. service-url new-membership c)
               (<?? c) => (throws ExceptionInfo)))))
@@ -528,7 +543,7 @@
                                   :name     (get rails-org-1 "name")
                                   :uuid     (get rails-org-1 "uuid")
                                   :is_admin true
-                                  :links    {:self                  ..self1..
+                                  :links    {:self                     ..self1..
                                              :projects                 ..projects1..
                                              :organization-memberships ..members1..
                                              :organization-groups      ..groups1..}}
@@ -537,7 +552,7 @@
                                   :name     (get rails-org-2 "name")
                                   :uuid     (get rails-org-2 "uuid")
                                   :is_admin true
-                                  :links    {:self                  ..self2..
+                                  :links    {:self                     ..self2..
                                              :projects                 ..projects2..
                                              :organization-memberships ..members2..
                                              :organization-groups      ..groups2..}}]]

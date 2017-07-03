@@ -2,10 +2,9 @@
   (:require [ovation.organizations :as organizations]
             [clojure.tools.logging :as logging]
             [com.stuartsierra.component :as component]
-            [clojure.core.async :refer [chan]]
+            [clojure.core.async :as async :refer [chan go <!]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [clojure.core.async :as async]
             [ovation.groups :as groups]))
 
 
@@ -31,6 +30,7 @@
   (get-organization-group [this ctx id])
   (put-organization-group [this ctx id body])
   (delete-organization-group [this ctx id])
+  (get-organization-group-project-ids [this ctx group-id])
 
   (get-organization-groups-memberships [this ctx group-id])
   (create-organization-group-membership [this ctx body])
@@ -40,7 +40,7 @@
 
   (get-team-groups [this ctx team-id])
   (post-team-group [this ctx body])
-  (get-team-group [thx ctx group-id])
+  (get-team-group [this ctx group-id])
   (put-team-group [this ctx group-id body])
   (delete-team-group [this ctx group-id]))
 
@@ -219,6 +219,11 @@
   (delete-team-group [this ctx group-id]
     (let [ch (chan)]
       (groups/delete-team-group ctx (:services-url this) group-id ch)
+      (<?? ch)))
+
+  (get-organization-group-project-ids [this ctx group-id]
+    (let [ch (chan)]
+      (organizations/group-project-ids ctx (:services-url this) group-id ch)
       (<?? ch))))
 
 

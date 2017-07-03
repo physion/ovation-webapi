@@ -20,6 +20,7 @@
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [ovation.request-context :as request-context]
+            [ovation.groups :as groups]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
@@ -352,7 +353,21 @@
 
                 (context "/projects" []
                   :tags ["projects"]
-                  (get-resources db org authz "Project")
+
+                  (GET "/" request
+                    :name :all-projects
+                    :return {:projects [Project]}
+                    :query-params [{organization_group_id :- Id nil}]
+                    :summary "Gets all top-level projects"
+                    (let [ctx      (request-context/make-context request org authz)
+                          group-id organization_group_id]
+                      (if (nil? group-id)
+                        (let [entities (core/of-type ctx db "Project")]
+                          (ok {:projects entities}))
+                        (let [project-ids (authz/get-organization-group-project-ids authz ctx group-id)
+                              entities (core/get-entities ctx db project-ids)]
+                          (ok {:projects entities})))))
+
                   (post-resources db org authz "Project" [NewProject])
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -371,7 +386,7 @@
 
                 (context "/sources" []
                   :tags ["sources"]
-                  (get-resources db org authz "Source")
+                  (get-resources db org authz "Source" Source)
                   (post-resources db org authz "Source" [NewSource])
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -390,7 +405,7 @@
 
                 (context "/activities" []
                   :tags ["activities"]
-                  (get-resources db org authz "Activity")
+                  (get-resources db org authz "Activity" Activity)
                   (post-resources db org authz "Activity" [NewActivity])
                   (context "/:id" []
                     :path-params [id :- s/Str]
@@ -407,7 +422,7 @@
 
                 (context "/folders" []
                   :tags ["folders"]
-                  (get-resources db org authz "Folder")
+                  (get-resources db org authz "Folder" Folder)
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -436,7 +451,7 @@
 
                 (context "/files" []
                   :tags ["files"]
-                  (get-resources db org authz "File")
+                  (get-resources db org authz "File" File)
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -616,8 +631,8 @@
                           :summary "Deletes a team membership, removing the team member."
                           (let [ctx (request-context/make-context request org authz)]
                             (teams/delete-membership* ctx mid)
-                            (no-content)))))
-                    ))
+                            (no-content)))))))
+
 
                 (context "/roles" []
                   :tags ["teams"]

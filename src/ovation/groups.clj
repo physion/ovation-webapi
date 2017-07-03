@@ -1,10 +1,11 @@
 (ns ovation.groups
   (:require [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
-            [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
+            [clojure.core.async :refer [chan >!! >! <! go]]
             [slingshot.support :refer [get-throwable]]
             [ovation.http :as http]
             [slingshot.slingshot :refer [try+]]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ovation.util :as util]))
 
 (defn make-read-team-group-tf
   [_]

@@ -3,7 +3,9 @@
   (:require [ovation.authz :as authz]
             [ovation.util :as util]
             [ovation.request-context :as request-context]
-            [clojure.core.async :as async]))
+            [org.httpkit.fake :refer [with-fake-http]]
+            [clojure.core.async :as async :refer [go >!]]
+            [ovation.groups :as groups]))
 
 
 (facts "About AuthzService"
@@ -16,3 +18,4 @@
         (async/promise-chan) => ..ch..
         (authz/get-authorizations ..ctx.. ..url.. ..ch..) => ..go..
         (util/<?? ..ch..) => ..result..))))
+
