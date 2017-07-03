@@ -307,7 +307,7 @@
 
 (s/defschema NewTeamMembership
   {:email s/Str
-   :roke  TeamRole})
+   :role  TeamRole})
 
 (s/defschema TeamMembership
   {:id                                   Id
