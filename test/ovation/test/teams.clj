@@ -197,7 +197,7 @@
                              :role  {:id 1}}
             authz-ch        (async/promise-chan)
             _               (async/go (async/>! authz-ch {}))
-            expected-put-body {:membership membership}]
+            expected-put-body {:membership {:role_id (get-in membership [:role :id])}}]
 
         (fact "updates membership"
           (with-fake-http [{:url membership-url :method :put} (fn [_ {body :body} _]

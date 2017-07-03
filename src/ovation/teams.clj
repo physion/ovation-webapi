@@ -132,8 +132,10 @@
           (nil? membership-id))
     (unprocessable-entity!))
 
-  (let [ch (chan)]
-    (http/update-resource ctx config/TEAMS_SERVER "memberships" {:membership membership} membership-id ch
+  (let [ch (chan)
+        role (:role membership)
+        body {:membership {:role_id (:id role)}} ]
+    (http/update-resource ctx config/TEAMS_SERVER "memberships" body membership-id ch
       :response-key :membership
       :make-tf (make-read-membership-tf team-uuid))
 
