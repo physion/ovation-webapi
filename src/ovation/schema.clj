@@ -253,7 +253,7 @@
 (s/defschema OrganizationMembership
   (-> NewOrganizationMembership
     (assoc :id Id)
-    (assoc (s/optional-key :profile_image_url) s/Str)))
+    (assoc s/Keyword s/Any)))
 
 ;; -- Organization groups -- ;;
 (s/defschema NewOrganizationGroup
