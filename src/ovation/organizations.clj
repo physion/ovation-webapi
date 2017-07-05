@@ -44,8 +44,7 @@
 (defn make-read-membership-tf
   [ctx]
   (fn [membership]
-    (let [filtered-membership (select-keys membership [:id :organization_id :role :email :first_name :last_name :job_title :contact_information])
-          membership-without-nil-values (into {} (filter second filtered-membership))]
+    (let [membership-without-nil-values (into {} (filter second membership))]
       (-> membership-without-nil-values
         (assoc :type "OrganizationMembership")
         (assoc :links {:self (if (:id membership) (routes/self-route ctx "org-membership" (:id membership)) "")})))))

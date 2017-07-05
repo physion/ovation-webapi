@@ -280,7 +280,8 @@
                                        :type            "OrganizationMembership"
                                        :organization_id org-id
                                        :email           user-email
-                                       :links           {:self {:id id, :org org-id}}}]
+                                       :links           {:self {:id id, :org org-id}}
+                                       :user_id         user-id}]
               (orgs/get-memberships ..ctx.. service-url c)
               (<?? c) => [expected-membership]))))
 
@@ -293,7 +294,8 @@
                                        :type            "OrganizationMembership"
                                        :email           user-email
                                        :organization_id org-id
-                                       :links           {:self {:id id, :org org-id}}}]
+                                       :links           {:self {:id id, :org org-id}}
+                                       :user_id         user-id}]
               (orgs/get-membership ..ctx.. service-url id c)
               (<?? c) => expected-membership))))
 
