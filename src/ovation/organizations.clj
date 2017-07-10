@@ -24,7 +24,8 @@
     {:self                     (routes/self-route ctx "organization" (:id org) (:id org))
      :projects                 (routes/org-projects-route rt (:id org))
      :organization-memberships (routes/org-memberships-route rt (:id org))
-     :organization-groups      (routes/org-groups-route rt (:id org))}))
+     :organization-groups      (routes/org-groups-route rt (:id org))
+     :stats                    (routes/org-stats-route rt (:id org))}))
 
 
 (defn make-read-org-tf
