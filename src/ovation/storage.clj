@@ -1,7 +1,8 @@
 (ns ovation.storage
   (:require [ovation.couch :as couch]
             [ovation.constants :as k]
-            [clojure.core.async :refer [go >! close!]]))
+            [clojure.core.async :refer [go >! close!]]
+            [ovation.request-context :as request-context]))
 
 
 
@@ -13,8 +14,9 @@
   [ctx db org-id ch & {:keys [close?] :or {close? true}}]
 
   (let [org0?       (= 0 org-id)
-        startkey    (if org0? [] [org-id])
-        endkey      (if org0? [{}] [org-id, {}])
+        user-id     (request-context/user-id ctx)
+        startkey    (if org0? [user-id] [org-id])
+        endkey      (if org0? [user-id {}] [org-id, {}])
         view-result (couch/get-view ctx db k/REVISION-BYTES-VIEW {:startkey    startkey
                                                                   :endkey      endkey
                                                                   :reduce      true
