@@ -412,12 +412,13 @@
           (let [c        (chan)
                 org-id   1
                 org-url  (util/join-path [config/ORGS_SERVER "organizations"])
-                expected {:id 1, :is_admin true, :links {:organization-groups ..groups1.., :organization-memberships ..members1.., :projects ..projects1.., :self ..self1..}, :name "Name 1", :research_subscription_id 3, :type "Organization"}]
+                expected {:id 1, :is_admin true, :links {:organization-groups ..groups1.., :organization-memberships ..members1.., :projects ..projects1.., :stats ..stats1.., :self ..self1..}, :name "Name 1", :research_subscription_id 3, :type "Organization"}]
             (facts "with success"
               (against-background [(routes/self-route ..ctx.. "organization" org-id 1) => ..self1..
                                    (routes/org-projects-route ..rt.. org-id) => ..projects1..
                                    (routes/org-memberships-route ..rt.. org-id) => ..members1..
                                    (routes/org-groups-route ..rt.. 1) => ..groups1..
+                                   (routes/org-stats-route ..rt.. 1) => ..stats1..
                                    ..ctx.. =contains=> {::request-context/org org-id}]
 
                 (with-fake-http [{:url org-url :method :post} (fn [_ {body :body} _]
@@ -445,12 +446,14 @@
                              :links      {:self                     ..self1..
                                           :projects                 ..projects1..
                                           :organization-memberships ..members1..
-                                          :organization-groups      ..groups1..}}]
+                                          :organization-groups      ..groups1..
+                                          :stats                    ..stats1..}}]
             (facts "with success"
               (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                    (routes/org-projects-route ..rt.. org-id) => ..projects1..
                                    (routes/org-memberships-route ..rt.. 1) => ..members1..
                                    (routes/org-groups-route ..rt.. 1) => ..groups1..
+                                   (routes/org-stats-route ..rt.. 1) => ..stats1..
                                    ..ctx.. =contains=> {::request-context/org org-id}]
 
                 (with-fake-http [{:url org-url :method :put} (fn [_ {body :body} _]
@@ -482,12 +485,14 @@
                                   :links    {:self                     ..self1..
                                              :projects                 ..projects1..
                                              :organization-memberships ..members1..
-                                             :organization-groups      ..groups1..}}]
+                                             :organization-groups      ..groups1..
+                                             :stats                    ..stats1..}}]
 
                 (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                      (routes/org-projects-route ..rt.. org-id) => ..projects1..
                                      (routes/org-memberships-route ..rt.. 1) => ..members1..
-                                     (routes/org-groups-route ..rt.. 1) => ..groups1..]
+                                     (routes/org-groups-route ..rt.. 1) => ..groups1..
+                                     (routes/org-stats-route ..rt.. 1) => ..stats1..]
                   (with-fake-http [{:url org-url :method :get} {:status 200
                                                                 :body   (util/to-json {:organization rails-org-1})}]
                     (fact "conveys transformed organizations service response"
@@ -548,7 +553,8 @@
                                   :links    {:self                     ..self1..
                                              :projects                 ..projects1..
                                              :organization-memberships ..members1..
-                                             :organization-groups      ..groups1..}}
+                                             :organization-groups      ..groups1..
+                                             :stats                    ..stats1..}}
                                  {:id       (get rails-org-2 "id")
                                   :type     "Organization"
                                   :name     (get rails-org-2 "name")
@@ -557,7 +563,8 @@
                                   :links    {:self                     ..self2..
                                              :projects                 ..projects2..
                                              :organization-memberships ..members2..
-                                             :organization-groups      ..groups2..}}]]
+                                             :organization-groups      ..groups2..
+                                             :stats                    ..stats2..}}]]
 
               (against-background [(routes/self-route ..ctx.. "organization" 1 1) => ..self1..
                                    (routes/self-route ..ctx.. "organization" 2 2) => ..self2..
@@ -566,7 +573,9 @@
                                    (routes/org-memberships-route ..rt.. 1) => ..members1..
                                    (routes/org-memberships-route ..rt.. 2) => ..members2..
                                    (routes/org-groups-route ..rt.. 1) => ..groups1..
-                                   (routes/org-groups-route ..rt.. 2) => ..groups2..]
+                                   (routes/org-groups-route ..rt.. 2) => ..groups2..
+                                   (routes/org-stats-route ..rt.. 1) => ..stats1..
+                                   (routes/org-stats-route ..rt.. 2) => ..stats2..]
 
                 (with-fake-http [{:url orgs-url :method :get} {:status 200
                                                                :body   (util/to-json {:organizations orgs})}]
