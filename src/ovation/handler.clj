@@ -152,7 +152,9 @@
                   :tags ["admin"]
                   (GET "/" request
                     :name :get-stats
-                    :return {:stats s/Any}
+                    :return {:stats [{:id              Id
+                                      :organization_id Id
+                                      :usage           s/Num}]}
                     :summary "Get storage usage statistics"
                     (let [ctx (request-context/make-context request org authz)
                           ch  (chan)]
