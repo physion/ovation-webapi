@@ -16,7 +16,7 @@
   (let [org0?       (= 0 org-id)
         user-id     (request-context/user-id ctx)
         startkey    (if org0? [user-id] [org-id])
-        endkey      (if org0? [user-id {}] [org-id, {}])
+        endkey      (if org0? [user-id {}] [org-id {}])
         view-result (couch/get-view ctx db k/REVISION-BYTES-VIEW {:startkey    startkey
                                                                   :endkey      endkey
                                                                   :reduce      true
