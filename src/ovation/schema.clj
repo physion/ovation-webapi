@@ -233,10 +233,8 @@
    (s/optional-key :logo_image)               s/Str
    (s/optional-key :is_admin)                 s/Bool
    (s/optional-key :research_subscription_id) Id
-   (s/optional-key :links)                    {:self                                      s/Str
-                                               (s/optional-key :projects)                 s/Str
-                                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
-                                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
+   (s/optional-key :links)                    {:self     s/Str
+                                               s/Keyword s/Any}})
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
