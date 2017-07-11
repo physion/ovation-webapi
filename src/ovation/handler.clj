@@ -35,7 +35,9 @@
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
             [ovation.authz :as authz]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [clojure.core.async :refer [chan]]
+            [ovation.storage :as storage]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -145,6 +147,18 @@
                   (let [ctx (request-context/make-context request org authz)
                         _ (authz/delete-organization authz ctx)]
                     (no-content)))
+
+                (context "/stats" []
+                  :tags ["admin"]
+                  (GET "/" request
+                    :name :get-stats
+                    :return {:stats [{:id              Id
+                                      :organization_id Id
+                                      :usage           s/Num}]}
+                    :summary "Get storage usage statistics"
+                    (let [ctx (request-context/make-context request org authz)
+                          ch  (chan)]
+                      (ok {:stats (util/<?? (storage/get-organization-storage ctx db org ch))}))))
 
                 (context "/authorizations" []
                   :tags ["auth"]

@@ -32,6 +32,7 @@
 (def LINK-DOCS-VIEW "link_docs")
 (def REVISIONS-VIEW "revisions")
 (def ALL-DOCS-VIEW "all_docs")
+(def REVISION-BYTES-VIEW "revision-bytes")
 
 
 
