@@ -13,14 +13,15 @@
 
 ;; -- ANNOTATIONS -- ;;
 
-(def AnnotationBase {:_id                    s/Str
-                     :_rev                   s/Str
-                     :user                   s/Uuid
-                     :entity                 s/Uuid
-                     :type                   (s/eq "Annotation")
-                     (s/optional-key :links) {(s/optional-key :_collaboration_roots) [s/Str]
+(def AnnotationBase {:_id                           s/Str
+                     :_rev                          s/Str
+                     :user                          s/Uuid
+                     :entity                        s/Uuid
+                     :type                          (s/eq "Annotation")
+                     (s/optional-key :organization) s/Int
+                     (s/optional-key :links)        {(s/optional-key :_collaboration_roots) [s/Str]
                                               s/Keyword s/Str}
-                     (s/optional-key :permissions) {s/Keyword s/Bool}})
+                     (s/optional-key :permissions)  {s/Keyword s/Bool}})
 
 (s/defschema AnnotationTypes (s/enum k/TAGS
                                      k/PROPERTIES
@@ -57,21 +58,22 @@
                       (s/optional-key :inverse_rel) s/Str
                       (s/optional-key :name)        s/Str})
 
-(s/defschema LinkInfo {:_id                          s/Str
-                       (s/optional-key :_rev)        s/Str
-                       :type                         (s/eq util/RELATION_TYPE)
+(s/defschema LinkInfo {:_id                           s/Str
+                       (s/optional-key :_rev)         s/Str
+                       :type                          (s/eq util/RELATION_TYPE)
 
-                       :user_id                      s/Uuid
-                       :source_id                    s/Uuid
-                       :target_id                    s/Uuid
-                       :rel                          s/Str
-                       (s/optional-key :name)        s/Str
-                       (s/optional-key :inverse_rel) s/Str
+                       :user_id                       s/Uuid
+                       :source_id                     s/Uuid
+                       :target_id                     s/Uuid
+                       :rel                           s/Str
+                       (s/optional-key :organization) s/Int
+                       (s/optional-key :name)         s/Str
+                       (s/optional-key :inverse_rel)  s/Str
 
-                       (s/optional-key :attributes)  {s/Keyword s/Any}
+                       (s/optional-key :attributes)   {s/Keyword s/Any}
 
-                       :links                        {(s/optional-key :_collaboration_roots) [s/Str]
-                                                      (s/optional-key :self)                 s/Str}})
+                       :links                         {(s/optional-key :_collaboration_roots) [s/Str]
+                                                       (s/optional-key :self)                 s/Str}})
 
 
 
@@ -83,6 +85,7 @@
 
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
+                                         (s/optional-key :organization) s/Int
                                          (s/optional-key :api_version) s/Int
                                          (s/optional-key :permissions) {s/Keyword s/Bool}))
 
@@ -308,13 +311,15 @@
    :role  TeamRole})
 
 (s/defschema TeamMembership
-  {:id                                   Id
-   :team_id                              Id
-   :type                                 s/Str
-   :role                                 TeamRole
-   :user_id                              s/Int
-   s/Keyword                             s/Any
-   :links                                {:self s/Keyword}})
+  {:id                  Id
+   :team_id             Id
+   :type                s/Str
+   :added               s/Str
+   :role                TeamRole
+   :user_id             s/Int
+   :membership_role_ids [s/Int]
+   s/Keyword            s/Any
+   :links               {:self s/Keyword}})
 
 (s/defschema UpdatedTeamMembership
   {:role                                 TeamRole
