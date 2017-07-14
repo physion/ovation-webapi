@@ -317,7 +317,6 @@
    :added               s/Str
    :role                TeamRole
    :user_id             s/Int
-   :membership_role_ids [s/Int]
    s/Keyword            s/Any
    :links               {:self s/Keyword}})
 
