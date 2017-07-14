@@ -10,7 +10,9 @@
             [ovation.config :as config]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util]
-            [ovation.transform.read :as tr])
+            [ovation.transform.read :as tr]
+            [ovation.pubsub :as pubsub]
+            [clojure.core.async :as async])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn sling-throwable
@@ -156,23 +158,30 @@
               (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..])))))
 
     (facts "update-metadata"
-      (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]
-        (fact "updates file metadata if URL is not ovation.io"
-          (let [revision    {:_id ..id.. :attributes {:url     "https://example.com/rsrc/1"
+      (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"
+                           ..db.. =contains=> {:pubsub {:publisher ..publisher..}}]
+
+        (fact "updates file metadata if URL is not ovation.io and publishes :revisions message [#145319005]"
+          (let [c           (async/chan)
+                revision    {:_id ..id.. :attributes {:url     "https://example.com/rsrc/1"
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 updated-rev (-> revision
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.., :result true}
+            (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
             (provided
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
               (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-              (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}])))
+              (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                        :rev  ..rev..
+                                                        :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
+              (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid..}])))
 
 
-        (fact "updates metadata from Rails and sets file=>revision status to COMPLETE"
-          (let [revid       "100"
-                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+        (fact "updates metadata from Rails and sets file=>revision status to COMPLETE and publishes :revisions message [#145319005]"
+          (let [c           (async/chan)
+                revid       "100"
+                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 length      100
@@ -180,34 +189,41 @@
                 updated-rev (-> revision
                               (assoc-in [:attributes :content_length] length)
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                                {:status 200
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
-              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :result true}
+              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
+                (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                          :rev  ..rev..
+                                                          :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))
+                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid.. :_rev ..filerev.. :type k/FILE-TYPE}]))))
 
         (fact "skips metadata from Rails and sets file=>revision status to COMPLETE if rails response is not 200 [#136329619]"
-          (let [revid       "100"
-                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER revid])
+          (let [c           (async/chan)
+                revid       "100"
+                revision    {:_id ..id.. :attributes {:url     (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid])
                                                       :file_id ..fileid..}}
                 file        {:_id ..fileid..}
                 length      100
                 etag        "etag"
                 updated-rev (-> revision
                               (assoc-in [:attributes :upload-status] k/COMPLETE))]
-            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER revid "metadata"]) :method :get} (fn [orig-fn opts callback]
+            (with-fake-http [{:url (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" revid "metadata"]) :method :get} (fn [orig-fn opts callback]
                                                                                                                {:status 500
                                                                                                                 :body   (util/to-json {:content_length length
                                                                                                                                        :etag           etag})})]
-              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :result true}
+              (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
+                (pubsub/publish ..publisher.. :revisions {:id   ..id..
+                                                          :rev  ..rev..
+                                                          :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
-                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :result true} {:_id ..fileid..}]))))))
+                (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid..}]))))))
 
 
     (facts "record-upload-failure"
@@ -230,10 +246,10 @@
       (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"]
         (fact "creates a Rails Resource"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER {:status 201
-                                                      :body   (util/to-json {:resource {:public_url "url"
-                                                                                        :aws        "aws"
-                                                                                        :url        "post"}})}]
+            (with-fake-http [(util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:status 201
+                                                                                                :body   (util/to-json {:resource {:public_url "url"
+                                                                                                                                  :aws        "aws"
+                                                                                                                                  :url        "post"}})}]
               (rev/make-resource ..ctx.. {:_id        revid
                                           :attributes {}}) => {:revision {:_id        revid
                                                                           :attributes {:url           "url"
@@ -244,8 +260,8 @@
                 ..rsrc.. =contains=> {:url ..url..}))))
         (fact "+throws if rails API fails"
           (let [revid "revid"]
-            (with-fake-http [config/RESOURCES_SERVER {:status 500
-                                                      :body   "{}"}]
+            (with-fake-http [(util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:status 500
+                                                                                                :body   "{}"}]
               (rev/make-resource ..ctx.. {:_id        revid
                                           :attributes {}}) => (throws ExceptionInfo))))
         (fact "sets [:attributes :remote] to true if :url is present already"

@@ -13,7 +13,9 @@
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.transform.read :as tr]
             [clojure.tools.logging :as logging]
-            [ovation.request-context :as request-context]))
+            [ovation.request-context :as request-context]
+            [ovation.pubsub :as pubsub]
+            [clojure.core.async :as async]))
 
 (defn-traced get-head-revisions
   "Gets HEAD revisions for the given file-id. Queries revisions view for top 2 parent lengths. If
@@ -96,9 +98,9 @@
 
     (let [body {:entity_id (:_id revision)
                 :path      (get-in revision [:attributes :name] (:_id revision))}
-          resp (http/post config/RESOURCES_SERVER {:oauth-token (request-context/token ctx)
-                                                   :body        (util/to-json body)
-                                                   :headers     {"Content-Type" "application/json"}})]
+          resp (http/post (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:oauth-token (request-context/token ctx)
+                                                   :body                                                  (util/to-json body)
+                                                   :headers                                               {"Content-Type" "application/json"}})]
       (when-not (= (:status @resp) 201)
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
@@ -118,13 +120,20 @@
   (doall (map #(make-resource ctx %) revisions)))           ;;TODO this would be much better as core.async channel
 
 
-(defn-traced update-metadata
+(defn publish-revision
+  [db doc]
+  (let [publisher (get-in db [:pubsub :publisher])
+        topic     (config/config :revisions-topic :default :revisions)]
+    (pubsub/publish publisher topic {:id   (:_id doc)
+                                     :rev  (:_rev doc)
+                                     :type (:type doc)} (async/chan))))
+(defn update-metadata
   [ctx db revision & {:keys [complete] :or {complete true}}]
 
   (if (re-find #"ovation.io" (get-in revision [:attributes :url]))
     ;; /api/v1/resources Resource
     (let [rsrc-id (last (string/split (get-in revision [:attributes :url]) #"/"))
-          resp    (http/get (util/join-path [config/RESOURCES_SERVER rsrc-id "metadata"])
+          resp    (http/get (util/join-path [config/RESOURCES_SERVER "api" "v1" "resources" rsrc-id "metadata"])
                     {:oauth-token (request-context/token ctx)
                      :headers     {"Content-Type" "application/json"
                                    "Accept"       "application/json"}})
@@ -139,9 +148,12 @@
                                (assoc-in [:attributes :upload-status] k/COMPLETE))
             updates          (if file
                                [updated-revision (update-file-status file [revision] k/COMPLETE)]
-                               [updated-revision])]
-        (first (filter #(= (:_id %) (:_id revision))
-                 (core/update-entities ctx db updates :allow-keys [:revisions])))))
+                               [updated-revision])
+            update-result    (first (filter #(= (:_id %) (:_id revision))
+                                      (core/update-entities ctx db updates :allow-keys [:revisions])))]
+
+        (publish-revision db update-result)
+        update-result))
 
     ;; Remote resource
     (let [file (if complete
@@ -151,9 +163,12 @@
       (when file
         (let [updated-revision (-> revision
                                  (assoc-in [:attributes :upload-status] k/COMPLETE))
-              updates [updated-revision (update-file-status file [revision] k/COMPLETE)]]
-          (first (filter #(= (:_id %) (:_id revision))
-                   (core/update-entities ctx db updates :allow-keys [:revisions]))))))))
+              updates          [updated-revision (update-file-status file [revision] k/COMPLETE)]
+              update-result    (first (filter #(= (:_id %) (:_id revision))
+                                        (core/update-entities ctx db updates :allow-keys [:revisions])))]
+
+          (publish-revision db update-result)
+          update-result)))))
 
 
 (defn-traced record-upload-failure

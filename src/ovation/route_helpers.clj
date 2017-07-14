@@ -43,7 +43,7 @@
 
 (defn annotation
   "Creates an annotation type endpoint"
-  [db org id annotation-description annotation-key record-schema annotation-schema]
+  [db org authz id annotation-description annotation-key record-schema annotation-schema]
 
   (let [annotation-kw (keyword annotation-key)]
     (context (str "/" annotation-key) []
@@ -52,14 +52,14 @@
         :name (keyword (str "get-" (lower-case annotation-key)))
         :return {annotation-kw [annotation-schema]}
         :summary (str "Returns all " annotation-description " annotations associated with entity :id")
-        (get-annotations* (request-context/make-context request org) db id annotation-key))
+        (get-annotations* (request-context/make-context request org authz) db id annotation-key))
 
       (POST "/" request
         :name (keyword (str "create-" (lower-case annotation-key)))
         :return {(keyword annotation-key) [annotation-schema]}
         :body [new-annotations {(keyword annotation-key) [record-schema]}]
         :summary (str "Adds a new " annotation-description " annotation to entity :id")
-        (post-annotations* (request-context/make-context request org) db id annotation-key ((keyword annotation-key) new-annotations)))
+        (post-annotations* (request-context/make-context request org authz) db id annotation-key ((keyword annotation-key) new-annotations)))
 
       ;(if (= annotation-kw :notes))
       (context "/:annotation-id" []
@@ -68,7 +68,7 @@
           :name (keyword (str "delete-" (lower-case annotation-key)))
           :return [s/Str]
           :summary (str "Removes a " annotation-description " annotation from entity :id. Returns the deleted annotations.")
-          (delete-annotations* (request-context/make-context request org) db annotation-id annotation-key))
+          (delete-annotations* (request-context/make-context request org authz) db annotation-id annotation-key))
 
         (if (= annotation-kw :notes)
           (PUT "/" request
@@ -76,7 +76,7 @@
             :return {:note annotation-schema}
             :body [update {:note record-schema}]
             :summary (str "Updates a " annotation-description " annotation to entity :id.")
-            (put-annotation* (request-context/make-context request org) db "note" annotation-id (:note update))))))))
+            (put-annotation* (request-context/make-context request org authz) db "note" annotation-id (:note update))))))))
 
 
 
@@ -87,19 +87,19 @@
     ;;default
     (lower-case (str typename "s"))))
 
-(defmacro get-resources
+(defn get-resources
   "Get all resources of type (e.g. \"Project\")"
-  [db org entity-type]
+  [db org authz entity-type record-schema]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
         type-kw   (keyword type-path)]
-    `(GET "/" request#
-       :name ~(keyword (str "all-" (lower-case type-name)))
-       :return {~type-kw [~(clojure.core/symbol "ovation.schema" type-name)]}
-       :summary (str "Gets all top-level " ~type-path)
-       (let [ctx# (request-context/make-context request# ~org)
-             entities# (core/of-type ctx# ~db ~type-name)]
-         (ok {~type-kw entities#})))))
+    (GET "/" request
+      :name (keyword (str "all-" (lower-case type-name)))
+      :return {type-kw [record-schema]}
+      :summary (str "Gets all top-level " type-path)
+      (let [ctx      (request-context/make-context request org authz)
+            entities (core/of-type ctx db type-name)]
+        (ok {type-kw entities})))))
 
 (defn remove-embedded-relationships
   [entities]
@@ -122,7 +122,7 @@
                 relationships))
       rel-map)))
 
-(defn-traced post-resources*
+(defn post-resources*
   [ctx db type-name type-kw new-entities]
   (let [{routes ::request-context/routes
          org    ::request-context/org} ctx]
@@ -154,7 +154,7 @@
 
 (defmacro post-resources
   "POST to resources of type (e.g. \"Project\")"
-  [db org entity-type schemas]
+  [db org authz entity-type schemas]
   (let [type-name (capitalize entity-type)
         type-path (typepath type-name)
         type-kw (keyword type-path)]
@@ -164,18 +164,18 @@
                 (s/optional-key :updates) [Entity]}
        :body [entities# {~type-kw [(apply s/either ~schemas)]}]
        :summary ~(str "Creates a new top-level " type-name)
-       (let [ctx# (request-context/make-context request# ~org)]
+       (let [ctx# (request-context/make-context request# ~org ~authz)]
          (post-resources* ctx# ~db ~type-name ~type-kw (~type-kw entities#))))))
 
 (defmacro get-resource
-  [db org entity-type id]
+  [db org authz entity-type id]
   (let [type-name (capitalize entity-type)
         single-type-kw (keyword (lower-case type-name))]
     `(GET "/" request#
        :name ~(keyword (str "get-" (lower-case type-name)))
        :return {~single-type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :summary ~(str "Returns " type-name " with :id")
-       (let [ctx# (request-context/make-context request# ~org)]
+       (let [ctx# (request-context/make-context request# ~org ~authz)]
          (if-let [entities# (core/get-entities ctx# ~db [~id])]
            (if-let [filtered# (seq (filter #(= ~type-name (:type %)) entities#))]
              (ok {~single-type-kw (first filtered#)})
@@ -226,7 +226,7 @@
 
 
 (defmacro post-resource
-  [db org entity-type id schemas]
+  [db org authz entity-type id schemas]
   (let [type-name (capitalize entity-type)]
     `(POST "/" request#
        :name ~(keyword (format "create-%s-entity" (lower-case type-name)))
@@ -235,7 +235,7 @@
                 :updates  [Entity]}
        :body [body# {:entities [(apply s/either ~schemas)]}]
        :summary ~(str "Creates and returns a new entity with the identified " type-name " as collaboration root")
-       (let [ctx# (request-context/make-context request# ~org)]
+       (let [ctx# (request-context/make-context request# ~org ~authz)]
          (post-resource* ctx# ~db ~type-name ~id (:entities body#))))))
 
 
@@ -261,7 +261,7 @@
                                   :id     (:id err)}}))))))
 
 (defmacro put-resource
-  [db org entity-type id]
+  [db org authz entity-type id]
   (let [type-name (capitalize entity-type)
         update-type (format "%sUpdate" type-name)
         type-kw (util/entity-type-name-keyword type-name)]
@@ -270,11 +270,11 @@
        :return {~type-kw ~(clojure.core/symbol "ovation.schema" type-name)}
        :body [updates# {~type-kw ~(clojure.core/symbol "ovation.schema" update-type)}]
        :summary ~(str "Updates and returns " type-name " with :id")
-       (let [ctx# (request-context/make-context request# ~org)]
+       (let [ctx# (request-context/make-context request# ~org ~authz)]
          (put-resource* ctx# ~db ~id ~type-name ~type-kw (~type-kw updates#))))))
 
 (defmacro delete-resource
-  [db org entity-type id]
+  [db org authz entity-type id]
   (let [type-name (capitalize entity-type)]
 
     `(DELETE "/" request#
@@ -282,7 +282,7 @@
        :return {:entity TrashedEntity}
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
-         (let [ctx# (request-context/make-context request# ~org)]
+         (let [ctx# (request-context/make-context request# ~org ~authz)]
            (accepted {:entity (first (core/delete-entities ctx# ~db [~id]))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
@@ -294,13 +294,13 @@
 
 
 (defmacro rel-related
-  [db org entity-type id rel]
+  [db org authz entity-type id rel]
   (let [type-name (capitalize entity-type)]
     `(GET "/" request#
        :name ~(keyword (str "get-" (lower-case type-name) "-link-targets"))
        :return {s/Keyword [Entity]}
        :summary ~(str "Gets the targets of relationship :rel from the identified " type-name)
-       (let [ctx# (request-context/make-context request# ~org)]
+       (let [ctx# (request-context/make-context request# ~org ~authz)]
          (rel-related* ctx# ~db ~id ~rel)))))
 
 (defn-traced get-relationships*
@@ -329,14 +329,14 @@
       (bad-request {:errors {:detail message}}))))
 
 (defmacro relationships
-  [db org entity-type id rel]
+  [db org authz entity-type id rel]
   (let [type-name (capitalize entity-type)]
     `(context "/relationships" []
        (GET "/" request#
          :name ~(keyword (str "get-" (lower-case type-name) "-links"))
          :return {:links [LinkInfo]}
          :summary ~(str "Get relationships for :rel from " type-name " :id")
-         (let [ctx# (request-context/make-context request# ~org)]
+         (let [ctx# (request-context/make-context request# ~org ~authz)]
            (get-relationships* ctx# ~db ~id ~rel)))
 
        (POST "/" request#
@@ -345,7 +345,7 @@
                   :updates [Entity]}
          :body [new-links# [NewLink]]
          :summary ~(str "Add relationship links for :rel from " type-name " :id")
-         (let [ctx# (request-context/make-context request# ~org)]
+         (let [ctx# (request-context/make-context request# ~org ~authz)]
            (post-relationships* ctx# ~db ~id new-links# ~rel))))))
 
 (defn-traced post-revisions*
@@ -369,8 +369,8 @@
       (conflict {:errors {:detail (:message err)}}))))
 
 (defn-traced get-head-revisions*
-  [request db org id]
-  (let [ctx (request-context/make-context request org)]
+  [request db org authz id]
+  (let [ctx (request-context/make-context request org nil)]
 
     (try+
       (ok {:revisions (revisions/get-head-revisions ctx db id)})
@@ -386,8 +386,8 @@
   (get-in EntityChildren [(util/entity-type-keyword src) (util/entity-type-keyword dest) :inverse-rel]))
 
 (defn-traced move-contents*
-  [request db org id info]
-  (let [ctx    (request-context/make-context request org)
+  [request db org authz id info]
+  (let [ctx    (request-context/make-context request org authz)
 
         src    (core/get-entities ctx db [(:source info)])
         dest   (core/get-entities ctx db [(:destination info)])

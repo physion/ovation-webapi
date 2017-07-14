@@ -14,19 +14,11 @@
             [ring.util.http-response :refer [throw!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [clojure.tools.logging :as logging]
-            [ring.util.http-predicates :as hp]))
+            [ring.util.http-predicates :as hp]
+            [ovation.pubsub :as pubsub]))
 
 
 (def API-DESIGN-DOC "api")
-
-
-(defn db
-  "Database URL from authorization info"
-  [auth]
-  (logging/debug "DEPRECATED call to couch/db")
-  (-> (url/url (config/config :cloudant-db-url))
-    (assoc :username (config/config :cloudant-username)
-           :password (config/config :cloudant-password))))
 
 
 (defn- sequential!
@@ -72,7 +64,7 @@
 
   (let [org (::rc/org ctx)]
 
-    (cl/with-db db
+    (cl/with-db (:connection db)
       (if prefix-teams
         ;; [prefix-teams] Run queries in parallel
         (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
@@ -99,7 +91,6 @@
   "Gets all documents with given document IDs"
   [ctx db ids]
   (let [partitions     (partition-all VIEW-PARTITION ids)
-        {auth ::rc/auth} ctx
         thread-results (map
                          (fn [p]
                            (async/thread (get-view ctx db k/ALL-DOCS-VIEW {:keys         (map util/jsonify-value p)
@@ -112,9 +103,9 @@
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."
   [docs updates]
   (let [update-map (into {} (map (fn [doc] [(:id doc) (:rev doc)]) updates))]
-    (map #(if-let [rev (update-map (:_id %))]
-           (assoc % :_rev rev)
-           (case (:error %)
+    (map #(if-let [rev (update-map (str (:_id %)))]
+            (assoc % :_rev rev)
+            (case (:error %)
              "conflict" (throw+ {:type ::conflict :message "Document conflict" :id (:_id %)})
              "forbidden" (throw+ {:type ::forbidden :message "Update forbidden" :id (:_id %)})
              "unauthorized" (throw+ {:type ::unauthorized :message "Update unauthorized" :id (:id %)})
@@ -122,11 +113,31 @@
 
       docs)))
 
+(defn publish-updates
+  [publisher docs & {:keys [channel close?] :or {channel (chan)
+                                                 close?  true}}]
+  (let [msg-fn   (fn [doc]
+                   {:id   (:_id doc)
+                    :rev  (:_rev doc)
+                    :type (:type doc)})
+        topic    (config/config :db-updates-topic :default :updates)
+        channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
+
+    (async/pipe (async/merge channels) channel close?)))
+
 (defn bulk-docs
   "Creates or updates documents"
   [db docs]
-  (cl/with-db db
-    (merge-updates docs (cl/bulk-update docs))))
+  (let [{pubsub     :pubsub
+         connection :connection} db
+        publisher (:publisher pubsub)]
+    (cl/with-db connection
+      (let [bulk-results (cl/bulk-update docs)
+            pub-ch       (chan (count bulk-results))]
+        (publish-updates publisher bulk-results :channel pub-ch)
+        ;(util/drain! pub-ch)
+
+        (merge-updates docs bulk-results)))))
 
 (defn changes
   "Writes changes to channel c.
@@ -135,7 +146,7 @@
     :continuous [true|false]
     :since <db-seq>"
   [db c & {:as opts}]
-  (let [changes-agent (cl/change-agent db opts)]
+  (let [changes-agent (cl/change-agent (:connection db) opts)]
     (add-watch changes-agent :update (fn [key ref old new] (go (>! c new))))
     (cl/start-changes changes-agent)))
 
@@ -154,7 +165,7 @@
                                       (for [[k v] query-params :when (nil? v)] k))
                       :headers      {"Accept" "application/json"}
                       :basic-auth   [(config/config :cloudant-username) (config/config :cloudant-password)]}
-        uri          (util/join-path [db "_design" "search" "_search" "all"])
+        uri          (util/join-path [(:connection db) "_design" "search" "_search" "all"])
         resp         @(httpkit.client/get uri opts)]
 
     (let [body   (-> resp :body util/from-json)

@@ -73,7 +73,7 @@
                        (s/optional-key :attributes)   {s/Keyword s/Any}
 
                        :links                         {(s/optional-key :_collaboration_roots) [s/Str]
-                                                      (s/optional-key :self)                 s/Str}})
+                                                       (s/optional-key :self)                 s/Str}})
 
 
 
@@ -233,12 +233,11 @@
    :type                                      (s/eq "Organization")
    :uuid                                      s/Uuid
    :name                                      s/Str
+   (s/optional-key :logo_image)               s/Str
    (s/optional-key :is_admin)                 s/Bool
    (s/optional-key :research_subscription_id) Id
-   :links                                     {:self                                      s/Str
-                               (s/optional-key :projects)                 s/Str
-                               (s/optional-key :organization-memberships) s/Str ;;FIX dash
-                               (s/optional-key :organization-groups)      s/Str}}) ;;FIX dash
+   (s/optional-key :links)                    {:self     s/Str
+                                               s/Keyword s/Any}})
 
 (s/defschema NewOrganizationMembership
   {:type                                 (s/eq "OrganizationMembership")
@@ -255,7 +254,7 @@
 (s/defschema OrganizationMembership
   (-> NewOrganizationMembership
     (assoc :id Id)
-    (assoc (s/optional-key :profile_image_url) s/Str)))
+    (assoc s/Keyword s/Any)))
 
 ;; -- Organization groups -- ;;
 (s/defschema NewOrganizationGroup
@@ -267,6 +266,9 @@
 
 (s/defschema OrganizationGroup
   (-> NewOrganizationGroup
+    (assoc (s/optional-key :project_count) s/Int)
+    (assoc (s/optional-key :member_count) s/Int)
+    (assoc (s/optional-key :team_ids) [s/Uuid])
     (assoc (s/optional-key :organization_group_membership_ids) [Id])
     (assoc :id Id)))
 
@@ -284,33 +286,44 @@
 
 ;; -- Teams -- ;;
 
+(s/defschema NewTeamGroup
+  {:team_id               Id
+   (s/optional-key :type) s/Str
+   :organization_group_id Id
+   :role_id               Id})
+
+(s/defschema TeamGroup
+  {:id                    Id
+   :team_id               Id
+   :organization_group_id Id
+   :role_id               Id
+   (s/optional-key :type) s/Str
+   :name                  s/Str})
+
 (s/defschema TeamRole
   {:id                     Id
    :organization_id        Id
    :name                   s/Str
    (s/optional-key :links) {s/Keyword s/Str}})
 
+(s/defschema NewTeamMembership
+  {:email s/Str
+   :role  TeamRole})
+
 (s/defschema TeamMembership
-  {:id                          Id
-   :team_id                     Id
-   :type                        s/Str
-   :added                       s/Str
-   :role                        TeamRole
-   (s/optional-key :email)      s/Str
-   (s/optional-key :name)       s/Str
-   (s/optional-key :user_uuid)  s/Uuid
-   :user_id                     s/Int
-   :membership_role_ids         [s/Int]
-   :links                       {:self s/Keyword}})
+  {:id                  Id
+   :team_id             Id
+   :type                s/Str
+   :added               s/Str
+   :role                TeamRole
+   :user_id             s/Int
+   s/Keyword            s/Any
+   :links               {:self s/Keyword}})
 
-
-(s/defschema PendingTeamMembership
-  {:id        Id
-   :role      TeamRole
-   :added     s/Str
-   (s/optional-key :email)      s/Str
-   (s/optional-key :name) s/Str
-   :type      s/Str})
+(s/defschema UpdatedTeamMembership
+  {:role                                 TeamRole
+   s/Keyword                             s/Any
+   (s/optional-key :links)               {:self s/Keyword}})
 
 (s/defschema NewTeamRole
   (dissoc TeamRole :links))
@@ -319,35 +332,16 @@
   {:email s/Str
    :role  NewTeamRole})
 
-(s/defschema TeamUser
-  {
-   :id                          s/Int
-   :uuid                        s/Uuid
-   (s/optional-key :name)       (s/maybe s/Str)
-   (s/optional-key :first_name) (s/maybe s/Str)
-   (s/optional-key :last_name)  (s/maybe s/Str)
-   :email                       s/Str
-   :location                    (s/maybe s/Str)
-   :user_preference             s/Num
-   :links                       {:roles s/Str}
-   :type                        (s/eq "User")})
-
-
-(s/defschema TeamMembershipRole
-  {:id            s/Int
-   :membership_id s/Int
-   :role_id       s/Int})
-
 (s/defschema Team
-  {:id                  Id
-   :type                (s/eq "Team")
-   :uuid                s/Uuid
-   :name                s/Str
-   :roles               [TeamRole]
-   :pending_memberships [PendingTeamMembership]
-   :memberships         [TeamMembership]
-   :links               {s/Keyword s/Str}
-   (s/optional-key :permissions) {s/Keyword s/Bool}})
+  {:id                                   Id
+   :type                                 (s/eq "Team")
+   :uuid                                 s/Uuid
+   :name                                 s/Str
+   :roles                                [TeamRole]
+   :memberships                          [TeamMembership]
+   :team_groups                          [TeamGroup]
+   :links                                {s/Keyword s/Str}
+   (s/optional-key :permissions)         {s/Keyword s/Bool}})
 
 
 

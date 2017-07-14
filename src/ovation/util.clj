@@ -8,8 +8,9 @@
             [clojure.string :as s]
             [clj-time.core :as t]
             [clj-time.format :as tf]
-            [clojure.core.async :refer [<!!] :as async]
-            [slingshot.slingshot :refer [throw+]]))
+            [clojure.core.async :refer [<!! <! go-loop] :as async]
+            [slingshot.slingshot :refer [throw+]]
+            [clojure.tools.logging :as logging]))
 
 (def RELATION_TYPE "Relation")
 
@@ -129,23 +130,20 @@
 
 ;; Async utilities
 
-(defn ncpus []
-  (.availableProcessors (Runtime/getRuntime)))
-
-(defn response-exception?
+(defn exception?
   "Tests response for Throwable or :ring.util.http-response/response"
   [response]
   (or
     (instance? Throwable response)
     (#{(str :ring.util.http-response/response) :ring.util.http-response/response} (:type response))))
 
-
 (defn <??
-  "Async pop that throws an exception if item returned is throwable
-   This function comes from David Nolen"
+  "Async pop that throws an exception if item returned is throwable. Returns nil on timeout.
+   Timeout in milliseconds (default 1000ms).
+   This function comes from David Nolen."
   [c]
   (let [returned (<!! c)]
-    (if (response-exception? returned)
+    (if (exception? returned)
       (throw+ returned)
       returned)))
 

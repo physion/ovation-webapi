@@ -25,7 +25,7 @@
 
 (defn org-projects-route
   [rt org-id]
-  (rt :all-project {:org org-id}))
+  (rt :all-projects {:org org-id}))
 
 (defn org-memberships-route
   [rt org-id]
@@ -38,6 +38,10 @@
 (defn group-memberships-route
   [rt org-id group-id]
   (rt :get-groups-memberships {:org org-id :id group-id}))
+
+(defn org-stats-route
+  [rt org-id]
+  (rt :get-stats {:org org-id}))
 
 
 (defn self-route

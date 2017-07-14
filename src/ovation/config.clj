@@ -1,27 +1,21 @@
 (ns ovation.config
-  (:require [environ.core :refer [env]]))
+  (:require [environ.core :refer [env]]
+            [ovation.util :as util]))
 
 (defn config
   [name & {:keys [default] :or {default nil}}]
   (or (env name) default))
 
-(def JWT_SECRET (config :jwt-secret))
-(def NOTIFICATIONS_SERVER (config :notifications-server))
-(def AUTH_SERVER (config :auth-server))
-
-(def RESOURCES_SERVER (config :resources-server))
-
-(def TEAMS_SERVER (config :teams-server))
-
-(def LOGGING_HOST (config :logging-host))
-(def LOGGING_PORT (config :logging-port))
-
-(def CLOUDANT_DB_URL (config :cloudant-db-url))
-(def CLOUDANT_USERNAME (config :clouddant-username))
-(def CLOUDANT_PASSWORD (config :cloudant-password))
-
 (def PORT (Integer/parseInt (str (config :port :default 3000))))
-(def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))
 
+(def JWT_SECRET (config :jwt-secret))
+
+(def SERVICES_API_URL (config :ovation-io-host-uri :default "https://app-services-staging.ovation.io"))
+
+(def NOTIFICATIONS_SERVER SERVICES_API_URL)
+(def AUTH_SERVER SERVICES_API_URL)
+(def RESOURCES_SERVER SERVICES_API_URL)
+(def TEAMS_SERVER (util/join-path [SERVICES_API_URL "api" "v2"]))
 (def ORGS_SERVER TEAMS_SERVER)
-(def SERVICES_API (config :ovation-io-host-uri :default "https://services-staging.ovation.io"))
+
+(def ZIP_SERVICE (config :zip-service :default "https://zip-staging.ovation.io"))
