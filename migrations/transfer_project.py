@@ -17,23 +17,25 @@ def transfer_project(client, db_name,
 
     db = client[db_name]
 
-    proj = db[project]
-    current_org = int(proj['organization'])
-
     end_point = '{0}/{1}'.format(client.server_url, '{}/_design/api/_view/by_project'.format(db_name))
     params = {'include_docs': 'false',
               'keys': json.dumps([project]) }
 
     # https://ovation-io-dev.cloudant.com/staging/_design/api/_view/by_project?limit=20&reduce=false&include_docs=true&keys=%5B%22002e2984-186d-41a2-a064-2c09a9b37faf%22%5D
     # Issue the request
-    response = client.r_session.get(end_point, params=params)
+    response = client.r_session.get(end_point, params=params).json()
 
     # Display the response content
-    total_docs = int(response.json()['total_rows'])
+    total_docs = len(response['rows'])
 
-    for doc in tqdm(db, total=total_docs, unit='doc'):
-        doc['organization'] = dest_org
+    for r in tqdm(response['rows'], total=total_docs, unit='doc'):
+        doc = db[r['id']]
+        doc['organization'] = int(dest_org)
         doc.save()
+
+    proj_doc = db[project]
+    proj_doc['organization'] = int(dest_org)
+    proj_doc.save()
 
 
 # Copy design doc...
