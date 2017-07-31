@@ -371,7 +371,8 @@
                   (GET "/" request
                     :name :all-projects
                     :return {:projects [Project]}
-                    :query-params [{organization_group_id :- Id nil}]
+                    :query-params [{organization_group_id :- Id nil}
+                                   {organization_membership_id :- Id nil}]
                     :summary "Gets all top-level projects"
                     (let [ctx      (request-context/make-context request org authz)
                           group-id organization_group_id]
