@@ -15,7 +15,7 @@
             [ovation.core :as core]
             [ovation.auth :as auth]))
 
-
+(def TEAMS "teams")
 
 (defn get-teams
   "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2] :organization_ids [id1 id2]}"
@@ -29,7 +29,6 @@
                 (-> resp
                   :body
                   util/from-json))))))
-
 
 (defn make-read-membership-tf
   [team-uuid]
@@ -103,6 +102,13 @@
   [ctx team-id ch]
   (http/show-resource ctx config/TEAMS_SERVER "teams" team-id ch
     :response-key :team
+    :make-tf make-read-team-tf))
+
+(defn member-teams
+  [ctx url org-membership-id ch]
+  (http/index-resource ctx url TEAMS ch
+    :query-params {:organization_membership_id org-membership-id}
+    :response-key :teams
     :make-tf make-read-team-tf))
 
 

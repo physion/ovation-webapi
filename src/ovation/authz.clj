@@ -25,6 +25,8 @@
   (put-organization-membership [this ctx id body])
   (delete-organization-membership [this ctx id])
 
+  (get-organization-member-project-ids [this ctx member-id])
+
   (get-organization-groups [this ctx])
   (create-organization-group [this ctx body])
   (get-organization-group [this ctx id])
@@ -224,7 +226,10 @@
   (get-organization-group-project-ids [this ctx group-id]
     (let [ch (chan)]
       (organizations/group-project-ids ctx (:services-url this) group-id ch)
-      (<?? ch))))
+      (<?? ch)))
+
+  (get-organization-member-project-ids [this ctx member-id]
+    (let [ch (chan)])))
 
 
 (defn new-authz-service [services-url]

@@ -374,14 +374,19 @@
                     :query-params [{organization_group_id :- Id nil}
                                    {organization_membership_id :- Id nil}]
                     :summary "Gets all top-level projects"
-                    (let [ctx      (request-context/make-context request org authz)
-                          group-id organization_group_id]
-                      (if (nil? group-id)
-                        (let [entities (core/of-type ctx db "Project")]
-                          (ok {:projects entities}))
-                        (let [project-ids (authz/get-organization-group-project-ids authz ctx group-id)
-                              entities (core/get-entities ctx db project-ids)]
-                          (ok {:projects entities})))))
+                    (let [ctx       (request-context/make-context request org authz)
+                          group-id  organization_group_id
+                          member-id organization_membership_id]
+                      (cond
+                        group-id (let [project-ids (authz/get-organization-group-project-ids authz ctx group-id)
+                                       entities    (core/get-entities ctx db project-ids)]
+                                   (ok {:projects entities}))
+                        member-id (let [project-ids (authz/get-organization-member-project-ids authz ctx member-id)
+                                        entities    (core/get-entities ctx db project-ids)]
+                                    (ok {:projects entities}))
+                        :else (let [entities (core/of-type ctx db "Project")]
+                                (ok {:projects entities}))
+                        )))
 
                   (post-resources db org authz "Project" [NewProject])
                   (context "/:id" []

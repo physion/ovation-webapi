@@ -9,7 +9,8 @@
             [ovation.routes :as routes]
             [ovation.test.helpers :refer [sling-throwable]]
             [slingshot.slingshot :refer [try+]]
-            [ovation.organizations :as organizations])
+            [ovation.organizations :as organizations]
+            [ovation.teams :as teams])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "groups-memberships"
@@ -174,6 +175,7 @@
 
 
               (<?? (organizations/group-project-ids ..ctx.. service-url id ch)) => team-uuids))))
+
 
 
       (facts "`create-group`"
