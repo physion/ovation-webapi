@@ -101,6 +101,7 @@
                                                            (s/optional-key :error) s/Str}}
 
                       :links {:self                                  s/Str
+                              (s/optional-key :team)                s/Str
                               (s/optional-key :heads)                s/Str
                               (s/optional-key :zip)                  s/Str
                               (s/optional-key :tags)                 s/Str

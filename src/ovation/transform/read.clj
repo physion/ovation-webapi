@@ -64,6 +64,12 @@
       (assoc-in [:links :upload-failed] (r/upload-failed-route ctx dto)))
     dto))
 
+(defn add-team-link
+  [dto ctx]
+  (condp = (:type dto)
+    k/PROJECT-TYPE (assoc-in dto [:links :team] (r/team-route ctx (:_id dto)))
+    dto))
+
 (defn add-self-link
   "Adds self link to dto"
   [dto ctx]
@@ -120,6 +126,7 @@
             (add-heads-link ctx)
             (add-upload-links ctx)
             (add-zip-link ctx)
+            (add-team-link ctx)
             (add-annotation-links ctx)
             (add-relationship-links ctx)
             (convert-file-revision-status)
