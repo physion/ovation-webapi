@@ -5,7 +5,8 @@
             [clojure.core.async :as async :refer [chan go <!]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [ovation.groups :as groups]))
+            [ovation.groups :as groups]
+            [ovation.teams :as teams]))
 
 
 (defprotocol AuthzApi
@@ -229,7 +230,9 @@
       (<?? ch)))
 
   (get-organization-member-project-ids [this ctx member-id]
-    (let [ch (chan)])))
+    (let [ch (chan)]
+      (teams/member-teams ctx (:services-url this) member-id ch)
+      (<?? ch))))
 
 
 (defn new-authz-service [services-url]
