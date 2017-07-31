@@ -133,7 +133,21 @@
                                                 :links {:self ..route..}}
         (provided
           (r/self-route ..ctx.. couch) => ..route..)))
-    ;
+
+    (facts "`add-team-link`"
+      (fact "adds link for Project"
+        (let [couch {:_id ..id..
+                     :type k/PROJECT-TYPE
+                     :links {}}]
+          (tr/add-team-link couch ..ctx..) => (assoc-in couch [:links :team] ..team..)
+          (provided
+            (r/team-route ..ctx.. ..id..) => ..team..)))
+      (fact "does not add team link for non-project"
+        (let [couch {:_id ..id..
+                     :type k/SOURCE-TYPE
+                     :links {}}]
+          (tr/add-team-link couch ..ctx..) => couch)))
+
     (fact "`couch-to-value` adds self link to LinkInfo"
       (let [couch {:_id  ..id..
                    :type util/RELATION_TYPE}]
