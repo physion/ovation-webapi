@@ -37,6 +37,13 @@
       (let [service-url   (util/join-path [config/SERVICES_API_URL "api" "v2"])
             rails-team    {:type k/TEAM-TYPE
                            :uuid (str (util/make-uuid))}
+            expected-team (-> rails-team
+                            (assoc-in [:links :memberships] {:id  nil
+                                                             :org ..org..})
+                            (assoc-in [:links :self] {:id  nil
+                                                      :org ..org..})
+                            (assoc :memberships '())
+                            (assoc :permissions {:delete false :update false}))
             membership-id 1000
             authz-ch      (async/promise-chan)
             _             (async/go (async/>! authz-ch {}))]
@@ -46,7 +53,7 @@
             (fact "Gets project ids from group.team_uuids"
               (let [ch (async/chan)]
                 (teams/member-teams ..ctx.. service-url membership-id ch)
-                (<?? ch) => [rails-team]))))))
+                (<?? ch) => [expected-team]))))))
 
     (facts "get-team* "
       (against-background []
