@@ -104,13 +104,6 @@
     :response-key :team
     :make-tf make-read-team-tf))
 
-(defn member-teams
-  [ctx url org-membership-id ch]
-  (http/index-resource ctx url TEAMS ch
-    :query-params {:organization_membership_id org-membership-id}
-    :response-key :teams
-    :make-tf make-read-team-tf))
-
 
 (defn get-team*
   [ctx db team-id]

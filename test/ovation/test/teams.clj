@@ -12,7 +12,8 @@
             [ovation.core]
             [ovation.authz :as authz]
             [ovation.constants :as k]
-            [ovation.groups :as groups])
+            [ovation.groups :as groups]
+            [ovation.organizations :as organizations])
 
   (:import (clojure.lang ExceptionInfo)))
 
@@ -32,28 +33,6 @@
 
           (fact "calls /teams"
             @(teams/get-teams ..apikey..) => {:team_uuids teams}))))
-
-    (facts "member-teams"
-      (let [service-url   (util/join-path [config/SERVICES_API_URL "api" "v2"])
-            rails-team    {:type k/TEAM-TYPE
-                           :uuid (str (util/make-uuid))}
-            expected-team (-> rails-team
-                            (assoc-in [:links :memberships] {:id  nil
-                                                             :org ..org..})
-                            (assoc-in [:links :self] {:id  nil
-                                                      :org ..org..})
-                            (assoc :memberships '())
-                            (assoc :permissions {:delete false :update false}))
-            membership-id 1000
-            authz-ch      (async/promise-chan)
-            _             (async/go (async/>! authz-ch {}))]
-        (against-background [(request-context/authorization-ch ..ctx..) => authz-ch]
-          (with-fake-http [{:url (util/join-path [service-url teams/TEAMS]) :method :get} {:status 200
-                                                                                           :body   (util/to-json {:teams [rails-team]})}]
-            (fact "Gets project ids from group.team_uuids"
-              (let [ch (async/chan)]
-                (teams/member-teams ..ctx.. service-url membership-id ch)
-                (<?? ch) => [expected-team]))))))
 
     (facts "get-team* "
       (against-background []
