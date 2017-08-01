@@ -1,15 +1,17 @@
 (ns ovation.test.organizations
   (:use midje.sweet)
   (:require [ovation.organizations :as orgs]
-            [clojure.core.async :as core.async :refer [chan]]
+            [clojure.core.async :as core.async :refer [go chan promise-chan >!]]
             [ovation.util :as util :refer [<??]]
             [org.httpkit.fake :refer [with-fake-http]]
+            [ovation.constants :as k]
             [ovation.config :as config]
             [ovation.request-context :as request-context]
             [ovation.routes :as routes]
             [ovation.test.helpers :refer [sling-throwable]]
             [slingshot.slingshot :refer [try+]]
-            [ovation.organizations :as organizations])
+            [ovation.organizations :as organizations]
+            [ovation.teams :as teams])
   (:import (clojure.lang ExceptionInfo)))
 
 (facts "groups-memberships"
@@ -176,6 +178,7 @@
               (<?? (organizations/group-project-ids ..ctx.. service-url id ch)) => team-uuids))))
 
 
+
       (facts "`create-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :post} (fn [_ {body :body} _]
                                                                                                         (if (= {:organization_group {:organization_id org-id
@@ -271,6 +274,23 @@
                                               ::request-context/routes ..rt..
                                               ::request-context/org    org-id}
                          (request-context/router ..request..) => ..rt..]
+
+      (facts "member-team-ids"
+        (let [service-url   (util/join-path [config/SERVICES_API_URL "api" "v2"])
+              rails-team    {:type k/TEAM-TYPE
+                             :uuid (str (util/make-uuid))}
+              membership-id 1000
+              authz-ch      (promise-chan)
+              _             (go (>! authz-ch {}))]
+          (against-background [(ovation.request-context/authorization-ch ..ctx..) => authz-ch]
+            (with-fake-http [{:url (util/join-path [service-url teams/TEAMS]) :method :get} {:status 200
+                                                                                             :body   (util/to-json {:teams [rails-team]})}]
+              (fact "Gets project ids from group.team_uuids"
+                (let [ch (chan)]
+                  (orgs/member-project-ids ..ctx.. service-url membership-id ch)
+                  (<?? ch) => [(:uuid rails-team)]))))))
+
+
       (facts "`get-memberships`"
         (with-fake-http [{:url (util/join-path [service-url "organization_memberships"]) :method :get} {:status 200
                                                                                                         :body   (util/to-json {:organization_memberships [rails-membership]})}]

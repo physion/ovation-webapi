@@ -12,7 +12,8 @@
             [ovation.core]
             [ovation.authz :as authz]
             [ovation.constants :as k]
-            [ovation.groups :as groups])
+            [ovation.groups :as groups]
+            [ovation.organizations :as organizations])
 
   (:import (clojure.lang ExceptionInfo)))
 

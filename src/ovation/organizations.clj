@@ -9,13 +9,15 @@
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity!]]
             [slingshot.support :refer [get-throwable]]
             [slingshot.slingshot :refer [try+]]
-            [clojure.core.async :refer [chan go >! <! >!! pipeline pipe]]))
+            [clojure.core.async :refer [chan go >! <! >!! pipeline pipe]]
+            [ovation.http :as http]))
 
 
 (def ORGANIZATIONS "organizations")
 (def ORGANIZATION-MEMBERSHIPS "organization_memberships")
 (def ORGANIZATION-GROUPS "organization_groups")
 (def GROUP-MEMBERSHIPS "organization_group_memberships")
+(def TEAMS "teams")
 
 
 (defn make-org-links
@@ -260,8 +262,21 @@
     (get-group ctx url group-id group-ch)
     (go
       (let [response (<! group-ch)]
-        (println response)
         (if (util/exception? response)
           (>! ch response)
           (>! ch (:team_ids response)))))
     ch))
+
+
+(defn member-project-ids
+  [ctx url org-membership-id ch]
+  (let [teams-ch (chan)]
+    (http/index-resource ctx url TEAMS teams-ch
+      :query-params {:organization_membership_id org-membership-id}
+      :response-key :teams
+      :make-tf (fn [ctx] identity))
+    (go
+      (let [response (<! teams-ch)]
+        (if (util/exception? response)
+          (>! ch response)
+          (>! ch (map :uuid response)))))))

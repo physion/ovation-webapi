@@ -30,7 +30,6 @@
   (get-organization-group [this ctx id])
   (put-organization-group [this ctx id body])
   (delete-organization-group [this ctx id])
-  (get-organization-group-project-ids [this ctx group-id])
 
   (get-organization-groups-memberships [this ctx group-id])
   (create-organization-group-membership [this ctx body])
@@ -42,7 +41,11 @@
   (post-team-group [this ctx body])
   (get-team-group [this ctx group-id])
   (put-team-group [this ctx group-id body])
-  (delete-team-group [this ctx group-id]))
+  (delete-team-group [this ctx group-id])
+
+
+  (get-organization-member-project-ids [this ctx member-id])
+  (get-organization-group-project-ids [this ctx group-id]))
 
 (defn get-authorizations
   [ctx url-base ch]
@@ -224,6 +227,11 @@
   (get-organization-group-project-ids [this ctx group-id]
     (let [ch (chan)]
       (organizations/group-project-ids ctx (:services-url this) group-id ch)
+      (<?? ch)))
+
+  (get-organization-member-project-ids [this ctx member-id]
+    (let [ch (chan)]
+      (organizations/member-project-ids ctx (:services-url this) member-id ch)
       (<?? ch))))
 
 
