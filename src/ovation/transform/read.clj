@@ -115,13 +115,15 @@
         "conflict" (conflict!)
         "forbidden" (forbidden!)
         "unauthorized" (unauthorized!)
-        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])]
+        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])
+              org-id (:organization doc)]
           (-> doc
             (remove-user-attributes)
             (dissoc :named_links)                           ;; For v3
             (dissoc :links)                                 ;; For v3
             (dissoc :relationships)
             (dissoc :organization)
+            (assoc :organization_id org-id)
             (add-self-link ctx)
             (add-heads-link ctx)
             (add-upload-links ctx)
@@ -153,25 +155,29 @@
 (defn-traced couch-to-value
   [ctx]
   (fn [doc]
-    (case (:error doc)
-      "conflict" (conflict! doc)
-      "forbidden" (forbidden!)
-      "unauthorized" (unauthorized!)
-      (condp = (util/entity-type-name doc)
-        c/RELATION-TYPE-NAME (-> doc
-                               (dissoc :organization)
-                               (add-self-link ctx))
-        ;(add-value-permissions auth)
-
-        c/ANNOTATION-TYPE-NAME (-> doc
+    (let [org-id (:organization doc)]
+      (case (:error doc)
+        "conflict" (conflict! doc)
+        "forbidden" (forbidden!)
+        "unauthorized" (unauthorized!)
+        (condp = (util/entity-type-name doc)
+          c/RELATION-TYPE-NAME (-> doc
                                  (dissoc :organization)
-                                 (add-annotation-self-link ctx)
-                                 (add-value-permissions ctx))
+                                 (assoc :organization_id org-id)
+                                 (add-self-link ctx))
+          ;(add-value-permissions auth)
 
-        ;; default
-        (-> doc
-          (dissoc :organization)
-          (add-value-permissions ctx))))))
+          c/ANNOTATION-TYPE-NAME (-> doc
+                                   (dissoc :organization)
+                                   (assoc :organization_id org-id)
+                                   (add-annotation-self-link ctx)
+                                   (add-value-permissions ctx))
+
+          ;; default
+          (-> doc
+            (dissoc :organization)
+            (assoc :organization_id org-id)
+            (add-value-permissions ctx)))))))
 
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
