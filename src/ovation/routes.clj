@@ -43,6 +43,12 @@
   [rt org-id]
   (rt :get-stats {:org org-id}))
 
+(defn team-route
+  [ctx team-id]
+  (let [rt (:ovation.request-context/routes ctx)
+        org (:ovation.request-context/org ctx)]
+    (rt :get-team {:org org :id team-id})))
+
 
 (defn self-route
   ([ctx doc]

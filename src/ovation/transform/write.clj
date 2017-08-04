@@ -59,6 +59,7 @@
           (ensure-owner owner-id)
           (add-updated-at time)
           (add-organization ctx)
+          (dissoc :organization_id)
           (dissoc :links)
           (dissoc :relationships)
           (dissoc :permissions)

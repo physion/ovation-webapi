@@ -15,7 +15,7 @@
             [ovation.core :as core]
             [ovation.auth :as auth]))
 
-
+(def TEAMS "teams")
 
 (defn get-teams
   "Gets all teams for authenticated user as a future assoc: @{:user_uuid id :team_uuids [id1 id2] :organization_ids [id1 id2]}"
@@ -29,7 +29,6 @@
                 (-> resp
                   :body
                   util/from-json))))))
-
 
 (defn make-read-membership-tf
   [team-uuid]

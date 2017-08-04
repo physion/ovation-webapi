@@ -24,6 +24,7 @@
       ((tr/couch-to-value ..ctx..) {:type            k/ANNOTATION-TYPE
                                     :annotation_type k/TAGS
                                     :entity          ..id..
+                                    :organization    ..org..
                                     :_id             ..annotation..}) => {:type            k/ANNOTATION-TYPE
                                                                           :annotation_type k/TAGS
                                                                           :entity          ..id..
@@ -33,6 +34,7 @@
         (tr/add-value-permissions {:type            k/ANNOTATION-TYPE
                                    :annotation_type k/TAGS
                                    :entity          ..id..
+                                   :organization_id ..org..
                                    :_id             ..annotation..
                                    :links           {:self ..self..}} ..ctx..) => {:type             k/ANNOTATION-TYPE
                                                                                     :annotation_type k/TAGS
@@ -133,14 +135,32 @@
                                                 :links {:self ..route..}}
         (provided
           (r/self-route ..ctx.. couch) => ..route..)))
-    ;
+
+    (facts "`add-team-link`"
+      (fact "adds link for Project"
+        (let [couch {:_id ..id..
+                     :type k/PROJECT-TYPE
+                     :links {}}]
+          (tr/add-team-link couch ..ctx..) => (assoc-in couch [:links :team] ..team..)
+          (provided
+            (r/team-route ..ctx.. ..id..) => ..team..)))
+      (fact "does not add team link for non-project"
+        (let [couch {:_id ..id..
+                     :type k/SOURCE-TYPE
+                     :links {}}]
+          (tr/add-team-link couch ..ctx..) => couch)))
+
     (fact "`couch-to-value` adds self link to LinkInfo"
-      (let [couch {:_id  ..id..
-                   :type util/RELATION_TYPE}]
-        ((tr/couch-to-value ..ctx..) couch) => (assoc-in couch [:links :self] ..url..)
+      (let [couch                 {:_id          ..id..
+                                   :type         util/RELATION_TYPE
+                                   :organization ..org..}
+            expected-intermediate (-> couch
+                                    (dissoc :organization)
+                                    (assoc :organization_id ..org..))]
+        ((tr/couch-to-value ..ctx..) couch) => (assoc-in expected-intermediate [:links :self] ..url..)
         (provided
           (util/entity-type-name couch) => c/RELATION-TYPE-NAME
-          (r/self-route ..ctx.. couch) => ..url..))))
+          (r/self-route ..ctx.. expected-intermediate) => ..url..))))
 
   (facts "About doc-to-couch"
     (fact "skips docs without :type"

@@ -13,15 +13,16 @@
 
 ;; -- ANNOTATIONS -- ;;
 
-(def AnnotationBase {:_id                           s/Str
-                     :_rev                          s/Str
-                     :user                          s/Uuid
-                     :entity                        s/Uuid
-                     :type                          (s/eq "Annotation")
-                     (s/optional-key :organization) s/Int
-                     (s/optional-key :links)        {(s/optional-key :_collaboration_roots) [s/Str]
+(def AnnotationBase {:_id                              s/Str
+                     :_rev                             s/Str
+                     :user                             s/Uuid
+                     :entity                           s/Uuid
+                     :type                             (s/eq "Annotation")
+                     (s/optional-key :organization)    Id
+                     (s/optional-key :organization_id) Id
+                     (s/optional-key :links)           {(s/optional-key :_collaboration_roots) [s/Str]
                                               s/Keyword s/Str}
-                     (s/optional-key :permissions)  {s/Keyword s/Bool}})
+                     (s/optional-key :permissions)     {s/Keyword s/Bool}})
 
 (s/defschema AnnotationTypes (s/enum k/TAGS
                                      k/PROPERTIES
@@ -86,6 +87,7 @@
 (s/defschema BaseEntity (assoc NewEntity :_rev s/Str
                                          :_id s/Uuid
                                          (s/optional-key :organization) s/Int
+                                         (s/optional-key :organization_id) Id
                                          (s/optional-key :api_version) s/Int
                                          (s/optional-key :permissions) {s/Keyword s/Bool}))
 
@@ -101,6 +103,7 @@
                                                            (s/optional-key :error) s/Str}}
 
                       :links {:self                                  s/Str
+                              (s/optional-key :team)                s/Str
                               (s/optional-key :heads)                s/Str
                               (s/optional-key :zip)                  s/Str
                               (s/optional-key :tags)                 s/Str
