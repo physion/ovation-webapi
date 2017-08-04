@@ -96,7 +96,7 @@
 
                    [ring.logger/wrap-with-logger {:printer :identity-printer}]
 
-                   [wrap-raygun-handler (config/config "RAYGUN_API_KEY")]
+                   [wrap-raygun-handler (config/config :raygun-api-key)]
 
                    wrap-newrelic-transaction]
 
