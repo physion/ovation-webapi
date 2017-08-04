@@ -21,13 +21,13 @@
                      (s/optional-key :organization)    Id
                      (s/optional-key :organization_id) Id
                      (s/optional-key :links)           {(s/optional-key :_collaboration_roots) [s/Str]
-                                              s/Keyword s/Str}
+                                                        s/Keyword                              s/Str}
                      (s/optional-key :permissions)     {s/Keyword s/Bool}})
 
 (s/defschema AnnotationTypes (s/enum k/TAGS
-                                     k/PROPERTIES
-                                     k/NOTES
-                                     k/TIMELINE_EVENTS))
+                               k/PROPERTIES
+                               k/NOTES
+                               k/TIMELINE_EVENTS))
 
 (s/defschema TagRecord {:tag s/Str})
 (s/defschema TagAnnotation (conj AnnotationBase {:annotation_type (s/eq k/TAGS)
@@ -75,7 +75,8 @@
                        (s/optional-key :attributes)      {s/Keyword s/Any}
 
                        :links                            {(s/optional-key :_collaboration_roots) [s/Str]
-                                                          (s/optional-key :self)                 s/Str}})
+                                                          (s/optional-key :self)                 s/Str
+                                                          s/Keyword                              s/Any}})
 
 
 
