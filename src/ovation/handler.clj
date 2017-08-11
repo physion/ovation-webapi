@@ -51,7 +51,7 @@
                                    auth/authenticated-user-account?]}
              :request-method [:put :post :delete]}
             {:pattern #"^/api.*"
-             :handler authenticated?}])
+             :handler auth/authenticated-user-account?}])
 
 (def DESCRIPTION (slurp (io/file (io/resource "description.md"))))
 
@@ -70,7 +70,7 @@
                                :description    DESCRIPTION
                                :contact        {:name "Ovation"
                                                 :url  "https://www.ovation.io"}
-                               :termsOfService "https://services.ovation.io/terms_of_service"}
+                               :termsOfService "https://app-services.ovation.io/terms_of_service"}
                         :tags [{:name "entities" :description "Generic entity operations"}
                                {:name "activities" :description "Describe inputs and outputs of a procedure"}
                                {:name "projects" :description "Manage Projects"}
