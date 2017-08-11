@@ -83,7 +83,13 @@
   (fact "with wildcard scope"
     (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:*") => true)
   (fact "without wildcard scope"
-    (auth/has-scope? {::auth/scopes ["foo:bar"]} "read:*") => false))
+    (auth/has-scope? {::auth/scopes ["foo:bar"]} "read:*") => false)
+  (fact "throws IllegalArgumentException if scope is missing permission and scope"
+    (auth/has-scope? {} "*") => (throws IllegalArgumentException))
+  (fact "throws IllegalArgumentException if scope is missing scope"
+    (auth/has-scope? {} "foo") => (throws IllegalArgumentException))
+  (fact "throws IllegalArgumentException if scope is missing permission"
+    (auth/has-scope? {} ":global") => (throws IllegalArgumentException)))
 
 (facts "About `can?`"
   (fact "returns true when auth.identity is a service account"

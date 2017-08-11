@@ -8,7 +8,8 @@
             [clojure.tools.logging :as logging]
             [buddy.auth]
             [ovation.config :as config]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [clojure.string :as string]))
 
 
 
@@ -61,8 +62,16 @@
 
 (defn has-scope?
   [auth scope]
-  (let [scopes (get auth ::scopes [])]
-    (boolean (some #(re-find (re-pattern scope) %) scopes))))
+  (let [scopes           (get auth ::scopes [])
+        permission       (first (string/split scope #":"))
+        permission-scope (second (string/split scope #":"))
+        rx               (re-pattern (format "%s:%s" permission permission-scope))]
+
+    (when (or (string/blank? permission)
+            (string/blank? permission-scope))
+      (throw+ (IllegalArgumentException. "Missing permission and scope")))
+
+    (boolean (some #(re-find rx %) scopes))))
 
 
 (defn get-permissions                                ;; TODO move to authz

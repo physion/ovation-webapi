@@ -47,20 +47,20 @@
     (fact "adds annotation links to entity"
       (tr/add-annotation-links {:_id   "123"
                                 :links {:foo "bar"}} ..ctx..) => {:_id  "123"
-                                                                 :links {:foo             "bar"
-                                                                         :properties      "/api/v1/entities/123/annotations/properties"
-                                                                         :tags            "/api/v1/entities/123/annotations/tags"
-                                                                         :notes           "/api/v1/entities/123/annotations/notes"
-                                                                         :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
+                                                                  :links {:foo             "bar"
+                                                                          :properties      "/api/v1/entities/123/annotations/properties"
+                                                                          :tags            "/api/v1/entities/123/annotations/tags"
+                                                                          :notes           "/api/v1/entities/123/annotations/notes"
+                                                                          :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
       (provided
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
+                                      :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
+                                      :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
+                                      :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
+                                      :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
   (facts "About error handling"
     (facts "in couch-to-entity"
