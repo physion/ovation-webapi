@@ -53,7 +53,7 @@
 (defn authenticated-user-account?
   [request]
   (and (authenticated? request)
-    (not (authenticated-service-account? request))))
+    (not (service-account? (identity request)))))
 
 
 
