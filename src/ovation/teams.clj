@@ -95,8 +95,7 @@
       :response-key :team
       :make-tf make-read-team-tf)
 
-    (let [team (<?? ch)]
-      team)))
+    (<?? ch)))
 
 (defn get-team
   [ctx team-id ch]

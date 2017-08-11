@@ -7,8 +7,7 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [buddy.auth]
-            [ovation.config :as config]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [ovation.config :as config]))
 
 
 
@@ -34,29 +33,40 @@
       (assoc id ::token (token request))
       id)))
 
-(defn unauthorized-response
+(defn unauthorized-response                                 ;; TODO move to authz
   "A default response constructor for an unathorized request."
-  [request value]
+  [request _]
   (if (authenticated? request)
     (forbidden "Permission denied")
     (unauthorized "Unauthorized")))
 
 
-(defn authenticated-user-id
+(defn authenticated-user-id                                 ;; TODO use authorizations
   "The UUID of the authorized user"
   [auth]
   (if-let [ateams (::authenticated-teams auth)]
     (:user_uuid (deref ateams 500 {:user_uuid nil}))))
 
+(defn service-account?
+  [auth]
+  (boolean (::service-account auth)))
+
+
 
 ;; Authorization
-(defn-traced get-permissions
+
+(defn has-scope?
+  [ctx scope]
+  (let [scopes (get-in ctx [:identity ::scopes] [])]
+    (boolean (some #(re-find (re-pattern scope) %) scopes))))
+
+(defn get-permissions                                ;; TODO move to authz
   [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
         opts {:oauth-token   token
               :accept       :json}]
 
-    (future (let [response @(http/get url opts)]
+    (future (let [response @(http/get url opts)]            ;;TODO use ovation.http
               (when (not (hp/ok? response))
                 (logging/error "Unable to retrieve object permissions" (-> response
                                                                          :body
@@ -69,29 +79,29 @@
                 :permissions)))))
 
 
-(defn-traced permissions
+(defn permissions                                    ;;TODO move to authz
   [auth collaboration-roots]
   (let [permissions (deref (::authenticated-permissions auth) 500 [])
         root-set (set collaboration-roots)]
     (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
 
-(defn-traced collect-permissions
+(defn collect-permissions                            ;;TODO move to authz
   [permissions perm]
   (map #(-> % :permissions perm) permissions))
 
-(defn- authenticated-team-value
+(defn- authenticated-team-value                             ;;TODO move to authz
   [auth k & {:keys [default] :or {default []}}]
   (if-let [ateams (::authenticated-teams auth)]
     (k (deref ateams 500 {k default}))
     []))
 
-(defn authenticated-teams
+(defn authenticated-teams                                   ;;TODO move to authz
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (authenticated-team-value auth :team_uuids))
 
-(defn organization-ids
+(defn organization-ids                                      ;;TODO move to authz
   "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
   [auth]
   (authenticated-team-value auth :organization_ids))
@@ -179,22 +189,26 @@
 (defn can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
 
-  (let [{auth :ovation.request-context/auth
-         org  :ovation.request-context/org} ctx
-        organization-ids (organization-ids auth)]
+  (let [auth (:ovation.request-context/auth ctx)]
+    ;; Service accounts are always can? -> true
+    (if (service-account? auth)
+      true
 
-    (when (not (some #{org} organization-ids))
-      (logging/debug "Organization" org "not in users' organizations:" organization-ids)
-      (not-found!))
+      (let [{org :ovation.request-context/org} ctx
+            organization-ids (organization-ids auth)]
 
-    (case op
-      ::create (can-create? auth doc)
-      ::update (can-update? auth doc)
-      ::delete (can-delete? auth doc)
-      ::read (can-read? auth doc :teams teams)
+        (when (not (some #{org} organization-ids))
+          (logging/debug "Organization" org "not in users' organizations:" organization-ids)
+          (not-found!))
 
-      ;;default
-      (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))
+        (case op
+          ::create (can-create? auth doc)
+          ::update (can-update? auth doc)
+          ::delete (can-delete? auth doc)
+          ::read (can-read? auth doc :teams teams)
+
+          ;;default
+          (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))))
 
 
 (defn check!

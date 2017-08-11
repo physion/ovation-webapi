@@ -12,15 +12,13 @@
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-authenticated-teams]]
+            [ovation.middleware.auth :refer [wrap-auth]]
             [ovation.links :as links]
-            [ovation.routes :as r]
             [ovation.auth :as auth]
             [ovation.audit]
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [ovation.request-context :as request-context]
-            [ovation.groups :as groups]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
@@ -35,7 +33,6 @@
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
             [ovation.authz :as authz]
-            [clojure.tools.logging :as logging]
             [clojure.core.async :refer [chan]]
             [ovation.storage :as storage]))
 
@@ -92,7 +89,7 @@
                    [wrap-access-rules {:rules    rules
                                        :on-error auth/unauthorized-response}]
 
-                   wrap-authenticated-teams
+                   wrap-auth
 
                    [ring.logger/wrap-with-logger {:printer :identity-printer}]
 
@@ -385,8 +382,8 @@
                                         entities    (core/get-entities ctx db project-ids)]
                                     (ok {:projects entities}))
                         :else (let [entities (core/of-type ctx db "Project")]
-                                (ok {:projects entities}))
-                        )))
+                                (ok {:projects entities})))))
+
 
                   (post-resources db org authz "Project" [NewProject])
                   (context "/:id" []

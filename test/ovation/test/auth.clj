@@ -10,7 +10,8 @@
             [clojure.data.json :as json]
             [ovation.config :as config]
             [ovation.constants :as k]
-            [ovation.core :as core])
+            [ovation.core :as core]
+            [ovation.middleware.auth :as middleware.auth])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -30,8 +31,47 @@
     (provided
       ..auth.. =contains=> {::auth/authenticated-teams (future {:organization_ids ..ids..})})))
 
+(facts "About `service-account?`"
+  (fact "with ::service-account true"
+    (auth/service-account? {::auth/service-account true}) => true)
+  (fact "with ::service-account false"
+    (auth/service-account? {::auth/service-account false}) => false)
+  (fact "with ::service-account nil"
+    (auth/service-account? {}) => false))
+
+(facts "About `middleware.auth.service-sub?`"
+  (fact "recognizes user accounts"
+    (middleware.auth/service-sub? {:sub (str (util/make-uuid))}) => false)
+  (fact "recognizes service accounts"
+    (middleware.auth/service-sub? {:sub (format "%s@clients" (util/make-uuid))}) => true)
+  (fact "recognizes identity without sub as non-service account"
+    (middleware.auth/service-sub? {}) => false))
+
+(facts "About `middleware.auth.scopes`"
+  (facts "parsing"
+    (fact "for :scope"
+      (middleware.auth/scopes {:scope  "scope1 scope2"}) => ["scope1" "scope2"])
+    (fact "for :https://ovation.io/scope"
+      (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])))
+
+(facts "About has-scope?"
+  (fact "with scope"
+    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "read:global") => true)
+  (fact "without scope"
+    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "write:global") => false)
+  (fact "with wildcard scope"
+    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "read:*") => true)
+  (fact "without wildcard scope"
+    (auth/has-scope? {:identity {::auth/scopes ["foo:bar"] }} "read:*") => false))
 
 (facts "About `can?`"
+  (fact "returns true when auth.identity is a service account"
+    ;; When it's a service account, authz is handled via scopes at the handler
+    (auth/can? ..ctx.. ::auth/read {:type  "Project"
+                                    :owner ..user..}) => true
+    (provided
+      ..ctx.. =contains=> {::request-context/auth {::auth/service-account true}}))
+
   (fact "throws not-found! if authenticated organization not in authenticated teams"
     (auth/can? ..ctx.. ::auth/read {:type  "Project"
                                     :owner ..user..}) => (throws ExceptionInfo)
@@ -190,8 +230,8 @@
           (provided
             (auth/permissions ..auth.. [..root..]) => [{:uuid            ..root..
                                                             :permissions {:read false}}
-                                                           {:uuid        ..root2..
-                                                            :permissions {:read true}}]))
+                                                       {:uuid        ..root2..
+                                                        :permissions {:read true}}]))
 
 
         (fact "allows when :owner is auth user and can read all roots"
@@ -225,10 +265,10 @@
                                                          :permissions {:read  true
                                                                        :write false
                                                                        :admin false}}
-                                                        {:uuid        :uuid2
-                                                         :permissions {:read  true
-                                                                       :write true
-                                                                       :admin false}}]))))
+                                                    {:uuid        :uuid2
+                                                     :permissions {:read  true
+                                                                   :write true
+                                                                   :admin false}}]))))
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
@@ -270,10 +310,10 @@
                                                          :permissions {:read  true
                                                                        :write true
                                                                        :admin true}}
-                                                        {:uuid        :uuid2
-                                                         :permissions {:read  true
-                                                                       :write true
-                                                                       :admin false}}]))
+                                                    {:uuid        :uuid2
+                                                     :permissions {:read  true
+                                                                   :write true
+                                                                   :admin false}}]))
 
       (fact "Requires :write on all roots when not owner"
         (auth/can? ..ctx.. ::auth/delete {:type   "Entity"
@@ -285,10 +325,10 @@
                                                                        :permissions {:read  true
                                                                                      :write false
                                                                                      :admin false}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write false
-                                                                                     :admin true}}]})))))
+                                                                  {:uuid        :uuid2
+                                                                   :permissions {:read  true
+                                                                                 :write false
+                                                                                 :admin true}}]})))))
 
 (facts "About permissions"
   (fact "gets permissions from auth server"
