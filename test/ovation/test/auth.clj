@@ -75,6 +75,16 @@
     (fact "for :https://ovation.io/scope"
       (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])))
 
+(facts "About has-scope?"
+  (fact "with scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:global") => true)
+  (fact "without scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "write:global") => false)
+  (fact "with wildcard scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:*") => true)
+  (fact "without wildcard scope"
+    (auth/has-scope? {::auth/scopes ["foo:bar"]} "read:*") => false))
+
 (facts "About `can?`"
   (fact "returns true when auth.identity is a service account"
     ;; When it's a service account, authz is handled via scopes at the handler
@@ -96,7 +106,8 @@
                          (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
-                                              ::request-context/org      ..org..}]
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/READ-GLOBAL-SCOPE) => true]
       (facts "entities"
         (fact "allowed when user is owner"
           (auth/can? ..ctx.. ::auth/read {:type   "Project"
@@ -169,7 +180,8 @@
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
-                                              ::request-context/org      ..org..}]
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (facts "Annotations"
         (fact "allowed when :user is authenticated user and can read all roots"
           (auth/can? ..ctx.. ::auth/create {:type    "Annotation"
@@ -266,7 +278,8 @@
     (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
-                                              ::request-context/org      ..org..}]
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (fact "Delegates to get-permissions when not owner"
         (auth/can? ..ctx.. ::auth/update {:type   "Entity"
                                            :owner (str (UUID/randomUUID))
@@ -284,7 +297,8 @@
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
-                                              ::request-context/org      ..org..}]
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (facts "Relations"
         (fact "allowed if user is owner"
           (auth/can? ..ctx.. ::auth/delete {:type     k/RELATION-TYPE

@@ -9,26 +9,17 @@
             [ovation.auth :as auth]
             [buddy.auth.accessrules :as accessrules]))
 
-(facts "About has-scope?"
-  (fact "with scope"
-    (authz/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:global") => true)
-  (fact "without scope"
-    (authz/has-scope? {::auth/scopes ["read:global foo:bar"]} "write:global") => false)
-  (fact "with wildcard scope"
-    (authz/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:*") => true)
-  (fact "without wildcard scope"
-    (authz/has-scope? {::auth/scopes ["foo:bar"]} "read:*") => false))
 
 (facts "About require-scope"
   (fact "builds fn that requires scope"
     ((authz/require-scope ..scope..) ..request..) => accessrules/success
     (provided
-      (authz/has-scope? ..identity.. ..scope..) => true
+      (auth/has-scope? ..identity.. ..scope..) => true
       (auth/identity ..request..) => ..identity..))
   (fact "builds fn that rejects if missing scope"
     ((authz/require-scope ..scope..) ..request..) => (accessrules/error (str ..scope.. "scope required"))
     (provided
-      (authz/has-scope? ..identity.. ..scope..) => false
+      (auth/has-scope? ..identity.. ..scope..) => false
       (auth/identity ..request..) => ..identity..)))
 
 (facts "About AuthzService"

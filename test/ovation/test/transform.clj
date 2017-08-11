@@ -234,12 +234,13 @@
     (facts "for annotations"
       (let [doc {:user ..id..
                  :type "Annotation"}]
-        (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
+        (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete)"
           (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update  true
                                                                               :delete true})
           (provided
             (auth/authenticated-user-id ..auth..) => ..id..
-            (auth/organization-ids ..auth..) => [..org..])))))
+            (auth/organization-ids ..auth..) => [..org..]
+            (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true)))))
 
   (facts "About entities-from-couch"
     (fact "removes unauthorized documents"

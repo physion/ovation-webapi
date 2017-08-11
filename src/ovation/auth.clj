@@ -7,7 +7,8 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]
             [buddy.auth]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [ovation.constants :as k]))
 
 
 
@@ -57,6 +58,12 @@
 
 
 ;; Authorization
+
+(defn has-scope?
+  [auth scope]
+  (let [scopes (get auth ::scopes [])]
+    (boolean (some #(re-find (re-pattern scope) %) scopes))))
+
 
 (defn get-permissions                                ;; TODO move to authz
   [token]
@@ -200,10 +207,14 @@
           (not-found!))
 
         (case op
-          ::create (can-create? auth doc)
-          ::update (can-update? auth doc)
-          ::delete (can-delete? auth doc)
-          ::read (can-read? auth doc :teams teams)
+          ::create (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+                     (can-create? auth doc))
+          ::update (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+                     (can-update? auth doc))
+          ::delete (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+                     (can-delete? auth doc))
+          ::read (and (has-scope? auth k/READ-GLOBAL-SCOPE)
+                   (can-read? auth doc :teams teams))
 
           ;;default
           (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))))

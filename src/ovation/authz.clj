@@ -17,15 +17,10 @@
     (forbidden "Permission denied")
     (unauthorized "Unauthorized")))
 
-(defn has-scope?
-  [auth scope]
-  (let [scopes (get auth ::auth/scopes [])]
-    (boolean (some #(re-find (re-pattern scope) %) scopes))))
-
 (defn require-scope
   [scope]
   (fn [request]
-    (if (has-scope? (auth/identity request) scope)
+    (if (auth/has-scope? (auth/identity request) scope)
       success
       (error (str scope "scope required")))))
 

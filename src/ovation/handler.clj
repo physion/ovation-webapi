@@ -35,19 +35,16 @@
             [clojure.core.async :refer [chan]]
             [ovation.storage :as storage]
             [ovation.auth :as auth]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [ovation.constants :as k]))
 
-
-
-(def READ-SCOPE "read:global")
-(def WRITE-SCOPE "write:global")
 
 (def rules [{:pattern        #"^/api.*"
-             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope READ-SCOPE)]}
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope k/READ-GLOBAL-SCOPE)]}
                                    auth/authenticated-user-account?]}
              :request-method :get}
             {:pattern        #"^/api.*"
-             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope WRITE-SCOPE)]}
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope k/WRITE-GLOBAL-SCOPE)]}
                                    auth/authenticated-user-account?]}
              :request-method [:put :post :delete]}
             {:pattern #"^/api.*"
