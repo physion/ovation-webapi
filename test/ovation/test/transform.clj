@@ -15,9 +15,9 @@
   (:import (clojure.lang ExceptionInfo)))
 
 
-(against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
+(against-background [..ctx.. =contains=> {::request-context/identity      ..auth..
                                           :ovation.request-context/routes ..rt..
-                                          :ovation.request-context/org ..org..}
+                                          :ovation.request-context/org    ..org..}
                      (request-context/user-id ..ctx..) => ..owner-id..]
   (facts "About Annotations"
     (fact "adds self link"
@@ -220,8 +220,8 @@
         (tr/remove-user-attributes doc) => doc)))
 
   (facts "About permissions"
-    (against-background [..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}])
+    (against-background [..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}])
     (facts "for entities"
       (let [doc {:owner ..id..}]
         (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"

@@ -109,7 +109,7 @@
 
 (defn couch-to-entity
   [ctx & {:keys [teams] :or {teams nil}}]
-  (let [{auth   :ovation.request-context/auth} ctx]
+  (let [{auth ::request-context/identity} ctx]
     (fn [doc]
       (case (:error doc)
         "conflict" (conflict!)
@@ -139,7 +139,7 @@
 (defn-traced entities-from-couch
   "Transform couchdb documents."
   [docs ctx]
-  (let [{auth :ovation.request-context/auth} ctx
+  (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
         xf    (comp
                 (map (couch-to-entity ctx))
@@ -182,7 +182,7 @@
 (defn values-from-couch
   "Transform couchdb value documents (e.g. LinkInfo)"
   [docs ctx]
-  (let [{auth :ovation.request-context/auth} ctx
+  (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)]
     (->> docs
       (map (couch-to-value ctx))

@@ -21,8 +21,8 @@
                                      (slingshot.support/stack-trace))))
 
 (against-background [(request-context/make-context ..req.. ..org.. anything) => ..ctx..
-                     ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                          ::request-context/routes ..rt..}]
+                     ..ctx.. =contains=> {::request-context/identity ..auth..
+                                          ::request-context/routes   ..rt..}]
 
   (facts "About get-head-revisions*"
     (fact "returns HEAD revisions for file"

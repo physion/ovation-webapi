@@ -13,7 +13,7 @@
             [ovation.constants :as k]
             [ovation.links :as links]))
 
-(against-background [..ctx.. =contains=> {::request-context/auth ..auth..}]
+(against-background [..ctx.. =contains=> {::request-context/identity ..auth..}]
   (facts "About values"
     (facts "read"
       (facts "`get-values`"

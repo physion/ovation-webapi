@@ -24,10 +24,10 @@
                           "user_id"         user-id
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth    ..auth..
-                                              ::request-context/routes  ..rt..
-                                              ::request-context/org     org-id
-                                              ::request-context/request {:params {:id group-id}}}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id
+                                              ::request-context/request  {:params {:id group-id}}}
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-memberships`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
@@ -134,9 +134,9 @@
                      "team_ids"      team-uuids
                      "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..
-                                              ::request-context/org    org-id}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id}
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-groups`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :get} {:status 200
@@ -270,9 +270,9 @@
                           "email"           user-email
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..
-                                              ::request-context/org    org-id}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id}
                          (request-context/router ..request..) => ..rt..]
 
       (facts "member-team-ids"
@@ -422,8 +422,8 @@
 
 
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..}
                          (request-context/router ..request..) => ..rt..]
 
       (let [orgs-url (util/join-path [config/ORGS_SERVER "organizations"])]

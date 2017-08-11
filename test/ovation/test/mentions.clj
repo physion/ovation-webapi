@@ -12,8 +12,8 @@
             [clojure.string :as string]))
 
 
-(against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
-                                          :ovation.request-context/routes ..rt..}]
+(against-background [..ctx.. =contains=> {:ovation.request-context/identity ..auth..
+                                          :ovation.request-context/routes   ..rt..}]
 
   (facts "About @-mention notification"
     (fact "escapes html"

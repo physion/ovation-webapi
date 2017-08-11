@@ -61,8 +61,8 @@
 
 (defn send-mention-notification
   [ctx user-id entity note-id text]
-  (let [{auth ::request-context/auth
-         org ::request-context/org} ctx
+  (let [{auth ::request-context/identity
+         org  ::request-context/org} ctx
         body    (mention-notification-body org user-id entity note-id text)
         options {:body    (util/write-json-body body)
                  :headers {"Content-Type" "application/json"
@@ -100,7 +100,7 @@
 
 (defn create-annotations
   [ctx db ids annotation-type records]
-  (let [{auth ::request-context/auth} ctx
+  (let [{auth ::request-context/identity} ctx
         auth-user-id (auth/authenticated-user-id auth)
         entities (core/get-entities ctx db ids)
         entity-map (into {} (map (fn [entity] [(:_id entity) entity]) entities))
@@ -116,7 +116,7 @@
 (defn update-annotation
   [ctx db id annotation]
 
-  (let [{auth ::request-context/auth
+  (let [{auth ::request-context/identity
          rt   ::request-context/routes} ctx
         existing (first (core/get-values ctx db [id] :routes rt))]
 

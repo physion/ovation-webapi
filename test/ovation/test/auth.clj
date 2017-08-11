@@ -11,7 +11,8 @@
             [ovation.config :as config]
             [ovation.constants :as k]
             [ovation.core :as core]
-            [ovation.middleware.auth :as middleware.auth])
+            [ovation.middleware.auth :as middleware.auth]
+            [ovation.authz :as authz])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -47,6 +48,26 @@
   (fact "recognizes identity without sub as non-service account"
     (middleware.auth/service-sub? {}) => false))
 
+(facts "About `authenticated-service-account?"
+  (fact "requires service account"
+    (auth/authenticated-service-account? ..req..) => true
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account true}}))
+  (fact "rejects user account"
+    (auth/authenticated-service-account? ..req..) => false
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account false}})))
+
+(facts "About `authenticated-user-account?"
+  (fact "rejects service account"
+    (auth/authenticated-user-account? ..req..) => false
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account true}}))
+  (fact "requires user account"
+    (auth/authenticated-user-account? ..req..) => true
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account false}})))
+
 (facts "About `middleware.auth.scopes`"
   (facts "parsing"
     (fact "for :scope"
@@ -54,38 +75,28 @@
     (fact "for :https://ovation.io/scope"
       (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])))
 
-(facts "About has-scope?"
-  (fact "with scope"
-    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "read:global") => true)
-  (fact "without scope"
-    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "write:global") => false)
-  (fact "with wildcard scope"
-    (auth/has-scope? {:identity {::auth/scopes ["read:global foo:bar"] }} "read:*") => true)
-  (fact "without wildcard scope"
-    (auth/has-scope? {:identity {::auth/scopes ["foo:bar"] }} "read:*") => false))
-
 (facts "About `can?`"
   (fact "returns true when auth.identity is a service account"
     ;; When it's a service account, authz is handled via scopes at the handler
     (auth/can? ..ctx.. ::auth/read {:type  "Project"
                                     :owner ..user..}) => true
     (provided
-      ..ctx.. =contains=> {::request-context/auth {::auth/service-account true}}))
+      ..ctx.. =contains=> {::request-context/identity {::auth/service-account true}}))
 
   (fact "throws not-found! if authenticated organization not in authenticated teams"
     (auth/can? ..ctx.. ::auth/read {:type  "Project"
                                     :owner ..user..}) => (throws ExceptionInfo)
     (provided
       (auth/organization-ids ..auth..) => [..org2..]
-      ..ctx.. =contains=> {::request-context/auth ..auth..
-                           ::request-context/org  ..org..}))
+      ..ctx.. =contains=> {::request-context/identity ..auth..
+                           ::request-context/org      ..org..}))
 
   (facts ":read"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}]
       (facts "entities"
         (fact "allowed when user is owner"
           (auth/can? ..ctx.. ::auth/read {:type   "Project"
@@ -157,8 +168,8 @@
   (facts ":create"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}]
       (facts "Annotations"
         (fact "allowed when :user is authenticated user and can read all roots"
           (auth/can? ..ctx.. ::auth/create {:type    "Annotation"
@@ -254,8 +265,8 @@
   (facts ":update"
     (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}]
       (fact "Delegates to get-permissions when not owner"
         (auth/can? ..ctx.. ::auth/update {:type   "Entity"
                                            :owner (str (UUID/randomUUID))
@@ -272,8 +283,8 @@
   (facts ":delete"
     (against-background [(auth/authenticated-user-id ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}]
       (facts "Relations"
         (fact "allowed if user is owner"
           (auth/can? ..ctx.. ::auth/delete {:type     k/RELATION-TYPE

@@ -18,9 +18,9 @@
   (:import (clojure.lang ExceptionInfo)))
 
 (against-background [(request-context/token ..ctx..) => ..auth..
-                     ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                          ::request-context/routes ..rt..
-                                          ::request-context/org    ..org..}
+                     ..ctx.. =contains=> {::request-context/identity ..auth..
+                                          ::request-context/routes   ..rt..
+                                          ::request-context/org      ..org..}
                      (request-context/router ..request..) => ..rt..]
   (facts "About Teams API"
     (facts "teams"

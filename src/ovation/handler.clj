@@ -14,7 +14,6 @@
             [ovation.core :as core]
             [ovation.middleware.auth :refer [wrap-auth]]
             [ovation.links :as links]
-            [ovation.auth :as auth]
             [ovation.audit]
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
@@ -34,14 +33,27 @@
             [ovation.request-context :as request-context]
             [ovation.authz :as authz]
             [clojure.core.async :refer [chan]]
-            [ovation.storage :as storage]))
+            [ovation.storage :as storage]
+            [ovation.auth :as auth]
+            [clojure.java.io :as io]))
 
 
-(def rules [{:pattern #"^/api.*"
+
+(def READ-SCOPE "read:global")
+(def WRITE-SCOPE "write:global")
+
+(def rules [{:pattern        #"^/api.*"
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope READ-SCOPE)]}
+                                   auth/authenticated-user-account?]}
+             :request-method :get}
+            {:pattern        #"^/api.*"
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope WRITE-SCOPE)]}
+                                   auth/authenticated-user-account?]}
+             :request-method [:put :post :delete]}
+            {:pattern #"^/api.*"
              :handler authenticated?}])
 
-(def DESCRIPTION "")
-;(slurp (io/file (io/resource "description.md")))
+(def DESCRIPTION (slurp (io/file (io/resource "description.md"))))
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
@@ -84,10 +96,12 @@
                     :access-control-allow-methods [:get :put :post :delete :options]
                     :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
-                   [wrap-authentication (jws-backend {:secret     config/JWT_SECRET
-                                                      :token-name "Bearer"})]
+                   [wrap-authentication (jws-backend {:secret               config/JWT_SECRET
+                                                      :token-name           "Bearer"
+                                                      :unauthorized-handler authz/unauthorized-response})]
+
                    [wrap-access-rules {:rules    rules
-                                       :on-error auth/unauthorized-response}]
+                                       :on-error authz/unauthorized-response}]
 
                    wrap-auth
 
@@ -273,7 +287,6 @@
 
                       (context "/:membership-id" []
                         :path-params [membership-id :- s/Str]
-                        ;;TODO
                         (GET "/" request
                           :name :get-group-membership
                           :return {:group-membership OrganizationGroupMembership}
@@ -627,7 +640,7 @@
                       (POST "/" request
                         :name :post-memberships
                         :return {s/Keyword TeamMembership}
-                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
+                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership. Invites user if they're not already an Ovation user."
                         :body [body {:membership NewTeamMembership}]
                         (let [ctx (request-context/make-context request org authz)
                               membership (teams/post-membership* ctx id (:membership body))]

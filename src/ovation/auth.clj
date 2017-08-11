@@ -33,13 +33,6 @@
       (assoc id ::token (token request))
       id)))
 
-(defn unauthorized-response                                 ;; TODO move to authz
-  "A default response constructor for an unathorized request."
-  [request _]
-  (if (authenticated? request)
-    (forbidden "Permission denied")
-    (unauthorized "Unauthorized")))
-
 
 (defn authenticated-user-id                                 ;; TODO use authorizations
   "The UUID of the authorized user"
@@ -51,14 +44,19 @@
   [auth]
   (boolean (::service-account auth)))
 
+(defn authenticated-service-account?
+  [request]
+  (and (authenticated? request)
+    (service-account? (identity request))))
+
+(defn authenticated-user-account?
+  [request]
+  (and (authenticated? request)
+    (not (authenticated-service-account? request))))
+
 
 
 ;; Authorization
-
-(defn has-scope?
-  [ctx scope]
-  (let [scopes (get-in ctx [:identity ::scopes] [])]
-    (boolean (some #(re-find (re-pattern scope) %) scopes))))
 
 (defn get-permissions                                ;; TODO move to authz
   [token]
@@ -189,7 +187,7 @@
 (defn can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
 
-  (let [auth (:ovation.request-context/auth ctx)]
+  (let [auth (:ovation.request-context/identity ctx)]
     ;; Service accounts are always can? -> true
     (if (service-account? auth)
       true
