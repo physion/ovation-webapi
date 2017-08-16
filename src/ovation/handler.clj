@@ -96,6 +96,8 @@
 
                    wrap-authenticated-teams
 
+                   audit/add-request-id
+
                    [ring.logger/wrap-with-logger {:printer :audit-printer
                                                   :logger  (audit/make-logger)}]
 
