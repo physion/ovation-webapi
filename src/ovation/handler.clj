@@ -39,8 +39,7 @@
             [ovation.storage :as storage]
             [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
-            [clojure.tools.logging]
-            [clojure.tools.logging :as logging]))
+            [ovation.audit :as audit]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -97,7 +96,8 @@
 
                    wrap-authenticated-teams
 
-                   [ring.logger/wrap-with-logger {:printer :audit-printer}]
+                   [ring.logger/wrap-with-logger {:printer :audit-printer
+                                                  :logger  (audit/make-logger)}]
 
                    [wrap-raygun-handler (config/config :raygun-api-key)]
 
