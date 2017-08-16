@@ -30,7 +30,7 @@
 
 
 
-(defn-traced get-entities
+(defn get-entities
   "Gets entities by ID"
   [ctx db ids & {:keys [include-trashed] :or {include-trashed false}}]
   (-> (couch/all-docs ctx db ids)

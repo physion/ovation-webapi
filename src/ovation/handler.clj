@@ -94,6 +94,7 @@
                     :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
                    [wrap-authentication (jws-backend {:secret               config/JWT_SECRET
+                                                      :options              {:alg :hs256}
                                                       :token-name           "Bearer"
                                                       :unauthorized-handler authz/unauthorized-response})]
 

@@ -94,7 +94,7 @@
     dto))
 
 (defn add-entity-permissions
-  [doc ctx teams]
+  [doc ctx]
   (-> doc
     (assoc-in [:permissions :create] true)
     (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
@@ -109,34 +109,33 @@
 
 (defn couch-to-entity
   [ctx & {:keys [teams] :or {teams nil}}]
-  (let [{auth ::request-context/identity} ctx]
-    (fn [doc]
-      (case (:error doc)
-        "conflict" (conflict!)
-        "forbidden" (forbidden!)
-        "unauthorized" (unauthorized!)
-        (let [collaboration-roots (get-in doc [:links :_collaboration_roots])
-              org-id (:organization doc)]
-          (-> doc
-            (remove-user-attributes)
-            (dissoc :named_links)                           ;; For v3
-            (dissoc :links)                                 ;; For v3
-            (dissoc :relationships)
-            (dissoc :organization)
-            (assoc :organization_id org-id)
-            (add-self-link ctx)
-            (add-heads-link ctx)
-            (add-upload-links ctx)
-            (add-zip-link ctx)
-            (add-team-link ctx)
-            (add-annotation-links ctx)
-            (add-relationship-links ctx)
-            (convert-file-revision-status)
-            (assoc-in [:links :_collaboration_roots] collaboration-roots)
-            (add-entity-permissions ctx teams)))))))
+  (fn [doc]
+    (case (:error doc)
+      "conflict" (conflict!)
+      "forbidden" (forbidden!)
+      "unauthorized" (unauthorized!)
+      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])
+            org-id              (:organization doc)]
+        (-> doc
+          (remove-user-attributes)
+          (dissoc :named_links)                             ;; For v3
+          (dissoc :links)                                   ;; For v3
+          (dissoc :relationships)
+          (dissoc :organization)
+          (assoc :organization_id org-id)
+          (add-self-link ctx)
+          (add-heads-link ctx)
+          (add-upload-links ctx)
+          (add-zip-link ctx)
+          (add-team-link ctx)
+          (add-annotation-links ctx)
+          (add-relationship-links ctx)
+          (convert-file-revision-status)
+          (assoc-in [:links :_collaboration_roots] collaboration-roots)
+          (add-entity-permissions ctx))))))
 
 
-(defn-traced entities-from-couch
+(defn entities-from-couch
   "Transform couchdb documents."
   [docs ctx]
   (let [{auth ::request-context/identity} ctx
