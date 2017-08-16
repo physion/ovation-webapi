@@ -194,10 +194,12 @@
         (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
 
 
-  (facts "About `add-owner`"
-    (fact "`add-owner` adds owner element"
+  (facts "About `ensure-owner`"
+    (fact "it adds owner element"
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..))))
+        (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..)))
+    (fact "it does not add nil owner"
+      (tw/ensure-owner ..doc.. nil) => ..doc..))
 
   (facts "About add-organization"
     (fact "adds organization from request context"
