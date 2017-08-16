@@ -21,8 +21,10 @@
 (defn ensure-owner
   "Adds owner reference"
   [doc owner-id]
-  (if (nil? (:owner doc))
-    (assoc doc :owner owner-id)
+  (if owner-id
+    (if (nil? (:owner doc))
+      (assoc doc :owner owner-id)
+      doc)
     doc))
 
 
