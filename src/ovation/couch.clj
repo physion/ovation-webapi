@@ -7,7 +7,7 @@
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
-            [ovation.request-context :as rc]
+            [ovation.request-context :as request-context]
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
@@ -70,8 +70,8 @@
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [org        (::rc/org ctx)
-        auth       (::rc/auth ctx)
+  (let [org        (::request-context/org ctx)
+        auth       (::request-context/identity ctx)
         is-service (auth/service-account? auth)
         view-name  (if is-service (format "%s_service" view) view)]
 
@@ -79,16 +79,17 @@
       (if prefix-teams
         (if is-service
           ;; service account; prefix only org, make a single call
-          (let [prefixed-opts (first (prefix-keys opts org))
+          (let [prefixed-opts (prefix-keys opts org)
                 tf            (if (:include_docs opts)
                                 (comp
                                   (map :doc)
                                   (distinct))
                                 (distinct))]
+            (logging/debug (str "get-view/service " prefixed-opts))
             (sequence tf (cl/get-view API-DESIGN-DOC view-name prefixed-opts)))
 
           ;; [prefix-teams] Run queries in parallel
-          (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
+          (let [roots         (conj (request-context/team-ids ctx) (request-context/user-id ctx))
                 prefixed-opts (vec (map #(prefix-keys opts org %) roots))
                 tf            (if (:include_docs opts)
                                 (comp
@@ -97,6 +98,7 @@
                                   (filter #(not (nil? %)))
                                   (distinct))
                                 (distinct))]
+            (logging/debug (str "get-view-batch " prefixed-opts))
             (get-view-batch view-name prefixed-opts tf)))
 
         ;; [!prefix-teams] Make single call

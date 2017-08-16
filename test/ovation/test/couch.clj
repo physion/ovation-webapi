@@ -5,14 +5,14 @@
             [com.ashafa.clutch :as cl]
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
-            [ovation.request-context :as rc]
+            [ovation.request-context :as request-context]
             [ovation.pubsub :as pubsub]
             [ovation.util :as util]
             [ovation.auth :as auth]))
 
 
-(against-background [(rc/team-ids ..ctx..) => [..team..]
-                     (rc/user-id ..ctx..) => ..user..
+(against-background [(request-context/team-ids ..ctx..) => [..team..]
+                     (request-context/user-id ..ctx..) => ..user..
                      ..db.. =contains=> {:connection ..db..}]
 
   (facts "About `get-view`"
@@ -21,19 +21,19 @@
       (provided
         (cl/get-view couch/API-DESIGN-DOC "view_name_service" ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}
-        ..ctx.. =contains=> {::rc/auth ..auth..
-                             ::rc/org  ..org..}
+        ..ctx.. =contains=> {::request-context/identity ..auth..
+                             ::request-context/org      ..org..}
         (auth/service-account? ..auth..) => true))
 
     (fact "it adds _service when caller is a service and prefix-teams is true"
       (couch/get-view ..ctx.. "db" "view_name" ..opts.. :prefix-teams true) => [..result..]
       (provided
-        ..ctx.. =contains=> {::rc/auth ..auth..
-                             ::rc/org  ..org..}
+        ..ctx.. =contains=> {::request-context/identity ..auth..
+                             ::request-context/org      ..org..}
         (auth/service-account? ..auth..) => true
         (cl/get-view couch/API-DESIGN-DOC "view_name_service" ..opts..) => [{:doc ..result..}]
         ..opts.. =contains=> {:include_docs true}
-        (couch/prefix-keys ..opts.. ..org..) => [..opts..]))
+        (couch/prefix-keys ..opts.. ..org..) => ..opts..))
 
     (fact "it returns CouchDB view result docs when include_docs=true"
       (couch/get-view ..ctx.. "db" ..view.. ..opts.. :prefix-teams false) => [..result..]
@@ -46,7 +46,7 @@
                                              :endkey       [..end..]
                                              :include_docs true}) => [..other.. ..result..]
       (provided
-        ..ctx.. =contains=> {::rc/org ..org..}
+        ..ctx.. =contains=> {::request-context/org ..org..}
         (couch/get-view-batch ..view.. [{:startkey     [..org.. ..team.. ..start..]
                                          :endkey       [..org.. ..team.. ..end..]
                                          :include_docs true}
