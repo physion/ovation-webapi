@@ -36,7 +36,10 @@
             [ovation.storage :as storage]
             [ovation.auth :as auth]
             [clojure.java.io :as io]
-            [ovation.constants :as k]))
+            [ovation.constants :as k]
+            [ring.logger.messages :refer [request-details]]
+            [ring.logger.protocols :refer [info]]
+            [ovation.audit :as audit]))
 
 
 (def rules [{:pattern        #"^/api.*"
@@ -103,7 +106,10 @@
 
                    wrap-auth
 
-                   [ring.logger/wrap-with-logger {:printer :identity-printer}]
+                   audit/add-request-id
+
+                   [ring.logger/wrap-with-logger {:printer :audit-printer
+                                                  :logger  (audit/make-logger)}]
 
                    [wrap-raygun-handler (config/config :raygun-api-key)]
 
