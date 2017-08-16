@@ -35,9 +35,11 @@
             [ovation.routes :as routes]
             [ovation.request-context :as request-context]
             [ovation.authz :as authz]
-            [clojure.tools.logging :as logging]
             [clojure.core.async :refer [chan]]
-            [ovation.storage :as storage]))
+            [ovation.storage :as storage]
+            [ring.logger.messages :refer [request-details]]
+            [ring.logger.protocols :refer [info]]
+            [ovation.audit :as audit]))
 
 
 (def rules [{:pattern #"^/api.*"
@@ -94,7 +96,10 @@
 
                    wrap-authenticated-teams
 
-                   [ring.logger/wrap-with-logger {:printer :identity-printer}]
+                   audit/add-request-id
+
+                   [ring.logger/wrap-with-logger {:printer :audit-printer
+                                                  :logger  (audit/make-logger)}]
 
                    [wrap-raygun-handler (config/config :raygun-api-key)]
 
