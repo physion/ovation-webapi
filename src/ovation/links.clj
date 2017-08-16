@@ -21,7 +21,7 @@
 
 (defn-traced get-links
   [ctx db id rel & {:keys [label name] :or {label nil name nil}}]
-  (let [{auth ::request-context/auth} ctx
+  (let [{auth ::request-context/identity} ctx
         opts {:startkey      (if name [id rel name] [id rel])
               :endkey        (if name [id rel name] [id rel])
               :inclusive_end true
@@ -163,7 +163,7 @@
                                                                          name nil
                                                                          strict false]}]
 
-  (let [{auth   ::request-context/auth
+  (let [{auth   ::request-context/identity
          org-id ::request-context/org} ctx
         authenticated-user-id (auth/authenticated-user-id auth)
         targets               (core/get-entities ctx db target-ids)]

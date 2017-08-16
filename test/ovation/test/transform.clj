@@ -15,9 +15,9 @@
   (:import (clojure.lang ExceptionInfo)))
 
 
-(against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
+(against-background [..ctx.. =contains=> {::request-context/identity      ..auth..
                                           :ovation.request-context/routes ..rt..
-                                          :ovation.request-context/org ..org..}
+                                          :ovation.request-context/org    ..org..}
                      (request-context/user-id ..ctx..) => ..owner-id..]
   (facts "About Annotations"
     (fact "adds self link"
@@ -47,20 +47,20 @@
     (fact "adds annotation links to entity"
       (tr/add-annotation-links {:_id   "123"
                                 :links {:foo "bar"}} ..ctx..) => {:_id  "123"
-                                                                 :links {:foo             "bar"
-                                                                         :properties      "/api/v1/entities/123/annotations/properties"
-                                                                         :tags            "/api/v1/entities/123/annotations/tags"
-                                                                         :notes           "/api/v1/entities/123/annotations/notes"
-                                                                         :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
+                                                                  :links {:foo             "bar"
+                                                                          :properties      "/api/v1/entities/123/annotations/properties"
+                                                                          :tags            "/api/v1/entities/123/annotations/tags"
+                                                                          :notes           "/api/v1/entities/123/annotations/notes"
+                                                                          :timeline-events "/api/v1/entities/123/annotations/timeline_events"}}
       (provided
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
+                                      :links {:foo "bar"}} "tags") => "/api/v1/entities/123/annotations/tags"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
+                                      :links {:foo "bar"}} "properties") => "/api/v1/entities/123/annotations/properties"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
+                                      :links {:foo "bar"}} "notes") => "/api/v1/entities/123/annotations/notes"
         (r/annotations-route ..ctx.. {:_id  "123"
-                                     :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
+                                      :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
   (facts "About error handling"
     (facts "in couch-to-entity"
@@ -194,10 +194,12 @@
         (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
 
 
-  (facts "About `add-owner`"
-    (fact "`add-owner` adds owner element"
+  (facts "About `ensure-owner`"
+    (fact "it adds owner element"
       (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..))))
+        (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..)))
+    (fact "it does not add nil owner"
+      (tw/ensure-owner ..doc.. nil) => ..doc..))
 
   (facts "About add-organization"
     (fact "adds organization from request context"
@@ -220,12 +222,12 @@
         (tr/remove-user-attributes doc) => doc)))
 
   (facts "About permissions"
-    (against-background [..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}])
+    (against-background [..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}])
     (facts "for entities"
       (let [doc {:owner ..id..}]
         (fact "add-entity-permissions sets {update: (can? :update) delete: (can? :delete)}"
-          (tr/add-entity-permissions doc ..id.. ..teams..) => (assoc doc :permissions {:update ..update..
+          (tr/add-entity-permissions doc ..id..) => (assoc doc :permissions {:update ..update..
                                                                                        :delete ..delete..
                                                                                        :create true})
           (provided
@@ -234,12 +236,13 @@
     (facts "for annotations"
       (let [doc {:user ..id..
                  :type "Annotation"}]
-        (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete"
+        (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete)"
           (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update  true
                                                                               :delete true})
           (provided
             (auth/authenticated-user-id ..auth..) => ..id..
-            (auth/organization-ids ..auth..) => [..org..])))))
+            (auth/organization-ids ..auth..) => [..org..]
+            (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true)))))
 
   (facts "About entities-from-couch"
     (fact "removes unauthorized documents"

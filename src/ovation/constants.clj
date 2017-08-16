@@ -1,6 +1,10 @@
 (ns ovation.constants
   (:require [ovation.util :as util]))
 
+
+(def READ-GLOBAL-SCOPE "read:global")
+(def WRITE-GLOBAL-SCOPE "write:global")
+
 (def USER-ENTITY "User")
 (def ANNOTATION-TYPE "Annotation")
 (def REVISION-TYPE "Revision")

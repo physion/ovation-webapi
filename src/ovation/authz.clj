@@ -3,10 +3,26 @@
             [clojure.tools.logging :as logging]
             [com.stuartsierra.component :as component]
             [clojure.core.async :as async :refer [chan go <!]]
+            [ring.util.http-response :refer [throw! unauthorized! forbidden! not-found! unauthorized forbidden]]
             [ovation.util :refer [<??]]
             [ovation.http :as http]
-            [ovation.groups :as groups]))
+            [ovation.groups :as groups]
+            [ovation.auth :as auth]
+            [buddy.auth.accessrules :refer (success error)]))
 
+(defn unauthorized-response
+  "A default response constructor for an unauthorized request."
+  [request _]
+  (if (auth/authenticated? request)
+    (forbidden "Permission denied")
+    (unauthorized "Unauthorized")))
+
+(defn require-scope
+  [scope]
+  (fn [request]
+    (if (auth/has-scope? (auth/identity request) scope)
+      success
+      (error (str scope "scope required")))))
 
 (defprotocol AuthzApi
   "Authorization service"

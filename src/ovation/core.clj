@@ -30,7 +30,7 @@
 
 
 
-(defn-traced get-entities
+(defn get-entities
   "Gets entities by ID"
   [ctx db ids & {:keys [include-trashed] :or {include-trashed false}}]
   (-> (couch/all-docs ctx db ids)
@@ -76,7 +76,7 @@
     (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
 
-  (let [{auth ::rc/auth} ctx
+  (let [{auth ::rc/identity} ctx
         created-entities (tr/entities-from-couch (couch/bulk-docs db
                                                    (tw/to-couch ctx
                                                      entities
@@ -162,7 +162,7 @@
 
 (defn-traced restore-deleted-entities
   [ctx db ids]
-  (let [{auth ::rc/auth} ctx
+  (let [{auth ::rc/identity} ctx
         docs              (get-entities ctx db ids :include-trashed true)
         user-id           (auth/authenticated-user-id auth)
         trashed           (map #(restore-trashed-entity user-id %) docs)
@@ -172,7 +172,7 @@
 
 (defn-traced delete-entities
   [ctx db ids]
-  (let [{auth ::rc/auth} ctx
+  (let [{auth ::rc/identity} ctx
         docs (get-entities ctx db ids)]
 
     (when (some #{k/USER-ENTITY} (map :type docs))
@@ -189,7 +189,7 @@
   "DELETEs value(s) direct to Couch"
   [ctx db ids]
 
-  (let [{auth ::rc/auth} ctx
+  (let [{auth ::rc/identity} ctx
         values (get-values ctx db ids)]
     (when-not (every? #{k/ANNOTATION-TYPE k/RELATION-TYPE} (map :type values))
       (throw+ {:type ::illegal-argument :message "Values must have :type \"Annotation\" or \"Relation\""}))

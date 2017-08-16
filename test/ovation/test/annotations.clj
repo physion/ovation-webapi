@@ -94,7 +94,7 @@
         (core/get-entities ..ctx.. ..db.. [..id1.. ..id2..]) => [entity1
                                                                  entity2]
         (core/create-values ..ctx.. ..db.. expected) => [{:entity ..id1..} {:entity ..id2..}]
-        ..ctx.. =contains=> {:ovation.request-context/auth ..auth..}
+        ..ctx.. =contains=> {:ovation.request-context/identity ..auth..}
         (a/notify ..ctx.. entity1 {:entity ..id1..}) => ..result1..
         (a/notify ..ctx.. entity2 {:entity ..id2..}) => ..result2..))))
 
@@ -111,8 +111,8 @@
                        :annotation      {:note ..old..}}]
           (a/update-annotation ..ctx.. ..db.. ..uuid.. {:note ..new..}) => ..result..
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes ..rt..
-                                 :ovation.request-context/auth   ..auth..}
+            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
+                                 :ovation.request-context/identity ..auth..}
             (util/iso-short-now) => ..time..
             (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [current]
             (core/get-entities ..ctx.. ..db.. [..entity..]) => {:_id  ..entity..
@@ -135,8 +135,8 @@
                    :annotation      {:tag ..tag..}}]
           (a/update-annotation ..ctx.. ..db.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes ..rt..
-                                 :ovation.request-context/auth   ..auth..}
+            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
+                                 :ovation.request-context/identity ..auth..}
             (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [tag])))))
 
   (facts "unauthorized user"
@@ -150,8 +150,8 @@
                    :annotation      {:tag ..tag..}}]
           (a/update-annotation ..ctx.. ..db.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes ..rt..
-                                 :ovation.request-context/auth   ..auth..}
+            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
+                                 :ovation.request-context/identity ..auth..}
             (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [tag]))))))
 
 (facts "About `delete-annotations`"

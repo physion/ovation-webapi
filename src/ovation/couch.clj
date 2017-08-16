@@ -7,7 +7,7 @@
             [ovation.util :refer [<??]]
             [ovation.constants :as k]
             [ovation.config :as config]
-            [ovation.request-context :as rc]
+            [ovation.request-context :as request-context]
             [org.httpkit.client :as httpkit.client]
             [ring.util.http-predicates :as http-predicates]
             [ovation.util :as util]
@@ -15,7 +15,8 @@
             [com.climate.newrelic.trace :refer [defn-traced]]
             [clojure.tools.logging :as logging]
             [ring.util.http-predicates :as hp]
-            [ovation.pubsub :as pubsub]))
+            [ovation.pubsub :as pubsub]
+            [ovation.auth :as auth]))
 
 
 (def API-DESIGN-DOC "api")
@@ -26,13 +27,20 @@
   (if (sequential? key) key [key]))
 
 (defn prefix-keys
-  [opts org prefix]
-  (cond
-    (contains? opts :key) (assoc opts :key (concat [org prefix] (sequential! (:key opts))))
-    (contains? opts :keys) (assoc opts :keys (vec (map #(concat [org prefix] (sequential! %)) (:keys opts))))
-    :else (-> opts
-            (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
-            (assoc :endkey (concat [org prefix] (sequential! (:endkey opts)))))))
+  ([opts org]
+   (cond
+     (contains? opts :key) (assoc opts :key (concat [org] (sequential! (:key opts))))
+     (contains? opts :keys) (assoc opts :keys (vec (map #(concat [org] (sequential! %)) (:keys opts))))
+     :else (-> opts
+             (assoc :startkey (concat [org] (sequential! (:startkey opts))))
+             (assoc :endkey (concat [org] (sequential! (:endkey opts)))))))
+  ([opts org prefix]
+   (cond
+     (contains? opts :key) (assoc opts :key (concat [org prefix] (sequential! (:key opts))))
+     (contains? opts :keys) (assoc opts :keys (vec (map #(concat [org prefix] (sequential! %)) (:keys opts))))
+     :else (-> opts
+             (assoc :startkey (concat [org prefix] (sequential! (:startkey opts))))
+             (assoc :endkey (concat [org prefix] (sequential! (:endkey opts))))))))
 
 (def VIEW-PARTITION 500)
 
@@ -62,21 +70,36 @@
   Use {} (empty map) for a JS object. E.g. :startkey [1 2] :endkey [1 2 {}]"
   [ctx db view opts & {:keys [prefix-teams] :or {prefix-teams true}}]
 
-  (let [org (::rc/org ctx)]
+  (let [org        (::request-context/org ctx)
+        auth       (::request-context/identity ctx)
+        is-service (auth/service-account? auth)
+        view-name  (if is-service (format "%s_service" view) view)]
 
     (cl/with-db (:connection db)
       (if prefix-teams
-        ;; [prefix-teams] Run queries in parallel
-        (let [roots         (conj (rc/team-ids ctx) (rc/user-id ctx))
-              prefixed-opts (vec (map #(prefix-keys opts org %) roots))
-              tf            (if (:include_docs opts)
-                              (comp
-                                (mapcat :rows)
-                                (map :doc)
-                                (filter #(not (nil? %)))
-                                (distinct))
-                              (distinct))]
-          (get-view-batch view prefixed-opts tf))
+        (if is-service
+          ;; service account; prefix only org, make a single call
+          (let [prefixed-opts (prefix-keys opts org)
+                tf            (if (:include_docs opts)
+                                (comp
+                                  (map :doc)
+                                  (distinct))
+                                (distinct))]
+            (logging/debug (str "get-view/service " prefixed-opts))
+            (sequence tf (cl/get-view API-DESIGN-DOC view-name prefixed-opts)))
+
+          ;; [prefix-teams] Run queries in parallel
+          (let [roots         (conj (request-context/team-ids ctx) (request-context/user-id ctx))
+                prefixed-opts (vec (map #(prefix-keys opts org %) roots))
+                tf            (if (:include_docs opts)
+                                (comp
+                                  (mapcat :rows)
+                                  (map :doc)
+                                  (filter #(not (nil? %)))
+                                  (distinct))
+                                (distinct))]
+            (logging/debug (str "get-view-batch " prefixed-opts))
+            (get-view-batch view-name prefixed-opts tf)))
 
         ;; [!prefix-teams] Make single call
         (let [tf (if (:include_docs opts)
@@ -84,7 +107,7 @@
                      (map :doc)
                      (distinct))
                    (distinct))]
-          (into '() tf (cl/get-view API-DESIGN-DOC view opts)))))))
+          (sequence tf (cl/get-view API-DESIGN-DOC view-name opts)))))))
 
 
 (defn all-docs
@@ -97,7 +120,7 @@
                                                                            :include_docs true})))
                          partitions)]
 
-    (apply concat (map <?? thread-results))))               ;;TODO we should use alts!! until all results have come back?
+    (apply concat (map <?? thread-results))))
 
 (defn merge-updates
   "Merges _rev updates (e.g. via bulk-update) into the documents in docs."

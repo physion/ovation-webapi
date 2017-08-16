@@ -11,9 +11,9 @@
   (:import (java.util UUID)))
 
 (facts "About links"
-  (against-background [..ctx.. =contains=> {:ovation.request-context/auth   ..auth..
-                                            :ovation.request-context/routes ..rt..
-                                            :ovation.request-context/org    ..org..}]
+  (against-background [..ctx.. =contains=> {:ovation.request-context/identity ..auth..
+                                            :ovation.request-context/routes   ..rt..
+                                            :ovation.request-context/org      ..org..}]
 
     (facts "`get-link-targets`"
       (let [doc1 {:attributes {:label ..label1..}}

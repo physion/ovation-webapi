@@ -12,15 +12,12 @@
             [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
             [ovation.config :as config]
             [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-authenticated-teams]]
+            [ovation.middleware.auth :refer [wrap-auth]]
             [ovation.links :as links]
-            [ovation.routes :as r]
-            [ovation.auth :as auth]
             [ovation.audit]
             [ovation.search :as search]
             [ovation.breadcrumbs :as breadcrumbs]
             [ovation.request-context :as request-context]
-            [ovation.groups :as groups]
             [schema.core :as s]
             [ovation.teams :as teams]
             [new-reliquary.ring :refer [wrap-newrelic-transaction]]
@@ -37,16 +34,26 @@
             [ovation.authz :as authz]
             [clojure.core.async :refer [chan]]
             [ovation.storage :as storage]
+            [ovation.auth :as auth]
+            [clojure.java.io :as io]
+            [ovation.constants :as k]
             [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
             [ovation.audit :as audit]))
 
 
-(def rules [{:pattern #"^/api.*"
-             :handler authenticated?}])
+(def rules [{:pattern        #"^/api.*"
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope k/READ-GLOBAL-SCOPE)]}
+                                   auth/authenticated-user-account?]}
+             :request-method :get}
+            {:pattern        #"^/api.*"
+             :handler        {:or [{:and [auth/authenticated-service-account? (authz/require-scope k/WRITE-GLOBAL-SCOPE)]}
+                                   auth/authenticated-user-account?]}
+             :request-method [:put :post :delete]}
+            {:pattern #"^/api.*"
+             :handler auth/authenticated-user-account?}])
 
-(def DESCRIPTION "")
-;(slurp (io/file (io/resource "description.md")))
+(def DESCRIPTION (slurp (io/file (io/resource "description.md"))))
 
 ;;; --- Routes --- ;;;
 (defroutes static-resources
@@ -63,7 +70,7 @@
                                :description    DESCRIPTION
                                :contact        {:name "Ovation"
                                                 :url  "https://www.ovation.io"}
-                               :termsOfService "https://services.ovation.io/terms_of_service"}
+                               :termsOfService "https://app-services.ovation.io/terms_of_service"}
                         :tags [{:name "entities" :description "Generic entity operations"}
                                {:name "activities" :description "Describe inputs and outputs of a procedure"}
                                {:name "projects" :description "Manage Projects"}
@@ -89,12 +96,15 @@
                     :access-control-allow-methods [:get :put :post :delete :options]
                     :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
-                   [wrap-authentication (jws-backend {:secret     config/JWT_SECRET
-                                                      :token-name "Bearer"})]
-                   [wrap-access-rules {:rules    rules
-                                       :on-error auth/unauthorized-response}]
+                   [wrap-authentication (jws-backend {:secret               config/JWT_SECRET
+                                                      :options              {:alg :hs256}
+                                                      :token-name           "Bearer"
+                                                      :unauthorized-handler authz/unauthorized-response})]
 
-                   wrap-authenticated-teams
+                   [wrap-access-rules {:rules    rules
+                                       :on-error authz/unauthorized-response}]
+
+                   wrap-auth
 
                    audit/add-request-id
 
@@ -281,7 +291,6 @@
 
                       (context "/:membership-id" []
                         :path-params [membership-id :- s/Str]
-                        ;;TODO
                         (GET "/" request
                           :name :get-group-membership
                           :return {:group-membership OrganizationGroupMembership}
@@ -390,8 +399,8 @@
                                         entities    (core/get-entities ctx db project-ids)]
                                     (ok {:projects entities}))
                         :else (let [entities (core/of-type ctx db "Project")]
-                                (ok {:projects entities}))
-                        )))
+                                (ok {:projects entities})))))
+
 
                   (post-resources db org authz "Project" [NewProject])
                   (context "/:id" []
@@ -635,7 +644,7 @@
                       (POST "/" request
                         :name :post-memberships
                         :return {s/Keyword TeamMembership}
-                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership. May return a pending membership if the user is not already an Ovation user. Upon signup an invited user will be added as a team member."
+                        :summary "Creates a new team membership (adding a user to a team). Returns the created membership. Invites user if they're not already an Ovation user."
                         :body [body {:membership NewTeamMembership}]
                         (let [ctx (request-context/make-context request org authz)
                               membership (teams/post-membership* ctx id (:membership body))]
