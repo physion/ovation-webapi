@@ -142,7 +142,8 @@
   (let [msg-fn   (fn [doc]
                    {:id   (:_id doc)
                     :rev  (:_rev doc)
-                    :type (:type doc)})
+                    :type (:type doc)
+                    :organization (:organization doc)})
         topic    (config/config :db-updates-topic :default :updates)
         channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
 
