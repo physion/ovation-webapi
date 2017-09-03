@@ -25,13 +25,15 @@
     (case type
       "Activity" (let [inputs  (thread (relations ctx db id k/INPUTS-REL))
                        outputs (thread (relations ctx db id k/OUTPUTS-REL))
-                       actions (thread (relations ctx db id k/ACTIONS-REL))]
+                       actions (thread (relations ctx db id k/ACTIONS-REL))
+                       operators (thread (relations cts db id k/OPERATOR-REL))]
                    {:_id     id
                     :name    name
                     :type    type
                     :inputs  (<?? inputs)
                     :outputs (<?? outputs)
-                    :actions (<?? actions)})
+                    :actions (<?? actions)
+                    :operators (<?? operators)})
       ;;default
       (let [origins    (thread (relations ctx db id k/ORIGINS-REL))
             activities (thread (relations ctx db id k/ACTIVITIES-REL))]

@@ -26,6 +26,7 @@
 (def INPUTS-REL "inputs")
 (def OUTPUTS-REL "outputs")
 (def ACTIONS-REL "actions")
+(def OPERATORS-REL "operators")
 (def ORIGINS-REL "origins")
 (def PARENTS-REL "parents")
 

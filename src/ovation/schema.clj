@@ -142,7 +142,10 @@
                                                                                                    :inverse_rel (s/eq "origins")}
                                                                         (s/optional-key :actions) {:related     [s/Str]
                                                                                                    :type        (s/eq k/REVISION-TYPE)
-                                                                                                   :inverse_rel (s/eq "procedures")}})))
+                                                                                                   :inverse_rel (s/eq "procedures")}
+                                                                        (s/optional-key :operators) {:related     [s/Str]
+                                                                                                     :type        (s/eq k/USER-ENTITY)
+                                                                                                     :inverse_rel (s/eq "activities")}})))
 
 (s/defschema NewActivity (-> NewEntity
                            (assoc :type (s/eq "Activity"))
@@ -160,7 +163,10 @@
                                                                                               :inverse_rel (s/eq "origins")}
                                                                    (s/optional-key :actions) {:related     [s/Str]
                                                                                               :type        (s/eq k/REVISION-TYPE)
-                                                                                              :inverse_rel (s/eq "procedures")}})))
+                                                                                              :inverse_rel (s/eq "procedures")}
+                                                                   (s/optional-key :operators) {:related     [s/Str]
+                                                                                                :type        (s/eq k/USER-ENTITY)
+                                                                                                :inverse_rel (s/eq "activities")}})))
 
 (s/defschema Activity (-> Entity
                         (assoc :type (s/eq "Activity"))))
@@ -401,6 +407,7 @@
    :activity {:inputs  {:schema Entity}                     ; should be Revision or Source
               :outputs {:schema Entity}                     ; should be Revision or Source
               :actions {:schema Revision}
+              :operators {:schema User}
               :parents {:schema Project}}
 
    :folder   {:folders    {:schema Folder}
