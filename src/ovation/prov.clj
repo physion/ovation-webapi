@@ -26,7 +26,7 @@
       "Activity" (let [inputs  (thread (relations ctx db id k/INPUTS-REL))
                        outputs (thread (relations ctx db id k/OUTPUTS-REL))
                        actions (thread (relations ctx db id k/ACTIONS-REL))
-                       operators (thread (relations ctx db id k/OPERATOR-REL))]
+                       operators (thread (relations ctx db id k/OPERATORS-REL))]
                    {:_id     id
                     :name    name
                     :type    type
