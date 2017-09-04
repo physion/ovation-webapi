@@ -99,12 +99,14 @@
       (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
                      (async/timeout 100)]) => [..result.. ch]
       (provided
-        (pubsub/publish ..pub.. :updates {:id   ..id..
-                                          :rev  ..rev..
-                                          :type ..type..} anything) => pchan
+        (pubsub/publish ..pub.. :updates {:id           ..id..
+                                          :rev          ..rev..
+                                          :type         ..type..
+                                          :organization ..org..} anything) => pchan
         ..doc.. =contains=> {:_id  ..id..
                              :_rev ..rev..
-                             :type ..type..}))))
+                             :type ..type..
+                             :organization ..org..}))))
 
 (facts "About `delete-docs`"
   (fact "it POSTs bulk-update"
