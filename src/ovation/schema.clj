@@ -24,6 +24,9 @@
                                                         s/Keyword                              s/Str}
                      (s/optional-key :permissions)     {s/Keyword s/Bool}})
 
+(s/defschema GenericAnnotation (conj AnnotationBase {:annotation_type s/Str
+                                                     :annotation      {s/Keyword s/Any}}))
+
 (s/defschema AnnotationTypes (s/enum k/TAGS
                                k/PROPERTIES
                                k/NOTES

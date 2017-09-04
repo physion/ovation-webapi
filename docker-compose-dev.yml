@@ -4,8 +4,8 @@
       volumes:
         - .:/app
       env_file: dev.env
-      links:
-        - pubsub
+#      links:
+#        - pubsub
     repl:
       build: .
       command: lein repl :headless :host 0.0.0.0 :port 59789
@@ -17,10 +17,10 @@
     db:
       environment:
         - MYSQL_RANDOM_ROOT_PASSWORD="1"
-    pubsub:
-      image: niallmccullagh/docker-google-cloud-emulators:latest
-      ports:
-        - "8538:8538"
-      command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
-      volumes:
-        - ./logs:/var/log
+#    pubsub:
+#      image: niallmccullagh/docker-google-cloud-emulators:latest
+#      ports:
+#        - "8538:8538"
+#      command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
+#      volumes:
+#        - ./logs:/var/log
