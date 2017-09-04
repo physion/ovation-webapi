@@ -357,10 +357,7 @@
                       (context "/:id" []
                         (GET "/" request
                           :name :get-annotation
-                          :return {:annotation (s/either TagAnnotation
-                                                 PropertyAnnotation
-                                                 TimelineEventAnnotation
-                                                 NoteAnnotation)}
+                          :return {:annotation GenericAnnotation}
                           :summary "Gets a single Annotation record with :id"
                           :responses {404 {:schema JsonApiError :description "Not found"}}
                           (let [ctx (request-context/make-context request org authz)]
