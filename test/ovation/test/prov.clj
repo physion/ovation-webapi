@@ -46,6 +46,7 @@
                                                                                   :type       "Revision"
                                                                                   :attributes {:name ..rev..}}]
         (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/ACTIONS-REL) => []
+        (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/OPERATORS-REL) => []
         (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/INPUTS-REL) => [{:_id        ..source-id..
                                                                                  :attributes {:name ..name..}
                                                                                  :type       "Source"}]
@@ -114,6 +115,7 @@
                                                                                   :attributes {:name ..downstream-rev..}}]
 
         (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/ACTIONS-REL) => []
+        (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/OPERATORS-REL) => []
         (links/get-link-targets ..ctx.. ..db.. ..activityid.. k/INPUTS-REL) => [{:_id        ..revid..
                                                                                  :type       "Revision"
                                                                                  :attributes {:name ..rev..}}]
@@ -137,6 +139,7 @@
                                                                                :attributes {:name ..upstream-rev..}}]
 
         (links/get-link-targets ..ctx.. ..db.. ..originid.. k/ACTIONS-REL) => []
+        (links/get-link-targets ..ctx.. ..db.. ..originid.. k/OPERATORS-REL) => []
         (links/get-link-targets ..ctx.. ..db.. ..originid.. k/OUTPUTS-REL) => [{:_id        ..revid..
                                                                                 :type       "Revision"
                                                                                 :attributes {:name ..rev..}}]))
@@ -154,7 +157,7 @@
                                                                 {:_id ..idia2.. :type ..tpia2.. :name ..nameia2..}]
                                                       :outputs [{:_id ..ido1.. :type ..tpo1.. :name ..nameo1..}
                                                                 {:_id ..ido2.. :type ..tpo2.. :name ..nameo2..}]
-                                                      :operators [{:id ..idu1.. :type ..tpu1.. :name ..nameu1..}]}
+                                                      :operators [{:_id ..idu1.. :type ..tpu1.. :name ..nameu1..}]}
 
                                                      {:_id     ..ida2..
                                                       :name    ..namea2..
@@ -165,7 +168,7 @@
                                                                 {:_id ..idia4.. :type ..tpia4.. :name ..nameia4..}]
                                                       :outputs [{:_id ..ido3.. :type ..tpo3.. :name ..nameo3..}
                                                                 {:_id ..ido4.. :type ..tpo4.. :name ..nameo4..}]
-                                                      :operators [{:id ..idu2.. :type ..tpu2.. :name ..nameu2..}]}]
+                                                      :operators [{:_id ..idu2.. :type ..tpu2.. :name ..nameu2..}]}]
       (provided
         (links/get-link-targets ..ctx.. ..db.. ..project.. k/ACTIVITIES-REL) => [{:_id        ..ida1..
                                                                                   :type       "Activity"
