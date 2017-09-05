@@ -39,7 +39,10 @@
             [ovation.constants :as k]
             [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
-            [ovation.audit :as audit]))
+            [ovation.audit :as audit]
+            [clojure.string :as string]
+            [ovation.annotations :as annotations]
+            [clojure.tools.logging :as logging]))
 
 
 (def rules [{:pattern        #"^/api.*"
@@ -317,15 +320,20 @@
                     :path-params [id :- s/Str]
                     (GET "/" request
                       :name :get-entity
-                      :query-params [{trash :- (s/maybe s/Bool) false}]
-                      :return {:entity TrashedEntity}
+                      :query-params [{trash :- (s/maybe s/Bool) false}
+                                     {includes :- (s/maybe s/Str) nil}]
+                      :return {:entity                    TrashedEntity
+                               (s/optional-key :includes) [GenericAnnotation]}
                       :responses {404 {:schema JsonApiError :description "Not found"}}
                       :summary "Returns entity with :id. If include-trashed is true, result includes entity even if it's in the trash."
                       (let [ctx (request-context/make-context request org authz)]
-                        (if-let [entities (core/get-entities ctx db [id] :include-trashed trash)]
-                          (if-let [entity (first entities)]
-                            (ok {:entity entity})
-                            (not-found {:errors {:detail "Not found"}}))
+                        (if-let [entity (core/get-entity ctx db id :include-trashed trash)]
+                          (if (= includes "annotations")
+                            (let [incl                [k/TAGS k/PROPERTIES k/NOTES k/TIMELINE_EVENTS]
+                                  annotation-includes (vec (mapcat #(annotations/get-annotations ctx db [id] %) incl))]
+                              (ok {:entity   entity
+                                   :includes annotation-includes}))
+                            (ok {:entity entity}) )
                           (not-found {:errors {:detail "Not found"}}))))
                     (DELETE "/" request
                       :name :delete-entity
@@ -365,8 +373,8 @@
                               (if-let [annotation (first annotation)]
                                 (ok {:annotation annotation})
                                 (not-found {:errors {:detail "Not found"}}))
-                              (not-found {:errors {:detail "Not found"}})))))
-                      )))
+                              (not-found {:errors {:detail "Not found"}}))))))))
+
 
                 (context "/relationships" []
                   :tags ["links"]

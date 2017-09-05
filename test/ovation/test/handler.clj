@@ -517,7 +517,51 @@
                   (fact "GET /entities/:id returns status 200"
                     (:status (app get)) => 200)
                   (fact "GET /entities/:id returns doc"
-                    (body-json app get) => {:entity doc}))))))))
+                    (body-json app get) => {:entity doc})))
+              (let [id   (str (UUID/randomUUID))
+                    get  (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version ORGS org "entities" id]) "?includes=annotations")) apikey)
+                    doc  {:_id           id
+                          :_rev          "123"
+                          :type          "Entity"
+                          :links         {:self "self"}
+                          :relationships {}
+                          :attributes    {}}
+
+                    tag  {:_id             (str (UUID/randomUUID))
+                          :_rev            "1"
+                          :entity          id
+                          :user            (str (UUID/randomUUID))
+                          :type            "Annotation"
+                          :annotation_type k/TAGS
+                          :annotation      {}}
+
+                    prop {:_id             (str (UUID/randomUUID))
+                          :_rev            "1"
+                          :entity          id
+                          :user            (str (UUID/randomUUID))
+                          :type            "Annotation"
+                          :annotation_type k/PROPERTIES
+                          :annotation      {}}
+
+                    note {:_id             (str (UUID/randomUUID))
+                          :_rev            "1"
+                          :entity          id
+                          :user            (str (UUID/randomUUID))
+                          :type            "Annotation"
+                          :annotation_type k/NOTES
+                          :annotation      {}}]
+
+                (against-background [(core/get-entities ..ctx.. db [id] :include-trashed false) => [doc]
+                                     (request-context/router anything) => ..rt..
+                                     (annotations/get-annotations ..ctx.. db [id] k/TAGS) => [tag]
+                                     (annotations/get-annotations ..ctx.. db [id] k/PROPERTIES) => [prop]
+                                     (annotations/get-annotations ..ctx.. db [id] k/NOTES) => [note]
+                                     (annotations/get-annotations ..ctx.. db [id] k/TIMELINE_EVENTS) => []]
+                  (fact "GET /entities/:id returns status 200 "
+                    (:status (app get)) => 200)
+                  (fact "GET /entities/:id includes annotations"
+                    (body-json app get) => {:entity   doc
+                                            :includes [tag prop note]}))))))))
 
     (facts "About entities"
       (entity-resource-deletion-tests app db org "entitie"))

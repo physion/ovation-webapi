@@ -170,7 +170,7 @@
     (tr/entities-from-couch (couch/bulk-docs db (tw/to-couch ctx auth-checked-docs))
       ctx)))
 
-(defn-traced delete-entities
+(defn delete-entities
   [ctx db ids]
   (let [{auth ::rc/identity} ctx
         docs (get-entities ctx db ids)]
@@ -185,7 +185,7 @@
                               ctx))))
 
 
-(defn-traced delete-values
+(defn delete-values
   "DELETEs value(s) direct to Couch"
   [ctx db ids]
 
