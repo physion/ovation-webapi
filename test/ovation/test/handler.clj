@@ -715,7 +715,8 @@
                          :type    "Activity"
                          :name    "Something"
                          :inputs  []
-                         :outputs []}]
+                         :outputs []
+                         :operators []}]
               get      (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "prov" id])) apikey)]
           (body-json app get) => {:provenance expected}
           (provided
