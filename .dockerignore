@@ -9,4 +9,5 @@ js/*
 examples
 .repository
 target
+*.aes
 
