@@ -11,6 +11,11 @@ NAMESPACE=development
 
 codeship_google authenticate
 
+gcloud container clusters get-credentials $KUBERNETES_CLUSTER_NAME \
+  --project $PROJECT_ID \
+  --zone $DEFAULT_ZONE
+
+
 echo "Setting Project ID $PROJECT_ID"
 gcloud config set project $PROJECT_ID
 
