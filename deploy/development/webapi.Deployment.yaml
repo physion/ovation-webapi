@@ -1,0 +1,62 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: webapi
+# For more info about Pods see:
+#   https://cloud.google.com/container-engine/docs/pods/
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webapi
+        env: development
+    spec:
+      containers:
+      - name: webapi
+        image: gcr.io/ovation-staging/webapi
+        # This setting makes nodes pull the docker image every time before
+        # starting the pod. This is useful when debugging, but should be turned
+        # off in production.
+        imagePullPolicy: Always
+        command: ["lein"]
+        args: ["run"]
+        ports:
+        - name: indexer
+          containerPort: 3000
+        env:
+          - name: CLOUDANT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: development-webapi-secret
+                key: CLOUDANT_PASSWORD
+          - name: CLOUDANT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: development-webapi-secret
+                key: CLOUDANT_USERNAME
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: development-webapi-secret
+                key: JWT_SECRET
+          - name: RAYGUN_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: development-webapi-secret
+                key: RAYGUN_API_KEY
+          - name: CLOUDANT_DB_URL
+            valueFrom:
+              configMapKeyRef:
+                name: development-webapi-config
+                key: CLOUDANT_DB_URL
+          - name: OVATION_IO_HOST_URI
+            valueFrom:
+              configMapKeyRef:
+                name: development-webapi-config
+                key: OVATION_IO_HOST_URI
+          - name: GOOGLE_CLOUD_PROJECT_ID
+            valueFrom:
+              configMapKeyRef:
+                name: development-webapi-config
+                key: GOOGLE_CLOUD_PROJECT_ID

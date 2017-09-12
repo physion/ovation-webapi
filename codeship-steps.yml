@@ -1,24 +1,30 @@
-- type: parallel
-  steps:
-    - name: test
-      service: web
-      command: lein midje
+- name: tests
+  service: web
+  command: lein midje
 
-- type: serial
-  steps:
-    - name: gce_push #TODO https://documentation.codeship.com/pro/continuous-deployment/google-cloud/, https://documentation.codeship.com/pro/continuous-deployment/deployment-with-kubernetes/
-      type: push
-      tag: master
-      service: web
-      image_name: gcr.io/ovation/ovation-webapi
-      image_tag: "{{ .Timestamp }}"
-      registry: https://gcr.io
-      dockercfg_service: gcr_dockercfg
-    - name: gce_deploy #TODO https://documentation.codeship.com/pro/continuous-deployment/deployment-with-kubernetes/
-      tag: master
-      command: /deploy/gce_deploy.sh
-    - name: heroku_push #TODO https://documentation.codeship.com/pro/continuous-deployment/heroku/
-      tag: development
-      service: web
-      type: push
+- name: Push to GCR (dev)
+  tag: development
+  service: indexer
+  type: push
+  image_name: gcr.io/ovation/webapi
+  image_tag: "development-{{ .Timestamp }}"
+  registry: https://gcr.io
+  dockercfg_service: gcr_dockercfg
 
+- name: Push to GCR (prod)
+  tag: master
+  service: indexer
+  type: push
+  image_name: gcr.io/ovation/webapi
+  image_tag: "{{ .Timestamp }}"
+
+
+- name: Deploy (dev)
+  tag: development
+  service: googleclouddeployment
+  command: deploy/development/deploy.sh
+
+- name: Deploy (prod)
+  tag: master
+  service: googleclouddeployment
+  command: deploy/production/deploy.sh
