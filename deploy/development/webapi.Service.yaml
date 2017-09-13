@@ -4,6 +4,12 @@ metadata:
   name: webapi
 spec:
   type: NodePort
+#  strategy:
+#    # indicate which strategy we want for rolling update
+#    type: RollingUpdate
+#    rollingUpdate:
+#      maxSurge: 1
+#      maxUnavailable: 1
   ports:
   - name: http
     port: 80

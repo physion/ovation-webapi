@@ -34,4 +34,4 @@ kubectl --namespace=$NAMESPACE apply -f webapi.Service.yaml
 
 IMAGE=gcr.io/ovation-staging/webapi:development-$CI_TIMESTAMP
 echo "Setting deployment image $IMAGE..."
-kubectl --namespace=$NAMESPACE rolling-update webapi --image=$IMAGE
+kubectl --namespace=$NAMESPACE set image deployment/webapi --image=$IMAGE
