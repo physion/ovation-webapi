@@ -16,15 +16,15 @@
   service: indexer
   type: push
   image_name: gcr.io/ovation/webapi
-  image_tag: "{{ .Timestamp }}"
+  image_tag: "production-{{ .Timestamp }}"
 
 
 - name: Deploy (dev)
   tag: development
-  service: googleclouddeployment
+  service: gke-deploy
   command: deploy/development/deploy.sh
 
 - name: Deploy (prod)
   tag: master
-  service: googleclouddeployment
+  service: gke-deploy
   command: deploy/production/deploy.sh
