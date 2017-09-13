@@ -4,7 +4,7 @@
 
 - name: Push to GCR (dev)
   tag: development
-  service: indexer
+  service: web
   type: push
   image_name: gcr.io/ovation/webapi
   image_tag: "development-{{ .Timestamp }}"
@@ -13,7 +13,7 @@
 
 - name: Push to GCR (prod)
   tag: master
-  service: indexer
+  service: web
   type: push
   image_name: gcr.io/ovation/webapi
   image_tag: "production-{{ .Timestamp }}"
