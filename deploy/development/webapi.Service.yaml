@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: webapi
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: webapi
+    protocol: TCP
+  selector:
+    app: webapi
+    env: development
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: webapi-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: development-webapi-static-ip
+spec:
+  tls:
+    - secretName: star-ovation-io-tls-secret
+  backend:
+    serviceName: webapi
+    servicePort: 80

@@ -40,3 +40,7 @@ dev.env
 ovation-staging.json
 
 dev-local.env
+
+*.env
+
+codeship.aes
