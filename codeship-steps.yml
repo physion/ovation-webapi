@@ -17,6 +17,8 @@
   type: push
   image_name: gcr.io/ovation-io/webapi
   image_tag: "production-{{ .Timestamp }}"
+  registry: https://gcr.io
+  dockercfg_service: gcr_dockercfg
 
 
 - name: Deploy (dev)
