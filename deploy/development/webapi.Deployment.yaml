@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: webapi
-        image: gcr.io/ovation-staging/webapi
+        image: gcr.io/ovation-io/webapi
         # This setting makes nodes pull the docker image every time before
         # starting the pod. This is useful when debugging, but should be turned
         # off in production.

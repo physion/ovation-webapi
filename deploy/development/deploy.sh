@@ -5,7 +5,7 @@ set -e
 KUBERNETES_CLUSTER_NAME=ovation
 KUBERNETES_APP_NAME=webapi
 DEFAULT_ZONE=us-east1-b
-PROJECT_ID=ovation-staging
+PROJECT_ID=ovation-io
 WORKDIR=deploy/development
 NAMESPACE=development
 
