@@ -24,7 +24,6 @@ gcloud config set compute/zone $DEFAULT_ZONE
 
 cd $WORKDIR
 
-#sed -i "s/DATE/`date +'%s'`/" indexer.Deployment.yaml
 
 echo "Applying deployment..."
 kubectl --namespace=$NAMESPACE apply -f webapi.Deployment.yaml

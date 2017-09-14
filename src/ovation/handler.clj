@@ -123,6 +123,9 @@
                   (undocumented
                     static-resources)
 
+        (GET "/healthz" request
+          (ok "Alive!"))
+
         (context "/api" []
           (context "/v1" []
             (context "/o" []
