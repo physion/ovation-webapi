@@ -24,6 +24,7 @@
   (reify ApiFutureCallback
     (onSuccess [_ result]
       (go
+        (logging/info "Success publishing to pubsub")
         (>! ch result)
         (if close?
           (close! ch))))
@@ -65,10 +66,10 @@
 (defrecord TopicPublisher [topics project-id]
   Topics
   (publish [this topic msg ch]
-    (logging/debug "Attempting to publish message %s to %s" (str msg) topic)
+    (logging/debug "Attempting to publish message" (str msg) "to" topic)
     (when-not (get this [:topics topic])
       (if-let [publisher (make-publisher (:project-id this) topic)]
-        (do (logging/debug "New publisher: %s" topic)
+        (do (logging/debug "New publisher:" topic)
             (update-in this [:topics] assoc topic publisher))))
 
     (if-let [publisher (get-in this [:topics topic])]
