@@ -53,7 +53,7 @@
 
   (let [msg           (make-msg message)
         msg-id-future (send-msg publisher msg)]
-
+    (logging/debug "Message sent")
     (add-api-callback msg-id-future (future-to-ch channel :close? close?))
     channel))
 
@@ -65,8 +65,10 @@
 (defrecord TopicPublisher [topics project-id]
   Topics
   (publish [this topic msg ch]
+    (logging/debug "Attempting to publish message %s to %s" (str msg) topic)
     (when-not (get this [:topics topic])
       (if-let [publisher (make-publisher (:project-id this) topic)]
+        (logging/debug "New publisher: %s" topic)
         (update-in this [:topics] assoc topic publisher)))
 
     (if-let [publisher (get-in this [:topics topic])]
