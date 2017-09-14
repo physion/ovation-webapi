@@ -6,7 +6,7 @@
   tag: development
   service: web
   type: push
-  image_name: gcr.io/ovation-staging/webapi
+  image_name: gcr.io/ovation-io/webapi
   image_tag: "development-{{ .Timestamp }}"
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
@@ -15,7 +15,7 @@
   tag: master
   service: web
   type: push
-  image_name: gcr.io/ovation-staging/webapi
+  image_name: gcr.io/ovation-io/webapi
   image_tag: "production-{{ .Timestamp }}"
 
 
