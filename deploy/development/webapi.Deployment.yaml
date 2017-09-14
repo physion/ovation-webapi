@@ -24,6 +24,10 @@ spec:
         ports:
         - name: webapi
           containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
         env:
           - name: CLOUDANT_PASSWORD
             valueFrom:
