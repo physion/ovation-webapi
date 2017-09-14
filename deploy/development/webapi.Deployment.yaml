@@ -22,7 +22,7 @@ spec:
         command: ["lein"]
         args: ["run"]
         ports:
-        - name: indexer
+        - name: webapi
           containerPort: 3000
         env:
           - name: CLOUDANT_PASSWORD
