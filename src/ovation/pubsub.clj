@@ -68,8 +68,8 @@
     (logging/debug "Attempting to publish message %s to %s" (str msg) topic)
     (when-not (get this [:topics topic])
       (if-let [publisher (make-publisher (:project-id this) topic)]
-        (logging/debug "New publisher: %s" topic)
-        (update-in this [:topics] assoc topic publisher)))
+        (do (logging/debug "New publisher: %s" topic)
+            (update-in this [:topics] assoc topic publisher))))
 
     (if-let [publisher (get-in this [:topics topic])]
       (publish-message publisher msg :channel ch)))
