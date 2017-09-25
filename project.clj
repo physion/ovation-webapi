@@ -68,12 +68,6 @@
 
   :resource-paths ["resources"]
 
-  ;; For EB .ebextensions
-  ;:war-resources-path "war-resources"
-
-  :aws {:beanstalk {:stack-name   "64bit Amazon Linux running Tomcat 8"
-                    :environments [{:name "ovation-webapi-staging"}]}}
-
   :profiles {:dev      {:dependencies [[ring-mock "0.1.5"]
                                        [midje "1.8.3"]
                                        [http-kit.fake "0.2.2"]
@@ -89,8 +83,5 @@
              :jmx      {:jvm-opts ["-Dcom.sun.management.jmxremote"
                                    "-Dcom.sun.management.jmxremote.ssl=false"
                                    "-Dcom.sun.management.jmxremote.authenticate=false"
-                                   "-Dcom.sun.management.jmxremote.port=43210"]}
-
-             :ci       {:aws {:access-key ~(System/getenv "AWS_ACCESS_KEY")
-                              :secret-key ~(System/getenv "AWS_SECRET_KEY")}}})
+                                   "-Dcom.sun.management.jmxremote.port=43210"]}})
 

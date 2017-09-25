@@ -10,7 +10,6 @@
    :pubsub {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
    :authz  {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
    :db     {:host     (config/config :cloudant-db-url)
-            :port     nil
             :username (config/config :cloudant-username)
             :password (config/config :cloudant-password)}})
 
