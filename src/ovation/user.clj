@@ -1,7 +1,7 @@
 (ns ovation.user
   (:require [ovation.system :as system]
             [com.stuartsierra.component :as component]
-            [clojure.tools.namespace.repl :refer (refresh refresh-all)]
+            [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
             [ovation.config :as config]
             [ovation.util :as util]))
 
@@ -32,4 +32,5 @@
 
 (defn reset []
   (stop)
+  (set-refresh-dirs "src")
   (refresh :after 'ovation.user/go))

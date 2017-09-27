@@ -140,9 +140,9 @@
   [publisher docs & {:keys [channel close?] :or {channel (chan)
                                                  close?  true}}]
   (let [msg-fn   (fn [doc]
-                   {:id   (:_id doc)
-                    :rev  (:_rev doc)
-                    :type (:type doc)
+                   {:id           (str (:_id doc))
+                    :rev          (:_rev doc)
+                    :type         (:type doc)
                     :organization (:organization doc)})
         topic    (config/config :db-updates-topic :default :updates)
         channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
@@ -158,7 +158,7 @@
     (cl/with-db connection
       (let [bulk-results (cl/bulk-update docs)
             pub-ch       (chan (count bulk-results))]
-        (publish-updates publisher bulk-results :channel pub-ch)
+        (publish-updates publisher docs :channel pub-ch)
         ;(util/drain! pub-ch)
 
         (merge-updates docs bulk-results)))))
