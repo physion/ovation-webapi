@@ -141,7 +141,7 @@
                                                  close?  true}}]
   (let [msg-fn   (fn [doc]
                    {:id           (str (:_id doc))
-                    :rev          (:_rev doc)
+                    :rev          (or (:_rev doc) 0)
                     :type         (:type doc)
                     :organization (:organization doc)})
         topic    (config/config :db-updates-topic :default :updates)
