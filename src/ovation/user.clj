@@ -1,7 +1,7 @@
 (ns ovation.user
   (:require [ovation.system :as system]
             [com.stuartsierra.component :as component]
-            [clojure.tools.namespace.repl :refer (refresh refresh-all)]
+            [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
             [ovation.config :as config]
             [ovation.util :as util]))
 
@@ -10,7 +10,6 @@
    :pubsub {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
    :authz  {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
    :db     {:host     (config/config :cloudant-db-url)
-            :port     nil
             :username (config/config :cloudant-username)
             :password (config/config :cloudant-password)}})
 
@@ -33,4 +32,5 @@
 
 (defn reset []
   (stop)
+  (set-refresh-dirs "src")
   (refresh :after 'ovation.user/go))
