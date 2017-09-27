@@ -29,7 +29,7 @@
         (if close?
           (close! ch))))
     (onFailure [_ throwable]
-      (logging/error throwable "Error publishing to pubsub")
+      (logging/error throwable "Error publishing to pubsub:" (.getMessage throwable))
       (go
         (>! ch throwable)
         (if close?
