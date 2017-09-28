@@ -6,4 +6,4 @@ NAMESPACE=development
 
 kubectl create secret generic development-webapi-service-key \
  --namespace=$NAMESPACE \
- --from-file=<PATH-TO-KEY-FILE>.json
+ --from-file=key.json=<PATH-TO-KEY-FILE>.json
