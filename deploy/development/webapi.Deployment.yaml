@@ -12,6 +12,10 @@ spec:
         app: webapi
         env: development
     spec:
+      valumes:
+      - name: google-cloud-key
+        secret:
+          secretName: development-webapi-service-key
       containers:
       - name: webapi
         image: gcr.io/ovation-io/webapi
@@ -28,7 +32,13 @@ spec:
           httpGet:
             path: /healthz
             port: 3000
+        volumeMounts:
+          - name: google-cloud-key
+            mountPath: /var/secrets/google
+
         env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /var/secrets/google/key.json
           - name: CLOUDANT_PASSWORD
             valueFrom:
               secretKeyRef:
