@@ -317,6 +317,22 @@
                           (let [_ (authz/delete-organization-group-membership authz (request-context/make-context request org authz) membership-id)]
                             (no-content)))))))
 
+                (context "/annotations" []
+                  :tags ["annotations"]
+                  (context "/:id" []
+                    :path-params [id :- s/Str]
+                    (GET "/" request
+                      :name :get-annotation
+                      :return {:annotation GenericAnnotation}
+                      :summary "Gets a single Annotation record with :id"
+                      :responses {404 {:schema JsonApiError :description "Not found"}}
+                      (let [ctx (request-context/make-context request org authz)]
+                        (if-let [annotation (core/get-values ctx db [id])]
+                          (if-let [annotation (first annotation)]
+                            (ok {:annotation annotation})
+                            (not-found {:errors {:detail "Not found"}}))
+                          (not-found {:errors {:detail "Not found"}}))))))
+
                 (context "/entities" []
                   :tags ["entities"]
                   (context "/:id" []
@@ -364,19 +380,7 @@
                       (annotation db org authz id "keywords" "tags" TagRecord TagAnnotation)
                       (annotation db org authz id "properties" "properties" PropertyRecord PropertyAnnotation)
                       (annotation db org authz id "timeline events" "timeline_events" TimelineEventRecord TimelineEventAnnotation)
-                      (annotation db org authz id "notes" "notes" NoteRecord NoteAnnotation)
-                      (context "/:id" []
-                        (GET "/" request
-                          :name :get-annotation
-                          :return {:annotation GenericAnnotation}
-                          :summary "Gets a single Annotation record with :id"
-                          :responses {404 {:schema JsonApiError :description "Not found"}}
-                          (let [ctx (request-context/make-context request org authz)]
-                            (if-let [annotation (core/get-values ctx db [id])]
-                              (if-let [annotation (first annotation)]
-                                (ok {:annotation annotation})
-                                (not-found {:errors {:detail "Not found"}}))
-                              (not-found {:errors {:detail "Not found"}}))))))))
+                      (annotation db org authz id "notes" "notes" NoteRecord NoteAnnotation))))
 
 
                 (context "/relationships" []
