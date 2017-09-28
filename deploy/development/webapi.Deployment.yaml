@@ -12,7 +12,7 @@ spec:
         app: webapi
         env: development
     spec:
-      valumes:
+      volumes:
       - name: google-cloud-key
         secret:
           secretName: development-webapi-service-key
@@ -35,7 +35,6 @@ spec:
         volumeMounts:
           - name: google-cloud-key
             mountPath: /var/secrets/google
-
         env:
           - name: GOOGLE_APPLICATION_CREDENTIALS
             value: /var/secrets/google/key.json
