@@ -7,7 +7,6 @@
             [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
             [clojure.tools.logging :as logging]
-            [ring.util.http-response :refer [throw!]]
             [clojure.walk :as walk])
   (:import (java.io EOFException)))
 

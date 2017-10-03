@@ -5,12 +5,13 @@
             [ovation.util :as util]))
 
 (def system-config
-  {:web    {:port 3000}
-   :authz  {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
-   :pubsub {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
-   :db     {:host     (config/config :cloudant-db-url :default "https://db-host")
-            :username (config/config :cloudant-username :default "db-username")
-            :password (config/config :cloudant-password :default "db-password")}})
+  {:web           {:port 3000}
+   :elasticsearch {:url (config/config :elasticsearch-url :default "http://localhost:9200")}
+   :authz         {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
+   :pubsub        {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
+   :db            {:host     (config/config :cloudant-db-url :default "https://db-host")
+                   :username (config/config :cloudant-username :default "db-username")
+                   :password (config/config :cloudant-password :default "db-password")}})
 
 (def test-system nil)
 

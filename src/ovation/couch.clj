@@ -159,8 +159,6 @@
       (let [bulk-results (cl/bulk-update docs)
             pub-ch       (chan (count bulk-results))]
         (publish-updates publisher docs :channel pub-ch)
-        ;(util/drain! pub-ch)
-
         (merge-updates docs bulk-results)))))
 
 (defn changes

@@ -80,16 +80,16 @@
   (fact "it POSTs bulk-update"
     (couch/bulk-docs "dburl" ..docs..) => ..result..
     (provided
-      (cl/bulk-update ..docs..) => ..revs..
-      (couch/merge-updates ..docs.. ..revs..) => ..result..))
+      (cl/bulk-update ..docs..) => [..revs..]
+      (couch/merge-updates ..docs.. [..revs..]) => ..result..))
   (fact "it publishes updates"
     (couch/bulk-docs ..db.. ..docs..) => ..result..
     (provided
       ..db.. =contains=> {:connection "db-url"
                           :pubsub     {:publisher ..pub..}}
-      (cl/bulk-update ..docs..) => ..revs..
+      (cl/bulk-update ..docs..) => [..revs..]
       (couch/publish-updates ..pub.. ..docs.. :channel anything) => ..published..
-      (couch/merge-updates ..docs.. ..revs..) => ..result..)))
+      (couch/merge-updates ..docs.. [..revs..]) => ..result..)))
 
 (facts "About publish-updates"
   (fact "publishes update record to publisher"

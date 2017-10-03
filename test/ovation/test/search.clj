@@ -1,116 +1,107 @@
 (ns ovation.test.search
   (:require [midje.sweet :refer :all]
             [ovation.search :as search]
-            [ovation.couch :as couch]
-            [ovation.constants :as k]
             [ovation.core :as core]
             [ovation.routes :as routes]
-            [ovation.links :as links]))
-
+            [clojure.data.json :as json]
+            [qbits.spandex :as spandex]
+            [ovation.util :as util]
+            [clojure.core.async :as async]))
 
 (against-background [..ctx.. =contains=> {:ovation.request-context/routes ..rt..
                                           :ovation.request-context/org    1}]
   (facts "About search"
-    (fact "transforms Cloudant search"
-      (let [query    "some-query"
-            ex-query (format "organization:%s AND (%s)" 1 query)]
-        (search/search ..ctx.. ..db.. query) => {:search_results [..result1.. ..result2..]
-                                                 :meta           {:bookmark   ..bookmark..
-                                                                  :total_rows ..total..}}
-        (provided
-          (search/get-results ..ctx.. ..db.. [{:id     ..id1..
-                                               :order  [3.9 107]
-                                               :fields {:id   ..id1..
-                                                        :type k/PROJECT-TYPE}}
-                                              {:id     ..id2..
-                                               :order  [3.9 107]
-                                               :fields {:id   ..id2..
-                                                        :type k/REVISION-TYPE}}]) => [..result1.. ..result2..]
-          (couch/search ..db.. ex-query
-            :bookmark nil
-            :limit search/MIN-SEARCH) => {:total_rows ..total..
-                                          :bookmark   ..bookmark..
-                                          :rows       [{:id     ..id1..
-                                                        :order  [3.9 107]
-                                                        :fields {:id   ..id1..
-                                                                 :type k/PROJECT-TYPE}}
-                                                       {:id     ..id2..
-                                                        :order  [3.9 107]
-                                                        :fields {:id   ..id2..
-                                                                 :type k/REVISION-TYPE}}]})))
+    (fact "transforms ES result"
+      (let [org            1
+            query-response {:took      0,
+                            :timed_out false,
+                            :_shards   {:total 1, :successful 1, :failed 0},
+                            :sort      ..sort..
+                            :hits      {:total     ..total_rows..,
+                                        :max_score 3.1533415,
+                                        :hits      [{:_index  (search/org-index org),
+                                                     :_type   "file",
+                                                     :_id     ..id..,
+                                                     :_score  3.1533415,
+                                                     :_source {:attributes  {:name       "PrivateData.csv",
+                                                                             :created-at "2017-09-28T03:04:33.286Z",
+                                                                             :updated-at "2017-09-28T03:04:48.398Z"},
+                                                               :owner       "15cab930-1e24-0131-026c-22000a977b96",
+                                                               :projects    [..project_id..],
+                                                               :annotations [{:user            "15cab930-1e24-0131-026c-22000a977b96",
+                                                                              :annotation      {:tag "findme"},
+                                                                              :annotation_type "tags"}]}}]}}]
 
-    (fact "Extracts entity ids"
-      (let [rows [{:id     ..id1..
-                   :order  [3.9 107]
-                   :fields {:id   ..id1..
-                            :type k/PROJECT-TYPE}}
-                  {:id     ..id2..
-                   :order  [3.9 107]
-                   :fields {:id     ..id2..
-                            :entity ..eid..
-                            :type   k/ANNOTATION-TYPE}}]]
-        (search/get-results ..ctx.. ..db.. rows) => [{:id            ..eid..
-                                                      :entity_type   k/PROJECT-TYPE
-                                                      :name          ..project..
-                                                      :project_names [..project..]
-                                                      :owner         ..user1..
-                                                      :updated-at    ..update1..
-                                                      :organization  1
-                                                      :links         {:breadcrumbs ..bc1..}}
-                                                     {:id            ..id1..
-                                                      :entity_type   k/FILE-TYPE
-                                                      :name          ..file..
-                                                      :owner         ..user2..
-                                                      :updated-at    ..update2..
-                                                      :organization  1
-                                                      :project_names [..fileproject..]
-                                                      :links         {:breadcrumbs ..bc2..}}]
+        (search/transform-results ..ctx.. ..db.. query-response) => {:meta           {:total_rows ..total_rows..
+                                                                                      :bookmark   ..sort..}
+                                                                     :search_results [{:id            ..id..
+                                                                                       :entity_type   ..type..
+                                                                                       :name          ..name..
+                                                                                       :owner         ..owner..
+                                                                                       :updated-at    ..updated_at..
+                                                                                       :organization  org
+                                                                                       :project_names [..project_name..]
+                                                                                       :links         {:breadcrumbs ..breadcrumbs..}}]}
         (provided
-          (search/breadcrumbs-url ..ctx.. ..eid..) => ..bc1..
-          (search/breadcrumbs-url ..ctx.. ..id1..) => ..bc2..
-          (search/entity-ids rows) => [..eid.. ..id1..]
-          (links/collaboration-roots {:_id        ..eid..
-                                      :type       k/PROJECT-TYPE
-                                      :owner      ..user1..
-                                      :attributes {:name       ..project..
-                                                   :updated-at ..update1..}}) => [..eid..]
-          (links/collaboration-roots {:_id        ..id1..
-                                      :type       k/FILE-TYPE
-                                      :owner      ..user2..
-                                      :attributes {:name ..file.. :updated-at ..update2..}}) => [..fileprojectid..]
-          (core/get-entities ..ctx.. ..db.. [..eid.. ..fileprojectid..]) => [{:_id        ..fileprojectid..
-                                                                              :type       k/PROJECT-TYPE
-                                                                              :owner      ..user2..
-                                                                              :attributes {:name       ..fileproject..
-                                                                                           :updated-at ..update2..}}
-                                                                             {:_id        ..eid..
-                                                                              :type       k/PROJECT-TYPE
-                                                                              :owner      ..user1..
-                                                                              :attributes {:name       ..project..
-                                                                                           :updated-at ..update1..}}]
-          (core/get-entities ..ctx.. ..db.. [..eid.. ..id1..]) => [{:_id        ..eid..
-                                                                    :type       k/PROJECT-TYPE
-                                                                    :owner      ..user1..
-                                                                    :attributes {:name       ..project..
-                                                                                 :updated-at ..update1..}}
-                                                                   {:_id        ..id1..
-                                                                    :type       k/FILE-TYPE
-                                                                    :owner      ..user2..
-                                                                    :attributes {:name       ..file..
-                                                                                 :updated-at ..update2..}}])))
+          (search/breadcrumbs-url ..ctx.. ..id..) => ..breadcrumbs..
+          (core/get-entity ..ctx.. ..db.. ..id..) => {:_id        ..id..
+                                                      :type       ..type..
+                                                      :attributes {:name       ..name..
+                                                                   :updated-at ..updated_at..}
+                                                      :owner      ..owner..}
+          (core/get-entity ..ctx.. ..db.. ..project_id..) => {:attributes {:name ..project_name..}})))
+
+
+    (fact "runs query"
+      (let [query                "some-query"
+            org                  1
+            query-response       {:took      0,
+                                  :timed_out false,
+                                  :_shards   {:total 1, :successful 1, :failed 0},
+                                  :hits      {:total     2,
+                                              :max_score 3.1533415,
+                                              :hits      [{:_index  (search/org-index org),
+                                                           :_type   "file",
+                                                           :_id     ..result_id_1..,
+                                                           :_score  3.1533415,
+                                                           :_source {:attributes  {:name       "PrivateData.csv",
+                                                                                   :created-at "2017-09-28T03:04:33.286Z",
+                                                                                   :updated-at "2017-09-28T03:04:48.398Z"},
+                                                                     :owner       "15cab930-1e24-0131-026c-22000a977b96",
+                                                                     :projects    ["d3a695c4-e7d4-4095-9449-8fd29849f6fe"],
+                                                                     :annotations [{:user            "15cab930-1e24-0131-026c-22000a977b96",
+                                                                                    :annotation      {:tag "findme"},
+                                                                                    :annotation_type "tags"}]}}
+                                                          {:_index  "org-247-v1",
+                                                           :_type   "file",
+                                                           :_id     ..result_id_2..,
+                                                           :_score  2.1533415,
+                                                           :_source {:attributes  {:name       "PrivateData.csv",
+                                                                                   :created-at "2017-09-28T03:48:33.745Z",
+                                                                                   :updated-at "2017-09-28T03:48:51.051Z"},
+                                                                     :owner       "15cab930-1e24-0131-026c-22000a977b96",
+                                                                     :projects    ["52d3bf73-7f05-434e-a198-648480e88cb2"],
+                                                                     :annotations [{:user            "15cab930-1e24-0131-026c-22000a977b96",
+                                                                                    :annotation      {:tag "findme"},
+                                                                                    :annotation_type "tags"}]}}]}}
+            get-results-response {:meta           {:bookmark   ..bookmark..
+                                                   :total_rows ..total..}
+                                  :search_results [..result1.. ..result2..]}]
+        (search/search ..ctx.. ..db.. ..client.. query) => {:meta           {:bookmark   ..bookmark..
+                                                                             :total_rows ..total..}
+                                                            :search_results [..result1.. ..result2..]}
+        (provided
+          (search/transform-results ..ctx.. ..db.. query-response) => get-results-response
+          (spandex/request ..client.. {:url    (util/join-path [(search/org-index org) "_search"])
+                                       :method :post
+                                       :body   {:query {:size                search/MIN-SEARCH
+                                                        :simple_query_string {:query query}
+                                                        :sort                [{:_score "desc"}, {:_uid "asc"}]}}}) => query-response)))
+
 
     (fact "Generates breadcrumbs URL"
       (search/breadcrumbs-url ..ctx.. "ENTITY") => "breadcrumbs/url?id=ENTITY"
       (provided
         (routes/named-route ..ctx.. :get-breadcrumbs {:org 1}) => "breadcrumbs/url"))
-
-    (fact "Gets entity ID from annotations"
-      (search/entity-ids [{:id     ..id1..
-                           :order  [3.9 107]
-                           :fields {:id   ..id1..
-                                    :type k/PROJECT-TYPE}}
-                          {:id     ..id2..
-                           :order  [3.9 107]
-                           :fields {:id   ..eid..
-                                    :type k/ANNOTATION-TYPE}}]) => [..id1.. ..eid..])))
+    ))
 

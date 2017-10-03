@@ -15,10 +15,10 @@
 
                  ;; Compojure API and middleware
                  [metosin/compojure-api "1.1.11"]
+                 ;[metosin/ring-http-response "0.9.0"]
                  [ring-cors "0.1.11"]
                  [ring-logger "0.7.7"]
                  [buddy/buddy-auth "1.4.1"]
-                 [ring/ring-jetty-adapter "1.5.0"]
 
 
                  ;; HTTP and CouchDB
@@ -57,8 +57,10 @@
                  ;; GCP
                  [com.google.cloud/google-cloud "0.18.0-alpha"]
 
-                 ;;Elasticsearch
-                 [cc.qbits/spandex "0.5.2"]]
+                 ;; Elasticsearch
+                 [cc.qbits/spandex "0.5.2"]
+                 [org.elasticsearch.client/rest "5.5.0"]    ;; This is a spandex dependency, but we're not getting transitive deps unless it's included explicitly
+                 ]
 
 
   :ring {:handler ovation.handler/app
