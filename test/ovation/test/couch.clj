@@ -8,7 +8,8 @@
             [ovation.request-context :as request-context]
             [ovation.pubsub :as pubsub]
             [ovation.util :as util]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ovation.config :as config]))
 
 
 (against-background [(request-context/team-ids ..ctx..) => [..team..]
@@ -99,13 +100,13 @@
       (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
                      (async/timeout 100)]) => [..result.. ch]
       (provided
-        (pubsub/publish ..pub.. :updates {:id           (str ..id..)
-                                          :rev          ..rev..
-                                          :type         ..type..
-                                          :organization ..org..} anything) => pchan
-        ..doc.. =contains=> {:_id  ..id..
-                             :_rev ..rev..
-                             :type ..type..
+        (pubsub/publish ..pub.. (config/config :db-updates-topic :default :updates) {:id           (str ..id..)
+                                                                                     :rev          ..rev..
+                                                                                     :type         ..type..
+                                                                                     :organization ..org..} anything) => pchan
+        ..doc.. =contains=> {:_id          ..id..
+                             :_rev         ..rev..
+                             :type         ..type..
                              :organization ..org..}))))
 
 (facts "About `delete-docs`"
