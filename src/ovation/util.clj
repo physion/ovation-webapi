@@ -1,6 +1,6 @@
 (ns ovation.util
   (:import (java.net URI)
-           (java.util UUID Date))
+           (java.util UUID Date Base64))
   (:require [clojure.string :refer [join]]
             [ovation.version :refer [version]]
             [clojure.walk :as walk]
@@ -81,6 +81,11 @@
 
   (walk/keywordize-keys (json/read-str s)))
 
+(defn b64encode [to-encode]
+  (.encodeToString (Base64/getEncoder) (.getBytes to-encode)))
+
+(defn b64decode [to-decode]
+  (String. (.decode (Base64/getDecoder) to-decode)))
 
 (defn join-path
   [comps]
