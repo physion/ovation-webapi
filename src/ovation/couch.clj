@@ -54,7 +54,7 @@
                                   :headers    {"Content-Type" "application/json; charset=utf-8"
                                                "Accept"       "application/json"}
                                   :basic-auth [(config/config :cloudant-username) (config/config :cloudant-password)]} hp/ok?
-      :log-response? true)
+      :log-response? false)
     (try+
       (let [response (<?? ch)
             results  (:results response)]

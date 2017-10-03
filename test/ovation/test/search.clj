@@ -16,7 +16,6 @@
             query-response {:took      0,
                             :timed_out false,
                             :_shards   {:total 1, :successful 1, :failed 0},
-                            :sort      ..sort..
                             :hits      {:total     ..total_rows..,
                                         :max_score 3.1533415,
                                         :hits      [{:_index  (search/org-index org),
@@ -30,25 +29,21 @@
                                                                :projects    [..project_id..],
                                                                :annotations [{:user            "15cab930-1e24-0131-026c-22000a977b96",
                                                                               :annotation      {:tag "findme"},
-                                                                              :annotation_type "tags"}]}}]}}]
+                                                                              :annotation_type "tags"}]}
+                                                     :sort    ["some-sort"]}]}}]
 
         (search/transform-results ..ctx.. ..db.. query-response) => {:meta           {:total_rows ..total_rows..
-                                                                                      :bookmark   ..sort..}
+                                                                                      :bookmark   (util/b64encode (json/write-str ["some-sort"]))}
                                                                      :search_results [{:id            ..id..
-                                                                                       :entity_type   ..type..
-                                                                                       :name          ..name..
-                                                                                       :owner         ..owner..
-                                                                                       :updated-at    ..updated_at..
+                                                                                       :entity_type   "File"
+                                                                                       :name          "PrivateData.csv"
+                                                                                       :owner         "15cab930-1e24-0131-026c-22000a977b96"
+                                                                                       :updated-at    "2017-09-28T03:04:48.398Z"
                                                                                        :organization  org
                                                                                        :project_names [..project_name..]
                                                                                        :links         {:breadcrumbs ..breadcrumbs..}}]}
         (provided
           (search/breadcrumbs-url ..ctx.. ..id..) => ..breadcrumbs..
-          (core/get-entity ..ctx.. ..db.. ..id..) => {:_id        ..id..
-                                                      :type       ..type..
-                                                      :attributes {:name       ..name..
-                                                                   :updated-at ..updated_at..}
-                                                      :owner      ..owner..}
           (core/get-entity ..ctx.. ..db.. ..project_id..) => {:attributes {:name ..project_name..}})))
 
 
@@ -92,11 +87,11 @@
                                                             :search_results [..result1.. ..result2..]}
         (provided
           (search/transform-results ..ctx.. ..db.. query-response) => get-results-response
-          (spandex/request ..client.. {:url    (util/join-path [(search/org-index org) "_search"])
+          (spandex/request ..client.. {:url    (util/join-path ["" (search/org-index org) "_search"])
                                        :method :post
-                                       :body   {:query {:size                search/MIN-SEARCH
-                                                        :simple_query_string {:query query}
-                                                        :sort                [{:_score "desc"}, {:_uid "asc"}]}}}) => query-response)))
+                                       :body   {:size  search/MIN-SEARCH
+                                                :query {:simple_query_string {:query query}}
+                                                :sort  [{:_score "desc"}, {:_uid "asc"}]}}) => {:body query-response})))
 
 
     (fact "Generates breadcrumbs URL"

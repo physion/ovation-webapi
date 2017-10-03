@@ -62,8 +62,9 @@
 (defroutes static-resources
   (route/resources "/public"))
 
-(defn create-app [database authz es-client]
-  (let [db database]
+(defn create-app [database authz search]
+  (let [db        database
+        es-client (:client search)]
     (api
       {:swagger {:ui   "/"
                  :spec "/swagger.json"

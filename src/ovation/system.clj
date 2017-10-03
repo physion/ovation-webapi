@@ -59,8 +59,14 @@
 (defrecord Spandex [url]
   component/Lifecycle
   (start [this]
-    (logging/info "Starting Elasticsearch component")
-    (assoc this :client (spandex/client {:hosts [(:url this)]})))
+    (let [u (cemerick.url/url (:url this))
+          {user :username
+           password :password} u
+          base-url (str (-> u (assoc :username nil) (assoc :password nil)))]
+      (logging/info "Starting Elasticsearch component")
+      (assoc this :client (spandex/client {:hosts       [base-url]
+                                           :http-client {:basic-auth {:user     user
+                                                                      :password password}}}))))
 
   (stop [this]
     (logging/info "Stopping Elasticsearch component")
