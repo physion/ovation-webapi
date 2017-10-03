@@ -7,7 +7,8 @@
               [http-kit :as system-http-kit])
             [cemerick.url :as url]
             [ovation.authz :as authz]
-            [qbits.spandex :as spandex]))
+            [qbits.spandex :as spandex]
+            [ovation.config :as config]))
 
 ;; Database
 (defrecord CouchDb [host username password pubsub connection]
@@ -75,6 +76,7 @@
     (assoc this :client nil)))
 
 (defn new-elasticsearch [url]
+  (clojure.tools.logging/info "ELASTIC: " (config/config :elasticsearch-url) "/" url)
   (map->Spandex {:url url}))
 
 ;; System
