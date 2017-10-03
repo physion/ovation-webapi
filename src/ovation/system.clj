@@ -65,8 +65,10 @@
           base-url (str (-> u (assoc :username nil) (assoc :password nil)))]
       (logging/info "Starting Elasticsearch component")
       (assoc this :client (spandex/client {:hosts       [base-url]
-                                           :http-client {:basic-auth {:user     user
-                                                                      :password password}}}))))
+                                           :http-client (if (and user password)
+                                                          {:basic-auth {:user     user
+                                                                        :password password}}
+                                                          {})}))))
 
   (stop [this]
     (logging/info "Stopping Elasticsearch component")
