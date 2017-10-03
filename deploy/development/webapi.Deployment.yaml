@@ -73,3 +73,8 @@ spec:
               configMapKeyRef:
                 name: development-webapi-config
                 key: GOOGLE_CLOUD_PROJECT_ID
+          - name: ELASTICSEARCH_URL
+            valueFrom:
+              configMapKeyRef:
+                name: development-webapi-config
+                key: ELASTICSEARCH_URL
