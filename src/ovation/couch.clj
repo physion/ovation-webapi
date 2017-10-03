@@ -176,27 +176,3 @@
   "Deletes documents from the database"
   [db docs]
   (bulk-docs db (map (fn [doc] (assoc doc :_deleted true)) docs)))
-
-(defn search
-  [db q & {:keys [bookmark limit] :or [bookmark nil
-                                       limit nil]}]
-
-  (let [query-params {:q q :bookmark bookmark :limit limit}
-        opts         {:query-params (apply dissoc
-                                      query-params
-                                      (for [[k v] query-params :when (nil? v)] k))
-                      :headers      {"Accept" "application/json"}
-                      :basic-auth   [(config/config :cloudant-username) (config/config :cloudant-password)]}
-        uri          (util/join-path [(:connection db) "_design" "search" "_search" "all"])
-        resp         @(httpkit.client/get uri opts)]
-
-    (let [body   (-> resp :body util/from-json)
-          status (:status resp)]
-      (if (http-predicates/ok? resp)
-        body
-        (let [err (-> body
-                    (assoc :status status)
-                    (assoc :detail (:reason body))
-                    (assoc :title (:error body)))]
-          (throw! {:status status
-                   :body   {:errors [err]}}))))))
