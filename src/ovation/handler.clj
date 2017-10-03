@@ -62,8 +62,9 @@
 (defroutes static-resources
   (route/resources "/public"))
 
-(defn create-app [database authz]
-  (let [db database]
+(defn create-app [database authz search]
+  (let [db        database
+        es-client (:client search)]
     (api
       {:swagger {:ui   "/"
                  :spec "/swagger.json"
@@ -759,5 +760,5 @@
                     :responses {400 {:schema JsonApiError, :description "Search error", :headers {:location s/Str}}}
 
                     (let [ctx (request-context/make-context request org authz)
-                          result (search/search ctx db q :bookmark bookmark :limit limit)]
+                          result (search/search ctx db es-client q :bookmark bookmark :limit limit)]
                       (ok result))))))))))))

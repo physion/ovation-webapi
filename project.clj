@@ -4,7 +4,7 @@
   :url "http://ovation.io"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.2.395"]
+                 [org.clojure/core.async "0.3.443"]
 
                  ;; To manage compojure's outdated deps
                  [commons-codec "1.10" :exclusions [[org.clojure/clojure]]]
@@ -14,11 +14,11 @@
                  [org.danielsz/system "0.4.0"]
 
                  ;; Compojure API and middleware
-                 [metosin/compojure-api "1.1.10"]
-                 [ring-cors "0.1.8"]
+                 [metosin/compojure-api "1.1.11"]
+                 ;[metosin/ring-http-response "0.9.0"]
+                 [ring-cors "0.1.11"]
                  [ring-logger "0.7.7"]
                  [buddy/buddy-auth "1.4.1"]
-                 [ring/ring-jetty-adapter "1.5.0"]
 
 
                  ;; HTTP and CouchDB
@@ -27,27 +27,24 @@
                  [com.ashafa/clutch "0.4.0"]
 
                  ;; New Relic agent (JAR)
-                 [com.newrelic.agent.java/newrelic-agent "3.34.0"]
+                 [com.newrelic.agent.java/newrelic-agent "3.43.0"]
                  [yleisradio/new-reliquary "1.0.0"]
                  [com.climate/clj-newrelic "0.2.1"]
 
                  ;; Raygun
-                 [com.mindscapehq/core "2.1.0"]
+                 [com.mindscapehq/core "2.2.0"]
 
                  ;; Logging
                  ; Use Logback for logging
-                 [ch.qos.logback/logback-classic "1.1.9"]
-                 [org.clojure/tools.logging "0.3.1"]
-                 [potemkin "0.4.3"]
+                 [ch.qos.logback/logback-classic "1.2.3"]
+                 [org.clojure/tools.logging "0.4.0"]
+                 [potemkin "0.4.4"]
 
                  ; Route all other logging to Logback
-                 [org.slf4j/log4j-over-slf4j "1.7.22"]
-                 [org.slf4j/jul-to-slf4j "1.7.22"]
-                 [org.slf4j/jcl-over-slf4j "1.7.22"]
+                 [org.slf4j/log4j-over-slf4j "1.7.25"]
+                 [org.slf4j/jul-to-slf4j "1.7.25"]
+                 [org.slf4j/jcl-over-slf4j "1.7.25"]
 
-                 ; Appenders. Set `-Dlogback.configurationFile=...` system property to choose logback-staging or logback-production
-                 [com.papertrailapp/logback-syslog4j "1.0.0"] ; For Papertrail
-                 [net.logstash.logback/logstash-logback-encoder "4.8"] ; For Catalyze
 
                  ;; Other
                  [org.clojure/data.json "0.2.6"]
@@ -58,7 +55,12 @@
                  [ubergraph "0.2.2"]
 
                  ;; GCP
-                 [com.google.cloud/google-cloud "0.18.0-alpha"]]
+                 [com.google.cloud/google-cloud "0.18.0-alpha"]
+
+                 ;; Elasticsearch
+                 [cc.qbits/spandex "0.5.2"]
+                 [org.elasticsearch.client/rest "5.5.0"]    ;; This is a spandex dependency, but we're not getting transitive deps unless it's included explicitly
+                 ]
 
 
   :ring {:handler ovation.handler/app
@@ -71,9 +73,9 @@
   :profiles {:dev      {:dependencies [[ring-mock "0.1.5"]
                                        [midje "1.8.3"]
                                        [http-kit.fake "0.2.2"]
-                                       [ring-server "0.4.0"]]
+                                       [ring-server "0.5.0"]]
                         :plugins      [[lein-midje "3.2.1"]
-                                       [lein-ring "0.10.0"]]}
+                                       [lein-ring "0.12.1"]]}
 
              :uberjar  {:aot [ovation.main]}
 

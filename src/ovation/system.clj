@@ -6,7 +6,8 @@
             (system.components
               [http-kit :as system-http-kit])
             [cemerick.url :as url]
-            [ovation.authz :as authz]))
+            [ovation.authz :as authz]
+            [qbits.spandex :as spandex]))
 
 ;; Database
 (defrecord CouchDb [host username password pubsub connection]
@@ -27,12 +28,12 @@
 
 
 ;; API
-(defrecord Api [db authz]
+(defrecord Api [db authz search]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db authz)))
+    (assoc this :handler (handler/create-app db authz search)))
 
   (stop [this]
     (logging/info "Stopping API")
@@ -54,10 +55,33 @@
     (logging/info "Stopping notifications component")
     this))
 
+;; Elasticsearch
+(defrecord Spandex [url]
+  component/Lifecycle
+  (start [this]
+    (let [u (cemerick.url/url (:url this))
+          {user :username
+           password :password} u
+          base-url (str (-> u (assoc :username nil) (assoc :password nil)))]
+      (logging/info "Starting Elasticsearch component")
+      (assoc this :client (spandex/client {:hosts       [base-url]
+                                           :http-client (if (and user password)
+                                                          {:basic-auth {:user     user
+                                                                        :password password}}
+                                                          {})}))))
+
+  (stop [this]
+    (logging/info "Stopping Elasticsearch component")
+    (assoc this :client nil)))
+
+(defn new-elasticsearch [url]
+  (map->Spandex {:url url}))
+
 ;; System
 (defn create-system [config-options]
-  (let [{:keys [web db authz pubsub]} config-options]
+  (let [{:keys [web db authz pubsub elasticsearch]} config-options]
     (component/system-map
+      :search (new-elasticsearch (:url elasticsearch))
       :database (component/using
                   (new-database (:host db) (:username db) (:password db))
                   {:pubsub :pubsub})
@@ -69,4 +93,5 @@
       :api (component/using
              (new-api)
              {:db    :database
-              :authz :authz}))))
+              :authz :authz
+              :search :search}))))

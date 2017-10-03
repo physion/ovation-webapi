@@ -8,7 +8,8 @@
             [ovation.request-context :as request-context]
             [ovation.pubsub :as pubsub]
             [ovation.util :as util]
-            [ovation.auth :as auth]))
+            [ovation.auth :as auth]
+            [ovation.config :as config]))
 
 
 (against-background [(request-context/team-ids ..ctx..) => [..team..]
@@ -80,16 +81,16 @@
   (fact "it POSTs bulk-update"
     (couch/bulk-docs "dburl" ..docs..) => ..result..
     (provided
-      (cl/bulk-update ..docs..) => ..revs..
-      (couch/merge-updates ..docs.. ..revs..) => ..result..))
+      (cl/bulk-update ..docs..) => [..revs..]
+      (couch/merge-updates ..docs.. [..revs..]) => ..result..))
   (fact "it publishes updates"
     (couch/bulk-docs ..db.. ..docs..) => ..result..
     (provided
       ..db.. =contains=> {:connection "db-url"
                           :pubsub     {:publisher ..pub..}}
-      (cl/bulk-update ..docs..) => ..revs..
+      (cl/bulk-update ..docs..) => [..revs..]
       (couch/publish-updates ..pub.. ..docs.. :channel anything) => ..published..
-      (couch/merge-updates ..docs.. ..revs..) => ..result..)))
+      (couch/merge-updates ..docs.. [..revs..]) => ..result..)))
 
 (facts "About publish-updates"
   (fact "publishes update record to publisher"
@@ -99,13 +100,13 @@
       (async/alts!! [(couch/publish-updates ..pub.. [..doc..] :channel ch)
                      (async/timeout 100)]) => [..result.. ch]
       (provided
-        (pubsub/publish ..pub.. :updates {:id           (str ..id..)
-                                          :rev          ..rev..
-                                          :type         ..type..
-                                          :organization ..org..} anything) => pchan
-        ..doc.. =contains=> {:_id  ..id..
-                             :_rev ..rev..
-                             :type ..type..
+        (pubsub/publish ..pub.. (config/config :db-updates-topic :default :updates) {:id           (str ..id..)
+                                                                                     :rev          ..rev..
+                                                                                     :type         ..type..
+                                                                                     :organization ..org..} anything) => pchan
+        ..doc.. =contains=> {:_id          ..id..
+                             :_rev         ..rev..
+                             :type         ..type..
                              :organization ..org..}))))
 
 (facts "About `delete-docs`"

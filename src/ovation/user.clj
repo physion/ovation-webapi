@@ -7,6 +7,7 @@
 
 (def system-config
   {:web    {:port 3000}
+   :elasticsearch {:url (config/config :elasticsearch-url)}
    :pubsub {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
    :authz  {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
    :db     {:host     (config/config :cloudant-db-url)
