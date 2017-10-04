@@ -280,6 +280,7 @@
 
 (s/defschema OrganizationGroup
   (-> NewOrganizationGroup
+    (assoc (s/optional-key :logo_image) s/Str)
     (assoc (s/optional-key :project_count) s/Int)
     (assoc (s/optional-key :member_count) s/Int)
     (assoc (s/optional-key :team_ids) [s/Uuid])
