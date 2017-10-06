@@ -15,11 +15,11 @@ metadata:
       {{ $key }}: {{ $value | quote }}
     {{- end -}}
 spec:
+  backend:
+    serviceName: {{ $serviceName }}
+    servicePort: {{ $servicePort }}
   {{- if .Values.ingress.tls }}
   tls:
 {{ toYaml .Values.ingress.tls | indent 4 }}
   {{- end -}}
-  backend:
-    serviceName: {{ $serviceName }}
-    servicePort: {{ $servicePort }}
 {{- end -}}
