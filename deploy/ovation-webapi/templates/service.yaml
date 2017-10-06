@@ -17,4 +17,4 @@ spec:
   selector:
     app: {{ template "name" . }}
     release: {{ .Release.Name }}
-    env: {{ .Values.environment }}
+    env: {{ .Release.Namespace }}

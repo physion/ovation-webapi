@@ -24,13 +24,15 @@ gcloud config set compute/zone $DEFAULT_ZONE
 
 cd $WORKDIR
 
+echo "Insalling chart..."
+# helm install…
 
-echo "Applying deployment..."
-kubectl --namespace=$NAMESPACE apply -f webapi.Deployment.yaml
-
-echo "Applying service..."
-kubectl --namespace=$NAMESPACE apply -f webapi.Service.yaml
-
-IMAGE=gcr.io/$PROJECT_ID/webapi:development-$CI_TIMESTAMP
-echo "Setting deployment image $IMAGE..."
-kubectl --namespace=$NAMESPACE set image deployment/webapi webapi=$IMAGE
+#echo "Applying deployment..."
+#kubectl --namespace=$NAMESPACE apply -f webapi.Deployment.yaml
+#
+#echo "Applying service..."
+#kubectl --namespace=$NAMESPACE apply -f webapi.Service.yaml
+#
+#IMAGE=gcr.io/$PROJECT_ID/webapi:development-$CI_TIMESTAMP
+#echo "Setting deployment image $IMAGE..."
+#kubectl --namespace=$NAMESPACE set image deployment/webapi webapi=$IMAGE
