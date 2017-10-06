@@ -10,6 +10,8 @@ You will need
 
 * [Leiningen][1] 2.3.4+
 * Java 1.8+
+* Kubernetes
+* Helm (`brew install kubernetes-helm`)
 
 [1]: https://github.com/technomancy/leiningen
 

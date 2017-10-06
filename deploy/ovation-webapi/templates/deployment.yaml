@@ -1,0 +1,84 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: {{ .Release.Name }}
+        env: {{ .Values.environment }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.internalPort }}
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /var/secrets/google
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/secrets/google/key.json
+            - name: CLOUDANT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: development-webapi-secret
+                  key: CLOUDANT_PASSWORD
+            - name: CLOUDANT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: development-webapi-secret
+                  key: CLOUDANT_USERNAME
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: development-webapi-secret
+                  key: JWT_SECRET
+            - name: RAYGUN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: development-webapi-secret
+                  key: RAYGUN_API_KEY
+            - name: CLOUDANT_DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: development-webapi-config
+                  key: CLOUDANT_DB_URL
+            - name: OVATION_IO_HOST_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: development-webapi-config
+                  key: OVATION_IO_HOST_URI
+            - name: GOOGLE_CLOUD_PROJECT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: development-webapi-config
+                  key: GOOGLE_CLOUD_PROJECT_ID
+            - name: ELASTICSEARCH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: development-webapi-config
+                  key: ELASTICSEARCH_URL
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}

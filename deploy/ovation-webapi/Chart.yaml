@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Ovation web API
+name: ovation-webapi
+version: 0.1.0
