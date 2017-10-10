@@ -19,6 +19,10 @@ spec:
         release: {{ .Release.Name }}
         env: {{ .Release.Namespace }}
     spec:
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Release.Name }}-service-key-secret
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

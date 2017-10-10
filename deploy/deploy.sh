@@ -32,5 +32,6 @@ helm upgrade --install --namespace=$NAMESPACE -f deploy-values.yaml \
     --set secret.CLOUDANT_USERNAME=$CLOUDANT_USERNAME
     --set secret.JWT_SECRET=$JWT_SECRET
     --set secret.RAYGUN_API_KEY=$RAYGUN_API_KEY
+    --set secret.SERVICE_KEY_JSON=$GCP_SERVICE_KEY_JSON
     $RELEASE_NAME \
     ./deploy/ovation-webapi/
