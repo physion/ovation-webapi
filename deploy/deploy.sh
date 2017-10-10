@@ -6,7 +6,6 @@ KUBERNETES_CLUSTER_NAME=ovation
 KUBERNETES_APP_NAME=webapi
 DEFAULT_ZONE=us-east1-b
 PROJECT_ID=ovation-io
-WORKDIR=deploy/development
 NAMESPACE=development
 
 codeship_google authenticate
@@ -22,10 +21,9 @@ gcloud config set project $PROJECT_ID
 echo "Setting default timezone $DEFAULT_ZONE"
 gcloud config set compute/zone $DEFAULT_ZONE
 
-cd $WORKDIR
-
-echo "Insalling chart..."
+echo "Upgrading webapi relase..."
 # helm install…
+helm upgrade -f deploy-values.yaml webapi ovation-webapi/
 
 #echo "Applying deployment..."
 #kubectl --namespace=$NAMESPACE apply -f webapi.Deployment.yaml
