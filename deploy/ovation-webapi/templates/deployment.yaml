@@ -9,7 +9,8 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
   annotations:
-    checksum/config: {{ include (print $.Template.BasePath "/pre-install-secret.yaml") . | sha256sum }}
+    checksum/secret: {{ include (print $.Template.BasePath "/pre-install-secret.yaml") . | sha256sum }}
+    checksum/service: {{ include (print $.Template.BasePath "/pre-install-service-key-secret.yaml") . | sha256sum }}
 spec:
   replicas: {{ .Values.replicaCount }}
   template:

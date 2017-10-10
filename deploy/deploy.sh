@@ -1,5 +1,7 @@
 #!/bin/bash
 
+NAMESPACE=$1
+
 set -e
 
 RELEASE_NAME=webapi
@@ -19,7 +21,6 @@ echo "Setting default timezone $DEFAULT_ZONE"
 gcloud config set compute/zone $GOOGLE_CLOUD_PROJECT_ID
 
 echo "Upgrading webapi relase..."
-NAMESPACE=$CI_BRANCH
 # helm install…
 helm upgrade --install --namespace=$NAMESPACE -f deploy-values.yaml \
     --set image.tag=$NAMESPACE-$CI_TIMESTAMP \

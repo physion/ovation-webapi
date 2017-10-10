@@ -24,9 +24,9 @@
 - name: Deploy (dev)
   tag: development
   service: gke-deploy
-  command: deploy/development/deploy.sh
+  command: deploy/deploy.sh development
 
 - name: Deploy (prod)
   tag: master
   service: gke-deploy
-  command: deploy/production/deploy.sh
+  command: deploy/deploy.sh production
