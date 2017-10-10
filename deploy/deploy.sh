@@ -2,11 +2,8 @@
 
 set -e
 
-KUBERNETES_CLUSTER_NAME=ovation
-KUBERNETES_APP_NAME=webapi
+RELEASE_NAME=webapi
 DEFAULT_ZONE=us-east1-b
-PROJECT_ID=ovation-io
-NAMESPACE=development
 
 codeship_google authenticate
 
@@ -16,21 +13,24 @@ gcloud container clusters get-credentials $KUBERNETES_CLUSTER_NAME \
 
 
 echo "Setting Project ID $PROJECT_ID"
-gcloud config set project $PROJECT_ID
+gcloud config set project $GOOGLE_CLOUD_PROJECT_ID
 
 echo "Setting default timezone $DEFAULT_ZONE"
-gcloud config set compute/zone $DEFAULT_ZONE
+gcloud config set compute/zone $GOOGLE_CLOUD_PROJECT_ID
 
 echo "Upgrading webapi relase..."
+NAMESPACE=$CI_BRANCH
 # helm install…
-helm upgrade -f deploy-values.yaml webapi ovation-webapi/
-
-#echo "Applying deployment..."
-#kubectl --namespace=$NAMESPACE apply -f webapi.Deployment.yaml
-#
-#echo "Applying service..."
-#kubectl --namespace=$NAMESPACE apply -f webapi.Service.yaml
-#
-#IMAGE=gcr.io/$PROJECT_ID/webapi:development-$CI_TIMESTAMP
-#echo "Setting deployment image $IMAGE..."
-#kubectl --namespace=$NAMESPACE set image deployment/webapi webapi=$IMAGE
+helm upgrade --install --namespace=$NAMESPACE -f deploy-values.yaml \
+    --set image.tag=$NAMESPACE-$CI_TIMESTAMP \
+    --set ingress.staticIPAddressName=$NAMESPACE-webapi-static-ip \
+    --set config.CLOUDANT_DB_URL=$CLOUDANT_DB_URL
+    --set config.OVATION_IO_HOST_URI=$OVATION_IO_HOST_URI
+    --set config.GOOGLE_CLOUD_PROJECT_ID=$GOOGLE_CLOUD_PROJECT_ID
+    --set config.ELASTICSEARCH_URL=$ELASTICSEARCH_URL
+    --set secret.CLOUDANT_PASSWORD=$CLOUDANT_PASSWORD
+    --set secret.CLOUDANT_USERNAME=$CLOUDANT_USERNAME
+    --set secret.JWT_SECRET=$JWT_SECRET
+    --set secret.RAYGUN_API_KEY=$RAYGUN_API_KEY
+    $RELEASE_NAME \
+    ./deploy/ovation-webapi/
