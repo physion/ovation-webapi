@@ -1,0 +1,6 @@
+FROM codeship/google-cloud-deployment
+MAINTAINER support@ovation.io
+
+RUN apt-get -y update
+
+RUN apt-get git

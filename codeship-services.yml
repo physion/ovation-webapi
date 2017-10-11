@@ -24,7 +24,9 @@ services:
     encrypted_env_file: google-credentials.encrypted
 
   gke-deploy:
-    image: codeship/google-cloud-deployment
+    build:
+      image: deploy
+      dockerfile: gke-deploy-Dockerfile
     encrypted_env_file: google-credentials.encrypted
     add_docker: true
     volumes:
