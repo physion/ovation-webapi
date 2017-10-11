@@ -10,7 +10,7 @@ DEFAULT_ZONE=us-east1-b
 codeship_google authenticate
 
 gcloud container clusters get-credentials $KUBERNETES_CLUSTER_NAME \
-  --project $PROJECT_ID \
+  --project $GOOGLE_CLOUD_PROJECT_ID \
   --zone $DEFAULT_ZONE
 
 
@@ -35,6 +35,6 @@ helm-secrets upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
     --set config.CLOUDANT_DB_URL=$CLOUDANT_DB_URL
     --set config.OVATION_IO_HOST_URI=$OVATION_IO_HOST_URI
     --set config.GOOGLE_CLOUD_PROJECT_ID=$GOOGLE_CLOUD_PROJECT_ID
-    -f ./deploy/secrets/$NAMESPACE/secrets.yaml \
+    -f ./deploy/values/$NAMESPACE/secrets.yaml \
     $RELEASE_NAME \
     ./deploy/ovation-webapi/

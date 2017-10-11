@@ -81,8 +81,8 @@ spec:
                   key: GOOGLE_CLOUD_PROJECT_ID
             - name: ELASTICSEARCH_URL
               valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-config
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
                   key: ELASTICSEARCH_URL
           resources:
 {{ toYaml .Values.resources | indent 12 }}

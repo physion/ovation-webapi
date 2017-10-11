@@ -7,4 +7,3 @@ data:
   CLOUDANT_DB_URL: {{ .Values.config.CLOUDANT_DB_URL }}
   OVATION_IO_HOST_URI: {{ .Values.config.OVATION_IO_HOST_URI }}
   GOOGLE_CLOUD_PROJECT_ID: {{ .Values.config.GOOGLE_CLOUD_PROJECT_ID }}
-  ELASTICSEARCH_URL: {{ .Values.config.ELASTICSEARCH_URL }}

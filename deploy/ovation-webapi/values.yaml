@@ -18,16 +18,17 @@ ingress:
     # Secrets must be manually created in the namespace.
     - secretName: star-ovation-io-tls-secret
 config:
-  CLOUDANT_DB_URL: "https://ovation-io-dev.cloudant.com/staging/"
-  OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
   GOOGLE_CLOUD_PROJECT_ID: ovation-io
-  ELASTICSEARCH_URL: "http://localhost:9200"
 secret:
   CLOUDANT_PASSWORD: password
   CLOUDANT_USERNAME: cloudant
   JWT_SECRET: jwt
   RAYGUN_API_KEY: raygun
   GCP_SERVICE_KEY_JSON: json
+  ELASTICSEARCH_URL: "http://localhost:9200"
+  CLOUDANT_DB_URL: "https://ovation-io-dev.cloudant.com/staging/"
+  OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
