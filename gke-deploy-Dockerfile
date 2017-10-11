@@ -3,4 +3,4 @@ MAINTAINER support@ovation.io
 
 RUN apt-get -y update
 
-RUN apt-get git
+RUN apt-get install -y git
