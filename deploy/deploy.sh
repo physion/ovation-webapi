@@ -6,6 +6,7 @@ set -e
 
 RELEASE_NAME=webapi-$NAMESPACE
 DEFAULT_ZONE=us-east1-b
+KUBERNETES_CLUSTER_NAME=ovation
 
 codeship_google authenticate
 
@@ -29,12 +30,16 @@ helm plugin install https://github.com/futuresimple/helm-secrets
 
 echo "Upgrading webapi relase..."
 # helm install…
-helm-secrets upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
+helm-wrapper install --dry-run --debug --namespace=$NAMESPACE --timeout 600 --wait \
     --set image.tag=$NAMESPACE-$CI_TIMESTAMP \
     --set ingress.staticIPAddressName=$NAMESPACE-webapi-static-ip \
-    --set config.CLOUDANT_DB_URL=$CLOUDANT_DB_URL
-    --set config.OVATION_IO_HOST_URI=$OVATION_IO_HOST_URI
-    --set config.GOOGLE_CLOUD_PROJECT_ID=$GOOGLE_CLOUD_PROJECT_ID
+    -f ./deploy/values/$NAMESPACE/secrets.yaml \
+    $RELEASE_NAME \
+    ./deploy/ovation-webapi/
+
+helm-wrapper upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
+    --set image.tag=$NAMESPACE-$CI_TIMESTAMP \
+    --set ingress.staticIPAddressName=$NAMESPACE-webapi-static-ip \
     -f ./deploy/values/$NAMESPACE/secrets.yaml \
     $RELEASE_NAME \
     ./deploy/ovation-webapi/
