@@ -20,6 +20,13 @@ gcloud config set project $GOOGLE_CLOUD_PROJECT_ID
 echo "Setting default timezone $DEFAULT_ZONE"
 gcloud config set compute/zone $GOOGLE_CLOUD_PROJECT_ID
 
+# Install helm
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+helm init --upgrade
+
+# Install helm-secrets
+helm plugin install https://github.com/futuresimple/helm-secrets
+
 echo "Upgrading webapi relase..."
 # helm install…
 helm-secrets upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
