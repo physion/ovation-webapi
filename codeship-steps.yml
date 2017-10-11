@@ -34,7 +34,7 @@
 ## Feature branches
 
 - name: Push to GCR (help-chart-151748507)
-  tag: master
+  tag: help-chart-151748507
   service: web
   type: push
   image_name: gcr.io/ovation-io/webapi
