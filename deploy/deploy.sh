@@ -11,15 +11,15 @@ KUBERNETES_CLUSTER_NAME=ovation
 codeship_google authenticate
 
 gcloud container clusters get-credentials $KUBERNETES_CLUSTER_NAME \
-  --project $GOOGLE_CLOUD_PROJECT_ID \
+  --project $GOOGLE_PROJECT_ID \
   --zone $DEFAULT_ZONE
 
 
 echo "Setting Project ID $PROJECT_ID"
-gcloud config set project $GOOGLE_CLOUD_PROJECT_ID
+gcloud config set project $GOOGLE_PROJECT_ID
 
 echo "Setting default timezone $DEFAULT_ZONE"
-gcloud config set compute/zone $GOOGLE_CLOUD_PROJECT_ID
+gcloud config set compute/zone $GOOGLE_PROJECT_ID
 
 # Install helm
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
