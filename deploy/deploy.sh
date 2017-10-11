@@ -28,6 +28,6 @@ helm-secrets upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
     --set config.CLOUDANT_DB_URL=$CLOUDANT_DB_URL
     --set config.OVATION_IO_HOST_URI=$OVATION_IO_HOST_URI
     --set config.GOOGLE_CLOUD_PROJECT_ID=$GOOGLE_CLOUD_PROJECT_ID
-    -f $NAMESPACE-secrets.yaml \
+    -f ./deploy/secrets/$NAMESPACE/secrets.yaml \
     $RELEASE_NAME \
     ./deploy/ovation-webapi/
