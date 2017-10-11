@@ -22,17 +22,12 @@ gcloud config set compute/zone $GOOGLE_CLOUD_PROJECT_ID
 
 echo "Upgrading webapi relase..."
 # helm install…
-helm upgrade --install --namespace=$NAMESPACE -f deploy-values.yaml \
+helm-secrets upgrade --install --namespace=$NAMESPACE --timeout 600 --wait \
     --set image.tag=$NAMESPACE-$CI_TIMESTAMP \
     --set ingress.staticIPAddressName=$NAMESPACE-webapi-static-ip \
     --set config.CLOUDANT_DB_URL=$CLOUDANT_DB_URL
     --set config.OVATION_IO_HOST_URI=$OVATION_IO_HOST_URI
     --set config.GOOGLE_CLOUD_PROJECT_ID=$GOOGLE_CLOUD_PROJECT_ID
-    --set config.ELASTICSEARCH_URL=$ELASTICSEARCH_URL
-    --set secret.CLOUDANT_PASSWORD=$CLOUDANT_PASSWORD
-    --set secret.CLOUDANT_USERNAME=$CLOUDANT_USERNAME
-    --set secret.JWT_SECRET=$JWT_SECRET
-    --set secret.RAYGUN_API_KEY=$RAYGUN_API_KEY
-    --set secret.SERVICE_KEY_JSON=$GCP_SERVICE_KEY_JSON
+    -f $NAMESPACE-secrets.yaml \
     $RELEASE_NAME \
     ./deploy/ovation-webapi/

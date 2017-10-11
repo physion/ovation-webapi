@@ -46,3 +46,7 @@ dev-local.env
 codeship.aes
 
 ovation-io.json
+
+# SOPS/helm-secrets
+deploy/.sops.yaml
+*.dec

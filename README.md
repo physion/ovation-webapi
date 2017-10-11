@@ -12,6 +12,7 @@ You will need
 * Java 1.8+
 * Kubernetes
 * Helm (`brew install kubernetes-helm`)
+* helm-secrets (`helm plugin install https://github.com/futuresimple/helm-secrets`)
 
 [1]: https://github.com/technomancy/leiningen
 
