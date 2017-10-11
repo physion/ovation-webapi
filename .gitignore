@@ -46,3 +46,4 @@ dev-local.env
 codeship.aes
 
 ovation-io.json
+deploy/.sops.yaml
