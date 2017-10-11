@@ -4,7 +4,7 @@ NAMESPACE=$1
 
 set -e
 
-RELEASE_NAME=webapi
+RELEASE_NAME=webapi-$NAMESPACE
 DEFAULT_ZONE=us-east1-b
 
 codeship_google authenticate

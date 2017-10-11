@@ -30,3 +30,8 @@
   tag: master
   service: gke-deploy
   command: deploy/deploy.sh production
+
+- name: Deploy (help-chart-151748507)
+  tag: development
+  service: gke-deploy
+  command: deploy/deploy.sh help-chart-151748507
