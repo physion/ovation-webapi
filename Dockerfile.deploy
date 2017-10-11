@@ -1,8 +1,10 @@
 FROM codeship/google-cloud-deployment
 MAINTAINER support@ovation.io
 
-RUN apt-get -y update
+RUN apt-get update -y
 
 RUN apt-get install -y git
 
-RUN apt-get install -y sops
+RUN apt-get install -y golang
+
+RUN go get -u go.mozilla.org/sops/cmd/sops
