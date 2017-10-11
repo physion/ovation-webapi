@@ -157,7 +157,7 @@
         publisher (:publisher pubsub)]
     (cl/with-db connection
       (let [bulk-results (cl/bulk-update docs)
-            pub-ch       (chan (count bulk-results))]
+            pub-ch       (chan (max 1 (count bulk-results)))]
         (publish-updates publisher docs :channel pub-ch)
         (merge-updates docs bulk-results)))))
 
