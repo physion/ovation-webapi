@@ -5,7 +5,43 @@ services:
     command: lein run
     ports:
       - "3000:3000"
+    volumes:
+      - .:/app
+    env_file: dev.env
     links:
       - db
+
+  repl:
+    build: .
+    command: lein repl :headless :host 0.0.0.0 :port 59789
+    ports:
+      - "59789:59789"
+    volumes:
+      - .:/app
+    env_file: dev.env
+    links:
+      - db
+
   db:
     image: mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD="1"
+      - MYSQL_USER=webapi
+      - MYSQL_PASSWORD=webapipass
+      - MYSQL_DATABASE=ovation_development
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/mysql/
+
+volumes:
+  db-data:
+
+#    pubsub:
+#      image: niallmccullagh/docker-google-cloud-emulators:latest
+#      ports:
+#        - "8538:8538"
+#      command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
+#      volumes:
+#        - ./logs:/var/log
