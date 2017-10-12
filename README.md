@@ -63,9 +63,9 @@ To start a REPL:
    
 or to start a headless nREPL server that can be used from, e.g. IntelliJ:
 
-    docker-compose -f docker-compose.yml -f docker-compose-dev.yml up
+    docker-compose -f docker-compose.yml up
     
-the nREPL port is fixed in docker-compose-dev.yml, but nREPL saves the port in `.nrepl-port`.
+the nREPL port is fixed in docker-compose.yml, but nREPL saves the port in `.nrepl-port`.
 
 ## License
 
