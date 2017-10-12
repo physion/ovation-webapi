@@ -2,6 +2,8 @@
   service: web
   command: lein midje
 
+
+## Development
 - name: Push to GCR (dev)
   tag: development
   service: web
@@ -11,6 +13,13 @@
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
 
+- name: Deploy (dev)
+  tag: development
+  service: gke-deploy
+  command: deploy/deploy.sh development
+
+
+## Production
 - name: Push to GCR (prod)
   tag: master
   service: web
@@ -19,11 +28,6 @@
   image_tag: "production-{{ .Timestamp }}"
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
-
-- name: Deploy (dev)
-  tag: development
-  service: gke-deploy
-  command: deploy/deploy.sh development
 
 - name: Deploy (prod)
   tag: master
