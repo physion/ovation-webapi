@@ -47,3 +47,6 @@ codeship.aes
 
 ovation-io.json
 deploy/.sops.yaml
+
+# Database
+/data
