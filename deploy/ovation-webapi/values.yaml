@@ -13,7 +13,7 @@ service:
   internalPort: 3000
 ingress:
   enabled: true
-  staticIPAddressName: STATICIPNAME
+#  staticIPAddressName: STATICIPNAME
   tls:
     # Secrets must be manually created in the namespace.
     - secretName: star-ovation-io-tls-secret
