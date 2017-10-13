@@ -26,6 +26,7 @@ curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
 helm init --upgrade
 
 # Install helm-secrets
+echo "Installing helm-secrets"
 helm plugin install https://github.com/futuresimple/helm-secrets
 
 echo "Upgrading webapi relase..."
