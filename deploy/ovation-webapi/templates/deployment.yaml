@@ -30,10 +30,6 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.internalPort }}
           readinessProbe:
             httpGet:
               path: /healthz
