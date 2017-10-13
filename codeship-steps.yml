@@ -37,16 +37,16 @@
 
 ## Feature branches
 
-- name: Push to GCR (help-chart-151748507)
-  tag: help-chart-151748507
-  service: web
-  type: push
-  image_name: gcr.io/ovation-io/webapi
-  image_tag: "help-chart-151748507-{{ .Timestamp }}"
-  registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg
-
-- name: Deploy (help-chart-151748507)
-  tag: help-chart-151748507
-  service: gke-deploy
-  command: deploy/deploy.sh help-chart-151748507
+#- name: Push to GCR (help-chart-151748507)
+#  tag: help-chart-151748507
+#  service: web
+#  type: push
+#  image_name: gcr.io/ovation-io/webapi
+#  image_tag: "help-chart-151748507-{{ .Timestamp }}"
+#  registry: https://gcr.io
+#  dockercfg_service: gcr_dockercfg
+#
+#- name: Deploy (help-chart-151748507)
+#  tag: help-chart-151748507
+#  service: gke-deploy
+#  command: deploy/deploy.sh help-chart-151748507
