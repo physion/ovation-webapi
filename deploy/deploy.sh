@@ -39,7 +39,6 @@ helm-wrapper install --dry-run --debug --namespace=${NAMESPACE} --timeout 600 --
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
     --set ingress.staticIPAddressName=${NAMESPACE}-webapi-static-ip \
     -f ./deploy/values/${NAMESPACE}/secrets.yaml \
-    ${RELEASE_NAME} \
     ./deploy/ovation-webapi/
 
 helm-wrapper upgrade --install --namespace=${NAMESPACE} --timeout 600 --wait \
