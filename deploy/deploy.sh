@@ -35,11 +35,11 @@ echo "NAMESPACE = $NAMESPACE"
 echo "RELEASE_NAME = $RELEASE_NAME"
 echo "CI_TIMESTAMP = $CI_TIMESTAMP"
 
-helm-wrapper install --dry-run --debug --namespace=${NAMESPACE} --timeout 600 --wait \
-    --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
-    --set ingress.staticIPAddressName=${NAMESPACE}-webapi-static-ip \
-    -f ./deploy/values/${NAMESPACE}/secrets.yaml \
-    ./deploy/ovation-webapi/
+#helm-wrapper install --dry-run --debug --namespace=${NAMESPACE} --timeout 600 --wait \
+#    --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
+#    --set ingress.staticIPAddressName=${NAMESPACE}-webapi-static-ip \
+#    -f ./deploy/values/${NAMESPACE}/secrets.yaml \
+#    ./deploy/ovation-webapi/
 
 helm-wrapper upgrade --install --namespace=${NAMESPACE} --timeout 600 --wait \
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
