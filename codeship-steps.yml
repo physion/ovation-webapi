@@ -2,6 +2,8 @@
   service: web
   command: lein midje
 
+
+## Development
 - name: Push to GCR (dev)
   tag: development
   service: web
@@ -11,6 +13,13 @@
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
 
+- name: Deploy (dev)
+  tag: development
+  service: gke-deploy
+  command: deploy/deploy.sh development
+
+
+## Production
 - name: Push to GCR (prod)
   tag: master
   service: web
@@ -20,13 +29,24 @@
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
 
-
-- name: Deploy (dev)
-  tag: development
-  service: gke-deploy
-  command: deploy/development/deploy.sh
-
 - name: Deploy (prod)
   tag: master
   service: gke-deploy
-  command: deploy/production/deploy.sh
+  command: deploy/deploy.sh production
+
+
+## Feature branches
+
+#- name: Push to GCR (help-chart-151748507)
+#  tag: help-chart-151748507
+#  service: web
+#  type: push
+#  image_name: gcr.io/ovation-io/webapi
+#  image_tag: "help-chart-151748507-{{ .Timestamp }}"
+#  registry: https://gcr.io
+#  dockercfg_service: gcr_dockercfg
+#
+#- name: Deploy (help-chart-151748507)
+#  tag: help-chart-151748507
+#  service: gke-deploy
+#  command: deploy/deploy.sh help-chart-151748507
