@@ -1,6 +1,7 @@
 (ns ovation.links
   (:require [ovation.util :refer [create-uri]]
             [ovation.couch :as couch]
+            [oavtion.db.relations :as relations]
             [ovation.util :as util]
             [ovation.auth :as auth]
             [ovation.core :as core]
@@ -19,17 +20,17 @@
               (= label doc-label)
               false)))
 
-(defn-traced get-links
-  [ctx db id rel & {:keys [label name] :or {label nil name nil}}]
-  (let [{auth ::request-context/identity} ctx
-        opts {:startkey      (if name [id rel name] [id rel])
-              :endkey        (if name [id rel name] [id rel])
-              :inclusive_end true
-              :reduce        false :include_docs true}]
-    (tr/values-from-couch
-      (couch/get-view ctx db k/LINK-DOCS-VIEW opts)
-      ctx)))
 
+(defn-traced get-links
+  [ctx db id rel]
+  (if-let [entity (first (core/get-entities ctx db [id]))]
+    (tr/values-from-db
+      (relations/find-all-by-parent-entity-id-rel db (:id entity) rel)
+      ctx)
+    [])) ;; TODO Should this throw?
+
+
+;; TODO Fix me
 (defn-traced get-link-targets
   "Gets the document targets for id--rel->"
   [ctx db id rel & {:keys [label name include-trashed] :or {label           nil
