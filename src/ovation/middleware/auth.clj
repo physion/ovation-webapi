@@ -19,7 +19,7 @@
   (if-let [scope-string (or (:scope identity) ((keyword "https://ovation.io/scope") identity))]
     (-> scope-string
       (string/split #" "))
-    []))
+    ["read:global" "write:global"]))
 
 (defn wrap-auth
   "Wrap the response with a future authenticated-teams andscopes"

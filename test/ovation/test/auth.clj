@@ -73,7 +73,9 @@
     (fact "for :scope"
       (middleware.auth/scopes {:scope  "scope1 scope2"}) => ["scope1" "scope2"])
     (fact "for :https://ovation.io/scope"
-      (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])))
+      (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])
+    (fact "without any scope"
+      (middleware.auth/scopes {}) => ["read:global" "write:global"])))
 
 (facts "About has-scope?"
   (fact "with scope"
