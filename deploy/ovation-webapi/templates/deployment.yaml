@@ -75,6 +75,11 @@ spec:
                 configMapKeyRef:
                   name: {{ .Release.Name }}-config
                   key: GOOGLE_CLOUD_PROJECT_ID
+            - name: DB_UPDATES_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: DB_UPDATES_TOPIC
             - name: ELASTICSEARCH_URL
               valueFrom:
                 secretKeyRef:
