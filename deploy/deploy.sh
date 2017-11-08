@@ -9,6 +9,7 @@ DEFAULT_ZONE=us-east1-b
 KUBERNETES_CLUSTER_NAME=ovation
 
 codeship_google authenticate
+export GOOGLE_APPLICATION_CREDENTIALS=/keyconfig.json
 
 gcloud container clusters get-credentials $KUBERNETES_CLUSTER_NAME \
   --project $GOOGLE_PROJECT_ID \
@@ -34,12 +35,6 @@ echo "Upgrading webapi release..."
 echo "NAMESPACE = $NAMESPACE"
 echo "RELEASE_NAME = $RELEASE_NAME"
 echo "CI_TIMESTAMP = $CI_TIMESTAMP"
-
-#helm-wrapper install --dry-run --debug --namespace=${NAMESPACE} --timeout 600 --wait \
-#    --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
-#    --set ingress.staticIPAddressName=${NAMESPACE}-webapi-static-ip \
-#    -f ./deploy/values/${NAMESPACE}/secrets.yaml \
-#    ./deploy/ovation-webapi/
 
 helm-wrapper upgrade --install --namespace=${NAMESPACE} --timeout 600 --wait \
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
