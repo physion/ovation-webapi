@@ -4,6 +4,14 @@
             [ovation.test.system :as test.system]
             [clojure.java.jdbc :as jdbc]))
 
+(def RECORD {:_id "<uuid>"
+             :organization_id 0
+             :user "<uuid>"
+             :entity "<uuid>"
+             :key "key"
+             :value "value"
+             :annotation_type "Property"
+             :type "Annotation"})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

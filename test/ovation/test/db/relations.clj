@@ -4,6 +4,15 @@
             [ovation.test.system :as test.system]
             [clojure.java.jdbc :as jdbc]))
 
+(def RECORD {:_id "<uuid>"
+             :organization_id 0
+             :project "<uuid>"
+             :rel "rel"
+             :inverse_rel "inverse rel"
+             :source_id "<uuid>"
+             :target_id "<uuid>"
+             :user_id "<uuid>"
+             :type "Relation"})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

@@ -4,6 +4,16 @@
             [ovation.test.system :as test.system]
             [clojure.java.jdbc :as jdbc]))
 
+(def RECORD {:_id "<uuid>"
+             :organization_id 0
+             :user "<uuid>"
+             :entity "<uuid>"
+             :name "name"
+             :notes "notes"
+             :start "0000-00-00 00:00:00"
+             :end "0000-00-00 00:00:00"
+             :annotation_type "TimelineEvent"
+             :type "Annotation"})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]
