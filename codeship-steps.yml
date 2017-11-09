@@ -20,7 +20,7 @@
 ## All others
 - name: Push to GCR
   tag: ^(staging|development)
-  service: indexer
+  service: web
   type: push
   image_name: gcr.io/ovation-io/indexer
   image_tag: "{{ .Branch }}-{{ .Timestamp }}"
@@ -29,6 +29,6 @@
 
 - name: Deploy
   tag: ^(staging|development)
-  service: deployment
+  service: gke-deploy
   command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 
