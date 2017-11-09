@@ -13,7 +13,7 @@ SELECT
   `or_timeline_events`.`notes` AS `notes`,
   `or_timeline_events`.`start` AS `start`,
   `or_timeline_events`.`end` AS `end`,
-  "TimelineEvent" AS `annotation_type`,
+  "timeline_events" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_timeline_events`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_timeline_events`.`project_id`
@@ -36,7 +36,7 @@ SELECT
   `or_timeline_events`.`notes` AS `notes`,
   `or_timeline_events`.`start` AS `start`,
   `or_timeline_events`.`end` AS `end`,
-  "TimelineEvent" AS `annotation_type`,
+  "timeline_events" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_timeline_events`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_timeline_events`.`project_id`

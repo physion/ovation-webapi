@@ -13,7 +13,7 @@ SELECT
   `or_notes`.`text` AS `text`,
   `or_notes`.`timestamp` AS `timestamp`,
   `or_notes`.`updated_at` AS `edited_at`,
-  "Note" AS `annotation_type`,
+  "notes" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_notes`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_notes`.`project_id`
@@ -34,7 +34,7 @@ SELECT
   `or_notes`.`text` AS `text`,
   `or_notes`.`timestamp` AS `timestamp`,
   `or_notes`.`updated_at` AS `edited_at`,
-  "Note" AS `annotation_type`,
+  "notes" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_notes`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_notes`.`project_id`

@@ -7,7 +7,7 @@ SELECT
   `entity_uuid`.`uuid` AS `entity`,
   `or_properties`.`property_key` AS `key`,
   `or_properties`.`property_value` AS `value`,
-  "Property" AS `annotation_type`,
+  "properties" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_properties`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_properties`.`project_id`
@@ -28,7 +28,7 @@ SELECT
   `entity_uuid`.`uuid` AS `entity`,
   `or_properties`.`property_key` AS `key`,
   `or_properties`.`property_value` AS `value`,
-  "Property" AS `annotation_type`,
+  "properties" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_properties`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_properties`.`project_id`

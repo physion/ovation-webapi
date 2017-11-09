@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.db.projects :as projects]
             [ovation.test.system :as test.system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [ovation.constants :as c]))
 
 (def RECORD {:_id "<uuid>"
              :organization_id 0
@@ -11,7 +12,7 @@
              :created-at "0000-00-00 00:00:00"
              :updated-at "0000-00-00 00:00:00"
              :attributes {}
-             :type "Project"})
+             :type c/PROJECT-TYPE})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

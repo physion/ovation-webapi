@@ -2,15 +2,16 @@
   (:use midje.sweet)
   (:require [ovation.db.tags :as tags]
             [ovation.test.system :as test.system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [ovation.constants :as c]))
 
 (def RECORD {:_id "<uuid>"
              :organization_id 0
              :user "<uuid>"
              :entity "<uuid>"
              :name "tag"
-             :annotation_type "Tag"
-             :type "Annotation"})
+             :annotation_type c/TAGS
+             :type c/ANNOTATION-TYPE})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

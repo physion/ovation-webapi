@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.db.revisions :as revisions]
             [ovation.test.system :as test.system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [ovation.constants :as c]))
 
 (def RECORD {:_id "<uuid>"
              :organization_id 0
@@ -17,7 +18,7 @@
              :updated-at "0000-00-00 00:00:00"
              :attributes {}
              :file_id "<uuid>"
-             :type "Revision"})
+             :type c/REVISION-TYPE})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

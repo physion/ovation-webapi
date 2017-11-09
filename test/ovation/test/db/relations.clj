@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.db.relations :as relations]
             [ovation.test.system :as test.system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [ovation.constants :as c]))
 
 (def RECORD {:_id "<uuid>"
              :organization_id 0
@@ -12,7 +13,7 @@
              :source_id "<uuid>"
              :target_id "<uuid>"
              :user_id "<uuid>"
-             :type "Relation"})
+             :type c/RELATION-TYPE})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]

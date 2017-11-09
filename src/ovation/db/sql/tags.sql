@@ -6,7 +6,7 @@ SELECT
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_tags`.`tag` AS `name`,
-  "Tag" AS `annotation_type`,
+  "tags" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_tags`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_tags`.`project_id`
@@ -26,7 +26,7 @@ SELECT
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_tags`.`tag` AS `name`,
-  "Tag" AS `annotation_type`,
+  "tags" AS `annotation_type`,
   "Annotation" AS `type`
 FROM `or_tags`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_tags`.`project_id`

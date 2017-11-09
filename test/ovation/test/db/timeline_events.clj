@@ -2,7 +2,8 @@
   (:use midje.sweet)
   (:require [ovation.db.timeline_events :as timeline_events]
             [ovation.test.system :as test.system]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [ovation.constants :as c]))
 
 (def RECORD {:_id "<uuid>"
              :organization_id 0
@@ -12,8 +13,8 @@
              :notes "notes"
              :start "0000-00-00 00:00:00"
              :end "0000-00-00 00:00:00"
-             :annotation_type "TimelineEvent"
-             :type "Annotation"})
+             :annotation_type c/TIMELINE_EVENTS
+             :type c/ANNOTATION-TYPE})
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [db (test.system/get-db)]
