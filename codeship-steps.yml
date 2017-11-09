@@ -2,25 +2,8 @@
   service: web
   command: lein midje
 
-
-## Development
-- name: Push to GCR (dev)
-  tag: development
-  service: web
-  type: push
-  image_name: gcr.io/ovation-io/webapi
-  image_tag: "development-{{ .Timestamp }}"
-  registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg
-
-- name: Deploy (dev)
-  tag: development
-  service: gke-deploy
-  command: deploy/deploy.sh development
-
-
 ## Production
-- name: Push to GCR (prod)
+- name: Push to GCR (production)
   tag: master
   service: web
   type: push
@@ -29,24 +12,23 @@
   registry: https://gcr.io
   dockercfg_service: gcr_dockercfg
 
-- name: Deploy (prod)
+- name: Deploy (production)
   tag: master
   service: gke-deploy
   command: deploy/deploy.sh production
 
+## All others
+- name: Push to GCR
+  tag: ^(staging|development)
+  service: indexer
+  type: push
+  image_name: gcr.io/ovation-io/indexer
+  image_tag: "{{ .Branch }}-{{ .Timestamp }}"
+  registry: https://gcr.io
+  dockercfg_service: gcr_dockercfg\
 
-## Feature branches
+- name: Deploy
+  tag: ^(staging|development)
+  service: deployment
+  command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 
-#- name: Push to GCR (help-chart-151748507)
-#  tag: help-chart-151748507
-#  service: web
-#  type: push
-#  image_name: gcr.io/ovation-io/webapi
-#  image_tag: "help-chart-151748507-{{ .Timestamp }}"
-#  registry: https://gcr.io
-#  dockercfg_service: gcr_dockercfg
-#
-#- name: Deploy (help-chart-151748507)
-#  tag: help-chart-151748507
-#  service: gke-deploy
-#  command: deploy/deploy.sh help-chart-151748507
