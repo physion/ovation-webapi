@@ -10,7 +10,7 @@
   image_name: gcr.io/ovation-io/webapi
   image_tag: "production-{{ .Timestamp }}"
   registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg
+  dockercfg_service: gcr-dockercfg
 
 - name: Deploy (production)
   tag: master
@@ -25,7 +25,7 @@
   image_name: gcr.io/ovation-io/indexer
   image_tag: "{{ .Branch }}-{{ .Timestamp }}"
   registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg\
+  dockercfg_service: gcr-dockercfg
 
 - name: Deploy
   tag: ^(staging|development)

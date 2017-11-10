@@ -12,7 +12,7 @@ services:
   db:
     image: mysql
 
-  gcr_dockercfg:
+  gcr-dockercfg:
     image: codeship/gcr-dockercfg-generator
     add_docker: true
     encrypted_env_file: google-credentials.encrypted
