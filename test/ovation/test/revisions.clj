@@ -6,7 +6,7 @@
             [ovation.links :as links]
             [ovation.auth :as auth]
             [ovation.constants :as k]
-            [ovation.couch :as couch]
+            [ovation.db.revisions :as revisions]
             [ovation.config :as config]
             [org.httpkit.fake :refer [with-fake-http]]
             [ovation.util :as util]
@@ -48,7 +48,7 @@
                                       ..id2.. {:status ..status.. :started-at ..now..}}}]
         (rev/update-file-status file [rev1 rev2] ..status..) => updated-file)))
 
-  (against-background [(auth/authenticated-user-id ..auth..) => ..userid..]
+  (against-background [(auth/authenticated-user-uuid ..auth..) => ..userid..]
     (facts "create-revisions"
       (facts "from a Revision"
         (fact "creates a new revision with resource attribute and appending parent id to previous chain"
@@ -127,35 +127,13 @@
 
     (facts "get-head-revisions"
       (against-background [..ctx.. =contains=> {:ovation.request-context/org ..org..}]
-        (fact "gets HEAD revisions from couch view"
+        (fact "gets HEAD revisions"
           (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
           (provided
-            (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..org.. ..fileid.. {}]
-                                                             :endkey       [..org.. ..fileid..]
-                                                             :descending   true
-                                                             :include_docs true
-                                                             :limit        2} :prefix-teams false) => [..doc..]
-            (tr/entities-from-couch [..doc..] ..ctx..) => [..rev..]
-            (core/filter-trashed [..rev..] false) => [..rev..]
-            ..doc.. =contains=> {:attributes {:previous []}}))
-
-        (fact "returns all HEAD revisions when top 2 are equal"
-          (let [doc1 {:attributes {:previous [1 2]}}
-                doc2 {:attributes {:previous [1 2]}}]
-            (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev1.. ..rev2.. ..rev3..]
-            (provided
-              (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey     [..org.. ..fileid.. {}]
-                                                               :endkey       [..org.. ..fileid..]
-                                                               :descending   true
-                                                               :include_docs true
-                                                               :limit        2} :prefix-teams false) => [doc1 doc2]
-              (couch/get-view ..ctx.. ..db.. k/REVISIONS-VIEW {:startkey      [..org.. ..fileid.. 2]
-                                                               :endkey        [..org.. ..fileid.. 2]
-                                                               :inclusive_end true
-                                                               :include_docs  true} :prefix-teams false) => [..doc1.. ..doc2.. ..doc3..]
-
-              (tr/entities-from-couch [..doc1.. ..doc2.. ..doc3..] ..ctx..) => [..rev1.. ..rev2.. ..rev3..]
-              (core/filter-trashed [..rev1.. ..rev2.. ..rev3..] false) => [..rev1.. ..rev2.. ..rev3..])))))
+            (revisions/find-latest-by-file-id ..db.. {:organization_id ..org..
+                                                      :team_uuids []
+                                                      :file_id ..fileid..}) => [..doc..]
+            (tr/entities-from-db [..doc..] ..ctx..) => [..rev..]))))
 
     (facts "update-metadata"
       (against-background [(ovation.request-context/token ..ctx..) => "TOKEN"
