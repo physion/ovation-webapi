@@ -1,5 +1,16 @@
 (ns ovation.core
   (:require [ovation.couch :as couch]
+            [ovation.db.activities :as activities]
+            [ovation.db.files :as files]
+            [ovation.db.folders :as folders]
+            [ovation.db.notes :as notes]
+            [ovation.db.projects :as projects]
+            [ovation.db.properties :as properties]
+            [ovation.db.relations :as relations]
+            [ovation.db.revisions :as revisions]
+            [ovation.db.sources :as sources]
+            [ovation.db.tags :as tags]
+            [ovation.db.timeline_events :as timeline_events]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
@@ -41,13 +52,48 @@
   [ctx db id & {:keys [include-trashed] :or {include-trashed false}}]
   (first (get-entities ctx db [id] :include-trashed include-trashed)))
 
+(defn -get-values-by-id
+  [ctx db-fn ids]
+  (let [{org-id ::rc/org, auth ::rc/identity} ctx
+        teams (auth/authenticated-teams auth)]
+    (-> (db-fn {:ids ids
+                :organization_id org-id
+                :team_uuids teams})
+      (tr/values-from-db ctx))))
+
+(defn get-notes-by-id
+  "Get all notes by ID"
+  [ctx db ids]
+  (-get-values-by-id ctx (partial notes/find-all-by-uuid db) ids))
+
+(defn get-properties-by-id
+  "Get all properties by ID"
+  [ctx db ids]
+  (-get-values-by-id ctx (partial properties/find-all-by-uuid db) ids))
+
+(defn get-relations-by-id
+  "Get all relations by ID"
+  [ctx db ids]
+  (-get-values-by-id ctx (partial relations/find-all-by-uuid db) ids))
+
+(defn get-tags-by-id
+  "Get all tags by ID"
+  [ctx db ids]
+  (-get-values-by-id ctx (partial tags/find-all-by-uuid db) ids))
+
+(defn get-timeline-events-by-id
+  "Get all timeline events by ID"
+  [ctx db ids]
+  (-get-values-by-id ctx (partial timeline_events/find-all-by-uuid db) ids))
+
 (defn get-values
   "Get values by ID"
-  [ctx db ids & {:keys [routes]}]
-  (let [docs (couch/all-docs ctx db ids)]
-    (if routes
-      (tr/values-from-couch docs ctx)
-      docs)))
+  [ctx db ids]
+  (concat (get-notes-by-id           ctx db ids)
+          (get-properties-by-id      ctx db ids)
+          (get-relations-by-id       ctx db ids)
+          (get-tags-by-id            ctx db ids)
+          (get-timeline-events-by-id ctx db ids)))
 
 (defn-traced get-owner
   [ctx db entity]

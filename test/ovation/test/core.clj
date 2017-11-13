@@ -2,6 +2,11 @@
   (:use midje.sweet)
   (:require [ovation.core :as core]
             [ovation.couch :as couch]
+            [ovation.db.notes :as notes]
+            [ovation.db.properties :as properties]
+            [ovation.db.relations :as relations]
+            [ovation.db.tags :as tags]
+            [ovation.db.timeline_events :as timeline_events]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
@@ -17,11 +22,25 @@
   (facts "About values"
     (facts "read"
       (facts "`get-values`"
-        (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
+        (against-background [(auth/authenticated-teams ..auth..) => [..team..]
+                             (auth/authenticated-user-id ..auth..) => ..user..]
           (fact "gets values"
-            (core/get-values ..ctx.. ..db.. [..id..]) => [..doc..]
-            (provided
-              (couch/all-docs ..ctx.. ..db.. [..id..]) => [..doc..])))))
+            (let [args {:ids [..id..]
+                        :organization_id nil
+                        :team_uuids [..team..]}]
+              (core/get-values ..ctx.. ..db.. [..id..]) => [..doc1.. ..doc2.. ..doc3.. ..doc4.. ..doc5..]
+              (provided
+                (notes/find-all-by-uuid           ..db.. args) => [..doc1..]
+                (properties/find-all-by-uuid      ..db.. args) => [..doc2..]
+                (relations/find-all-by-uuid       ..db.. args) => [..doc3..]
+                (tags/find-all-by-uuid            ..db.. args) => [..doc4..]
+                (timeline_events/find-all-by-uuid ..db.. args) => [..doc5..]
+                (tr/values-from-db [..doc1..] ..ctx..) => [..doc1..]
+                (tr/values-from-db [..doc2..] ..ctx..) => [..doc2..]
+                (tr/values-from-db [..doc3..] ..ctx..) => [..doc3..]
+                (tr/values-from-db [..doc4..] ..ctx..) => [..doc4..]
+                (tr/values-from-db [..doc5..] ..ctx..) => [..doc5..]))))))
+
     (facts "write"
       (facts "`create-values`"
         (against-background [(auth/authenticated-user-id ..auth..) => ..user..]

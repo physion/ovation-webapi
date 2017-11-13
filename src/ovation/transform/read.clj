@@ -5,7 +5,6 @@
             [ovation.schema :refer [EntityRelationships]]
             [ovation.routes :as r]
             [ovation.constants :as c]
-            [ovation.constants :as k]
             [ovation.auth :as auth]
             [ovation.request-context :as request-context]
             [clojure.string :as s]
@@ -45,20 +44,20 @@
 
 (defn add-heads-link
   [dto ctx]
-  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/FILE-TYPE))
+  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword c/FILE-TYPE))
     (assoc-in dto [:links :heads] (r/heads-route ctx dto))
     dto))
 
 (defn add-zip-link
   [dto ctx]
   (condp = (:type dto)
-    k/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route ctx dto))
-    k/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route ctx dto))
+    c/ACTIVITY-TYPE (assoc-in dto [:links :zip] (r/zip-activity-route ctx dto))
+    c/FOLDER-TYPE (assoc-in dto [:links :zip] (r/zip-folder-route ctx dto))
     dto))
 
 (defn add-upload-links
   [dto ctx]
-  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword k/REVISION-TYPE))
+  (if (= (util/entity-type-keyword dto) (util/entity-type-name-keyword c/REVISION-TYPE))
     (-> dto
       (assoc-in [:links :upload-complete] (r/upload-complete-route ctx dto))
       (assoc-in [:links :upload-failed] (r/upload-failed-route ctx dto)))
@@ -67,7 +66,7 @@
 (defn add-team-link
   [dto ctx]
   (condp = (:type dto)
-    k/PROJECT-TYPE (assoc-in dto [:links :team] (r/team-route ctx (:_id dto)))
+    c/PROJECT-TYPE (assoc-in dto [:links :team] (r/team-route ctx (:_id dto)))
     dto))
 
 (defn add-self-link
@@ -102,7 +101,7 @@
 
 (defn convert-file-revision-status
   [doc]
-  (if (= (:type doc) k/FILE-TYPE)
+  (if (= (:type doc) c/FILE-TYPE)
     (let [revisions (into {} (map (fn [[k,v]] [(name k) v]) (:revisions doc)))]
       (assoc doc :revisions revisions))
     doc))
@@ -185,4 +184,60 @@
         teams (auth/authenticated-teams auth)]
     (->> docs
       (map (couch-to-value ctx))
+      (filter #(auth/can? ctx ::auth/read % :teams teams)))))
+
+(defn add-annotation
+  [doc ctx]
+  (condp = (:annotation_type doc)
+    c/NOTES (-> doc
+              (assoc-in [:annotation] {:text (:text doc)
+                                       :timestamp (:timestamp doc)})
+              (dissoc :text)
+              (dissoc :timestamp))
+    c/PROPERTIES (-> doc
+                   (assoc-in [:annotation] {:key (:key doc)
+                                            :value (:value doc)})
+                   (dissoc :key)
+                   (dissoc :value))
+    c/TAGS (-> doc
+             (assoc-in [:annotation] {:tag (:tag doc)})
+             (dissoc :tag))
+    c/TIMELINE_EVENTS (-> doc
+                        (assoc-in [:annotation] {:name (:name doc)
+                                                 :notes (:notes doc)
+                                                 :start (:start doc)
+                                                 :end (:end doc)})
+                        (dissoc :name)
+                        (dissoc :notes)
+                        (dissoc :start)
+                        (dissoc :end))))
+
+(defn add-collaboration-roots
+  [doc ctx]
+  (-> doc
+    (assoc-in [:links :_collaboration_roots] [(:source_id doc)])))
+
+(defn-traced db-to-value
+  [ctx]
+  (fn [doc]
+    (condp = (:type doc)
+      c/RELATION-TYPE (-> doc
+                        (add-collaboration-roots ctx)
+                        (add-self-link ctx))
+      c/ANNOTATION-TYPE (-> doc
+                          (add-annotation-links ctx)
+                          (add-annotation ctx)
+                          (add-value-permissions ctx)) ;; TODO Add collaboration roots
+      ;; default
+      (-> doc
+        (add-value-permissions ctx)))))
+
+
+(defn values-from-db
+  "Transform db value documents"
+  [docs ctx]
+  (let [{auth ::request-context/identity} ctx
+        teams (auth/authenticated-teams auth)]
+    (->> docs
+      (map (db-to-value ctx))
       (filter #(auth/can? ctx ::auth/read % :teams teams)))))
