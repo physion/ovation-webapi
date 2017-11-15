@@ -8,7 +8,8 @@
             [cemerick.url :as url]
             [ovation.authz :as authz]
             [qbits.spandex :as spandex]
-            [ovation.config :as config]))
+            [ovation.config :as config]
+            [environ.core]))
 
 ;; Database
 (defrecord CouchDb [host username password pubsub connection]
@@ -17,6 +18,8 @@
   (start [this]
     (logging/info "Starting database")
     (logging/info host)
+    (logging/info username)
+
     (logging/info (-> (url/url host)
                     (assoc :username username
                            :password password)))
@@ -86,6 +89,8 @@
 ;; System
 (defn create-system [config-options]
   (let [{:keys [web db authz pubsub elasticsearch]} config-options]
+    (logging/info db)
+    (logging/info environ.core/env)
     (component/system-map
       :search (new-elasticsearch (:url elasticsearch))
       :database (component/using
