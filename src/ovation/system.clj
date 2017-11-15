@@ -16,6 +16,10 @@
 
   (start [this]
     (logging/info "Starting database")
+    (logging/info host)
+    (logging/info (-> (url/url host)
+                    (assoc :username username
+                           :password password)))
     (assoc this :connection (-> (url/url host)
                               (assoc :username username
                                      :password password))))
