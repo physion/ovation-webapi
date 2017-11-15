@@ -41,21 +41,54 @@
 --   }
 -- }
 
-
 -- :name create :insert
--- :doc Create new project
-INSERT INTO or_projects (uuid, organization_id, name, team_id, created_at, updated_at, owner_id)
-VALUES (:uuid, :organization_id, :name, :team_id, now(), now(), :owner_id)
-
+-- :doc Create project
+INSERT INTO `or_projects` (
+  `uuid`,
+  `organization_id`,
+  `team_id`,
+  `owner_id`,
+  `name`,
+  `attributes`,
+  `archived`,
+  `created_at`,
+  `updated_at`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :team_id,
+  :owner_id,
+  :name,
+  :attributes,
+  false,
+  :created-at,
+  :updated-at
+)
 
 -- :name update :! :n
 -- :doc Update project
-UPDATE or_projects
-SET name = :name,
-    attributes = :attributes,
-    updated_at = :updated_at
-WHERE id = :id
+UPDATE `or_projects`
+SET
+  `or_projects`.`name` = :name,
+  `or_projects`.`attributes` = :attributes,
+  `or_projects`.`archived` = :archived,
+  `or_projects`.`archived_at` = :archived_at,
+  `or_projects`.`archived_by_user_id` = :archived_by_user_id,
+  `or_projects`.`updated_at` = :updated-at
+WHERE `or_projects`.`uuid` = :_id
+  AND `or_projects`.`organization_id` = :organization_id
 
+-- :name delete :! :n
+-- :doc Delete project
+DELETE FROM `or_projects`
+WHERE `or_projects`.`uuid` = :_id
+  AND `or_projects`.`organization_id` = :organization_id
+
+-- :name count :? :1
+-- :doc Count projects
+SELECT COUNT(*) AS `count`
+FROM `or_projects`
 
 -- :name find-all :? :*
 -- :doc Find all projects

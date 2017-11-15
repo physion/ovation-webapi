@@ -1,8 +1,53 @@
 -- :name create :insert
 -- :doc Create folders
-INSERT INTO `or_folders` ()
-VALUES ()
+INSERT INTO `or_folders` (
+  `uuid`,
+  `organization_id`,
+  `project_id`,
+  `owner_id`,
+  `name`,
+  `attributes`,
+  `archived`,
+  `created_at`,
+  `updated_at`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :project_id,
+  :owner_id,
+  :name,
+  :attributes,
+  false,
+  :created-at,
+  :updated-at
+)
 
+-- :name update :! :n
+-- :doc Update folder
+UPDATE `or_folders`
+SET
+  `or_folders`.`name` = :name,
+  `or_folders`.`attributes` = :attributes,
+  `or_folders`.`archived` = :archived,
+  `or_folders`.`archived_at` = :archived_at,
+  `or_folders`.`archived_by_user_id` = :archived_by_user_id,
+  `or_folders`.`updated_at` = :updated-at
+WHERE `or_folders`.`uuid` = :_id
+  AND `or_folders`.`organization_id` = :organization_id
+  AND `or_folders`.`project_id` = :project_id
+
+-- :name delete :! :n
+-- :doc Delete folder
+DELETE FROM `or_folders`
+WHERE `or_folders`.`uuid` = :_id
+  AND `or_folders`.`organization_id` = :organization_id
+  AND `or_folders`.`project_id` = :project_id
+
+-- :name count :? :1
+-- :doc Count folders
+SELECT COUNT(*) AS `count`
+FROM `or_folders`
 
 -- :name find-all :? :*
 -- :doc Find all folders

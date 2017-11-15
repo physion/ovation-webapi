@@ -56,9 +56,50 @@
 
 -- :name create :insert
 -- :doc Create source
-INSERT INTO `or_sources` ()
-VALUES ()
+INSERT INTO `or_sources` (
+  `uuid`,
+  `organization_id`,
+  `owner_id`,
+  `name`,
+  `attributes`,
+  `archived`,
+  `created_at`,
+  `updated_at`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :owner_id,
+  :name,
+  :attributes,
+  false,
+  :created-at,
+  :updated-at
+)
 
+-- :name update :! :n
+-- :doc Update source
+UPDATE `or_sources`
+SET
+  `or_sources`.`name` = :name,
+  `or_sources`.`attributes` = :attributes,
+  `or_sources`.`archived` = :archived,
+  `or_sources`.`archived_at` = :archived_at,
+  `or_sources`.`archived_by_user_id` = :archived_by_user_id,
+  `or_sources`.`updated_at` = :updated-at
+WHERE `or_sources`.`uuid` = :_id
+  AND `or_sources`.`organization_id` = :organization_id
+
+-- :name delete :! :n
+-- :doc Delete source
+DELETE FROM `or_sources`
+WHERE `or_sources`.`uuid` = :_id
+  AND `or_sources`.`organization_id` = :organization_id
+
+-- :name count :? :1
+-- :doc Count sources
+SELECT COUNT(*) AS `count`
+FROM `or_sources`
 
 -- :name find-all :? :*
 -- :doc Find all sources

@@ -48,6 +48,67 @@
 -- }
 
 
+-- :name create :insert
+-- :doc Create file
+INSERT INTO `or_files` (
+  `uuid`,
+  `organization_id`,
+  `project_id`,
+  `owner_id`,
+  `name`,
+  `attributes`,
+  `archived`,
+  `created_at`,
+  `updated_at`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :project_id,
+  :owner_id,
+  :name,
+  :attributes,
+  false,
+  :created-at,
+  :updated-at
+)
+
+-- :name update :! :n
+-- :doc Update file
+UPDATE `or_files`
+SET
+  `or_files`.`name` = :name,
+  `or_files`.`attributes` = :attributes,
+  `or_files`.`archived` = :archived,
+  `or_files`.`archived_at` = :archived_at,
+  `or_files`.`archived_by_user_id` = :archived_by_user_id,
+  `or_files`.`updated_at` = :updated-at
+WHERE `or_files`.`uuid` = :_id
+  AND `or_files`.`organization_id` = :organization_id
+  AND `or_files`.`project_id` = :project_id
+
+-- :name update-head-revision :! :n
+-- :doc Update file head revision
+UPDATE `or_files`
+SET
+  `or_files`.`head_revision_id` = :head_revision_id
+  `or_files`.`update_at` = :updated-at
+WHERE `or_files`.`uuid` = :_id
+  AND `or_files`.`organization_id` = :organization_id
+  AND `or_files`.`project_id` = :project_id
+
+-- :name delete :! :n
+-- :doc Delete file
+DELETE FROM `or_files`
+WHERE `or_files`.`uuid` = :_id
+  AND `or_files`.`organization_id` = :organization_id
+  AND `or_files`.`project_id` = :project_id
+
+-- :name count :? :1
+-- :doc Count files
+SELECT COUNT(*) AS `count`
+FROM `or_files`
+
 -- :name find-all :? :*
 -- :doc Find all files
 SELECT

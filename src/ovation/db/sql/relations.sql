@@ -16,6 +16,54 @@
 --   }
 -- }
 
+-- :name create :insert
+-- :doc Create new relation
+INSERT INTO `or_relations` (
+  `uuid`,
+  `organization_id`,
+  `project_id`,
+  `user_id`,
+  `rel`,
+  `inverse_rel`,
+  `parent_entity_id`,
+  `parent_entity_type`,
+  `child_entity_id`,
+  `child_entity_type`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :project_id,
+  :user_id,
+  :rel,
+  :inverse_rel,
+  :parent_entity_id,
+  :parent_entity_type,
+  :child_entity_id,
+  :child_entity_type
+)
+
+-- :name update :! :n
+-- :doc Update relation
+UPDATE `or_relations`
+SET
+  `or_relations`.`rel` = :rel,
+  `or_relations`.`inverse_rel` = :inverse_rel
+WHERE `or_relations`.`uuid` = :_id
+  AND `or_relations`.`organization_id` = :organization_id
+  AND `or_relations`.`project_id` = :project_id
+
+-- :name delete :! :n
+-- :doc Delete relation
+DELETE FROM `or_relations`
+WHERE `or_relations`.`uuid` = :_id
+  AND `or_relations`.`organization_id` = :organization_id
+  AND `or_relations`.`project_id` = :project_id
+
+-- :name count :? :1
+-- :doc Count relations
+SELECT COUNT(*) AS `count`
+FROM `or_relations`
 
 -- :name find-all
 -- :doc Find all relations

@@ -53,9 +53,54 @@
 
 -- :name create :insert
 -- :doc Create activities
-INSERT INTO `or_activities` ()
-VALUES ()
+INSERT INTO `or_activities` (
+  `uuid`,
+  `organization_id`,
+  `project_id`,
+  `owner_id`,
+  `name`,
+  `attributes`,
+  `archived`,
+  `created_at`,
+  `updated_at`
+)
+VALUES (
+  :_id,
+  :organization_id,
+  :project_id,
+  :owner_id,
+  :name,
+  :attributes,
+  false,
+  :created-at,
+  :updated-at
+)
 
+-- :name update :! :n
+-- :doc Update activity
+UPDATE `or_activities`
+SET
+  `or_activities`.`name` = :name,
+  `or_activities`.`attributes` = :attributes,
+  `or_activities`.`archived` = :archived,
+  `or_activities`.`archived_at` = :archived_at,
+  `or_activities`.`archived_by_user_id` = :archived_by_user_id,
+  `or_activities`.`updated_at` = :updated-at
+WHERE `or_activities`.`uuid` = :_id
+  AND `or_activities`.`organization_id` = :organization_id
+  AND `or_activities`.`project_id` = :project_id
+
+-- :name delete :! :n
+-- :doc Delete activity
+DELETE FROM `or_activities`
+WHERE `or_activities`.`uuid` = :_id
+  AND `or_activities`.`organization_id` = :organization_id
+  AND `or_activities`.`project_id` = :project_id
+
+-- :name count :? :1
+-- :doc Count activities
+SELECT COUNT(*) AS `count`
+FROM `or_activities`
 
 -- :name find-all :? :*
 -- :doc Find all activities
