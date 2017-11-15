@@ -72,6 +72,7 @@ FROM `or_properties`
 -- :name find-by-uuid :? :1
 -- :doc Find first property with ID
 SELECT
+  `or_properties`.`id` AS `id`,
   `or_properties`.`uuid` AS `_id`,
   `or_properties`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,
@@ -93,6 +94,7 @@ WHERE `or_properties`.`uuid` = :id
 -- :name find-all-by-uuid :? :*
 -- :doc Find all properties by ID
 SELECT
+  `or_properties`.`id` AS `id`,
   `or_properties`.`uuid` AS `_id`,
   `or_properties`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,

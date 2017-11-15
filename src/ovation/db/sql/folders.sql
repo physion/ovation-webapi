@@ -52,6 +52,7 @@ FROM `or_folders`
 -- :name find-all :? :*
 -- :doc Find all folders
 SELECT
+  `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -73,6 +74,7 @@ WHERE `or_folders`.`archived` = :archived
 -- :name find-all-by-uuid :? :*
 -- :doc Find all folders by id
 SELECT
+  `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -95,6 +97,7 @@ WHERE `or_folders`.`uuid` IN (:v*:ids)
 -- :name find-all-by-rel :? :*
 -- :doc Find all folders by entity and rel
 SELECT
+  `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,

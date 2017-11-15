@@ -72,6 +72,7 @@ select * from relations
 -- :name find-all-by-uuid :? :*
 -- :doc Find all relations by id
 SELECT
+  `or_relations`.`id` AS `id`,
   `or_relations`.`uuid` AS `_id`,
   `or_relations`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -93,6 +94,7 @@ WHERE `or_relations`.`uuid` IN (:v*:ids)
 -- :name find-all-by-parent-entity-rel :? :*
 -- :doc Find all relations by parent entity and rel
 SELECT
+  `or_relations`.`id` AS `id`,
   `or_relations`.`uuid` AS `_id`,
   `or_relations`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,

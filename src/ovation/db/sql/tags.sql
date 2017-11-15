@@ -72,6 +72,7 @@ FROM `or_tags`
 -- :name find-by-uuid :? :1
 -- :doc Find first tag with ID
 SELECT
+  `or_tags`.`id` AS `id`,
   `or_tags`.`uuid` AS `_id`,
   `or_tags`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,
@@ -92,6 +93,7 @@ WHERE `or_tags`.`uuid` = :id
 -- :name find-all-by-uuid :? :*
 -- :doc Find all tags by ID
 SELECT
+  `or_tags`.`id` AS `id`,
   `or_tags`.`uuid` AS `_id`,
   `or_tags`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,

@@ -83,6 +83,7 @@ select * from timeline_events
 -- :name find-by-uuid :? :1
 -- :doc Find first tag with ID
 SELECT
+  `or_timeline_events`.`id` AS `id`,
   `or_timeline_events`.`uuid` AS `_id`,
   `or_timeline_events`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,
@@ -106,6 +107,7 @@ WHERE `or_timeline_events`.`uuid` = :id
 -- :name find-all-by-uuid :? :*
 -- :doc Find all timeline_events by ID
 SELECT
+  `or_timeline_events`.`id` AS `id`,
   `or_timeline_events`.`uuid` AS `_id`,
   `or_timeline_events`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,

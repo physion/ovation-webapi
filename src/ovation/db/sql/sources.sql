@@ -105,6 +105,7 @@ FROM `or_sources`
 -- :doc Find all sources
 -- :note ACL owner_id, project_id
 SELECT
+  `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,
@@ -126,6 +127,7 @@ WHERE `or_sources`.`archived` = :archived
 -- :name find-all-by-uuid :? :*
 -- :doc Find all sources by id
 SELECT
+  `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,
@@ -148,6 +150,7 @@ WHERE `or_sources`.`uuid` IN (:v*:ids)
 -- :name find-all-by-rel :? :*
 -- :doc Find all sources by entity and rel
 SELECT
+  `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,

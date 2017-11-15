@@ -112,6 +112,7 @@ FROM `or_files`
 -- :name find-all :? :*
 -- :doc Find all files
 SELECT
+  `or_files`.`id` AS `id`,
   `or_files`.`uuid` AS `_id`,
   `or_files`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -133,6 +134,7 @@ WHERE `or_files`.`archived` = :archived
 -- :name find-all-by-uuid :? :*
 -- :doc Find all files by id
 SELECT
+  `or_files`.`id` AS `id`,
   `or_files`.`uuid` AS `_id`,
   `or_files`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -155,6 +157,7 @@ WHERE `or_files`.`uuid` IN (:v*:ids)
 -- :name find-all-by-rel :? :*
 -- :doc Find all files by entity and rel
 SELECT
+  `or_files`.`id` AS `id`,
   `or_files`.`uuid` AS `_id`,
   `or_files`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,

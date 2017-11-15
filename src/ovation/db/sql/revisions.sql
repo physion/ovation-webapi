@@ -132,6 +132,7 @@ select * from revisions
 -- :name find-all-by-uuid :? :*
 -- :doc Find all revisions by id
 SELECT
+  `or_revisions`.`id` AS `id`,
   `or_revisions`.`uuid` AS `_id`,
   `or_revisions`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -160,6 +161,7 @@ WHERE `or_revisions`.`uuid` IN (:v*:ids)
 -- :name find-all-by-rel :? :*
 -- :doc Find all revisions by entity and rel
 SELECT
+  `or_revisions`.`id` AS `id`,
   `or_revisions`.`uuid` AS `_id`,
   `or_revisions`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -221,6 +223,7 @@ GROUP BY `or_projects`.`uuid`
 -- :name find-head-by-file-id :? :*
 -- :doc Find HEAD revision for given file ID
 SELECT
+  `or_revisions`.`id` AS `id`,
   `or_revisions`.`uuid` AS `_id`,
   `or_revisions`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,

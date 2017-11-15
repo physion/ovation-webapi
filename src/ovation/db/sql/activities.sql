@@ -105,6 +105,7 @@ FROM `or_activities`
 -- :name find-all :? :*
 -- :doc Find all activities
 SELECT
+  `or_activities`.`id` AS `id`,
   `or_activities`.`uuid` AS `_id`,
   `or_activities`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -126,6 +127,7 @@ WHERE `or_activities`.`archived` = :archived
 -- :name find-all-by-uuid :? :*
 -- :doc Find all activities by id
 SELECT
+  `or_activities`.`id` AS `id`,
   `or_activities`.`uuid` AS `_id`,
   `or_activities`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,
@@ -148,6 +150,7 @@ WHERE `or_activities`.`uuid` IN (:v*:ids)
 -- :name find-all-by-rel :? :*
 -- :doc Find all activities by entity and rel
 SELECT
+  `or_activities`.`id` AS `id`,
   `or_activities`.`uuid` AS `_id`,
   `or_activities`.`organization_id` AS `organization_id`,
   `or_projects`.`uuid` AS `project`,

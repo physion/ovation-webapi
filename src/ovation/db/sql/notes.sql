@@ -51,6 +51,7 @@ FROM `or_notes`
 -- :name find-by-uuid :? :1
 -- :doc Find first note with ID
 SELECT
+  `or_notes`.`id` AS `id`,
   `or_notes`.`uuid` AS `_id`,
   `or_notes`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,
@@ -73,6 +74,7 @@ WHERE `or_notes`.`uuid` = :id
 -- :name find-all-by-uuid :? :*
 -- :doc Find all notes by ID
 SELECT
+  `or_notes`.`id` AS `id`,
   `or_notes`.`uuid` AS `_id`,
   `or_notes`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `user`,
