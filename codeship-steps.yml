@@ -22,7 +22,7 @@
   tag: ^(staging|development)
   service: web
   type: push
-  image_name: gcr.io/ovation-io/indexer
+  image_name: gcr.io/ovation-io/webapi
   image_tag: "{{ .Branch }}-{{ .Timestamp }}"
   registry: https://gcr.io
   dockercfg_service: gcr-dockercfg
