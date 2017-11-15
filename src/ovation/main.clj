@@ -7,7 +7,6 @@
             [clojure.tools.logging :as logging]))
 
 (defn -main []
-  (logging/info (str environ.core/env))
   (component/start (system/create-system {:web    {:port config/PORT}
                                           :elasticsearch {:url (config/config :elasticsearch-url)}
                                           :pubsub {:project-id (config/config :google-cloud-project-id)}
