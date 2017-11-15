@@ -1,0 +1,6 @@
+dependencies:
+  - name: gcloud-sqlproxy
+    version: "0.2.1"
+    tags:
+      - sql
+
