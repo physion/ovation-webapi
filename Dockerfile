@@ -1,4 +1,4 @@
-FROM clojure:lein-2.7.1
+FROM clojure:lein-2.8.1
 MAINTAINER support@ovation.io
 
 #RUN apt-get -y update
