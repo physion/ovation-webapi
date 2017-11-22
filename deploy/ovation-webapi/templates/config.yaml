@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  CLOUDANT_DB_URL: {{ .Values.config.CLOUDANT_DB_URL }}
+  OVATION_IO_HOST_URI: {{ .Values.config.OVATION_IO_HOST_URI }}
+  GOOGLE_CLOUD_PROJECT_ID: {{ .Values.config.GOOGLE_CLOUD_PROJECT_ID }}
+  DB_UPDATES_TOPIC: updates-{{ .Release.Namespace }}

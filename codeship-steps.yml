@@ -2,31 +2,33 @@
   service: web
   command: lein midje
 
-- name: Push to GCR (dev)
-  tag: development
-  service: web
-  type: push
-  image_name: gcr.io/ovation-io/webapi
-  image_tag: "development-{{ .Timestamp }}"
-  registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg
-
-- name: Push to GCR (prod)
+## Production
+- name: Push to GCR (production)
   tag: master
   service: web
   type: push
   image_name: gcr.io/ovation-io/webapi
   image_tag: "production-{{ .Timestamp }}"
   registry: https://gcr.io
-  dockercfg_service: gcr_dockercfg
+  dockercfg_service: gcr-dockercfg
 
-
-- name: Deploy (dev)
-  tag: development
-  service: gke-deploy
-  command: deploy/development/deploy.sh
-
-- name: Deploy (prod)
+- name: Deploy (production)
   tag: master
   service: gke-deploy
-  command: deploy/production/deploy.sh
+  command: deploy/deploy.sh production
+
+## All others
+- name: Push to GCR
+  tag: ^(staging|development)
+  service: web
+  type: push
+  image_name: gcr.io/ovation-io/webapi
+  image_tag: "{{ .Branch }}-{{ .Timestamp }}"
+  registry: https://gcr.io
+  dockercfg_service: gcr-dockercfg
+
+- name: Deploy
+  tag: ^(staging|development)
+  service: gke-deploy
+  command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
+

@@ -10,6 +10,9 @@ You will need
 
 * [Leiningen][1] 2.3.4+
 * Java 1.8+
+* Kubernetes
+* Helm (`brew install kubernetes-helm`)
+* helm-secrets (`helm plugin install https://github.com/futuresimple/helm-secrets`)
 
 [1]: https://github.com/technomancy/leiningen
 
@@ -29,7 +32,7 @@ You can get your API key from your account Profile > Token.
 
 To test from the command line, run:
 
-    docker-compose -f docker-compose.yml -f docker-compose-dev.yml run repl lein midje
+    docker-compose run repl lein midje
     
 Or from a REPL (with sweet, sweet autotest):
 
@@ -44,7 +47,7 @@ Limit test to directory
 
 To start a web server for the application on port 3000:
 
-    docker-compose -f docker-compose.yml -f docker-compose-dev.yml up
+    docker-compose up
 
 Or from a REPL:
     
@@ -67,7 +70,7 @@ To start a REPL:
    
 or to start a headless nREPL server that can be used from, e.g. IntelliJ:
 
-    docker-compose -f docker-compose.yml up
+    docker-compose up
     
 the nREPL port is fixed in docker-compose.yml, but nREPL saves the port in `.nrepl-port`.
 

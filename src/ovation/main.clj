@@ -3,7 +3,8 @@
   (:require [com.stuartsierra.component :as component]
             [ovation.system :as system]
             [ovation.config :as config]
-            [ovation.util :as util]))
+            [ovation.util :as util]
+            [clojure.tools.logging :as logging]))
 
 (defn -main []
   (component/start (system/create-system {:web           {:port config/PORT}

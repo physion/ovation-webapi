@@ -5,11 +5,12 @@ services:
     command: lein run
     ports:
       - "3000:3000"
+    links:
+      - db
+#       - pubsub
     volumes:
       - .:/app
     env_file: dev.env
-    links:
-      - db
 
   repl:
     build: .
@@ -34,9 +35,6 @@ services:
     volumes:
       - ./db/initdb.d:/docker-entrypoint-initdb.d
       - ./db/data:/var/lib/mysql/
-
-# volumes:
-#   db-data:
 
 #    pubsub:
 #      image: niallmccullagh/docker-google-cloud-emulators:latest

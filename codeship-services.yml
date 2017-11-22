@@ -12,19 +12,15 @@ services:
   db:
     image: mysql
 
-#  pubsub:
-#    image: niallmccullagh/docker-google-cloud-emulators:latest
-#    ports:
-#      - "8538:8538"
-#    command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
-
-  gcr_dockercfg:
+  gcr-dockercfg:
     image: codeship/gcr-dockercfg-generator
     add_docker: true
     encrypted_env_file: google-credentials.encrypted
 
   gke-deploy:
-    image: codeship/google-cloud-deployment
+    build:
+      image: deploy
+      dockerfile: Dockerfile.deploy
     encrypted_env_file: google-credentials.encrypted
     add_docker: true
     volumes:
