@@ -33,10 +33,10 @@ services:
       - "3306:3306"
     volumes:
       - ./db/initdb.d:/docker-entrypoint-initdb.d
-      - db-data:/var/lib/mysql/
+      - ./db/data:/var/lib/mysql/
 
-volumes:
-  db-data:
+# volumes:
+#   db-data:
 
 #    pubsub:
 #      image: niallmccullagh/docker-google-cloud-emulators:latest
