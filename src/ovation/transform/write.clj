@@ -75,6 +75,12 @@
   (logging/info "Transforming to db" docs)
   (map #(doc-to-db ctx db collaboration_roots %) docs))
 
+(defn transform-annotation
+  [value]
+  (if-let [annotation (:annotation value)]
+    (merge value annotation)
+    value))
+
 (defn transform-entity
   [value db entity-id]
   (if entity-id
@@ -113,6 +119,7 @@
     (-> value
       (ensure-project db project)
       (ensure-user user-id)
+      (transform-annotation)
       (transform-entity db (:entity value))
       (transform-target db (:target_id value))
       (transform-source db (:source_id value)))))

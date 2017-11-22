@@ -126,7 +126,25 @@
     (fact "adds user"
       (let [value {}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:user_id ..owner-id..})))
-    (fact "transforms annotation")
+    (fact "transforms annotation"
+      (let [value {:annotation {:text ..text..
+                                :timestamp ..timestamp..
+                                :key ..key..
+                                :value ..value..
+                                :tag ..tag..
+                                :name ..name..
+                                :notes ..notes..
+                                :start ..start..
+                                :end ..end..}}]
+        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:text ..text..
+                                                            :timestamp ..timestamp..
+                                                            :key ..key..
+                                                            :value ..value..
+                                                            :tag ..tag..
+                                                            :name ..name..
+                                                            :notes ..notes..
+                                                            :start ..start..
+                                                            :end ..end..})))
     (fact "transforms target_id to child_entity_id and type"
       (let [value {:target_id ..target..}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:child_entity_id ..entity-id..
