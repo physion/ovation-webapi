@@ -25,7 +25,7 @@
   (team-ids [c]
     (auth/authenticated-teams (::identity c)))
   (user-id [c]
-    (auth/authenticated-user-id (::identity c)))
+    (auth/authenticated-user-uuid (::identity c)))
   (organization-ids [c]
     (auth/organization-ids (::request c)))
   (authorization-ch [c]

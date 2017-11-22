@@ -1,7 +1,9 @@
 (ns ovation.core
   (:require [clojure.java.jdbc :as jdbc]
+            [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.auth :as auth]
+            [ovation.config :as config]
             [ovation.constants :as c]
             [ovation.db.activities :as activities]
             [ovation.db.files :as files]
@@ -15,11 +17,31 @@
             [ovation.db.tags :as tags]
             [ovation.db.timeline_events :as timeline_events]
             [ovation.db.uuids :as uuids]
+            [ovation.pubsub :as pubsub]
             [ovation.request-context :as rc]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.util :as util]
             [slingshot.slingshot :refer [throw+ try+]]))
+
+(defn -publish-updates
+  [publisher docs & {:keys [channel close?] :or {channel (chan)
+                                                 close?  true}}]
+  (let [msg-fn   (fn [doc]
+                   {:id           (str (:_id doc))
+                    :type         (:type doc)
+                    :organization (:organization_id doc)})
+        topic    (config/config :db-updates-topic :default :updates)
+        channels (map #(pubsub/publish publisher topic (msg-fn %) (chan)) docs)]
+
+    (async/pipe (async/merge channels) channel close?)))
+
+(defn publish-updates
+  [db docs]
+  (let [{pubsub     :pubsub} db
+        publisher (:publisher pubsub)
+        pub-ch nil] ;; TODO Fix me
+    (publish-updates publisher docs :channel pub-ch)))
 
 ;; QUERY
 (defn get-annotation
@@ -185,9 +207,9 @@
   [ctx db entity & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
   (let [{org-id ::rc/org, auth ::rc/identity} ctx
         user-id (auth/authenticated-user-id auth)
-        record (tw/to-db ctx entity :collaboration_roots collaboration_roots
-                                    :organization_id org-id
-                                    :user_id user-id)
+        record (tw/to-db ctx db entity :collaboration_roots collaboration_roots
+                                       :organization_id org-id
+                                       :user_id user-id)
         result (condp = (:type entity)
                  c/PROJECT-TYPE  (projects/create db record)
                  c/SOURCE-TYPE   (sources/create db record)
@@ -249,19 +271,19 @@
 ;; TODO any create or update operation must publish changes
 (defn- -create-relation-value
   [ctx db value]
-  (let [record (tw/value-to-db ctx value)
+  (let [record (tw/value-to-db ctx db value)
         result (relations/create db record)]
     (-> value
       (assoc :id (:generated_key result)))))
 
 (defn- -create-annotation-value
   [ctx db value]
-  (let [record (tw/value-to-db value)
+  (let [record (tw/value-to-db ctx db value)
         result (condp = (:annotation_type value)
-                 c/NOTES (notes/create db (tw/annotation-value-to-db ctx value))
-                 c/PROPERTIES (properties/create db (tw/annotation-value-to-db ctx value))
-                 c/TAGS (tags/create db value)
-                 c/TIMELINE_EVENTS (timeline_events/create db value))]
+                 c/NOTES (notes/create db record)
+                 c/PROPERTIES (properties/create db record)
+                 c/TAGS (tags/create db record)
+                 c/TIMELINE_EVENTS (timeline_events/create db record))]
     (-> value
       (assoc :id (:generated_key result)))))
 
@@ -298,12 +320,12 @@
 
 (defn -update-relation-value
   [ctx db value]
-  (let [record (tw/value-to-db ctx value)]
+  (let [record (tw/value-to-db ctx db value)]
     (relations/update db record)))
 
 (defn -update-annotation-value
   [ctx db value]
-  (let [record (tw/value-to-db ctx value)]
+  (let [record (tw/value-to-db ctx db value)]
     (condp = (:annotation_type record)
       c/NOTES (notes/update db record)
       c/PROPERTIES (properties/update db record)
@@ -355,7 +377,7 @@
 (defn -update-entities-tx
   [ctx db docs]
   (jdbc/with-db-transaction [tx db]
-    (map #(-update-entity tx %) (tw/to-db ctx docs))))
+    (map #(-update-entity tx %) (tw/to-db ctx db docs))))
 
 (defn-traced update-entities
   "Updates entities{EntityUpdate} or creates entities. If :allow-keys is non-empty, allows extra keys. Otherwise,

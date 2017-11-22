@@ -1,12 +1,11 @@
 -- {
---   "rel": "files",
 --   "_id": "cd553b43-68bc-409c-9dc5-795af00e1c41--files-->41ee30a5-2965-4492-8335-0640a763de63",
---   "_rev": "3-4b912ae8a45aa15967fa486bb829b4ab",
 --   "organization_id": 0,
 --   "type": "Relation",
+--   "user_id": "15cab930-1e24-0131-026c-22000a977b96",
+--   "rel": "files",
 --   "inverse_rel": "parents",
 --   "target_id": "41ee30a5-2965-4492-8335-0640a763de63",
---   "user_id": "15cab930-1e24-0131-026c-22000a977b96",
 --   "source_id": "cd553b43-68bc-409c-9dc5-795af00e1c41",
 --   "links": {
 --     "_collaboration_roots": [
@@ -64,10 +63,6 @@ WHERE `or_relations`.`uuid` = :_id
 -- :doc Count relations
 SELECT COUNT(*) AS `count`
 FROM `or_relations`
-
--- :name find-all
--- :doc Find all relations
-select * from relations
 
 -- :name find-all-by-uuid :? :*
 -- :doc Find all relations by id

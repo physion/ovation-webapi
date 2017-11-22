@@ -1,10 +1,7 @@
 -- {
 --   "_id": "string",
---   "permissions": {},
---   "_rev": "string",
 --   "organization_id": 0,
 --   "type": "string",
---   "organization": 0,
 --   "annotation_type": "string",
 --   "entity": "string",
 --   "user": "string",
@@ -12,6 +9,7 @@
 --     "key": "string",
 --     "value": {}
 --   },
+--   "permissions": {},
 --   "links": {
 --     "_collaboration_roots": [
 --       "string"
@@ -75,6 +73,7 @@ SELECT
   `or_properties`.`id` AS `id`,
   `or_properties`.`uuid` AS `_id`,
   `or_properties`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_properties`.`property_key` AS `key`,
@@ -97,6 +96,7 @@ SELECT
   `or_properties`.`id` AS `id`,
   `or_properties`.`uuid` AS `_id`,
   `or_properties`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_properties`.`property_key` AS `key`,

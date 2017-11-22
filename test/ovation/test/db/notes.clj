@@ -9,6 +9,7 @@
 
 (def RECORD '{:_id ..note-id..
               :organization_id ..org..
+              :project ..project..
               :user ..note-user..
               :entity ..note-entity..
               :text ..text..
@@ -41,7 +42,7 @@
                       :text "Some note"
                       :timestamp (util/iso-now)
                       :created-at (util/iso-now)
-                      :edited_at (util/iso-now)}]
+                      :updated-at (util/iso-now)}]
             (:generated_key (notes/create tx args)) => truthy)))
 
       (facts "About `update`"

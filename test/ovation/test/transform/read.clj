@@ -42,15 +42,6 @@
         (r/annotations-route ..ctx.. {:_id  "123"
                                       :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
-  (facts "About error handling"
-    (facts "in couch-to-entity"
-      (fact "throws conflict! if any doc has {:error 'conflict'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
-      (fact "throws forbidden! if any doc has {:error 'forbidden'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
-      (fact "throws unauthorized! if any doc has {:error 'unauthorized'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
-
   (facts "About DTO link modifications"
     (fact "`remove-private-links` removes '_...' links"
       (tr/remove-private-links {:_id   ...id...
@@ -110,27 +101,27 @@
 
     (facts "`add-team-link`"
       (fact "adds link for Project"
-        (let [couch {:_id ..id..
-                     :type c/PROJECT-TYPE
-                     :links {}}]
-          (tr/add-team-link couch ..ctx..) => (assoc-in couch [:links :team] ..team..)
+        (let [doc {:_id ..id..
+                   :type c/PROJECT-TYPE
+                   :links {}}]
+          (tr/add-team-link doc ..ctx..) => (assoc-in doc [:links :team] ..team..)
           (provided
             (r/team-route ..ctx.. ..id..) => ..team..)))
       (fact "does not add team link for non-project"
-        (let [couch {:_id ..id..
-                     :type c/SOURCE-TYPE
-                     :links {}}]
-          (tr/add-team-link couch ..ctx..) => couch)))
+        (let [doc {:_id ..id..
+                   :type c/SOURCE-TYPE
+                   :links {}}]
+          (tr/add-team-link doc ..ctx..) => doc)))
 
     (fact "`add-self-link` adds self link to entity"
-      (let [couch {:_id   ..id..
-                   :type  ..type..
-                   :links {}}]
-        (tr/add-self-link couch ..ctx..) => {:_id      ..id..
-                                                :type  ..type..
-                                                :links {:self ..route..}}
+      (let [doc {:_id   ..id..
+                 :type  ..type..
+                 :links {}}]
+        (tr/add-self-link doc ..ctx..) => {:_id   ..id..
+                                           :type  ..type..
+                                           :links {:self ..route..}}
         (provided
-          (r/self-route ..ctx.. couch) => ..route..)))
+          (r/self-route ..ctx.. doc) => ..route..)))
 
     (facts "add-annotation-self-link"))
 

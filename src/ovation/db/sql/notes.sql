@@ -1,3 +1,23 @@
+-- {
+--   "_id": "string",
+--   "organization_id": 0,
+--   "type": "string",
+--   "annotation_type": "string",
+--   "entity": "string",
+--   "user": "string",
+--   "edited_at": "string",
+--   "annotation": {
+--     "text": "string",
+--     "timestamp": "string"
+--   },
+--   "permissions": {},
+--   "links": {
+--     "_collaboration_roots": [
+--       "string"
+--     ]
+--   }
+-- }
+
 -- :name create :insert
 -- :doc Create new note
 INSERT INTO `or_notes` (
@@ -22,7 +42,7 @@ VALUES (
   :text,
   :timestamp,
   :created-at,
-  :edited_at
+  :updated-at
 )
 
 -- :name update :! :n
@@ -54,6 +74,7 @@ SELECT
   `or_notes`.`id` AS `id`,
   `or_notes`.`uuid` AS `_id`,
   `or_notes`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_notes`.`text` AS `text`,
@@ -77,6 +98,7 @@ SELECT
   `or_notes`.`id` AS `id`,
   `or_notes`.`uuid` AS `_id`,
   `or_notes`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_notes`.`text` AS `text`,

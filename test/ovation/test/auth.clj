@@ -21,10 +21,15 @@
   (String. (b64/encode (.getBytes original)) "UTF-8"))
 
 (facts "About authentication"
-  (fact "`authorized-user-id` returns user UUID"
+  (fact "`authorized-user-uuid` returns user UUID"
+    (auth/authenticated-user-uuid ..auth..) => ..id..
+    (provided
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})}))
+
+  (fact "`authorized-user-id` returns user ID"
     (auth/authenticated-user-id ..auth..) => ..id..
     (provided
-      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})})))
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_id ..id..})})))
 
 (facts "About `organization-ids`"
   (fact "returns organization-ids from authenticated-teams"
@@ -108,7 +113,7 @@
                            ::request-context/org      ..org..}))
 
   (facts ":read"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
@@ -183,7 +188,7 @@
                                            :links   {:_collaboration_roots [..team1.. ..team2..]}}) => true))))
 
   (facts ":create"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
                                               ::request-context/org      ..org..}
@@ -248,7 +253,7 @@
                                              :owner nil
                                              :links {:_collaboration_roots [..root..]}}) => true
           (provided
-            (auth/authenticated-user-id ..auth..) => ..user..
+            (auth/authenticated-user-uuid ..auth..) => ..user..
             (auth/permissions ..auth.. [..root..]) => [{:uuid            ..root..
                                                             :permissions {:read true}}]))
 
@@ -276,12 +281,12 @@
                                              :owner ..user..
                                              :links {:_collaboration_roots [..root..]}}) => false
           (provided
-            (auth/authenticated-user-id ..auth..) => ..user..
+            (auth/authenticated-user-uuid ..auth..) => ..user..
             (auth/permissions ..auth.. [..root..]) => ..permissions..
             (auth/collect-permissions ..permissions.. :read) => [true false])))))
 
   (facts ":update"
-    (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+    (against-background [(auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
                                               ::request-context/org      ..org..}
@@ -300,7 +305,7 @@
                                                                    :write true
                                                                    :admin false}}]))))
   (facts ":delete"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
                          ..ctx.. =contains=> {::request-context/identity ..auth..
                                               ::request-context/org      ..org..}
@@ -336,7 +341,7 @@
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
-          (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+          (auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
           (auth/permissions ..auth.. ..roots..) => [{:uuid            :uuid1
                                                          :permissions {:read  true
                                                                        :write true
@@ -351,7 +356,7 @@
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => false
         (provided
-          (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+          (auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
           (auth/permissions ..auth.. ..roots..) => {:permissions [{:uuid            :uuid1
                                                                        :permissions {:read  true
                                                                                      :write false

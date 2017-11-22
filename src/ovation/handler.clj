@@ -37,6 +37,7 @@
             [ovation.auth :as auth]
             [clojure.java.io :as io]
             [ovation.constants :as k]
+            [ovation.constants :as c]
             [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
             [ovation.audit :as audit]
@@ -427,7 +428,7 @@
                         member-id (let [project-ids (authz/get-organization-member-project-ids authz ctx member-id)
                                         entities    (core/get-entities ctx db project-ids)]
                                     (ok {:projects entities}))
-                        :else (let [entities (core/of-type ctx db "Project")]
+                        :else (let [entities (core/of-type ctx db c/PROJECT-TYPE)]
                                 (ok {:projects entities})))))
 
 

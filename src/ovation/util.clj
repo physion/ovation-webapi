@@ -12,8 +12,6 @@
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]))
 
-(def RELATION_TYPE "Relation")
-
 (defn make-uuid
   "Wraps java.util.UUID/randomUUID for test mocking."
   []

@@ -82,7 +82,7 @@
                        :text "Some note"
                        :timestamp (util/iso-now)
                        :created-at (util/iso-now)
-                       :edited_at (util/iso-now)} attrs)
+                       :updated-at (util/iso-now)} attrs)
         note-id (:generated_key (notes/create db record))]
     (-> record
       (assoc :id note-id))))
@@ -210,7 +210,9 @@
   (if-not (contains? attrs :entity_type)
     (throw (AssertionError. "Missing required key :entity_type")))
   (let [record (merge {:_id (str (util/make-uuid))
-                       :tag "Tag"} attrs)
+                       :tag "Tag"
+                       :created-at (util/iso-now)
+                       :updated-at (util/iso-now)} attrs)
         tag-id (:generated_key (tags/create db record))]
     (-> record
       (assoc :id tag-id))))
@@ -242,7 +244,9 @@
                        :name "Timeline event"
                        :notes "A note"
                        :start (util/iso-now)
-                       :end (util/iso-now)} attrs)
+                       :end (util/iso-now)
+                       :created-at (util/iso-now)
+                       :updated-at (util/iso-now)} attrs)
         timeline-event-id (:generated_key (timeline_events/create db record))]
     (-> record
       (assoc :id timeline-event-id))))

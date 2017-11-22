@@ -9,6 +9,7 @@
 
 (def RECORD '{:_id ..property-id..
               :organization_id ..org..
+              :project ..project..
               :user ..property-user..
               :entity ..property-entity..
               :key ..property-key..

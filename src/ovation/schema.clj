@@ -1,8 +1,7 @@
 (ns ovation.schema
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
-            [ovation.constants :as k]
-            [ovation.util :as util]))
+            [ovation.constants :as k]))
 
 (s/defschema Id (s/either s/Int s/Str))
 
@@ -64,7 +63,7 @@
 
 (s/defschema LinkInfo {:_id                              s/Str
                        (s/optional-key :_rev)            s/Str
-                       :type                             (s/eq util/RELATION_TYPE)
+                       :type                             (s/eq k/RELATION-TYPE)
 
                        :user_id                          s/Uuid
                        :source_id                        s/Uuid

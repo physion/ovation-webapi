@@ -8,7 +8,7 @@
             [clojure.tools.logging :as logging]
             [buddy.auth]
             [ovation.config :as config]
-            [ovation.constants :as k]
+            [ovation.constants :as c]
             [clojure.string :as string]))
 
 
@@ -34,13 +34,6 @@
     (if (map? id)
       (assoc id ::token (token request))
       id)))
-
-
-(defn authenticated-user-id                                 ;; TODO use authorizations
-  "The UUID of the authorized user"
-  [auth]
-  (if-let [ateams (::authenticated-teams auth)]
-    (:user_uuid (deref ateams 500 {:user_uuid nil}))))
 
 (defn service-account?
   [auth]
@@ -115,6 +108,16 @@
   [auth]
   (authenticated-team-value auth :team_uuids))
 
+(defn authenticated-user-uuid                                 ;; TODO use authorizations
+  "The UUID of the authorized user"
+  [auth]
+  (authenticated-team-value auth :user_uuid))
+
+(defn authenticated-user-id
+  "The ID of the authenticated user"
+  [auth]
+  (authenticated-team-value auth :user_id))
+
 (defn organization-ids                                      ;;TODO move to authz
   "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
   [auth]
@@ -124,37 +127,39 @@
 
 (defn effective-collaboration-roots
   [doc]
-  (case (:type doc)
-    "Project" (conj (get-in doc [:links :_collaboration_roots]) (:_id doc))
+  (condp = (:type doc)
+    c/PROJECT-TYPE [(:_id doc)]
 
     ;; default
-    (get-in doc [:links :_collaboration_roots])))
+    (if-let [project-id (:project_id doc)]
+      [project-id]
+      (get-in doc [:links :_collaboration_roots]))))
 
 (defn- can-create?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
 
-    (case (:type doc)
+    (condp = (:type doc)
       ;; User owns annotations and can read all collaboration roots
-      "Annotation" (= auth-user-id (:user doc))
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
 
-      "Relation" (= auth-user-id (:user_id doc))
+      c/RELATION-TYPE (= auth-user-uuid (:user_id doc))
 
-      "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+      c/PROJECT-TYPE (or (nil? (:owner doc)) (= auth-user-uuid (:owner doc)))
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
             permissions            (permissions auth collaboration-root-ids)]
 
-        (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+        (and (or (nil? (:owner doc)) (= auth-user-uuid (:owner doc)))
           (every? true? (collect-permissions permissions :read)))))))
 
 (defn- can-update?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
-    (case (:type doc)
-      "Annotation" (= auth-user-id (:user doc))
-      "Relation" (= auth-user-id (:user_id doc))
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
+    (condp = (:type doc)
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
+      c/RELATION-TYPE (= auth-user-uuid (:user_id doc))
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
@@ -162,7 +167,7 @@
         ;; handle entity with collaboration roots
         (or
           ;; user is owner and can read all roots
-          (and (= auth-user-id (:owner doc))
+          (and (= auth-user-uuid (:owner doc))
               (every? true? (collect-permissions permissions :read)))
 
           ;; user can write any of the roots
@@ -171,10 +176,10 @@
 
 (defn- can-delete?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
-    (case (:type doc)
-      "Annotation" (= auth-user-id (:user doc))
-      "Relation" (or (= auth-user-id (:user_id doc))
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
+    (condp = (:type doc)
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
+      c/RELATION-TYPE (or (= auth-user-uuid (:user_id doc))
                    (let [roots       (get-in doc [:links :_collaboration_roots])
                          permissions (permissions auth roots)]
                      (every? true? (collect-permissions permissions :write))))
@@ -182,15 +187,15 @@
       ;; default
       (let [permissions (permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
-          (= auth-user-id (:owner doc)))))))
+          (= auth-user-uuid (:owner doc)))))))
 
 (defn- can-read?
   [auth doc & {:keys [cached-teams] :or [cached-teams nil]}]
-  (let [authenticated-user  (authenticated-user-id auth)
+  (let [authenticated-user  (authenticated-user-uuid auth)
         authenticated-teams (or cached-teams (authenticated-teams auth))
-        owner               (case (:type doc)
-                              "Annotation" (:user doc)
-                              "Relation" (:user_id doc)
+        owner               (condp = (:type doc)
+                              c/ANNOTATION-TYPE (:user doc)
+                              c/RELATION-TYPE (:user_id doc)
                               ;; default
                               (:owner doc))
         roots               (effective-collaboration-roots doc)]
@@ -216,13 +221,13 @@
           (not-found!))
 
         (case op
-          ::create (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+          ::create (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
                      (can-create? auth doc))
-          ::update (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+          ::update (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
                      (can-update? auth doc))
-          ::delete (and (has-scope? auth k/WRITE-GLOBAL-SCOPE)
+          ::delete (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
                      (can-delete? auth doc))
-          ::read (and (has-scope? auth k/READ-GLOBAL-SCOPE)
+          ::read (and (has-scope? auth c/READ-GLOBAL-SCOPE)
                    (can-read? auth doc :teams teams))
 
           ;;default

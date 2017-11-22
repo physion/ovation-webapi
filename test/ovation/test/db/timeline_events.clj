@@ -9,6 +9,7 @@
 
 (def RECORD '{:_id ..timeline-event-id..
               :organization_id ..org..
+              :project_id ..project..
               :user ..timeline-event-user..
               :entity ..timeline-event-entity..
               :name ..timeline-event-name..
@@ -42,7 +43,9 @@
                       :name "Timeline event"
                       :notes "A note"
                       :start (util/iso-now)
-                      :end (util/iso-now)}]
+                      :end (util/iso-now)
+                      :created-at (util/iso-now)
+                      :updated-at (util/iso-now)}]
             (:generated_key (timeline_events/create tx args)) => truthy)))
 
       (facts "About `update`"

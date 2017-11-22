@@ -1,10 +1,5 @@
 -- {
 --   "_id": "5162f46e-f79d-43d6-ba9b-73b1198119f0",
---   "permissions": {
---     "update": false,
---     "delete": false
---   },
---   "_rev": "1-29d6d50d42151f358d3f4375219010ee",
 --   "organization_id": 292,
 --   "type": "Annotation",
 --   "annotation_type": "tags",
@@ -13,6 +8,7 @@
 --   "annotation": {
 --     "tag": "Version tag"
 --   },
+--   "permissions": {},
 --   "links": {
 --     "_collaboration_roots": [
 --       "aa511810-a28e-489b-810e-8d52d48e8673"
@@ -43,8 +39,8 @@ VALUES (
   :entity_id,
   :entity_type,
   :tag,
-  now(),
-  now()
+  :created-at,
+  :updated-at
 )
 
 -- :name update :! :n
@@ -75,6 +71,7 @@ SELECT
   `or_tags`.`id` AS `id`,
   `or_tags`.`uuid` AS `_id`,
   `or_tags`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_tags`.`tag` AS `tag`,
@@ -96,6 +93,7 @@ SELECT
   `or_tags`.`id` AS `id`,
   `or_tags`.`uuid` AS `_id`,
   `or_tags`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_tags`.`tag` AS `tag`,

@@ -130,9 +130,9 @@
         (fact "gets HEAD revisions"
           (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
           (provided
-            (revisions/find-latest-by-file-id ..db.. {:organization_id ..org..
-                                                      :team_uuids []
-                                                      :file_id ..fileid..}) => [..doc..]
+            (revisions/find-head-by-file-id ..db.. {:organization_id ..org..
+                                                    :team_uuids []
+                                                    :file_id ..fileid..}) => [..doc..]
             (tr/entities-from-db [..doc..] ..ctx..) => [..rev..]))))
 
     (facts "update-metadata"

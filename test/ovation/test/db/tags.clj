@@ -9,6 +9,7 @@
 
 (def RECORD '{:_id ..tag-id..
               :organization_id ..org..
+              :project ..project..
               :user ..tag-user..
               :entity ..tag-entity..
               :tag ..tag..
@@ -21,18 +22,6 @@
     (against-background [(around :facts (jdbc/with-db-transaction [tx db]
                                         (jdbc/db-set-rollback-only! tx)
                                         ?form))]
-
-
-
-
-  :_id,
-  :user_id,
-  :organization_id,
-  :project_id,
-  :entity_id,
-  :entity_type,
-  :tag,
-
 
       (facts "About `create`"
         (fact "should insert tag"
@@ -48,7 +37,9 @@
                       :project_id project-id
                       :entity_id project-id
                       :entity_type "Project"
-                      :tag "Tag"}]
+                      :tag "Tag"
+                      :created-at (util/iso-now)
+                      :updated-at (util/iso-now)}]
             (:generated_key (tags/create tx args)) => truthy)))
 
       (facts "About `update`"

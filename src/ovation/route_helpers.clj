@@ -249,16 +249,7 @@
           (ok {type-kw entity}))
 
         (catch [:type :ovation.auth/unauthorized] _
-          (unauthorized {:errors {:detail "Unauthorized"}}))
-        (catch [:type :ovation.couch/conflict] err
-          (conflict {:errors {:detail "Document update conflict"
-                              :id     (:id err)}}))
-        (catch [:type :ovation.couch/forbidden] err
-          (forbidden {:errors {:detail "Document update forbidden"
-                               :id     (:id err)}}))
-        (catch [:type :ovation.couch/unauthorized] err
-          (unauthorized {:errors {:detail "Document update unauthorized"
-                                  :id     (:id err)}}))))))
+          (unauthorized {:errors {:detail "Unauthorized"}}))))))
 
 (defmacro put-resource
   [db org authz entity-type id]

@@ -3,7 +3,6 @@
   (:require [ovation.auth :as auth]
             [ovation.constants :as k]
             [ovation.core :as core]
-            [ovation.couch :as couch]
             [ovation.db.activities :as activities]
             [ovation.db.files :as files]
             [ovation.db.folders :as folders]

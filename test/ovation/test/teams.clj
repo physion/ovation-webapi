@@ -118,7 +118,7 @@
 
 
   (facts "post-membership*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..]
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user-id..]
       (let [team-uuid       (str (util/make-uuid))
             team-id         "1"
             team-url        (util/join-path [config/TEAMS_SERVER "teams" team-uuid])
@@ -189,7 +189,7 @@
                 (request-context/authorization-ch ..ctx..) => authz-ch)))))))
 
   (facts "put-membership*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..]
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user-id..]
       (let [team-uuid       (str (util/make-uuid))
             team-id         "1"
             memberships-url (util/join-path [config/TEAMS_SERVER "memberships"])
@@ -225,7 +225,7 @@
 
 
   (facts "get-roles*"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user-id..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user-id..
                          ..request.. =contains=> {:identity ..auth..}
                          (request-context/router ..request..) => ..rt..]
       (let [roles-url (util/join-path [config/TEAMS_SERVER "roles"])

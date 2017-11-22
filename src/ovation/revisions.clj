@@ -26,9 +26,9 @@
   (let [{org-id ::request-context/org
          auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
-        docs (revisions/find-latest-by-file-id db {:organization_id org-id
-                                                   :team_uuids teams
-                                                   :file_id file-id})]
+        docs (revisions/find-head-by-file-id db {:organization_id org-id
+                                                 :team_uuids teams
+                                                 :file_id file-id})]
     (-> docs
       (tr/entities-from-db ctx))))
 

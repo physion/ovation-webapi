@@ -1,7 +1,5 @@
 -- {
 --   "_id": "string",
---   "permissions": {},
---   "_rev": "string",
 --   "organization_id": 0,
 --   "type": "string",
 --   "annotation_type": "string",
@@ -13,6 +11,7 @@
 --     "start": "string",
 --     "end": "string"
 --   },
+--   "permissions": {},
 --   "links": {
 --     "_collaboration_roots": [
 --       "string"
@@ -47,8 +46,8 @@ VALUES (
   :notes,
   :start,
   :end,
-  now(),
-  now()
+  :created-at,
+  :updated-at
 )
 
 -- :name update :! :n
@@ -76,16 +75,13 @@ WHERE `or_timeline_events`.`uuid` = :_id
 SELECT COUNT(*) AS `count`
 FROM `or_timeline_events`
 
--- :name find-all
--- :doc Find all timeline_events
-select * from timeline_events
-
 -- :name find-by-uuid :? :1
 -- :doc Find first tag with ID
 SELECT
   `or_timeline_events`.`id` AS `id`,
   `or_timeline_events`.`uuid` AS `_id`,
   `or_timeline_events`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_timeline_events`.`name` AS `name`,
@@ -110,6 +106,7 @@ SELECT
   `or_timeline_events`.`id` AS `id`,
   `or_timeline_events`.`uuid` AS `_id`,
   `or_timeline_events`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `user`,
   `entity_uuid`.`uuid` AS `entity`,
   `or_timeline_events`.`name` AS `name`,

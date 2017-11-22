@@ -1,7 +1,8 @@
 (ns ovation.test.core
   (:use midje.sweet)
-  (:require [ovation.core :as core]
-            [ovation.couch :as couch]
+  (:require [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
+            [ovation.config :as config]
+            [ovation.core :as core]
             [ovation.db.activities :as activities]
             [ovation.db.notes :as notes]
             [ovation.db.projects :as projects]
@@ -10,6 +11,7 @@
             [ovation.db.tags :as tags]
             [ovation.db.timeline_events :as timeline_events]
             [ovation.db.uuids :as uuids]
+            [ovation.pubsub :as pubsub]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
@@ -31,6 +33,21 @@
                                         ?form))]
 
       (against-background [..ctx.. =contains=> {::request-context/identity ..auth..}]
+        (facts "About publish-updates"
+          (fact "publishes update record to publisher"
+            (let [ch    (chan)
+                  pchan (chan)
+                  _     (async/onto-chan pchan [..result..])]
+              (async/alts!! [(core/-publish-updates ..pub.. [..doc..] :channel ch)
+                             (async/timeout 100)]) => [..result.. ch]
+              (provided
+                (pubsub/publish ..pub.. (config/config :db-updates-topic :default :updates) {:id           (str ..id..)
+                                                                                             :type         ..type..
+                                                                                             :organization ..org..} anything) => pchan
+                ..doc.. =contains=> {:_id          ..id..
+                                     :type         ..type..
+                                     :organization ..org..}))))
+
         (facts "About values"
           (facts "read"
             (facts "`get-values`"
@@ -203,9 +220,9 @@
                 (fact "should call <entity>/create with transformed doc"
                   (core/--create-entity ..ctx.. ..db.. entity) => (assoc entity :id ..id..)
                   (provided
-                    (tw/to-db ..ctx.. entity :collaboration_roots nil
-                                             :organization_id ..org..
-                                             :user_id ..user-id..) => record
+                    (tw/to-db ..ctx.. ..db.. entity :collaboration_roots nil
+                                                    :organization_id ..org..
+                                                    :user_id ..user-id..) => record
                     (projects/create ..db.. record) => {:generated_key ..id..})))))
 
           (facts "-create-entity"
@@ -359,7 +376,7 @@
 
                 (against-background [(core/get-entities ..ctx.. ..db.. [id]) => [entity]
                                      (core/archive-entity ..owner-id.. entity) => archived
-                                     (tw/to-db ..ctx.. [archived]) => [archived]
+                                     (tw/to-db ..ctx.. ..db.. [archived]) => [archived]
                                      (core/-update-entity ..tx.. archived) => 1]
                   (fact "it trashes entity"
                     (core/delete-entities ..ctx.. ..db.. [id]) => [entity]
