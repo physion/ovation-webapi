@@ -1,16 +1,21 @@
 (ns ovation.links
-  (:require [ovation.util :refer [create-uri]]
-            [ovation.couch :as couch]
-            [oavtion.db.relations :as relations]
-            [ovation.util :as util]
+  (:require [clojure.set :refer [union]]
+            [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.auth :as auth]
-            [ovation.core :as core]
-            [slingshot.slingshot :refer [throw+]]
-            [clojure.set :refer [union]]
             [ovation.constants :as k]
-            [ovation.transform.read :as tr]
+            [ovation.core :as core]
+            [ovation.db.activities :as activities]
+            [ovation.db.files :as files]
+            [ovation.db.folders :as folders]
+            [ovation.db.projects :as projects]
+            [ovation.db.relations :as relations]
+            [ovation.db.revisions :as revisions]
+            [ovation.db.sources :as sources]
             [ovation.request-context :as request-context]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [ovation.transform.read :as tr]
+            [ovation.util :as util]
+            [ovation.util :refer [create-uri]]
+            [slingshot.slingshot :refer [throw+]]))
 
 
 ;; QUERY
@@ -25,29 +30,37 @@
   [ctx db id rel]
   (if-let [entity (first (core/get-entities ctx db [id]))]
     (tr/values-from-db
-      (relations/find-all-by-parent-entity-id-rel db (:id entity) rel)
+      (relations/find-all-by-parent-entity-rel db {:entity_id (:id entity)
+                                                   :entity_type (:type entity)
+                                                   :rel rel})
       ctx)
-    [])) ;; TODO Should this throw?
+    []))
 
 
-;; TODO Fix me
 (defn-traced get-link-targets
   "Gets the document targets for id--rel->"
-  [ctx db id rel & {:keys [label name include-trashed] :or {label           nil
-                                                            name            nil
-                                                            include-trashed false}}]
-  (let [opts {:startkey      (if name [id rel name] [id rel])
-              :endkey        (if name [id rel name] [id rel])
-              :inclusive_end true
-              :reduce        false :include_docs true}
-        docs (if label
-               (filter (eq-doc-label label) (couch/get-view ctx db k/LINKS-VIEW opts))
-               (couch/get-view ctx db k/LINKS-VIEW opts))]
-    (-> docs
-      (tr/entities-from-couch ctx)
-      (core/filter-trashed include-trashed))))
-
-
+  [ctx db id rel & {:keys [include-trashed] :or {include-trashed false}}]
+  (if-let [entity (first (core/get-entities ctx db [id]))]
+    (let [{org-id ::request-context/org
+           auth   ::request-context/identity} ctx
+          teams (auth/authenticated-teams auth)
+          user (auth/authenticated-user-id auth)
+          args {:entity_id (:id entity)
+                :entity_type (:type entity)
+                :rel rel
+                :team_uuids teams
+                :owner_id user
+                :archived include-trashed
+                :organization_id org-id}]
+      (tr/entities-from-db
+        (concat (activities/find-all-by-rel db args)
+                (files/find-all-by-rel db args)
+                (folders/find-all-by-rel db args)
+                (projects/find-all-by-rel db args)
+                (revisions/find-all-by-rel db args)
+                (sources/find-all-by-rel db args))
+        ctx))
+    []))
 
 
 ;; COMMAND
@@ -133,7 +146,7 @@
 
 
 (defn-traced make-links
-  [org-id authenticated-user-id sources rel targets inverse-rel & {:keys [name]}]
+  [org-id authenticated-user-uuid sources rel targets inverse-rel & {:keys [name]}]
 
   (for [source sources
         target targets]
@@ -142,12 +155,12 @@
           source-id    (:_id source)
           target-id    (:_id target)
           base         {:_id          (link-id source-id rel target-id :name name)
-                        :type         util/RELATION_TYPE
+                        :type         k/RELATION-TYPE
                         :organization org-id
                         :target_id    (:_id target)
                         :source_id    (:_id source)
                         :rel          (clojure.core/name rel)
-                        :user_id      authenticated-user-id
+                        :user_id      authenticated-user-uuid
                         :links        {:_collaboration_roots (concat source-roots target-roots)}}
           named        (if name (assoc base :name name) base)]
       (if inverse-rel (assoc named :inverse_rel (clojure.core/name inverse-rel)) named))))
@@ -166,13 +179,13 @@
 
   (let [{auth   ::request-context/identity
          org-id ::request-context/org} ctx
-        authenticated-user-id (auth/authenticated-user-id auth)
-        targets               (core/get-entities ctx db target-ids)]
+        authenticated-user-uuid (auth/authenticated-user-uuid auth)
+        targets                 (core/get-entities ctx db target-ids)]
 
     (when (and strict (not= (count targets) (count (into #{} target-ids))))
       (throw+ {:type ::target-not-found :message "Target(s) not found"}))
 
-    (let [links   (make-links org-id authenticated-user-id sources rel targets inverse-rel :name name)
+    (let [links   (make-links org-id authenticated-user-uuid sources rel targets inverse-rel :name name)
           updates (update-collaboration-roots sources targets)]
       {:links   links
        :updates (concat (:sources updates) (:targets updates))})))
