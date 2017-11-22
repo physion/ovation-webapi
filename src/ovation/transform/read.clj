@@ -106,85 +106,40 @@
       (assoc doc :revisions revisions))
     doc))
 
-(defn couch-to-entity
-  [ctx & {:keys [teams] :or {teams nil}}]
-  (fn [doc]
-    (case (:error doc)
-      "conflict" (conflict!)
-      "forbidden" (forbidden!)
-      "unauthorized" (unauthorized!)
-      (let [collaboration-roots (get-in doc [:links :_collaboration_roots])
-            org-id              (:organization doc)]
-        (-> doc
-          (remove-user-attributes)
-          (dissoc :named_links)                             ;; For v3
-          (dissoc :links)                                   ;; For v3
-          (dissoc :relationships)
-          (dissoc :organization)
-          (assoc :organization_id org-id)
-          (add-self-link ctx)
-          (add-heads-link ctx)
-          (add-upload-links ctx)
-          (add-zip-link ctx)
-          (add-team-link ctx)
-          (add-annotation-links ctx)
-          (add-relationship-links ctx)
-          (convert-file-revision-status)
-          (assoc-in [:links :_collaboration_roots] collaboration-roots)
-          (add-entity-permissions ctx))))))
+(defn db-to-entity
+  [ctx]
+  (fn [record]
+    (-> record
+      (add-self-link ctx)
+      (add-heads-link ctx)
+      (add-upload-links ctx)
+      (add-zip-link ctx)
+      (add-team-link ctx)
+      (add-annotation-links ctx)
+      (add-relationship-links ctx)
+      (convert-file-revision-status)
+      (add-entity-permissions ctx))))
 
-
-(defn entities-from-couch
-  "Transform couchdb documents."
-  [docs ctx]
+(defn entities-from-db
+  "Transform db records"
+  [records ctx]
   (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
         xf    (comp
-                (map (couch-to-entity ctx))
+                (map (db-to-entity ctx))
                 (filter #(auth/can? ctx ::auth/read % :teams teams)))]
-    (sequence xf docs)))
+    (sequence xf records)))
+
+(defn entity-from-db
+  "Transform db record"
+  [record ctx]
+  (first (entities-from-db [record] ctx)))
 
 (defn add-value-permissions
   [doc ctx]
   (-> doc
     (assoc-in [:permissions :update] (auth/can? ctx ::auth/update doc))
     (assoc-in [:permissions :delete] (auth/can? ctx ::auth/delete doc))))
-
-(defn-traced couch-to-value
-  [ctx]
-  (fn [doc]
-    (let [org-id (:organization doc)]
-      (case (:error doc)
-        "conflict" (conflict! doc)
-        "forbidden" (forbidden!)
-        "unauthorized" (unauthorized!)
-        (condp = (util/entity-type-name doc)
-          c/RELATION-TYPE-NAME (-> doc
-                                 (dissoc :organization)
-                                 (assoc :organization_id org-id)
-                                 (add-self-link ctx))
-          ;(add-value-permissions auth)
-
-          c/ANNOTATION-TYPE-NAME (-> doc
-                                   (dissoc :organization)
-                                   (assoc :organization_id org-id)
-                                   (add-annotation-self-link ctx)
-                                   (add-value-permissions ctx))
-
-          ;; default
-          (-> doc
-            (dissoc :organization)
-            (assoc :organization_id org-id)
-            (add-value-permissions ctx)))))))
-
-(defn values-from-couch
-  "Transform couchdb value documents (e.g. LinkInfo)"
-  [docs ctx]
-  (let [{auth ::request-context/identity} ctx
-        teams (auth/authenticated-teams auth)]
-    (->> docs
-      (map (couch-to-value ctx))
-      (filter #(auth/can? ctx ::auth/read % :teams teams)))))
 
 (defn add-annotation
   [doc ctx]
@@ -217,6 +172,12 @@
   (-> doc
     (assoc-in [:links :_collaboration_roots] [(:source_id doc)])))
 
+(defn add-annotation-collaboration-roots
+  [doc ctx]
+  (-> doc
+    (assoc-in [:links :_collaboration_roots] [(:project doc)])
+    (dissoc :project)))
+
 (defn-traced db-to-value
   [ctx]
   (fn [doc]
@@ -225,9 +186,9 @@
                         (add-collaboration-roots ctx)
                         (add-self-link ctx))
       c/ANNOTATION-TYPE (-> doc
-                          (add-annotation-links ctx)
                           (add-annotation ctx)
-                          (add-value-permissions ctx)) ;; TODO Add collaboration roots
+                          (add-annotation-collaboration-roots ctx)
+                          (add-value-permissions ctx))
       ;; default
       (-> doc
         (add-value-permissions ctx)))))
@@ -235,9 +196,9 @@
 
 (defn values-from-db
   "Transform db value documents"
-  [docs ctx]
+  [records ctx]
   (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)]
-    (->> docs
+    (->> records
       (map (db-to-value ctx))
       (filter #(auth/can? ctx ::auth/read % :teams teams)))))
