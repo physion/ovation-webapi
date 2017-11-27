@@ -373,7 +373,7 @@
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [app (test.system/get-app)
-        db  (test.system/get-db)
+        db  (-> (test.system/get-db) :db :db)
         org 1]
 
 
