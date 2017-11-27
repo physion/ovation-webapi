@@ -14,7 +14,7 @@
             [ovation.config :as config]))
 
 ;; Database
-(defrecord Database [db pubsub]
+(defrecord Database [jdbc pubsub]
   component/Lifecycle
 
   (start [this]
@@ -107,7 +107,7 @@
       :database (component/using
                   (new-database)
                   {:pubsub :pubsub
-                   :db     :jdbc})
+                   :jdbc   :jdbc})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})

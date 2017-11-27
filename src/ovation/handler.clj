@@ -64,7 +64,7 @@
   (route/resources "/public"))
 
 (defn create-app [database authz search]
-  (let [db        (-> database :db :db)
+  (let [db        (-> database :jdbc :db)
         es-client (:client search)]
     (api
       {:swagger {:ui   "/"
