@@ -19,11 +19,11 @@
 
   (start [this]
     (logging/info "Starting database")
-    (assoc this :datasource (-> db :db :datasource)))
+    (assoc this :db-spec (-> jdbc :db)))
 
   (stop [this]
     (logging/info "Stopping database")
-    (assoc this :datasource nil)))
+    (assoc this :db-spec nil)))
 
 (defn new-database []
   (map->Database {}))
