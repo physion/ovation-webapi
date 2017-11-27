@@ -41,7 +41,7 @@
   (let [{pubsub     :pubsub} db
         publisher (:publisher pubsub)
         pub-ch nil] ;; TODO Fix me
-    (publish-updates publisher docs :channel pub-ch)))
+    (-publish-updates publisher docs :channel pub-ch)))
 
 ;; QUERY
 (defn get-annotation
@@ -240,7 +240,7 @@
   [ctx db entities & {:keys [parent] :or {parent nil}}]
   (let [collaboration-roots (parent-collaboration-roots ctx db parent)]
     (jdbc/with-db-transaction [tx db]
-      (map #(-create-entity ctx tx % :collaboration_roots collaboration-roots) entities))))
+      (doall (map #(-create-entity ctx db % :collaboration_roots collaboration-roots) entities)))))
 
 (defn create-entities
   "Creates entity(s) with the given parent and owner"

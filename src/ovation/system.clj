@@ -79,6 +79,7 @@
 (defn new-elasticsearch [url]
   (map->Spandex {:url url}))
 
+
 ;; System
 (defn create-system [config-options]
   (let [{:keys [web db authz pubsub elasticsearch flyway]} config-options]
@@ -88,16 +89,7 @@
                 (palikka-flyway/migrate {:schemas   (:schemas flyway)
                                          :locations (:locations flyway)})
                 {:db :jdbc})
-      :jdbc (palikka-database/create {:auto-commit        true
-                                      :read-only          false
-                                      :register-mbeans    false
-                                      :connection-timeout 30000
-                                      :validation-timeout 5000
-                                      :idle-timeout       600000
-                                      :max-lifetime       1800000
-                                      :minimum-idle       10
-                                      :maximum-pool-size  10
-                                      :pool-name          (get db :pool-name "db-pool")
+      :jdbc (palikka-database/create {:pool-name          (get db :pool-name "db-pool")
                                       :adapter            (get db :adapter "mysql")
                                       :username           (:username db)
                                       :password           (:password db)

@@ -16,7 +16,7 @@
 
                  ;; Database
                  [com.layerware/hugsql "0.4.7"]
-                 [hikari-cp "1.8.1"]
+                 [hikari-cp "1.8.3"]
                  [mysql/mysql-connector-java "5.1.44"]
                  [org.flywaydb/flyway-core "4.2.0"]
 
