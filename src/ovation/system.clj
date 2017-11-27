@@ -90,6 +90,7 @@
                 {:db :jdbc})
       :jdbc (palikka-database/create {:auto-commit        true
                                       :read-only          false
+                                      :register-mbeans    false
                                       :connection-timeout 30000
                                       :validation-timeout 5000
                                       :idle-timeout       600000
@@ -102,8 +103,7 @@
                                       :password           (:password db)
                                       :database-name      (:database-name db)
                                       :server-name        (:server-name db)
-                                      :port-number        (:port-number db)
-                                      :register-mbeans    false})
+                                      :port-number        (:port-number db)})
       :database (component/using
                   (new-database)
                   {:pubsub :pubsub
@@ -118,3 +118,4 @@
              {:db    :database
               :authz :authz
               :search :search}))))
+
