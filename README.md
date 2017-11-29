@@ -76,7 +76,7 @@ the nREPL port is fixed in docker-compose.yml, but nREPL saves the port in `.nre
 
 Connect to REPL
 
-    lein repl :connect 0.0.0.0:59789
+    lein repl :connect
 
 Reload code
 
