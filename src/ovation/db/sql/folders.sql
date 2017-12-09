@@ -29,9 +29,30 @@ UPDATE `or_folders`
 SET
   `or_folders`.`name` = :name,
   `or_folders`.`attributes` = :attributes,
+  `or_folders`.`updated_at` = :updated-at
+WHERE `or_folders`.`uuid` = :_id
+  AND `or_folders`.`organization_id` = :organization_id
+  AND `or_folders`.`project_id` = :project_id
+
+-- :name archive :! :n
+-- :doc Archive folder
+UPDATE `or_folders`
+SET
   `or_folders`.`archived` = :archived,
   `or_folders`.`archived_at` = :archived_at,
   `or_folders`.`archived_by_user_id` = :archived_by_user_id,
+  `or_folders`.`updated_at` = :updated-at
+WHERE `or_folders`.`uuid` = :_id
+  AND `or_folders`.`organization_id` = :organization_id
+  AND `or_folders`.`project_id` = :project_id
+
+-- :name unarchive :! :n
+-- :doc Unarchive folder
+UPDATE `or_folders`
+SET
+  `or_folders`.`archived` = false,
+  `or_folders`.`archived_at` = NULL,
+  `or_folders`.`archived_by_user_id` = NULL,
   `or_folders`.`updated_at` = :updated-at
 WHERE `or_folders`.`uuid` = :_id
   AND `or_folders`.`organization_id` = :organization_id

@@ -220,9 +220,9 @@
                 (fact "should call <entity>/create with transformed doc"
                   (core/--create-entity ..ctx.. ..db.. entity) => (assoc entity :id ..id..)
                   (provided
-                    (tw/to-db ..ctx.. ..db.. entity :collaboration_roots nil
-                                                    :organization_id ..org..
-                                                    :user_id ..user-id..) => record
+                    (tw/to-db ..ctx.. ..db.. [entity] :collaboration_roots nil
+                                                      :organization_id ..org..
+                                                      :user_id ..user-id..) => record
                     (projects/create ..db.. record) => {:generated_key ..id..})))))
 
           (facts "-create-entity"

@@ -395,7 +395,7 @@
                       :return {:relationship LinkInfo}
                       :summary "Relationship document"
                       (let [ctx (request-context/make-context request org authz)]
-                        (ok {:relationship (first (core/get-values ctx db [id] :routes (::request-context/routes ctx)))})))
+                        (ok {:relationship (first (core/get-values ctx db [id]))})))
                     (DELETE "/" request
                       :name :delete-relation
                       :return {:relationship LinkInfo}

@@ -83,9 +83,28 @@ UPDATE `or_sources`
 SET
   `or_sources`.`name` = :name,
   `or_sources`.`attributes` = :attributes,
+  `or_sources`.`updated_at` = :updated-at
+WHERE `or_sources`.`uuid` = :_id
+  AND `or_sources`.`organization_id` = :organization_id
+
+-- :name archive :! :n
+-- :doc Archive source
+UPDATE `or_sources`
+SET
   `or_sources`.`archived` = :archived,
   `or_sources`.`archived_at` = :archived_at,
   `or_sources`.`archived_by_user_id` = :archived_by_user_id,
+  `or_sources`.`updated_at` = :updated-at
+WHERE `or_sources`.`uuid` = :_id
+  AND `or_sources`.`organization_id` = :organization_id
+
+-- :name unarchive :! :n
+-- :doc Unarchive source
+UPDATE `or_sources`
+SET
+  `or_sources`.`archived` = false,
+  `or_sources`.`archived_at` = NULL,
+  `or_sources`.`archived_by_user_id` = NULL,
   `or_sources`.`updated_at` = :updated-at
 WHERE `or_sources`.`uuid` = :_id
   AND `or_sources`.`organization_id` = :organization_id
@@ -111,7 +130,7 @@ SELECT
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
-  `or_sources`.`updated_at` AS `updated-id`,
+  `or_sources`.`updated_at` AS `updated-at`,
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`
@@ -133,7 +152,7 @@ SELECT
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
-  `or_sources`.`updated_at` AS `updated-id`,
+  `or_sources`.`updated_at` AS `updated-at`,
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`
@@ -156,7 +175,7 @@ SELECT
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
-  `or_sources`.`updated_at` AS `updated-id`,
+  `or_sources`.`updated_at` AS `updated-at`,
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`

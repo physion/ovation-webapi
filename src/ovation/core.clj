@@ -1,6 +1,7 @@
 (ns ovation.core
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.core.async :as async :refer [chan >!! go go-loop >! <!! <! close!]]
+            [clojure.tools.logging :as logging]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.auth :as auth]
             [ovation.config :as config]
@@ -19,6 +20,7 @@
             [ovation.db.uuids :as uuids]
             [ovation.pubsub :as pubsub]
             [ovation.request-context :as rc]
+            [ovation.teams :as teams]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.util :as util]
@@ -63,6 +65,10 @@
   (let [{org-id ::rc/org, auth ::rc/identity} ctx
         teams (auth/authenticated-teams auth)
         user (auth/authenticated-user-id auth)]
+    (logging/info "-get-entities " {:archived include-trashed
+                                    :organization_id org-id
+                                    :team_uuids teams
+                                    :owner_id user})
     (-> (db-fn {:archived include-trashed
                 :organization_id org-id
                 :team_uuids teams
@@ -74,8 +80,13 @@
   [ctx db-fn ids & {:keys [include-trashed] :or {include-trashed false}}]
   (let [{org-id ::rc/org, auth ::rc/identity} ctx
         teams (auth/authenticated-teams auth)
-        user (auth/authenticated-user-id auth)]
-    (-> (db-fn {:ids ids
+        user (auth/authenticated-user-id auth)
+        ids-str (map str ids)]
+    (logging/debug "-get-entities-by-id " {:ids ids-str
+                                           :organization_id org-id
+                                           :team_uuids teams
+                                           :owner_id user})
+    (-> (db-fn {:ids ids-str
                 :archived include-trashed
                 :organization_id org-id
                 :team_uuids teams
@@ -133,12 +144,14 @@
 (defn get-entities
   "Gets entities by ID"
   [ctx db ids & {:keys [include-trashed] :or {include-trashed false}}]
-  (concat (-get-activities-by-id ctx db ids :include-trashed include-trashed)
-          (-get-files-by-id      ctx db ids :include-trashed include-trashed)
-          (-get-folders-by-id    ctx db ids :include-trashed include-trashed)
-          (-get-projects-by-id   ctx db ids :include-trashed include-trashed)
-          (-get-revisions-by-id  ctx db ids :include-trashed include-trashed)
-          (-get-sources-by-id    ctx db ids :include-trashed include-trashed)))
+  (if (empty? ids)
+    []
+    (concat (-get-activities-by-id ctx db ids :include-trashed include-trashed)
+            (-get-files-by-id      ctx db ids :include-trashed include-trashed)
+            (-get-folders-by-id    ctx db ids :include-trashed include-trashed)
+            (-get-projects-by-id   ctx db ids :include-trashed include-trashed)
+            (-get-revisions-by-id  ctx db ids :include-trashed include-trashed)
+            (-get-sources-by-id    ctx db ids :include-trashed include-trashed))))
 
 (defn-traced get-entity
   [ctx db id & {:keys [include-trashed] :or {include-trashed false}}]
@@ -207,24 +220,35 @@
   [ctx db entity & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
   (let [{org-id ::rc/org, auth ::rc/identity} ctx
         user-id (auth/authenticated-user-id auth)
-        record (tw/to-db ctx db entity :collaboration_roots collaboration_roots
-                                       :organization_id org-id
-                                       :user_id user-id)
+        user-uuid (auth/authenticated-user-uuid auth)
+        team (or (and (= (:type entity) c/PROJECT-TYPE) (teams/create-team ctx db (:_id entity))) {})
+        updated-entity (assoc entity :team_id (:id team))
+        record (first (tw/to-db ctx db [updated-entity] :collaboration_roots collaboration_roots
+                                                        :organization_id org-id
+                                                        :user_id user-id))
+        _ (logging/info "--create-entity record" record)
         result (condp = (:type entity)
-                 c/PROJECT-TYPE  (projects/create db record)
-                 c/SOURCE-TYPE   (sources/create db record)
                  c/ACTIVITY-TYPE (activities/create db record)
-                 c/FOLDER-TYPE   (folders/create db record))]
-      (-> entity
-        (assoc :id (:generated_key result)))))
+                 c/FILE-TYPE     (files/create db record)
+                 c/FOLDER-TYPE   (folders/create db record)
+                 c/PROJECT-TYPE  (projects/create db record)
+                 c/REVISION-TYPE (revisions/create db record)
+                 c/SOURCE-TYPE   (sources/create db record))]
+      (-> record
+        (assoc :id (:generated_key result))
+        (assoc :owner user-uuid)
+        (dissoc :user_id)
+        (dissoc :owner_id)
+        (dissoc :team_id))))
 
 (defn -create-entity
   "Create entity with given parent and owner"
   [ctx db doc & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
-  (let [uuid (or (:_id doc) (str (util/make-uuid)))
+  (let [uuid (str (or (:_id doc) (util/make-uuid)))
         collaboration-roots (or collaboration_roots [uuid])
         updated-doc (assoc doc :_id uuid)
         entity-type (:type updated-doc)
+        _ (logging/info "UUID " uuid " Doc " updated-doc)
         uuid-entry {:uuid uuid
                     :entity_type entity-type
                     :created-at (util/iso-now)
@@ -272,6 +296,7 @@
 (defn- -create-relation-value
   [ctx db value]
   (let [record (tw/value-to-db ctx db value)
+        _ (logging/info "-create-relation-value " record)
         result (relations/create db record)]
     (-> value
       (assoc :id (:generated_key result)))))
@@ -290,27 +315,30 @@
 (defn- -create-value
   [ctx db value]
   (let [authorized-value (-ensure-organization-and-authorization ctx value ::auth/create)
-        uuid (or (:_id value) (str (util/make-uuid)))
+        uuid (str (or (:_id value) (util/make-uuid)))
         updated-value (assoc authorized-value :_id uuid)
         entity-type (:type updated-value)
         uuid-entry {:uuid uuid
                     :entity_type entity-type
                     :created-at (util/iso-now)
                     :updated-at (util/iso-now)}
-        uuid-result (uuids/create db uuid-entry)
+        is-annotation (= entity-type c/ANNOTATION-TYPE)
+        _ (logging/info "uuid-entry " uuid-entry)
+        uuid-result (and is-annotation (uuids/create db uuid-entry))
         record (condp = (:type authorized-value)
                  c/RELATION-TYPE (-create-relation-value ctx db updated-value)
                  c/ANNOTATION-TYPE (-create-annotation-value ctx db updated-value))]
 
-    (uuids/update-entity db (-> uuid-entry
-                              (assoc :entity_id (:id record))
-                              (assoc :updated-at (util/iso-now))))
+    (if is-annotation
+      (uuids/update-entity db (-> uuid-entry
+                                (assoc :entity_id (:id record))
+                                (assoc :updated-at (util/iso-now)))))
     ((tr/db-to-value ctx) record)))
 
 (defn -create-values-tx
   [ctx db values]
   (jdbc/with-db-transaction [tx db]
-    (map #(-create-value ctx tx %) values)))
+    (doall (map #(-create-value ctx tx %) values))))
 
 (defn-traced create-values
   "POSTs value(s) direct to Couch"
@@ -342,7 +370,7 @@
 (defn -update-values-tx
   [ctx db values]
   (jdbc/with-db-transaction [tx db]
-    (map #(-update-value ctx tx %) values)))
+    (doall (map #(-update-value ctx tx %) values))))
 
 (defn-traced update-values
   "PUTs value(s) direct to Couch"
@@ -366,6 +394,7 @@
 
 (defn -update-entity
   [db record]
+  (logging/info "-update-entity " record)
   (condp = (:type record)
     c/ACTIVITY-TYPE (activities/update db record)
     c/FILE-TYPE (files/update db record)
@@ -377,7 +406,39 @@
 (defn -update-entities-tx
   [ctx db docs]
   (jdbc/with-db-transaction [tx db]
-    (map #(-update-entity tx %) (tw/to-db ctx db docs))))
+    (doall (map #(-update-entity tx %) (tw/to-db ctx db docs)))))
+
+(defn -archive-entity
+  [db record]
+  (logging/info "-delete-entity " record)
+  (condp = (:type record)
+    c/ACTIVITY-TYPE (activities/archive db record)
+    c/FILE-TYPE (files/archive db record)
+    c/FOLDER-TYPE (folders/archive db record)
+    c/PROJECT-TYPE (projects/archive db record)
+    c/REVISION-TYPE (revisions/archive db record)
+    c/SOURCE-TYPE (sources/archive db record)))
+
+(defn -archive-entities-tx
+  [ctx db docs]
+  (jdbc/with-db-transaction [tx db]
+    (doall (map #(-archive-entity tx %) (tw/to-db ctx db docs)))))
+
+(defn -unarchive-entity
+  [db record]
+  (logging/info "-delete-entity " record)
+  (condp = (:type record)
+    c/ACTIVITY-TYPE (activities/unarchive db record)
+    c/FILE-TYPE (files/unarchive db record)
+    c/FOLDER-TYPE (folders/unarchive db record)
+    c/PROJECT-TYPE (projects/unarchive db record)
+    c/REVISION-TYPE (revisions/unarchive db record)
+    c/SOURCE-TYPE (sources/unarchive db record)))
+
+(defn -unarchive-entities-tx
+  [ctx db docs]
+  (jdbc/with-db-transaction [tx db]
+    (doall (map #(-unarchive-entity tx %) (tw/to-db ctx db docs)))))
 
 (defn-traced update-entities
   "Updates entities{EntityUpdate} or creates entities. If :allow-keys is non-empty, allows extra keys. Otherwise,
@@ -386,34 +447,29 @@
                                                                                    update-collaboration-roots false
                                                                                    allow-keys                 []}}]
 
+  (logging/info "update-entities " entities)
   (when (some #{c/USER-ENTITY} (map :type entities))
     (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
   (let [bulk-docs         (let [ids      (map :_id entities)
                                 docs     (get-entities ctx db ids)
+                                _ (logging/info "docs " docs)
                                 merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
                             (map merge-fn docs))
-        auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)]
+        auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)
+        _ (logging/info "auth-checked-docs " auth-checked-docs)]
     (-update-entities-tx ctx db auth-checked-docs)
     auth-checked-docs))
 
-(defn -restore-archived-entity
-  [record]
-  (-> record
-    (assoc :archived false)
-    (assoc :archived_at nil)
-    (assoc :archived_by_user_id nil)))
-
-(defn-traced restore-deleted-entities
+(defn restore-deleted-entities
   [ctx db ids]
   (let [{auth ::rc/identity} ctx
         docs              (get-entities ctx db ids :include-trashed true)
-        trashed           (map #(-restore-archived-entity %) docs)
-        auth-checked-docs (vec (map (auth/check! ctx ::auth/update) trashed))]
-    (-update-entities-tx ctx db auth-checked-docs)
+        auth-checked-docs (vec (map (auth/check! ctx ::auth/update) docs))]
+    (-unarchive-entities-tx ctx db auth-checked-docs)
     docs))
 
-(defn-traced archive-entity
+(defn archive-entity
   [user-id record]
   (-> record
     (assoc :archived true)
@@ -425,13 +481,15 @@
   (let [{auth ::rc/identity} ctx
         docs (get-entities ctx db ids)]
 
+    (logging/info "delete-entities " docs)
     (when (some #{c/USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(archive-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! ctx ::auth/delete) trashed))]
-      (-update-entities-tx ctx db auth-checked-docs)
+      (logging/info "auth-checked-docs " auth-checked-docs)
+      (-archive-entities-tx ctx db auth-checked-docs)
       docs)))
 
 (defn -delete-relation-value
@@ -457,7 +515,7 @@
 (defn -delete-values-tx
   [db values]
   (jdbc/with-db-transaction [tx db]
-    (map #(-delete-value tx %) values)))
+    (doall (map #(-delete-value tx %) values))))
 
 (defn delete-values
   "DELETEs value(s)"

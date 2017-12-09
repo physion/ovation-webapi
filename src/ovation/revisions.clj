@@ -112,7 +112,6 @@
   (let [publisher (get-in db [:pubsub :publisher])
         topic     (config/config :revisions-topic :default :revisions)]
     (pubsub/publish publisher topic {:id   (:_id doc)
-                                     :rev  (:_rev doc)
                                      :type (:type doc)} (async/chan))))
 (defn update-metadata
   [ctx db revision & {:keys [complete] :or {complete true}}]

@@ -13,7 +13,6 @@
 ;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                              s/Str
-                     :_rev                             s/Str
                      :user                             s/Uuid
                      :entity                           s/Uuid
                      :type                             (s/eq "Annotation")
@@ -62,7 +61,6 @@
                       (s/optional-key :name)        s/Str})
 
 (s/defschema LinkInfo {:_id                              s/Str
-                       (s/optional-key :_rev)            s/Str
                        :type                             (s/eq k/RELATION-TYPE)
 
                        :user_id                          s/Uuid
@@ -88,8 +86,7 @@
                         :attributes                    {s/Keyword s/Any}
                         (s/optional-key :organization) s/Int})
 
-(s/defschema BaseEntity (assoc NewEntity :_rev s/Str
-                                         :_id s/Uuid
+(s/defschema BaseEntity (assoc NewEntity :_id s/Uuid
                                          (s/optional-key :organization) s/Int
                                          (s/optional-key :organization_id) Id
                                          (s/optional-key :api_version) s/Int

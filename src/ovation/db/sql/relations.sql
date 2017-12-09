@@ -57,7 +57,6 @@ WHERE `or_relations`.`uuid` = :_id
 DELETE FROM `or_relations`
 WHERE `or_relations`.`uuid` = :_id
   AND `or_relations`.`organization_id` = :organization_id
-  AND `or_relations`.`project_id` = :project_id
 
 -- :name count :? :1
 -- :doc Count relations
@@ -70,7 +69,6 @@ SELECT
   `or_relations`.`id` AS `id`,
   `or_relations`.`uuid` AS `_id`,
   `or_relations`.`organization_id` AS `organization_id`,
-  `or_projects`.`uuid` AS `project`,
   `or_relations`.`rel`,
   `or_relations`.`inverse_rel`,
   `parent_entity_uuid`.`uuid` AS `source_id`,
@@ -92,7 +90,6 @@ SELECT
   `or_relations`.`id` AS `id`,
   `or_relations`.`uuid` AS `_id`,
   `or_relations`.`organization_id` AS `organization_id`,
-  `or_projects`.`uuid` AS `project`,
   `or_relations`.`rel`,
   `or_relations`.`inverse_rel`,
   `parent_entity_uuid`.`uuid` AS `source_id`,

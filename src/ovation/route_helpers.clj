@@ -138,7 +138,7 @@
               links            (core/create-values ctx db (mapcat :links embedded-links)) ;; Combine all :links from child and embedded
               updates          (core/update-entities ctx db (mapcat :updates embedded-links) :authorize false :update-collaboration-roots true)]
           ;; create teams for new Project entities
-          (dorun (map #(teams/create-team ctx (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
+          ;; (dorun (map #(teams/create-team ctx (:_id %)) (filter #(= (:type %) k/PROJECT-TYPE) entities)))
 
           (if (and (zero? (count links))
                 (zero? (count updates)))

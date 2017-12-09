@@ -88,7 +88,7 @@
 
 (defn permissions                                    ;;TODO move to authz
   [auth collaboration-roots]
-  (let [permissions (deref (::authenticated-permissions auth) 500 [])
+  (let [permissions (deref (::authenticated-permissions auth) 5000 [])
         root-set (set collaboration-roots)]
     (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
@@ -100,7 +100,7 @@
 (defn- authenticated-team-value                             ;;TODO move to authz
   [auth k & {:keys [default] :or {default []}}]
   (if-let [ateams (::authenticated-teams auth)]
-    (k (deref ateams 500 {k default}))
+    (k (deref ateams 5000 {k default}))
     []))
 
 (defn authenticated-teams                                   ;;TODO move to authz

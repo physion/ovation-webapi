@@ -1,5 +1,6 @@
 (ns ovation.transform.read
-  (:require [ovation.version :refer [version version-path]]
+  (:require [clojure.tools.logging :as logging]
+            [ovation.version :refer [version version-path]]
             [ring.util.http-response :refer [conflict! unauthorized! forbidden!]]
             [ovation.util :as util]
             [ovation.schema :refer [EntityRelationships]]
@@ -84,6 +85,14 @@
         org (::request-context/org ctx)]
     (assoc-in dto [:links :self] (r/named-route ctx route-name {:org org :id entity-id :annotation-id annotation-id}))))
 
+(defn add-collaboration-roots
+  [doc ctx]
+  (if-let [project-id (:project doc)]
+    (-> doc
+      (assoc-in [:links :_collaboration_roots] [project-id])
+      (dissoc :project))
+    doc))
+
 (defn remove-user-attributes
   "Removes :attributes from User entities"
   [dto]
@@ -106,6 +115,54 @@
       (assoc doc :revisions revisions))
     doc))
 
+(defn deserialize-attributes
+  [doc]
+  (if-let [attributes (:attributes doc)]
+    (assoc doc :attributes (or (and (string? attributes) (util/from-json attributes)) attributes))
+    doc))
+
+(defn -clean-attributes
+  [doc]
+  (dissoc doc :name
+              :file_id
+              :version
+              :content_type
+              :content_length
+              :upload-status
+              :url
+              :created-at
+              :updated-at))
+
+(defn -extract-attributes
+  [doc]
+  (select-keys doc [:name
+                    :file_id
+                    :version
+                    :content_type
+                    :content_length
+                    :upload-status
+                    :url]))
+
+(defn -expand-attributes
+  [doc]
+  (let [attributes (or (:attributes doc) {})
+        created-at (:created-at doc)
+        updated-at (:updated-at doc)]
+    (-> attributes
+      (merge (-extract-attributes doc))
+      (assoc :created-at (or (and (string? created-at) created-at) (util/timestamp-to-iso created-at)))
+      (assoc :updated-at (or (and (string? updated-at) updated-at) (util/timestamp-to-iso updated-at))))))
+
+(defn transform-attributes
+  [doc]
+  (-> doc
+    (assoc :attributes (-expand-attributes doc))
+    (-clean-attributes)))
+
+(defn remove-id
+  [doc]
+  (dissoc doc :id))
+
 (defn db-to-entity
   [ctx]
   (fn [record]
@@ -117,12 +174,17 @@
       (add-team-link ctx)
       (add-annotation-links ctx)
       (add-relationship-links ctx)
+      (add-collaboration-roots ctx)
       (convert-file-revision-status)
-      (add-entity-permissions ctx))))
+      (add-entity-permissions ctx)
+      (deserialize-attributes)
+      (transform-attributes)
+      (remove-id))))
 
 (defn entities-from-db
   "Transform db records"
   [records ctx]
+  (logging/info "entities-from-db " records)
   (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
         xf    (comp
@@ -146,9 +208,11 @@
   (condp = (:annotation_type doc)
     c/NOTES (-> doc
               (assoc-in [:annotation] {:text (:text doc)
-                                       :timestamp (:timestamp doc)})
+                                       :timestamp (:timestamp doc)
+                                       :edited_at (:edited_at doc)})
               (dissoc :text)
-              (dissoc :timestamp))
+              (dissoc :timestamp)
+              (dissoc :edited_at))
     c/PROPERTIES (-> doc
                    (assoc-in [:annotation] {:key (:key doc)
                                             :value (:value doc)})
@@ -167,31 +231,28 @@
                         (dissoc :start)
                         (dissoc :end))))
 
-(defn add-collaboration-roots
+(defn add-relation-collaboration-roots
   [doc ctx]
   (-> doc
     (assoc-in [:links :_collaboration_roots] [(:source_id doc)])))
-
-(defn add-annotation-collaboration-roots
-  [doc ctx]
-  (-> doc
-    (assoc-in [:links :_collaboration_roots] [(:project doc)])
-    (dissoc :project)))
 
 (defn-traced db-to-value
   [ctx]
   (fn [doc]
     (condp = (:type doc)
       c/RELATION-TYPE (-> doc
-                        (add-collaboration-roots ctx)
-                        (add-self-link ctx))
+                        (add-relation-collaboration-roots ctx)
+                        (add-self-link ctx)
+                        (remove-id))
       c/ANNOTATION-TYPE (-> doc
                           (add-annotation ctx)
-                          (add-annotation-collaboration-roots ctx)
-                          (add-value-permissions ctx))
+                          (add-collaboration-roots ctx)
+                          (add-value-permissions ctx)
+                          (remove-id))
       ;; default
       (-> doc
-        (add-value-permissions ctx)))))
+        (add-value-permissions ctx)
+        (remove-id)))))
 
 
 (defn values-from-db

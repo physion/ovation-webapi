@@ -5,16 +5,17 @@
 (def READ-GLOBAL-SCOPE "read:global")
 (def WRITE-GLOBAL-SCOPE "write:global")
 
-(def USER-ENTITY "User")
+(def ACTIVITY-TYPE "Activity")
 (def ANNOTATION-TYPE "Annotation")
-(def REVISION-TYPE "Revision")
 (def FILE-TYPE "File")
 (def FOLDER-TYPE "Folder")
-(def TEAM-TYPE "Team")
+(def ORGANIZATION-TYPE "Organization")
 (def PROJECT-TYPE "Project")
 (def RELATION-TYPE "Relation")
+(def REVISION-TYPE "Revision")
 (def SOURCE-TYPE "Source")
-(def ACTIVITY-TYPE "Activity")
+(def TEAM-TYPE "Team")
+(def USER-ENTITY "User")
 
 (def TEAM-GROUP-TYPE "TeamGroup")
 

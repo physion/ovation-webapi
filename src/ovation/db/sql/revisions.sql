@@ -81,7 +81,7 @@ VALUES (
   :version,
   :content_type,
   :content_length,
-  :upload_status,
+  :upload-status,
   :url,
   :attributes,
   false,
@@ -96,12 +96,31 @@ SET
   `or_revisions`.`name` = :name,
   `or_revisions`.`content_type` = :content_type,
   `or_revisions`.`content_length` = :content_length,
-  `or_revisions`.`upload_status` = :upload_status,
+  `or_revisions`.`upload_status` = :upload-status,
   `or_revisions`.`url` = :url,
   `or_revisions`.`attributes` = :attributes,
+  `or_revisions`.`updated_at` = :updated-at
+WHERE
+  `or_revisions`.`uuid` = :_id
+
+-- :name archive :! :n
+-- :doc Archive revision
+UPDATE `or_revisions`
+SET
   `or_revisions`.`archived` = :archived,
   `or_revisions`.`archived_at` = :archived_at,
   `or_revisions`.`archived_by_user_id` = :archived_by_user_id,
+  `or_revisions`.`updated_at` = :updated-at
+WHERE
+  `or_revisions`.`uuid` = :_id
+
+-- :name unarchive :! :n
+-- :doc Unarchive revision
+UPDATE `or_revisions`
+SET
+  `or_revisions`.`archived` = false,
+  `or_revisions`.`archived_at` = NULL,
+  `or_revisions`.`archived_by_user_id` = NULL,
   `or_revisions`.`updated_at` = :updated-at
 WHERE
   `or_revisions`.`uuid` = :_id
@@ -138,9 +157,10 @@ SELECT
   `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_revisions`.`name` AS `name`,
+  `or_revisions`.`version` AS `version`,
   `or_revisions`.`content_type` AS `content_type`,
   `or_revisions`.`content_length` AS `content_length`,
-  `or_revisions`.`upload_status` AS `upload_status`,
+  `or_revisions`.`upload_status` AS `upload-status`,
   `or_revisions`.`url` AS `url`,
   `or_revisions`.`created_at` AS `created-at`,
   `or_revisions`.`updated_at` AS `updated-at`,
@@ -167,9 +187,10 @@ SELECT
   `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_revisions`.`name` AS `name`,
+  `or_revisions`.`version` AS `version`,
   `or_revisions`.`content_type` AS `content_type`,
   `or_revisions`.`content_length` AS `content_length`,
-  `or_revisions`.`upload_status` AS `upload_status`,
+  `or_revisions`.`upload_status` AS `upload-status`,
   `or_revisions`.`url` AS `url`,
   `or_revisions`.`created_at` AS `created-at`,
   `or_revisions`.`updated_at` AS `updated-at`,
@@ -229,9 +250,10 @@ SELECT
   `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_revisions`.`name` AS `name`,
+  `or_revisions`.`version` AS `version`,
   `or_revisions`.`content_type` AS `content_type`,
   `or_revisions`.`content_length` AS `content_length`,
-  `or_revisions`.`upload_status` AS `upload_status`,
+  `or_revisions`.`upload_status` AS `upload-status`,
   `or_revisions`.`url` AS `url`,
   `or_revisions`.`created_at` AS `created-at`,
   `or_revisions`.`updated_at` AS `updated-at`,

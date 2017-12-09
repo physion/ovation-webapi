@@ -72,9 +72,28 @@ UPDATE `or_projects`
 SET
   `or_projects`.`name` = :name,
   `or_projects`.`attributes` = :attributes,
+  `or_projects`.`updated_at` = :updated-at
+WHERE `or_projects`.`uuid` = :_id
+  AND `or_projects`.`organization_id` = :organization_id
+
+-- :name archive :! :n
+-- :doc Archive project
+UPDATE `or_projects`
+SET
   `or_projects`.`archived` = :archived,
   `or_projects`.`archived_at` = :archived_at,
   `or_projects`.`archived_by_user_id` = :archived_by_user_id,
+  `or_projects`.`updated_at` = :updated-at
+WHERE `or_projects`.`uuid` = :_id
+  AND `or_projects`.`organization_id` = :organization_id
+
+-- :name unarchive :! :n
+-- :doc Unarchive project
+UPDATE `or_projects`
+SET
+  `or_projects`.`archived` = false,
+  `or_projects`.`archived_at` = NULL,
+  `or_projects`.`archived_by_user_id` = NULL,
   `or_projects`.`updated_at` = :updated-at
 WHERE `or_projects`.`uuid` = :_id
   AND `or_projects`.`organization_id` = :organization_id

@@ -79,9 +79,30 @@ UPDATE `or_files`
 SET
   `or_files`.`name` = :name,
   `or_files`.`attributes` = :attributes,
+  `or_files`.`updated_at` = :updated-at
+WHERE `or_files`.`uuid` = :_id
+  AND `or_files`.`organization_id` = :organization_id
+  AND `or_files`.`project_id` = :project_id
+
+-- :name archive :! :n
+-- :doc Archive file
+UPDATE `or_files`
+SET
   `or_files`.`archived` = :archived,
   `or_files`.`archived_at` = :archived_at,
   `or_files`.`archived_by_user_id` = :archived_by_user_id,
+  `or_files`.`updated_at` = :updated-at
+WHERE `or_files`.`uuid` = :_id
+  AND `or_files`.`organization_id` = :organization_id
+  AND `or_files`.`project_id` = :project_id
+
+-- :name unarchive :! :n
+-- :doc Unarchive file
+UPDATE `or_files`
+SET
+  `or_files`.`archived` = false,
+  `or_files`.`archived_at` = NULL,
+  `or_files`.`archived_by_user_id` = NULL,
   `or_files`.`updated_at` = :updated-at
 WHERE `or_files`.`uuid` = :_id
   AND `or_files`.`organization_id` = :organization_id
@@ -128,6 +149,28 @@ INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
   AND `teams`.`uuid` IN (:v*:team_uuids)
 INNER JOIN `users` ON `users`.`id` = `or_files`.`owner_id`
 WHERE `or_files`.`archived` = :archived
+  AND `or_files`.`organization_id` = :organization_id
+
+
+-- :name find-by-uuid :? :1
+-- :doc Find file by id
+SELECT
+  `or_files`.`id` AS `id`,
+  `or_files`.`uuid` AS `_id`,
+  `or_files`.`organization_id` AS `organization_id`,
+  `or_projects`.`uuid` AS `project`,
+  `or_files`.`name` AS `name`,
+  `or_files`.`created_at` AS `created-at`,
+  `or_files`.`updated_at` AS `updated-at`,
+  `or_files`.`attributes` AS `attributes`,
+  `users`.`uuid` AS `owner`,
+  "File" as `type`
+FROM `or_files`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
+INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+  AND `teams`.`uuid` IN (:v*:team_uuids)
+INNER JOIN `users` ON `users`.`id` = `or_files`.`owner_id`
+WHERE `or_files`.`uuid` = :id
   AND `or_files`.`organization_id` = :organization_id
 
 

@@ -7,6 +7,7 @@
             [clojure.data.json :as json]
             [clojure.string :as s]
             [clj-time.core :as t]
+            [clj-time.coerce :as coerce]
             [clj-time.format :as tf]
             [clojure.core.async :refer [<!! <! go-loop] :as async]
             [slingshot.slingshot :refer [throw+]]
@@ -109,6 +110,10 @@
   "Gets the ISO date time string for (t/now)"
   []
   (format-iso8601 (t/now)))
+
+(defn timestamp-to-iso
+  [timestamp]
+  (format-iso8601 (coerce/from-long (.getTime timestamp))))
 
 (defn iso-short-now
   "Gets the short ISO date time string for (t/now)"

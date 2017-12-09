@@ -133,7 +133,7 @@
 
   (let [{auth ::request-context/identity
          rt   ::request-context/routes} ctx
-        existing (first (core/get-values ctx db [id] :routes rt))]
+        existing (first (core/get-values ctx db [id]))]
 
     (when-not (= (str (auth/authenticated-user-uuid auth)) (str (:user existing)))
       (forbidden! "Update of an other user's annotations is forbidden"))
@@ -142,7 +142,7 @@
       (unprocessable-entity! (str "Cannot update non-Note Annotations")))
 
     (let [entity (first (core/get-entities ctx db [(:entity existing)]))
-          time     (util/iso-short-now)
+          time     (util/iso-now)
           update  (-> existing
                     (assoc :annotation annotation)
                     (assoc :edited_at time))]
