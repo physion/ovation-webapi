@@ -1,5 +1,6 @@
 (ns ovation.links
   (:require [clojure.set :refer [union]]
+            [clojure.tools.logging :as logging]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.auth :as auth]
             [ovation.constants :as k]

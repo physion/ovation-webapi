@@ -178,8 +178,7 @@
       (convert-file-revision-status)
       (add-entity-permissions ctx)
       (deserialize-attributes)
-      (transform-attributes)
-      (remove-id))))
+      (transform-attributes))))
 
 (defn entities-from-db
   "Transform db records"
@@ -258,6 +257,7 @@
 (defn values-from-db
   "Transform db value documents"
   [records ctx]
+  (logging/info "values-from-db " records)
   (let [{auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)]
     (->> records

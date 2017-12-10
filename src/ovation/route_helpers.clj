@@ -1,44 +1,46 @@
 (ns ovation.route-helpers
-  (:require [compojure.api.sweet :refer :all]
-            [ovation.annotations :as annotations]
-            [schema.core :as s]
-            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity!]]
-            [ovation.core :as core]
-            [slingshot.slingshot :refer [try+ throw+]]
-            [clojure.string :refer [lower-case capitalize upper-case join]]
-            [ovation.schema :refer :all]
-            [ovation.links :as links]
-            [ovation.util :as util]
-            [ovation.routes :as r]
-            [ovation.auth :as auth]
-            [ovation.revisions :as revisions]
+  (:require [clojure.string :refer [lower-case capitalize upper-case join]]
+            [clojure.tools.logging :as logging]
             [clojure.walk :as walk]
+            [com.climate.newrelic.trace :refer [defn-traced]]
+            [compojure.api.sweet :refer :all]
+            [ovation.annotations :as annotations]
+            [ovation.auth :as auth]
             [ovation.constants :as k]
-            [ovation.teams :as teams]
-            [ovation.routes :as routes]
+            [ovation.core :as core]
+            [ovation.links :as links]
             [ovation.request-context :as request-context]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [ovation.revisions :as revisions]
+            [ovation.routes :as r]
+            [ovation.routes :as routes]
+            [ovation.schema :refer :all]
+            [ovation.teams :as teams]
+            [ovation.transform.serialize :as serialize]
+            [ovation.util :as util]
+            [ring.util.http-response :refer [created ok accepted not-found not-found! unauthorized bad-request bad-request! conflict forbidden unprocessable-entity!]]
+            [schema.core :as s]
+            [slingshot.slingshot :refer [try+ throw+]]))
 
 
 (defn-traced get-annotations*
   [ctx db id annotation-key]
   (let [annotations (annotations/get-annotations ctx db [id] annotation-key)]
-    (ok {(keyword annotation-key) annotations})))
+    (ok {(keyword annotation-key) (serialize/values annotations)})))
 
 (defn-traced post-annotations*
   [ctx db id annotation-key annotations]
   (let [annotations-kw (keyword annotation-key)]
     (created (routes/entity-route ctx id)
-      {annotations-kw (annotations/create-annotations ctx db [id] annotation-key annotations)})))
+      {annotations-kw (serialize/values (annotations/create-annotations ctx db [id] annotation-key annotations))})))
 
 (defn-traced delete-annotations*
   [ctx db annotation-id annotation-key]
-  (accepted {(keyword annotation-key) (annotations/delete-annotations ctx db [annotation-id])}))
+  (accepted {(keyword annotation-key) (serialize/values (annotations/delete-annotations ctx db [annotation-id]))}))
 
 (defn-traced put-annotation*
   [ctx db annotation-key annotation-id annotation]
 
-  (ok {(keyword annotation-key) (annotations/update-annotation ctx db annotation-id annotation)}))
+  (ok {(keyword annotation-key) (serialize/value (annotations/update-annotation ctx db annotation-id annotation))}))
 
 
 (defn annotation
@@ -99,7 +101,7 @@
       :summary (str "Gets all top-level " type-path)
       (let [ctx      (request-context/make-context request org authz)
             entities (core/of-type ctx db type-name)]
-        (ok {type-kw entities})))))
+        (ok {type-kw (serialize/entities entities)})))))
 
 (defn remove-embedded-relationships
   [entities]
@@ -142,10 +144,10 @@
 
           (if (and (zero? (count links))
                 (zero? (count updates)))
-            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities})
-            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw entities
-                                                                                             :links   links
-                                                                                             :updates updates})))
+            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw (serialize/entities entities)})
+            (created (routes (keyword (format "all-%s" (lower-case type-name))) {:org org}) {type-kw (serialize/entities entities)
+                                                                                             :links   (serialize/values links)
+                                                                                             :updates (serialize/entities updates)})))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Not authorized"}})))
@@ -178,7 +180,7 @@
        (let [ctx# (request-context/make-context request# ~org ~authz)]
          (if-let [entities# (core/get-entities ctx# ~db [~id])]
            (if-let [filtered# (seq (filter #(= ~type-name (:type %)) entities#))]
-             (ok {~single-type-kw (first filtered#)})
+             (ok {~single-type-kw (serialize/entity (first filtered#))})
              (not-found {:errors {:detail "Not found"}})))))))
 
 (defn make-child-link*
@@ -217,9 +219,9 @@
           links            (core/create-values ctx db (mapcat :links (cons child-links embedded-links))) ;; Combine all :links from child and embedded
           updates          (core/update-entities ctx db (mapcat :updates (cons child-links embedded-links)) :authorize false :update-collaboration-roots true)] ;; Combine all :updates from child and embedded links
 
-      (created (routes/self-route ctx (first entities)) {:entities entities
-                                                         :links    links
-                                                         :updates  updates}))
+      (created (routes/self-route ctx (first entities)) {:entities (serialize/entities entities)
+                                                         :links    (serialize/values links)
+                                                         :updates  (serialize/entities updates)}))
 
     (catch [:type :ovation.auth/unauthorized] err
       (unauthorized {:errors {:detail "Not authorized to create new entities"}}))))
@@ -246,7 +248,7 @@
       (not-found {:error (str type-name " " entity-id " ID mismatch")})
       (try+
         (let [entity (first (core/update-entities ctx db [updates]))]
-          (ok {type-kw entity}))
+          (ok {type-kw (serialize/entity entity)}))
 
         (catch [:type :ovation.auth/unauthorized] _
           (unauthorized {:errors {:detail "Unauthorized"}}))))))
@@ -274,14 +276,14 @@
        :summary ~(str "Deletes (trashes) " type-name " with :id")
        (try+
          (let [ctx# (request-context/make-context request# ~org ~authz)]
-           (accepted {:entity (first (core/delete-entities ctx# ~db [~id]))}))
+           (accepted {:entity (serialize/entity (first (core/delete-entities ctx# ~db [~id])))}))
          (catch [:type :ovation.auth/unauthorized] err#
            (unauthorized {}))))))
 
 (defn-traced rel-related*
   [ctx db id rel]
   (let [related (links/get-link-targets ctx db id (lower-case rel))]
-   (ok {(keyword rel) related})))
+   (ok {(keyword rel) (serialize/entities related)})))
 
 
 (defmacro rel-related
@@ -296,8 +298,10 @@
 
 (defn-traced get-relationships*
   [ctx db id rel]
+  (logging/info "get-relationships* for " id rel)
   (let [rels (links/get-links ctx db id rel)]
-    (ok {:links rels})))
+    (logging/info "found " rels)
+    (ok {:links (serialize/values rels)})))
 
 
 (defn-traced post-relationships*
@@ -311,8 +315,8 @@
               link-groups (map (fn [[irel nlinks]] (links/add-links ctx db [source] rel (map :target_id nlinks) :inverse-rel irel)) (seq groups))]
           (let [links   (core/create-values ctx db (flatten (map :links link-groups)))
                 updates (core/update-entities ctx db (flatten (map :updates link-groups)) :authorize false :update-collaboration-roots true)]
-            (created (routes/entity-route ctx id) {:updates updates
-                                                      :links   links})))
+            (created (routes/entity-route ctx id) {:updates (serialize/entities updates)
+                                                   :links   (serialize/values links)})))
         (not-found {:errors {:detail (str ~id " not found")}})))
     (catch [:type :ovation.auth/unauthorized] {:keys [message]}
       (unauthorized {:errors {:detail message}}))
@@ -351,9 +355,9 @@
                                      :update-collaboration-roots true
                                      :allow-keys [:revisions])]
 
-      {:entities (filter #(= (:type %) k/REVISION-TYPE) updates)
-       :links    links
-       :updates  updates
+      {:entities (serialize/entities (filter #(= (:type %) k/REVISION-TYPE) updates))
+       :links    (serialize/values links)
+       :updates  (serialize/entities updates)
        :aws      (map (fn [m] {:id  (get-in m [:revision :_id])
                                :aws (walk/keywordize-keys (:aws m))}) revisions-with-resources)})
     (catch [:type :ovation.revisions/file-revision-conflict] err
@@ -364,7 +368,7 @@
   (let [ctx (request-context/make-context request org nil)]
 
     (try+
-      (ok {:revisions (revisions/get-head-revisions ctx db id)})
+      (ok {:revisions (serialize/entities (revisions/get-head-revisions ctx db id))})
       (catch [:type ::revisions/not-found] _
         (not-found! {:errors {:detail "File not found"}})))))
 
