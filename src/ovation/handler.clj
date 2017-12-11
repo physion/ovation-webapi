@@ -720,7 +720,7 @@
 
                   (POST "/" request
                     :body [ids [s/Str]]
-                    :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
+                    :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str :organization Id}]]}}
                     :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
                     (let [ctx    (request-context/make-context request org authz)
                           result (breadcrumbs/get-breadcrumbs ctx db ids)]
