@@ -41,6 +41,7 @@
 
 (s/defschema NoteRecord {:text                             s/Str
                          (s/optional-key :organization_id) Id
+                         (s/optional-key :edited_at)       s/Str
                          :timestamp                        s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type            (s/eq k/NOTES)
                                                   :annotation                 NoteRecord

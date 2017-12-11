@@ -121,6 +121,12 @@
     (assoc doc :attributes (or (and (string? attributes) (util/from-json attributes)) attributes))
     doc))
 
+(defn -to-timestamp
+  [timestamp-or-string]
+  (if (string? timestamp-or-string)
+    timestamp-or-string
+    (util/timestamp-to-iso timestamp-or-string)))
+
 (defn -clean-attributes
   [doc]
   (dissoc doc :name
@@ -146,12 +152,12 @@
 (defn -expand-attributes
   [doc]
   (let [attributes (or (:attributes doc) {})
-        created-at (:created-at doc)
-        updated-at (:updated-at doc)]
+        created-at (-to-timestamp (:created-at doc))
+        updated-at (-to-timestamp (:updated-at doc))]
     (-> attributes
       (merge (-extract-attributes doc))
-      (assoc :created-at (or (and (string? created-at) created-at) (util/timestamp-to-iso created-at)))
-      (assoc :updated-at (or (and (string? updated-at) updated-at) (util/timestamp-to-iso updated-at))))))
+      (assoc :created-at created-at)
+      (assoc :updated-at updated-at))))
 
 (defn transform-attributes
   [doc]
@@ -207,8 +213,8 @@
   (condp = (:annotation_type doc)
     c/NOTES (-> doc
               (assoc-in [:annotation] {:text (:text doc)
-                                       :timestamp (:timestamp doc)
-                                       :edited_at (:edited_at doc)})
+                                       :timestamp (-to-timestamp (:timestamp doc))
+                                       :edited_at (-to-timestamp (:edited_at doc))})
               (dissoc :text)
               (dissoc :timestamp)
               (dissoc :edited_at))
@@ -223,8 +229,8 @@
     c/TIMELINE_EVENTS (-> doc
                         (assoc-in [:annotation] {:name (:name doc)
                                                  :notes (:notes doc)
-                                                 :start (:start doc)
-                                                 :end (:end doc)})
+                                                 :start (-to-timestamp (:start doc))
+                                                 :end (-to-timestamp (:end doc))})
                         (dissoc :name)
                         (dissoc :notes)
                         (dissoc :start)
