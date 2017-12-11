@@ -213,7 +213,7 @@
       (condp = (:type doc)
         c/PROJECT-TYPE [(:_id doc)]
         ;; default
-        [(:project_id doc)])
+        (get-in doc [:links :_collaboration_roots]))
       [])))
 
 (defn --create-entity
