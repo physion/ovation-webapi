@@ -2,15 +2,15 @@
   (:require [clojure.tools.logging :as logging]
             [ovation.util :as util]))
 
-(defn -remove-id
+(defn -ids
   [doc]
-  (dissoc doc :id))
+  (dissoc doc :id :project_id))
 
 (defn entity
   [doc]
   (logging/info "serialize/entity " doc)
   (-> doc
-    (-remove-id)))
+    (-ids)))
 
 (defn entities
   [docs]

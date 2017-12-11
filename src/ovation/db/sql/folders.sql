@@ -34,6 +34,14 @@ WHERE `or_folders`.`uuid` = :_id
   AND `or_folders`.`organization_id` = :organization_id
   AND `or_folders`.`project_id` = :project_id
 
+-- :name update-project-id :! :n
+-- :doc Update folder project
+UPDATE `or_folders`
+SET
+  `or_folders`.`project_id` = :project_id
+WHERE `or_folders`.`uuid` = :_id
+  AND `or_folders`.`organization_id` = :organization_id
+
 -- :name archive :! :n
 -- :doc Archive folder
 UPDATE `or_folders`
@@ -76,6 +84,7 @@ SELECT
   `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `project`,
   `or_folders`.`name` AS `name`,
   `or_folders`.`created_at` AS `created-at`,
@@ -98,6 +107,7 @@ SELECT
   `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `project`,
   `or_folders`.`name` AS `name`,
   `or_folders`.`created_at` AS `created-at`,
@@ -121,6 +131,7 @@ SELECT
   `or_folders`.`id` AS `id`,
   `or_folders`.`uuid` AS `_id`,
   `or_folders`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `project`,
   `or_folders`.`name` AS `name`,
   `or_folders`.`created_at` AS `created-at`,

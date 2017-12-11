@@ -133,6 +133,7 @@ WHERE `or_projects`.`archived` = :archived
 -- :doc Find project by id
 SELECT
   `or_projects`.`id` AS `id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `_id`,
   `or_projects`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,
@@ -153,6 +154,7 @@ WHERE `or_projects`.`uuid` = :id
 -- :doc Find all projects by id
 SELECT
   `or_projects`.`id` AS `id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `_id`,
   `or_projects`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,
@@ -174,6 +176,7 @@ WHERE `or_projects`.`uuid` IN (:v*:ids)
 -- :doc Find all projects by entity and rel
 SELECT
   `or_projects`.`id` AS `id`,
+  `or_projects`.`id` AS `project_id`,
   `or_projects`.`uuid` AS `_id`,
   `or_projects`.`organization_id` AS `organization_id`,
   `users`.`uuid` AS `owner`,

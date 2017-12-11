@@ -8,6 +8,7 @@
             [ovation.auth :as auth]
             [ovation.constants :as k]
             [ovation.core :as core]
+            [ovation.db.folders :as folders]
             [ovation.links :as links]
             [ovation.request-context :as request-context]
             [ovation.revisions :as revisions]
@@ -398,6 +399,8 @@
             updates (core/update-entities ctx db (:updates added) :authorize false :update-collaboration-roots true)]
 
         (do
+          (if (= (:type entity) k/FOLDER-TYPE)
+            (folders/update-project-id db (assoc entity :project_id (:project_id (first dest)))))
           (links/delete-links ctx db(first src) (rel (first src) entity) id)
 
           {(util/entity-type-keyword entity)    entity
