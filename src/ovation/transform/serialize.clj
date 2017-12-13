@@ -4,13 +4,18 @@
 
 (defn -remove-ids
   [doc]
-  (dissoc doc :id :project_id))
+  (dissoc doc :id :project :project_id))
+
+(defn -remove-timestamps
+  [doc]
+  (dissoc doc :created-at :updated-at :timestamp :edited_at :start :end))
 
 (defn entity
   [doc]
   (logging/info "serialize/entity " doc)
   (-> doc
-    (-remove-ids)))
+    (-remove-ids)
+    (-remove-timestamps)))
 
 (defn entities
   [docs]
@@ -19,7 +24,8 @@
 (defn value
   [value]
   (-> value
-    (-remove-ids)))
+    (-remove-ids)
+    (-remove-timestamps)))
 
 (defn values
   [values]

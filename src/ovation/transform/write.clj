@@ -28,7 +28,9 @@
              org-id ::request-context/org} ctx
             teams (auth/authenticated-teams auth)]
         (logging/info "ensure-project check" (:parent_entity_type doc) (= (:parent_entity_type doc) c/SOURCE-TYPE))
-        (if (= (:parent_entity_type doc) c/SOURCE-TYPE)
+        (if (or
+              (= (:parent_entity_type doc) c/SOURCE-TYPE)
+              (= (:entity_type doc) c/SOURCE-TYPE))
           (assoc doc :project_id 0)
           (if-let [project (projects/find-by-uuid db {:id project-id
                                                       :team_uuids teams

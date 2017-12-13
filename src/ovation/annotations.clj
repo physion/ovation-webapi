@@ -23,8 +23,10 @@
   [ctx db-fn ids]
   (let [{org-id ::request-context/org
          auth ::request-context/identity} ctx
-        teams (auth/authenticated-teams auth)]
+        teams (auth/authenticated-teams auth)
+        user-id (auth/authenticated-user-id auth)]
     (-> (db-fn {:ids ids
+                :owner_id user-id
                 :team_uuids teams
                 :organization_id org-id})
       (tr/values-from-db ctx))))
@@ -145,10 +147,9 @@
           time     (util/iso-now)
           update  (-> existing
                     (assoc :annotation annotation)
-                    (assoc :edited_at time))]
-
-      (first (map (fn [doc] (notify ctx entity doc)) (core/update-values ctx db [update]))))))
-
-
-
+                    (assoc :edited_at time))
+          _ (core/update-values ctx db [update])
+          value (first (core/get-values ctx db [id]))]
+      (notify ctx entity value)
+      value)))
 

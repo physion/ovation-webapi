@@ -451,15 +451,13 @@
   (when (some #{c/USER-ENTITY} (map :type entities))
     (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 
-  (let [bulk-docs         (let [ids      (map :_id entities)
-                                docs     (get-entities ctx db ids)
-                                _ (logging/info "docs " docs)
-                                merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
-                            (map merge-fn docs))
-        auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)
-        _ (logging/info "auth-checked-docs " auth-checked-docs)]
-    (-update-entities-tx ctx db auth-checked-docs)
-    auth-checked-docs))
+  (let [ids (map :_id entities)]
+    (let [bulk-docs         (let [docs     (get-entities ctx db ids)
+                                  merge-fn (merge-updates-fn entities :update-collaboration-roots update-collaboration-roots :allow-keys allow-keys)]
+                              (map merge-fn docs))
+          auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)]
+      (-update-entities-tx ctx db auth-checked-docs))
+    (get-entities ctx db ids)))
 
 (defn restore-deleted-entities
   [ctx db ids]
@@ -481,16 +479,14 @@
   (let [{auth ::rc/identity} ctx
         docs (get-entities ctx db ids)]
 
-    (logging/info "delete-entities " docs)
     (when (some #{c/USER-ENTITY} (map :type docs))
       (throw+ {:type ::auth/unauthorized :message "Not authorized to trash a User"}))
 
     (let [user-id (auth/authenticated-user-id auth)
           trashed (map #(archive-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! ctx ::auth/delete) trashed))]
-      (logging/info "auth-checked-docs " auth-checked-docs)
       (-archive-entities-tx ctx db auth-checked-docs)
-      docs)))
+      (get-entities ctx db ids))))
 
 (defn -delete-relation-value
   [db value]
