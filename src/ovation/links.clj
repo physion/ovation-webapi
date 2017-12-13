@@ -3,7 +3,7 @@
             [clojure.tools.logging :as logging]
             [com.climate.newrelic.trace :refer [defn-traced]]
             [ovation.auth :as auth]
-            [ovation.constants :as k]
+            [ovation.constants :as c]
             [ovation.core :as core]
             [ovation.db.activities :as activities]
             [ovation.db.files :as files]
@@ -46,21 +46,31 @@
            auth   ::request-context/identity} ctx
           teams (auth/authenticated-teams auth)
           user (auth/authenticated-user-id auth)
+          entity-type (:type entity)
           args {:entity_id (:id entity)
-                :entity_type (:type entity)
+                :entity_type entity-type
                 :rel rel
                 :team_uuids teams
                 :owner_id user
                 :archived include-trashed
                 :organization_id org-id}]
-      (tr/entities-from-db
-        (concat (activities/find-all-by-rel db args)
-                (files/find-all-by-rel db args)
-                (folders/find-all-by-rel db args)
-                (projects/find-all-by-rel db args)
-                (revisions/find-all-by-rel db args)
-                (sources/find-all-by-rel db args))
-        ctx))
+      (if (= entity-type c/SOURCE-TYPE)
+        (tr/entities-from-db
+          (concat (activities/find-all-by-source-rel db args)
+                  (files/find-all-by-source-rel db args)
+                  (folders/find-all-by-source-rel db args)
+                  (projects/find-all-by-source-rel db args)
+                  (revisions/find-all-by-source-rel db args)
+                  (sources/find-all-by-source-rel db args))
+          ctx)
+        (tr/entities-from-db
+          (concat (activities/find-all-by-rel db args)
+                  (files/find-all-by-rel db args)
+                  (folders/find-all-by-rel db args)
+                  (projects/find-all-by-rel db args)
+                  (revisions/find-all-by-rel db args)
+                  (sources/find-all-by-rel db args))
+          ctx)))
     []))
 
 
@@ -156,7 +166,7 @@
           source-id    (:_id source)
           target-id    (:_id target)
           base         {:_id          (link-id source-id rel target-id :name name)
-                        :type         k/RELATION-TYPE
+                        :type         c/RELATION-TYPE
                         :organization org-id
                         :target_id    (:_id target)
                         :source_id    (:_id source)

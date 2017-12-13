@@ -1,6 +1,7 @@
 (ns ovation.transform.write
   (:require [clojure.tools.logging :as logging]
             [ovation.auth :as auth]
+            [ovation.constants :as c]
             [ovation.db.files :as files]
             [ovation.db.projects :as projects]
             [ovation.db.uuids :as uuids]
@@ -20,16 +21,20 @@
 (defn ensure-project
   "Adds project reference"
   [doc ctx db project-id]
+  (logging/info "ensure-project" doc project-id)
   (if project-id
     (if-not (:project_id doc)
       (let [{auth ::request-context/identity,
              org-id ::request-context/org} ctx
             teams (auth/authenticated-teams auth)]
-        (if-let [project (projects/find-by-uuid db {:id project-id
-                                                    :team_uuids teams
-                                                    :organization_id org-id})]
-          (assoc doc :project_id (:id project))
-          doc))
+        (logging/info "ensure-project check" (:parent_entity_type doc) (= (:parent_entity_type doc) c/SOURCE-TYPE))
+        (if (= (:parent_entity_type doc) c/SOURCE-TYPE)
+          (assoc doc :project_id 0)
+          (if-let [project (projects/find-by-uuid db {:id project-id
+                                                      :team_uuids teams
+                                                      :organization_id org-id})]
+            (assoc doc :project_id (:id project))
+            doc)))
       doc)
     doc))
 
@@ -183,11 +188,11 @@
         project (first (get-in value [:links :_collaboration_roots] []))]
     (logging/info "user-id " user-id)
     (-> value
+      (transform-entity db (:entity value))
+      (transform-target db (:target_id value))
+      (transform-source db (:source_id value))
       (ensure-project ctx db project)
       (ensure-user user-id)
       (add-created-at time)
       (add-updated-at time)
-      (transform-annotation)
-      (transform-entity db (:entity value))
-      (transform-target db (:target_id value))
-      (transform-source db (:source_id value)))))
+      (transform-annotation))))
