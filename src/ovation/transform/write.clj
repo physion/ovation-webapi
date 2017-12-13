@@ -117,6 +117,32 @@
     (assoc doc :attributes (util/to-json attributes))
     doc))
 
+(defn -maybe-convert-timestamp
+  [timestamp]
+  (if (nil? timestamp)
+    nil
+    (if (string? timestamp)
+      (if (> (count timestamp) 23)
+        (util/joda-timestamp-to-iso (util/parse-iso-short timestamp))
+        timestamp)
+      (util/timestamp-to-iso timestamp))))
+
+(defn transform-timestamps
+  [record]
+  (let [created-at (:created-at record)
+        updated-at (:updated-at record)
+        timestamp  (:timestamp record)
+        edited-at  (:edited_at record)
+        start      (:start record)
+        end        (:end record)]
+    (-> record
+      (assoc :created-at (-maybe-convert-timestamp created-at))
+      (assoc :updated-at (-maybe-convert-timestamp updated-at))
+      (assoc :timestamp  (-maybe-convert-timestamp timestamp))
+      (assoc :edited_at  (-maybe-convert-timestamp edited-at))
+      (assoc :start      (-maybe-convert-timestamp start))
+      (assoc :end        (-maybe-convert-timestamp end)))))
+
 (defn doc-to-db
   [ctx db collaboration-roots doc]
   (logging/info "doc-to-db" doc)
@@ -136,6 +162,7 @@
       (transform-file-id ctx db file)
       (ensure-created-at time)
       (add-updated-at time)
+      (transform-timestamps)
       (serialize-attributes))))
 
 (defn-traced to-db
@@ -195,4 +222,5 @@
       (ensure-user user-id)
       (add-created-at time)
       (add-updated-at time)
-      (transform-annotation))))
+      (transform-annotation)
+      (transform-timestamps))))

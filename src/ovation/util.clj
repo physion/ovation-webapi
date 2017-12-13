@@ -56,6 +56,11 @@
     id
     (URI. (format "ovation://entities/%s" id))))
 
+(defn format-iso8601-short
+  "Formats the date instance as an ISO-8601 string"
+  [d]
+  (tf/unparse (tf/formatters :date-time) d))
+
 (defn format-iso8601
   "Formats the date instance as an ISO-8601 string"
   [d]
@@ -115,10 +120,30 @@
   [timestamp]
   (format-iso8601 (coerce/from-long (.getTime timestamp))))
 
+(defn joda-timestamp-to-iso
+  [timestamp]
+  (format-iso8601 (coerce/from-long (.getMillis timestamp))))
+
+(defn timestamp-to-iso-short
+  [timestamp]
+  (format-iso8601-short (coerce/from-long (.getTime timestamp))))
+
+(defn joda-timestamp-to-iso-short
+  [timestamp]
+  (format-iso8601-short (coerce/from-long (.getMillis timestamp))))
+
 (defn iso-short-now
   "Gets the short ISO date time string for (t/now)"
   []
   (tf/unparse (tf/formatters :date-time) (t/now)))
+
+(defn parse-iso-short
+  [date-time]
+  (tf/parse (tf/formatters :date-time) date-time))
+
+(defn parse-iso
+  [date-time]
+  (tf/parse (tf/formatters :date-hour-minute-second-ms) date-time))
 
 (defn filter-type
   [entity-type docs]

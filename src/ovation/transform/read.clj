@@ -123,9 +123,13 @@
 
 (defn -to-timestamp
   [timestamp-or-string]
-  (if (string? timestamp-or-string)
-    timestamp-or-string
-    (util/timestamp-to-iso timestamp-or-string)))
+  (if (nil? timestamp-or-string)
+    nil
+    (if (string? timestamp-or-string)
+      (if (> (count timestamp-or-string) 23)
+        timestamp-or-string
+        (util/joda-timestamp-to-iso-short (util/parse-iso timestamp-or-string)))
+      (util/timestamp-to-iso-short timestamp-or-string))))
 
 (defn -clean-attributes
   [doc]
