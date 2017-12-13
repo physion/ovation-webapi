@@ -612,7 +612,7 @@
                       :summary "Local provenance for a single entity"
                       (let [ctx    (request-context/make-context request org authz)
                             result (prov/local ctx db [id])]
-                        (ok {:provenance (serialize/entity result)})))))
+                        (ok {:provenance (serialize/entities result)})))))
 
                 (context "/teams" []
                   :tags ["teams"]

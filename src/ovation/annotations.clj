@@ -33,10 +33,10 @@
 (defn get-annotations
   [ctx db ids annotation-type]
   (condp = annotation-type
-    c/NOTES           (-get-annotations ctx (partial notes/find-all-by-uuid db) ids)
-    c/PROPERTIES      (-get-annotations ctx (partial properties/find-all-by-uuid db) ids)
-    c/TAGS            (-get-annotations ctx (partial tags/find-all-by-uuid db) ids)
-    c/TIMELINE_EVENTS (-get-annotations ctx (partial timeline_events/find-all-by-uuid db) ids)))
+    c/NOTES           (-get-annotations ctx (partial notes/find-all-by-entity-uuid db) ids)
+    c/PROPERTIES      (-get-annotations ctx (partial properties/find-all-by-entity-uuid db) ids)
+    c/TAGS            (-get-annotations ctx (partial tags/find-all-by-entity-uuid db) ids)
+    c/TIMELINE_EVENTS (-get-annotations ctx (partial timeline_events/find-all-by-entity-uuid db) ids)))
 
 
 ;; WRITE
