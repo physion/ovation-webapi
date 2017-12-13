@@ -45,4 +45,4 @@
   (get-in test-system [:api :handler]))
 
 (defn get-db []
-  (get-in test-system [:database]))
+  (get-in test-system [:database :db-spec]))
