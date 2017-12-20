@@ -54,23 +54,14 @@
                 :owner_id user
                 :archived include-trashed
                 :organization_id org-id}]
-      (if (= entity-type c/SOURCE-TYPE)
-        (tr/entities-from-db
-          (concat (activities/find-all-by-source-rel db args)
-                  (files/find-all-by-source-rel db args)
-                  (folders/find-all-by-source-rel db args)
-                  (projects/find-all-by-source-rel db args)
-                  (revisions/find-all-by-source-rel db args)
-                  (sources/find-all-by-source-rel db args))
-          ctx)
-        (tr/entities-from-db
-          (concat (activities/find-all-by-rel db args)
-                  (files/find-all-by-rel db args)
-                  (folders/find-all-by-rel db args)
-                  (projects/find-all-by-rel db args)
-                  (revisions/find-all-by-rel db args)
-                  (sources/find-all-by-rel db args))
-          ctx)))
+      (tr/entities-from-db
+        (concat (activities/find-all-by-rel db args)
+                (files/find-all-by-rel db args)
+                (folders/find-all-by-rel db args)
+                (projects/find-all-by-rel db args)
+                (revisions/find-all-by-rel db args)
+                (sources/find-all-by-rel db args))
+        ctx))
     []))
 
 

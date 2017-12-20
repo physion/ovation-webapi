@@ -273,39 +273,3 @@ WHERE `or_files`.`uuid` = :file_id
 ORDER BY `or_revisions`.`id` DESC
 LIMIT 1
 
-
--- :name find-all-by-source-rel :? :*
--- :doc Find all revisions by source and rel
-SELECT
-  `or_revisions`.`id` AS `id`,
-  `or_revisions`.`uuid` AS `_id`,
-  `or_revisions`.`organization_id` AS `organization_id`,
-  `or_projects`.`uuid` AS `project`,
-  `users`.`uuid` AS `owner`,
-  `or_revisions`.`name` AS `name`,
-  `or_revisions`.`version` AS `version`,
-  `or_revisions`.`content_type` AS `content_type`,
-  `or_revisions`.`content_length` AS `content_length`,
-  `or_revisions`.`upload_status` AS `upload-status`,
-  `or_revisions`.`url` AS `url`,
-  `or_revisions`.`created_at` AS `created-at`,
-  `or_revisions`.`updated_at` AS `updated-at`,
-  `or_revisions`.`attributes` AS `attributes`,
-  `or_files`.`uuid` AS `file_id`,
-  "Revision" as `type`
-FROM `or_revisions`
-INNER JOIN `or_files` ON `or_files`.`id` = `or_revisions`.`file_id`
-INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
-INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_revisions`.`id`
-  AND `or_relations`.`child_entity_type` = 'Revision'
-  AND `or_relations`.`parent_entity_id` = :entity_id
-  AND `or_relations`.`parent_entity_type` = 'Source'
-  AND `or_relations`.`rel` = :rel
-INNER JOIN `or_sources` ON `or_sources`.`id` = `or_relations`.`parent_entity_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources`.`id`
-LEFT JOIN `or_projects` on `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
-WHERE `or_revisions`.`archived` = :archived
-  AND `or_revisions`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources`.`owner_id` = :owner_id)
-

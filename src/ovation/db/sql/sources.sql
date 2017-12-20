@@ -59,6 +59,7 @@
 INSERT INTO `or_sources` (
   `uuid`,
   `organization_id`,
+  `project_id`,
   `owner_id`,
   `name`,
   `attributes`,
@@ -69,6 +70,7 @@ INSERT INTO `or_sources` (
 VALUES (
   :_id,
   :organization_id,
+  :project_id,
   :owner_id,
   :name,
   :attributes,
@@ -86,6 +88,7 @@ SET
   `or_sources`.`updated_at` = :updated-at
 WHERE `or_sources`.`uuid` = :_id
   AND `or_sources`.`organization_id` = :organization_id
+  AND `or_sources`.`project_id` = :project_id
 
 -- :name archive :! :n
 -- :doc Archive source
@@ -97,6 +100,7 @@ SET
   `or_sources`.`updated_at` = :updated-at
 WHERE `or_sources`.`uuid` = :_id
   AND `or_sources`.`organization_id` = :organization_id
+  AND `or_sources`.`project_id` = :project_id
 
 -- :name unarchive :! :n
 -- :doc Unarchive source
@@ -108,12 +112,14 @@ SET
   `or_sources`.`updated_at` = :updated-at
 WHERE `or_sources`.`uuid` = :_id
   AND `or_sources`.`organization_id` = :organization_id
+  AND `or_sources`.`project_id` = :project_id
 
 -- :name delete :! :n
 -- :doc Delete source
 DELETE FROM `or_sources`
 WHERE `or_sources`.`uuid` = :_id
   AND `or_sources`.`organization_id` = :organization_id
+  AND `or_sources`.`project_id` = :project_id
 
 -- :name count :? :1
 -- :doc Count sources
@@ -127,6 +133,8 @@ SELECT
   `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
@@ -134,13 +142,12 @@ SELECT
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
+INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+  AND `teams`.`uuid` IN (:v*:team_uuids)
 INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources`.`id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
 WHERE `or_sources`.`archived` = :archived
   AND `or_sources`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources`.`owner_id` = :owner_id)
 
 
 -- :name find-all-by-uuid :? :*
@@ -149,6 +156,8 @@ SELECT
   `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
@@ -156,14 +165,13 @@ SELECT
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
+INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+  AND `teams`.`uuid` IN (:v*:team_uuids)
 INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources`.`id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
 WHERE `or_sources`.`uuid` IN (:v*:ids)
   AND `or_sources`.`archived` = :archived
   AND `or_sources`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources`.`owner_id` = :owner_id)
 
 
 -- :name find-all-by-rel :? :*
@@ -172,6 +180,8 @@ SELECT
   `or_sources`.`id` AS `id`,
   `or_sources`.`uuid` AS `_id`,
   `or_sources`.`organization_id` AS `organization_id`,
+  `or_projects`.`id` AS `project_id`,
+  `or_projects`.`uuid` AS `project`,
   `users`.`uuid` AS `owner`,
   `or_sources`.`name` AS `name`,
   `or_sources`.`created_at` AS `created-at`,
@@ -179,10 +189,10 @@ SELECT
   `or_sources`.`attributes` AS `attributes`,
   "Source" as `type`
 FROM `or_sources`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
+INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+  AND `teams`.`uuid` IN (:v*:team_uuids)
 INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources`.`id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
 INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_sources`.`id`
   AND `or_relations`.`child_entity_type` = 'Source'
   AND `or_relations`.`parent_entity_id` = :entity_id
@@ -190,33 +200,4 @@ INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_sources`.`id
   AND `or_relations`.`rel` = :rel
 WHERE `or_sources`.`archived` = :archived
   AND `or_sources`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources`.`owner_id` = :owner_id)
-
-
--- :name find-all-by-source-rel :? :*
--- :doc Find all sources by source and rel
-SELECT
-  `or_sources`.`id` AS `id`,
-  `or_sources`.`uuid` AS `_id`,
-  `or_sources`.`organization_id` AS `organization_id`,
-  `users`.`uuid` AS `owner`,
-  `or_sources`.`name` AS `name`,
-  `or_sources`.`created_at` AS `created-at`,
-  `or_sources`.`updated_at` AS `updated-at`,
-  `or_sources`.`attributes` AS `attributes`,
-  "Source" as `type`
-FROM `or_sources`
-INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
-INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_sources`.`id`
-  AND `or_relations`.`child_entity_type` = 'Source'
-  AND `or_relations`.`parent_entity_id` = :entity_id
-  AND `or_relations`.`parent_entity_type` = 'Source'
-  AND `or_relations`.`rel` = :rel
-INNER JOIN `or_sources` AS `or_sources_join` ON `or_sources_join`.`id` = `or_relations`.`parent_entity_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources_join`.`id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
-WHERE `or_sources`.`archived` = :archived
-  AND `or_sources`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources_join`.`owner_id` = :owner_id)
 

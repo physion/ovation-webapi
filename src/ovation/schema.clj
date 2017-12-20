@@ -376,6 +376,8 @@
              :file     {:rel         "files"
                         :inverse-rel "parents"}
              :activity {:rel         "activities"
+                        :inverse-rel "parents"}
+             :source   {:rel         "sources"
                         :inverse-rel "parents"}}
 
    :folder  {:folder   {:rel         "folders"
@@ -396,10 +398,11 @@
 (def EntityRelationships                                    ;; rels to put into entity links at read
   {:project  {:folders    {:schema Folder}
               :files      {:schema File}
-              :activities {:schema Activity}}
+              :activities {:schema Activity}
+              :sources    {:schema Source}}
 
    :source   {:children   {:schema Source}
-              :parents    {:schema Source}
+              :parents    {:schema Entity}
               :files      {:schema File}
               :revisions  {:schema Revision}
               :activities {:schema Activity}

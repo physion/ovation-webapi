@@ -438,7 +438,7 @@
                     :path-params [id :- s/Str]
 
                     (get-resource db org authz "Project" id)
-                    (post-resource db org authz "Project" id [NewFolder NewFile NewChildActivity])
+                    (post-resource db org authz "Project" id [NewFolder NewFile NewChildActivity NewSource])
                     (put-resource db org authz "Project" id)
                     (delete-resource db org authz "Project" id)
 
@@ -452,7 +452,6 @@
                 (context "/sources" []
                   :tags ["sources"]
                   (get-resources db org authz "Source" Source)
-                  (post-resources db org authz "Source" [NewSource])
                   (context "/:id" []
                     :path-params [id :- s/Str]
 

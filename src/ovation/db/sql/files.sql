@@ -223,31 +223,3 @@ INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_files`.`id`
 WHERE `or_files`.`archived` = :archived
   AND `or_files`.`organization_id` = :organization_id
 
-
--- :name find-all-by-source-rel :? :*
--- :doc Find all files by source and rel
-SELECT
-  `or_files`.`id` AS `id`,
-  `or_files`.`uuid` AS `_id`,
-  `or_files`.`organization_id` AS `organization_id`,
-  `or_files`.`name` AS `name`,
-  `or_files`.`created_at` AS `created-at`,
-  `or_files`.`updated_at` AS `updated-at`,
-  `or_files`.`attributes` AS `attributes`,
-  `users`.`uuid` AS `owner`,
-  "File" as `type`
-FROM `or_files`
-INNER JOIN `users` ON `users`.`id` = `or_files`.`owner_id`
-INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_files`.`id`
-  AND `or_relations`.`child_entity_type` = 'File'
-  AND `or_relations`.`parent_entity_id` = :entity_id
-  AND `or_relations`.`parent_entity_type` = 'Source'
-  AND `or_relations`.`rel` = :rel
-INNER JOIN `or_sources` ON `or_sources`.`id` = `or_relations`.`parent_entity_id`
-LEFT JOIN `or_source_projects` ON `or_source_projects`.`source_id` = `or_sources`.`id`
-LEFT JOIN `or_projects` on `or_projects`.`id` = `or_source_projects`.`project_id`
-LEFT JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
-WHERE `or_files`.`archived` = :archived
-  AND `or_files`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR `or_sources`.`owner_id` = :owner_id)
-
