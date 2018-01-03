@@ -189,11 +189,17 @@ FROM `or_projects`
 INNER JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
   AND `teams`.`uuid` IN (:v*:team_uuids)
 INNER JOIN `users` ON `users`.`id` = `or_projects`.`owner_id`
-INNER JOIN `or_relations` ON `or_relations`.`child_entity_id` = `or_projects`.`id`
-  AND `or_relations`.`child_entity_type` = 'Project'
-  AND `or_relations`.`parent_entity_id` = :entity_id
-  AND `or_relations`.`parent_entity_type` = :entity_type
-  AND `or_relations`.`rel` = :rel
+LEFT JOIN `or_relations` AS `rel` ON `rel`.`child_entity_id` = `or_projects`.`id`
+  AND `rel`.`child_entity_type` = 'Project'
+  AND `rel`.`parent_entity_id` = :entity_id
+  AND `rel`.`parent_entity_type` = :entity_type
+  AND `rel`.`rel` = :rel
+LEFT JOIN `or_relations` AS `inverse_rel` ON `inverse_rel`.`parent_entity_id` = `or_projects`.`id`
+  AND `inverse_rel`.`parent_entity_type` = 'Project'
+  AND `inverse_rel`.`child_entity_id` = :entity_id
+  AND `inverse_rel`.`child_entity_type` = :entity_type
+  AND `inverse_rel`.`inverse_rel` = :rel
 WHERE `or_projects`.`archived` = :archived
   AND `or_projects`.`organization_id` = :organization_id
+  AND (`rel`.`id` OR `inverse_rel`.`id`)
 

@@ -92,10 +92,12 @@
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
       (let [result   (:resource (util/from-json (:body @resp)))
+            id       (:id result)
             url      (:public_url result)
             aws      (:aws result)
             post-url (:url result)]
         {:revision (-> revision
+                     (assoc-in [:attributes :resource_id] id)
                      (assoc-in [:attributes :url] url)
                      (assoc-in [:attributes :upload-status] k/UPLOADING))
          :aws      aws

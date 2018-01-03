@@ -62,6 +62,27 @@
     (assoc doc :user_id owner-id)
     doc))
 
+(defn ensure-resource-id
+  "Add resource reference"
+  [doc resource-id]
+  (if resource-id
+    (assoc doc :resource_id resource-id)
+    doc))
+
+(defn ensure-version
+  "Add version"
+  [doc version]
+  (if version
+    (assoc doc :version version)
+    (assoc doc :version nil)))
+
+(defn ensure-content-length
+  "Add content_length"
+  [doc content-length]
+  (if content-length
+    (assoc doc :content_length content-length)
+    (assoc doc :content_length nil)))
+
 (defn -clean-attributes
   [attributes]
   (dissoc attributes :name
@@ -149,12 +170,17 @@
         project (first (or collaboration-roots (get-in doc [:links :_collaboration_roots] [])))
         attributes (or (:attributes doc) {})
         file (:file_id attributes)
-        resource (:resource_id attributes)]
+        resource-id (:resource_id attributes)
+        version (:version attributes)
+        content-length (:content_length attributes)]
     (-> doc
       (ensure-organization ctx)
       (ensure-project ctx db project)
       (ensure-owner owner-id)
       (ensure-user owner-id)
+      (ensure-resource-id resource-id)
+      (ensure-version version)
+      (ensure-content-length content-length)
       (transform-attributes)
       (transform-file-id ctx db file)
       (ensure-created-at time)
