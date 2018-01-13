@@ -131,7 +131,7 @@
     c/PROJECT-TYPE [(:_id doc)]
 
     ;; default
-    (if-let [project-id (:project_id doc)]
+    (if-let [project-id (:project doc)]
       [project-id]
       (get-in doc [:links :_collaboration_roots]))))
 

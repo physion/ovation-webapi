@@ -284,7 +284,7 @@
 (defn-traced rel-related*
   [ctx db id rel]
   (let [related (links/get-link-targets ctx db id (lower-case rel))]
-   (ok {(keyword rel) (serialize/entities related)})))
+    (ok {(keyword rel) (serialize/entities related)})))
 
 
 (defmacro rel-related

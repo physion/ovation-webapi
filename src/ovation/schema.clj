@@ -201,7 +201,6 @@
                            (assoc :attributes {:content_type             s/Str
                                                :name                     s/Str
                                                (s/optional-key :url)     s/Str
-                                               (s/optional-key :version) s/Str
                                                s/Keyword                 s/Any})))
 
 (s/defschema Revision (-> Entity
@@ -209,7 +208,6 @@
                         (assoc :attributes {:content_type             s/Str
                                             :url                      s/Str
                                             :name                     s/Str
-                                            (s/optional-key :version) s/Str
                                             :previous                 [s/Uuid]
                                             :file_id                  s/Uuid
                                             s/Keyword                 s/Any})))
@@ -218,7 +216,6 @@
                               (assoc :attributes {:content_type             s/Str
                                                   :url                      s/Str
                                                   :name                     s/Str
-                                                  (s/optional-key :version) s/Str
                                                   :previous                 [s/Uuid]
                                                   :file_id                  s/Uuid
                                                   s/Keyword                 s/Any})))

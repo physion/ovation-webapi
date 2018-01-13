@@ -52,6 +52,42 @@ WHERE `or_relations`.`uuid` = :_id
   AND `or_relations`.`organization_id` = :organization_id
   AND `or_relations`.`project_id` = :project_id
 
+-- :name archive-by-entity :! :n
+-- :doc Archive all relations involving entity
+UPDATE `or_relations`
+SET
+  `or_relations`.`archived` = :archived,
+  `or_relations`.`archived_at` = :archived_at,
+  `or_relations`.`archived_by_user_id` = :archived_by_user_id
+WHERE
+  (
+        `or_relations`.`parent_entity_id` = :id
+    AND `or_relations`.`parent_entity_type` = :type
+  )
+  OR
+  (
+        `or_relations`.`child_entity_id` = :id
+    AND `or_relations`.`child_entity_type` = :type
+  )
+
+-- :name unarchive-by-entity :! :n
+-- :doc Unarchive all relations involving entity
+UPDATE `or_relations`
+SET
+  `or_relations`.`archived` = false,
+  `or_relations`.`archived_at` = NULL,
+  `or_relations`.`archived_by_user_id` = NULL
+WHERE
+  (
+        `or_relations`.`parent_entity_id` = :id
+    AND `or_relations`.`parent_entity_type` = :type
+  )
+  OR
+  (
+        `or_relations`.`child_entity_id` = :id
+    AND `or_relations`.`child_entity_type` = :type
+  )
+
 -- :name delete :! :n
 -- :doc Delete relation
 DELETE FROM `or_relations`
@@ -106,5 +142,6 @@ LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
 WHERE `or_relations`.`parent_entity_id` = :entity_id
   AND `or_relations`.`parent_entity_type` = :entity_type
   AND `or_relations`.`rel` = :rel
+  AND `or_relations`.`archived` = false
 
 

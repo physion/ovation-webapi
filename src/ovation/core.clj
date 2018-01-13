@@ -417,7 +417,8 @@
     c/FOLDER-TYPE (folders/archive db record)
     c/PROJECT-TYPE (projects/archive db record)
     c/REVISION-TYPE (revisions/archive db record)
-    c/SOURCE-TYPE (sources/archive db record)))
+    c/SOURCE-TYPE (sources/archive db record))
+  (relations/archive-by-entity db record))
 
 (defn -archive-entities-tx
   [ctx db docs]
@@ -433,7 +434,8 @@
     c/FOLDER-TYPE (folders/unarchive db record)
     c/PROJECT-TYPE (projects/unarchive db record)
     c/REVISION-TYPE (revisions/unarchive db record)
-    c/SOURCE-TYPE (sources/unarchive db record)))
+    c/SOURCE-TYPE (sources/unarchive db record))
+  (relations/unarchive-by-entity db record))
 
 (defn -unarchive-entities-tx
   [ctx db docs]
