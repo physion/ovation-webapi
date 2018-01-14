@@ -11,6 +11,7 @@
 /.nrepl-port
 /checkouts
 /classes
+/db/data
 /lib
 /target
 pom.xml

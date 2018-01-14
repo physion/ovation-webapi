@@ -9,8 +9,25 @@ services:
       - db
     encrypted_env_file: dev.env.encrypted
 
+  # repl:
+  #   build:
+  #     image: repl
+  #     dockerfile: Dockerfile
+  #   links:
+  #     - db
+  #   encrypted_env_file: dev.env.encrypted
+
   db:
     image: mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD="1"
+      - MYSQL_USER=webapi
+      - MYSQL_PASSWORD=webapipass
+      - MYSQL_DATABASE=ovation_development
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
 
   gcr-dockercfg:
     image: codeship/gcr-dockercfg-generator

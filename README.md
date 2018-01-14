@@ -39,6 +39,18 @@ Or from a REPL (with sweet, sweet autotest):
     (use 'midje.repl)
     (autotest)
 
+Limit test to directory
+
+    (midje.repl/autotest :dirs "test/ovation/test/db")
+
+Run one test file
+
+    (midje.repl/check-facts 'ovation.test.annotations)
+
+Reload facts
+
+    (midje.repl/load-facts 'ovation.test.annotations)
+
 ## Running
 
 To start a web server for the application on port 3000:
@@ -69,6 +81,14 @@ or to start a headless nREPL server that can be used from, e.g. IntelliJ:
     docker-compose up
     
 the nREPL port is fixed in docker-compose.yml, but nREPL saves the port in `.nrepl-port`.
+
+Connect to REPL
+
+    lein repl :connect
+
+Reload code
+
+    (clojure.tools.namespace.repl/refresh)
 
 ## License
 

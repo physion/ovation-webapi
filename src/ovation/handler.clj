@@ -1,48 +1,50 @@
 (ns ovation.handler
-  (:require [compojure.api.sweet :refer :all]
-            [compojure.api.routes :refer [path-for*]]
-            [compojure.route :as route]
-            [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict temporary-redirect]]
-            [ring.middleware.cors :refer [wrap-cors]]
-            [ring.logger :refer [wrap-with-logger]]
-            [ovation.middleware.raygun :refer [wrap-raygun-handler]]
-            [slingshot.slingshot :refer [try+ throw+]]
-            [clojure.string :refer [lower-case capitalize join]]
-            [ovation.schema :refer :all]
-            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
-            [ovation.config :as config]
-            [ovation.core :as core]
-            [ovation.middleware.auth :refer [wrap-auth]]
-            [ovation.links :as links]
-            [ovation.audit]
-            [ovation.search :as search]
-            [ovation.breadcrumbs :as breadcrumbs]
-            [ovation.request-context :as request-context]
-            [schema.core :as s]
-            [ovation.teams :as teams]
-            [new-reliquary.ring :refer [wrap-newrelic-transaction]]
-            [ovation.prov :as prov]
+  (:require [buddy.auth :refer [authenticated?]]
+            [buddy.auth.accessrules :refer [wrap-access-rules]]
             [buddy.auth.backends.token :refer [jws-backend]]
             [buddy.auth.middleware :refer [wrap-authentication]]
-            [buddy.auth :refer [authenticated?]]
-            [buddy.auth.accessrules :refer [wrap-access-rules]]
-            [ring.logger :as ring.logger]
-            [ovation.revisions :as revisions]
-            [ovation.util :as util]
-            [ovation.routes :as routes]
-            [ovation.request-context :as request-context]
-            [ovation.authz :as authz]
             [clojure.core.async :refer [chan]]
-            [ovation.storage :as storage]
-            [ovation.auth :as auth]
             [clojure.java.io :as io]
+            [clojure.string :as string]
+            [clojure.string :refer [lower-case capitalize join]]
+            [clojure.tools.logging :as logging]
+            [compojure.api.routes :refer [path-for*]]
+            [compojure.api.sweet :refer :all]
+            [compojure.route :as route]
+            [new-reliquary.ring :refer [wrap-newrelic-transaction]]
+            [ovation.annotations :as annotations]
+            [ovation.audit :as audit]
+            [ovation.audit]
+            [ovation.auth :as auth]
+            [ovation.authz :as authz]
+            [ovation.breadcrumbs :as breadcrumbs]
+            [ovation.config :as config]
+            [ovation.constants :as c]
             [ovation.constants :as k]
+            [ovation.core :as core]
+            [ovation.links :as links]
+            [ovation.middleware.auth :refer [wrap-auth]]
+            [ovation.middleware.raygun :refer [wrap-raygun-handler]]
+            [ovation.prov :as prov]
+            [ovation.request-context :as request-context]
+            [ovation.request-context :as request-context]
+            [ovation.revisions :as revisions]
+            [ovation.route-helpers :refer [annotation get-resources post-resources get-resource post-resource put-resource delete-resource rel-related relationships post-revisions* get-head-revisions* move-contents*]]
+            [ovation.routes :as routes]
+            [ovation.schema :refer :all]
+            [ovation.search :as search]
+            [ovation.storage :as storage]
+            [ovation.teams :as teams]
+            [ovation.transform.serialize :as serialize]
+            [ovation.util :as util]
+            [ring.logger :as ring.logger]
+            [ring.logger :refer [wrap-with-logger]]
             [ring.logger.messages :refer [request-details]]
             [ring.logger.protocols :refer [info]]
-            [ovation.audit :as audit]
-            [clojure.string :as string]
-            [ovation.annotations :as annotations]
-            [clojure.tools.logging :as logging]))
+            [ring.middleware.cors :refer [wrap-cors]]
+            [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict temporary-redirect]]
+            [schema.core :as s]
+            [slingshot.slingshot :refer [try+ throw+]]))
 
 
 (def rules [{:pattern        #"^/api.*"
@@ -63,7 +65,7 @@
   (route/resources "/public"))
 
 (defn create-app [database authz search]
-  (let [db        database
+  (let [db        (-> database :db-spec)
         es-client (:client search)]
     (api
       {:swagger {:ui   "/"
@@ -329,7 +331,7 @@
                       :responses {404 {:schema JsonApiError :description "Not found"}}
                       (let [ctx (request-context/make-context request org authz)]
                         (if-let [annotation (core/get-values ctx db [id])]
-                          (if-let [annotation (first annotation)]
+                          (if-let [annotation (serialize/value (first annotation))]
                             (ok {:annotation annotation})
                             (not-found {:errors {:detail "Not found"}}))
                           (not-found {:errors {:detail "Not found"}}))))))
@@ -351,9 +353,9 @@
                           (if (= includes "annotations")
                             (let [incl                [k/TAGS k/PROPERTIES k/NOTES k/TIMELINE_EVENTS]
                                   annotation-includes (vec (mapcat #(annotations/get-annotations ctx db [id] %) incl))]
-                              (ok {:entity   entity
-                                   :includes annotation-includes}))
-                            (ok {:entity entity}) )
+                              (ok {:entity   (serialize/entity entity)
+                                   :includes (serialize/values annotation-includes)}))
+                            (ok {:entity (serialize/entity entity)}) )
                           (not-found {:errors {:detail "Not found"}}))))
                     (DELETE "/" request
                       :name :delete-entity
@@ -361,7 +363,7 @@
                       :summary "Deletes entity with :id. Deleted entities can be restored."
                       (try+
                         (let [ctx (request-context/make-context request org authz)]
-                          (accepted {:entity (first (core/delete-entities ctx db [id]))}))
+                          (accepted {:entity (serialize/entity (first (core/delete-entities ctx db [id])))}))
                         (catch [:type :ovation.auth/unauthorized] err
                           (unauthorized {:errors {:detail "Delete not authorized"}}))))
                     (PUT "/restore" request
@@ -371,7 +373,7 @@
                       :summary "Restores a deleted entity from the trash."
                       (try+
                         (let [ctx (request-context/make-context request org authz)]
-                          (ok {:entity (first (core/restore-deleted-entities ctx db [id]))}))
+                          (ok {:entity (serialize/entity (first (core/restore-deleted-entities ctx db [id])))}))
                         (catch [:type :ovation.auth/unauthorized] err
                           (unauthorized {:errors {:detail "Restore` not authorized"}}))))
 
@@ -394,7 +396,7 @@
                       :return {:relationship LinkInfo}
                       :summary "Relationship document"
                       (let [ctx (request-context/make-context request org authz)]
-                        (ok {:relationship (first (core/get-values ctx db [id] :routes (::request-context/routes ctx)))})))
+                        (ok {:relationship (serialize/value (first (core/get-values ctx db [id])))})))
                     (DELETE "/" request
                       :name :delete-relation
                       :return {:relationship LinkInfo}
@@ -403,9 +405,9 @@
                             relationship (first (core/get-values ctx db [id]))]
                         (if relationship
                           (let [source (first (core/get-entities ctx db [(:source_id relationship)]))]
-                            (accepted {:relationships (links/delete-links ctx db
-                                                        source
-                                                        (:_id relationship))}))
+                            (accepted {:relationships (serialize/values (links/delete-links ctx db
+                                                                           source
+                                                                           (:_id relationship)))}))
                           (not-found {:errors {:detail "Not found"}}))))))
 
                 (context "/projects" []
@@ -423,12 +425,12 @@
                       (cond
                         group-id (let [project-ids (authz/get-organization-group-project-ids authz ctx group-id)
                                        entities    (core/get-entities ctx db project-ids)]
-                                   (ok {:projects entities}))
+                                   (ok {:projects (serialize/entities entities)}))
                         member-id (let [project-ids (authz/get-organization-member-project-ids authz ctx member-id)
                                         entities    (core/get-entities ctx db project-ids)]
-                                    (ok {:projects entities}))
-                        :else (let [entities (core/of-type ctx db "Project")]
-                                (ok {:projects entities})))))
+                                    (ok {:projects (serialize/entities entities)}))
+                        :else (let [entities (core/of-type ctx db c/PROJECT-TYPE)]
+                                (ok {:projects (serialize/entities entities)})))))
 
 
                   (post-resources db org authz "Project" [NewProject])
@@ -436,7 +438,7 @@
                     :path-params [id :- s/Str]
 
                     (get-resource db org authz "Project" id)
-                    (post-resource db org authz "Project" id [NewFolder NewFile NewChildActivity])
+                    (post-resource db org authz "Project" id [NewFolder NewFile NewChildActivity NewSource])
                     (put-resource db org authz "Project" id)
                     (delete-resource db org authz "Project" id)
 
@@ -450,7 +452,6 @@
                 (context "/sources" []
                   :tags ["sources"]
                   (get-resources db org authz "Source" Source)
-                  (post-resources db org authz "Source" [NewSource])
                   (context "/:id" []
                     :path-params [id :- s/Str]
 
@@ -577,7 +578,7 @@
                       :return {:revision Revision}
                       (let [ctx      (request-context/make-context request org authz)
                             revision (core/get-entity ctx db id)]
-                        (ok {:revision (revisions/update-metadata ctx db revision)})))
+                        (ok {:revision (serialize/entity (revisions/update-metadata ctx db revision))})))
                     (PUT "/upload-failed" request
                       :name :upload-failed
                       :summary "Indicates upload failed and updates the File status"
@@ -586,8 +587,8 @@
                       (let [ctx      (request-context/make-context request org authz)
                             revision (first (core/get-entities ctx db [id]))
                             result   (revisions/record-upload-failure ctx db revision)]
-                        (ok {:revision (:revision result)
-                             :file     (:file result)})))
+                        (ok {:revision (serialize/entity (:revision result))
+                             :file     (serialize/entity (:file result))})))
                     (context "/links/:rel" []
                       :path-params [rel :- s/Str]
 
@@ -610,7 +611,7 @@
                       :summary "Local provenance for a single entity"
                       (let [ctx    (request-context/make-context request org authz)
                             result (prov/local ctx db [id])]
-                        (ok {:provenance result})))))
+                        (ok {:provenance (serialize/entities result)})))))
 
                 (context "/teams" []
                   :tags ["teams"]
@@ -718,7 +719,7 @@
 
                   (POST "/" request
                     :body [ids [s/Str]]
-                    :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str}]]}}
+                    :return {:breadcrumbs {s/Uuid [[{:type s/Str :id s/Uuid :name s/Str :organization Id}]]}}
                     :summary "Gets the breadcrumbs for a collection of entities. Allows POSTing for large collections"
                     (let [ctx    (request-context/make-context request org authz)
                           result (breadcrumbs/get-breadcrumbs ctx db ids)]
@@ -761,4 +762,4 @@
 
                     (let [ctx (request-context/make-context request org authz)
                           result (search/search ctx db es-client q :bookmark bookmark :limit limit)]
-                      (ok result))))))))))))
+                      (ok (serialize/entities result)))))))))))))

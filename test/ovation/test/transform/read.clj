@@ -1,13 +1,16 @@
-(ns ovation.test.transform
+(ns ovation.test.transform.read
   (:use midje.sweet)
   (:require [ovation.transform.read :as tr]
-            [ovation.transform.write :as tw]
+            [ovation.test.db.notes :as tnotes]
+            [ovation.test.db.properties :as tproperties]
+            [ovation.test.db.relations :as trelations]
+            [ovation.test.db.tags :as ttags]
+            [ovation.test.db.timeline_events :as ttimeline_events]
             [ovation.version :refer [version]]
             [ovation.routes :as r]
             [ovation.schema :as s]
             [ovation.util :as util]
             [ovation.constants :as c]
-            [ovation.constants :as k]
             [ovation.request-context :as request-context]
             [clj-time.core :as t]
             [clj-time.format :as f]
@@ -19,29 +22,6 @@
                                           :ovation.request-context/routes ..rt..
                                           :ovation.request-context/org    ..org..}
                      (request-context/user-id ..ctx..) => ..owner-id..]
-  (facts "About Annotations"
-    (fact "adds self link"
-      ((tr/couch-to-value ..ctx..) {:type            k/ANNOTATION-TYPE
-                                    :annotation_type k/TAGS
-                                    :entity          ..id..
-                                    :organization    ..org..
-                                    :_id             ..annotation..}) => {:type            k/ANNOTATION-TYPE
-                                                                          :annotation_type k/TAGS
-                                                                          :entity          ..id..
-                                                                          :_id             ..annotation..
-                                                                          :links           {:self ..self..}}
-      (provided
-        (tr/add-value-permissions {:type            k/ANNOTATION-TYPE
-                                   :annotation_type k/TAGS
-                                   :entity          ..id..
-                                   :organization_id ..org..
-                                   :_id             ..annotation..
-                                   :links           {:self ..self..}} ..ctx..) => {:type             k/ANNOTATION-TYPE
-                                                                                    :annotation_type k/TAGS
-                                                                                    :entity          ..id..
-                                                                                    :_id             ..annotation..
-                                                                                    :links           {:self ..self..}}
-        (r/named-route ..ctx.. :delete-tags {:org ..org.. :id ..id.. :annotation-id ..annotation..}) => ..self..)))
 
   (facts "About annotation links"
     (fact "adds annotation links to entity"
@@ -62,17 +42,8 @@
         (r/annotations-route ..ctx.. {:_id  "123"
                                       :links {:foo "bar"}} "timeline_events") => "/api/v1/entities/123/annotations/timeline_events")))
 
-  (facts "About error handling"
-    (facts "in couch-to-entity"
-      (fact "throws conflict! if any doc has {:error 'conflict'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "conflict"}) => (throws ExceptionInfo))
-      (fact "throws forbidden! if any doc has {:error 'forbidden'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "forbidden"}) => (throws ExceptionInfo))
-      (fact "throws unauthorized! if any doc has {:error 'unauthorized'}"
-        ((tr/couch-to-entity ..ctx..) {:_id ..id.. :error "unauthorized"}) => (throws ExceptionInfo))))
-
   (facts "About DTO link modifications"
-    (fact "`remove-hidden-links` removes '_...' links"
+    (fact "`remove-private-links` removes '_...' links"
       (tr/remove-private-links {:_id   ...id...
                                 :links {"_collaboration_links" #{...hidden...}
                                         :link1                 ...link1...}}) => {:_id   ...id...
@@ -98,7 +69,7 @@
 
 
     (fact "`add-heads-link` adds heads to File entity links"
-      (let [type k/FILE-TYPE
+      (let [type c/FILE-TYPE
             dto  {:type type :links {:_collaboration_roots [..collab..]}}]
         (tr/add-heads-link dto ..ctx..) => (-> dto
                                             (assoc-in [:links] {:_collaboration_roots (get-in dto [:links :_collaboration_roots])
@@ -108,105 +79,51 @@
 
     (facts "add-zip-link"
       (fact "adds zip link for Activity"
-        (let [type k/ACTIVITY-TYPE
+        (let [type c/ACTIVITY-TYPE
               dto  {:type type :links {:_collaboration_roots [..roots..]}}]
           (tr/add-zip-link dto ..ctx..) => (assoc-in dto [:links :zip] ..zip..)
           (provided
             (r/zip-activity-route ..ctx.. dto) => ..zip..)))
 
       (fact "adds zip link for Folder"
-        (let [type k/FOLDER-TYPE
+        (let [type c/FOLDER-TYPE
               dto  {:type type :links {:_collaboration_roots [..roots..]}}]
           (tr/add-zip-link dto ..ctx..) => (assoc-in dto [:links :zip] ..zip..)
           (provided
             (r/zip-folder-route ..ctx.. dto) => ..zip..)))
 
       (fact "does not add zip link for Project"
-        (let [type k/PROJECT-TYPE
+        (let [type c/PROJECT-TYPE
               dto  {:type type :links {:_collaboration_roots [..roots..]}}]
           (tr/add-zip-link dto ..rt..) => dto)))
 
-    (fact "`add-self-link` adds self link to entity"
-      (let [couch {:_id   ..id..
-                   :type  ..type..
-                   :links {}}]
-        (tr/add-self-link couch ..ctx..) => {:_id      ..id..
-                                                :type  ..type..
-                                                :links {:self ..route..}}
-        (provided
-          (r/self-route ..ctx.. couch) => ..route..)))
+    (facts "add-upload-links")
 
     (facts "`add-team-link`"
       (fact "adds link for Project"
-        (let [couch {:_id ..id..
-                     :type k/PROJECT-TYPE
-                     :links {}}]
-          (tr/add-team-link couch ..ctx..) => (assoc-in couch [:links :team] ..team..)
+        (let [doc {:_id ..id..
+                   :type c/PROJECT-TYPE
+                   :links {}}]
+          (tr/add-team-link doc ..ctx..) => (assoc-in doc [:links :team] ..team..)
           (provided
             (r/team-route ..ctx.. ..id..) => ..team..)))
       (fact "does not add team link for non-project"
-        (let [couch {:_id ..id..
-                     :type k/SOURCE-TYPE
-                     :links {}}]
-          (tr/add-team-link couch ..ctx..) => couch)))
+        (let [doc {:_id ..id..
+                   :type c/SOURCE-TYPE
+                   :links {}}]
+          (tr/add-team-link doc ..ctx..) => doc)))
 
-    (fact "`couch-to-value` adds self link to LinkInfo"
-      (let [couch                 {:_id          ..id..
-                                   :type         util/RELATION_TYPE
-                                   :organization ..org..}
-            expected-intermediate (-> couch
-                                    (dissoc :organization)
-                                    (assoc :organization_id ..org..))]
-        ((tr/couch-to-value ..ctx..) couch) => (assoc-in expected-intermediate [:links :self] ..url..)
+    (fact "`add-self-link` adds self link to entity"
+      (let [doc {:_id   ..id..
+                 :type  ..type..
+                 :links {}}]
+        (tr/add-self-link doc ..ctx..) => {:_id   ..id..
+                                           :type  ..type..
+                                           :links {:self ..route..}}
         (provided
-          (util/entity-type-name couch) => c/RELATION-TYPE-NAME
-          (r/self-route ..ctx.. expected-intermediate) => ..url..))))
+          (r/self-route ..ctx.. doc) => ..route..)))
 
-  (facts "About doc-to-couch"
-    (fact "skips docs without :type"
-      (let [other {:_id "bar" :rel "some-rel"}]
-        (tw/doc-to-couch ..ctx.. ..roots.. other) => other))
-
-    (fact "skips docs of type Relation"
-      (let [other {:_id "bar" :rel "some-rel" :type "Relation"}]
-        (tw/doc-to-couch ..ctx.. ..roots.. other) => other))
-
-    (fact "adds updated_at date"
-      (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (:attributes (tw/doc-to-couch ..ctx.. ..roots.. doc)) => (contains {:updated-at ..time..})
-        (provided
-          (f/unparse (f/formatters :date-time) anything) => ..time..)))
-
-    (fact "adds created_at date"
-      (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (:attributes (tw/doc-to-couch ..ctx.. ..roots.. doc)) => (contains {:created-at ..time..})
-        (provided
-          (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
-
-    (fact "does not add created_at date if already present"
-      (let [doc {:type ..type.. :attributes {:label ..label.. :created-at ..old..}}]
-        (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:attributes :created-at]) => ..old..
-        (provided
-          (f/unparse (f/formatters :date-time) (t/now)) => ..time..)))
-
-    (fact "adds collaboration roots"
-      (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (get-in (tw/doc-to-couch ..ctx.. ..roots.. doc) [:links :_collaboration_roots]) => ..roots..)))
-
-
-  (facts "About `ensure-owner`"
-    (fact "it adds owner element"
-      (let [doc {:type ..type.. :attributes {:label ..label..}}]
-        (tw/ensure-owner doc ..owner..) => (assoc doc :owner ..owner..)))
-    (fact "it does not add nil owner"
-      (tw/ensure-owner ..doc.. nil) => ..doc..))
-
-  (facts "About add-organization"
-    (fact "adds organization from request context"
-      (let [doc {:type ..type.. :attributes {:label ..value..}}]
-        (tw/add-organization doc ..ctx..) => (assoc doc :organization ..org..)
-        (provided
-          ..ctx.. =contains=> {::request-context/org ..org..}))))
+    (facts "add-annotation-self-link"))
 
   (facts "About `remove-user-attributes`"
     (fact "Removes User entity attributes"
@@ -237,18 +154,72 @@
       (let [doc {:user ..id..
                  :type "Annotation"}]
         (fact "add-value-permissions sets {update: (can? :update) delete: (can? :delete)"
-          (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update  true
-                                                                              :delete true})
+          (tr/add-value-permissions doc ..ctx..) => (assoc doc :permissions {:update true
+                                                                             :delete true})
           (provided
-            (auth/authenticated-user-id ..auth..) => ..id..
+            ;; TODO What changed here?
+            ;;(auth/authenticated-user-uuid ..auth..) => ..id..
             (auth/organization-ids ..auth..) => [..org..]
-            (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true)))))
+            (auth/has-scope? ..auth.. c/WRITE-GLOBAL-SCOPE) => true
+            (#'auth/can-update? ..auth.. doc) => true
+            (#'auth/can-delete? ..auth.. doc) => true)))))
 
-  (facts "About entities-from-couch"
+  (facts "About entities-from-db"
     (fact "removes unauthorized documents"
-      (tr/entities-from-couch [..doc.. ..bad..] ..ctx..) => [..doc..]
+      (tr/entities-from-db [..doc.. ..bad..] ..ctx..) => [..doc..]
       (provided
-        (tr/couch-to-entity ..ctx..) => (fn [doc] doc)
+        (tr/db-to-entity ..ctx..) => (fn [doc] doc)
         (auth/authenticated-teams ..auth..) => ..teams..
         (auth/can? ..ctx.. ::auth/read ..doc.. :teams ..teams..) => true
-        (auth/can? ..ctx.. ::auth/read ..bad.. :teams ..teams..) => false))))
+        (auth/can? ..ctx.. ::auth/read ..bad.. :teams ..teams..) => false)))
+
+  (facts "db-to-value"
+    (facts "for relations"
+      (let [record {:_id ..id..
+                    :type c/RELATION-TYPE
+                    :source_id ..source..}
+            transformed-record {:_id ..id..
+                                :type c/RELATION-TYPE
+                                :source_id ..source..
+                                :links {:_collaboration_roots [..source..]
+                                        :self {:id ..id..
+                                               :org ..org..}}}]
+        (fact "it adds collaboration roots and self link"
+          ((tr/db-to-value ..ctx..) record) => transformed-record)))
+    (facts "for annotations"
+      (let [time (util/iso-now)
+            time-short (util/iso-short-now)
+            record {:_id ..id..
+                    :organization_id ..org..
+                    :project ..project..
+                    :user ..user..
+                    :entity ..entity..
+                    :text ..text..
+                    :timestamp time
+                    :edited_at time
+                    :annotation_type c/NOTES
+                    :type c/ANNOTATION-TYPE}
+            transformed-record {:_id ..id..
+                                :organization_id ..org..
+                                :user ..user..
+                                :entity ..entity..
+                                :annotation {:text ..text..
+                                             :edited_at time-short
+                                             :timestamp time-short}
+                                :permissions {:update true
+                                              :delete true}
+                                :annotation_type c/NOTES
+                                :type c/ANNOTATION-TYPE
+                                :links {:_collaboration_roots [..project..]}}]
+        (fact "it adds annotation, links and permissions"
+          ((tr/db-to-value ..ctx..) record) => transformed-record
+          (provided
+            (auth/can? ..ctx.. anything anything) => true)))))
+
+  (facts "values-from-db"
+    (fact "it transforms and authorizes record"
+      (tr/values-from-db [..record..] ..ctx..) => [..transformed-record..]
+      (provided
+        (tr/db-to-value ..ctx..) => (fn [record] ..transformed-record..)
+        (auth/can? ..ctx.. ::auth/read ..transformed-record.. :teams anything) => true))))
+

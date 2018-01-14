@@ -8,24 +8,25 @@
             [cemerick.url :as url]
             [ovation.authz :as authz]
             [qbits.spandex :as spandex]
+            [palikka.components
+             [flyway :as palikka-flyway]
+             [database :as palikka-database]]
             [ovation.config :as config]))
 
 ;; Database
-(defrecord CouchDb [host username password pubsub connection]
+(defrecord Database [jdbc pubsub]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting database")
-    (assoc this :connection (-> (url/url host)
-                              (assoc :username username
-                                     :password password))))
+    (assoc this :db-spec (-> jdbc :db)))
 
   (stop [this]
     (logging/info "Stopping database")
-    (assoc this :connection nil)))
+    (assoc this :db-spec nil)))
 
-(defn new-database [host username password]
-  (map->CouchDb {:host host :username username :password password}))
+(defn new-database []
+  (map->Database {}))
 
 
 ;; API
@@ -76,17 +77,29 @@
     (assoc this :client nil)))
 
 (defn new-elasticsearch [url]
-  (clojure.tools.logging/info "ELASTIC: " (config/config :elasticsearch-url) "/" url)
   (map->Spandex {:url url}))
+
 
 ;; System
 (defn create-system [config-options]
-  (let [{:keys [web db authz pubsub elasticsearch]} config-options]
+  (let [{:keys [web db authz pubsub elasticsearch flyway]} config-options]
     (component/system-map
       :search (new-elasticsearch (:url elasticsearch))
+      :flyway (component/using
+                (palikka-flyway/migrate {:schemas   (:schemas flyway)
+                                         :locations (:locations flyway)})
+                {:db :jdbc})
+      :jdbc (palikka-database/create {:pool-name          (get db :pool-name "db-pool")
+                                      :adapter            (get db :adapter "mysql")
+                                      :username           (:username db)
+                                      :password           (:password db)
+                                      :database-name      (:database-name db)
+                                      :server-name        (:server-name db)
+                                      :port-number        (:port-number db)})
       :database (component/using
-                  (new-database (:host db) (:username db) (:password db))
-                  {:pubsub :pubsub})
+                  (new-database)
+                  {:pubsub :pubsub
+                   :jdbc   :jdbc})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
@@ -97,3 +110,4 @@
              {:db    :database
               :authz :authz
               :search :search}))))
+
