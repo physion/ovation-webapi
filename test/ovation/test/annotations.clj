@@ -58,22 +58,22 @@
       (fact "returns annotation documents grouped by entity and user"
         (a/get-annotations ..ctx.. ..db.. [id1 id2] c/NOTES) => ..result..
         (provided
-          (notes/find-all-by-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
+          (notes/find-all-by-entity-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
 
       (fact "returns annotation documents grouped by entity and user"
         (a/get-annotations ..ctx.. ..db.. [id1 id2] c/PROPERTIES) => ..result..
         (provided
-          (properties/find-all-by-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
+          (properties/find-all-by-entity-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
 
       (fact "returns annotation documents grouped by entity and user"
         (a/get-annotations ..ctx.. ..db.. [id1 id2] c/TAGS) => ..result..
         (provided
-          (tags/find-all-by-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
+          (tags/find-all-by-entity-uuid ..db.. anything) => (seq [a1 a2 a3 a4])))
 
       (fact "returns annotation documents grouped by entity and user"
         (a/get-annotations ..ctx.. ..db.. [id1 id2] c/TIMELINE_EVENTS) => ..result..
         (provided
-          (timeline_events/find-all-by-uuid ..db.. anything) => (seq [a1 a2 a3 a4]))))))
+          (timeline_events/find-all-by-entity-uuid ..db.. anything) => (seq [a1 a2 a3 a4]))))))
 
 (facts "About `create-annotations`"
   (fact "creates annotation documents"
@@ -121,22 +121,16 @@
                        :user            ..user..
                        :annotation_type c/NOTES
                        :type            c/ANNOTATION-TYPE
-                       :annotation      {:note ..old..}}]
-          (a/update-annotation ..ctx.. ..db.. ..uuid.. {:note ..new..}) => ..result..
+                       :annotation      {:text "Old note"}}
+              new (assoc current :annotation {:text "A note"} :edited_at ..time..)]
+          (a/update-annotation ..ctx.. ..db.. ..uuid.. {:text "A note"}) => ..result..
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
-                                 :ovation.request-context/identity ..auth..}
-            (util/iso-short-now) => ..time..
-            (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [current]
-            (core/get-entities ..ctx.. ..db.. [..entity..]) => {:_id  ..entity..
-                                                                :type k/PROJECT-TYPE}
-            (core/update-values ..ctx.. ..db.. [{:_id             ..uuid..
-                                                 :entity          ..entity..
-                                                 :user            ..user..
-                                                 :annotation_type c/NOTES
-                                                 :type            c/ANNOTATION-TYPE
-                                                 :annotation      {:note ..new..}
-                                                 :edited_at       ..time..}]) => [..result..])))
+            ..ctx.. =contains=> {:ovation.request-context/identity ..auth..}
+            (util/iso-now) => ..time..
+            (core/get-values ..ctx.. ..db.. [..uuid..]) =streams=> [[current] [..result..]]
+            (core/get-entities ..ctx.. ..db.. [..entity..]) => [{:_id  ..entity..
+                                                                 :type k/PROJECT-TYPE}]
+            (core/update-values ..ctx.. ..db.. [new]) => [new])))
 
 
       (fact "raises 422 for non-note annotation"
@@ -148,9 +142,8 @@
                    :annotation      {:tag ..tag..}}]
           (a/update-annotation ..ctx.. ..db.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
-                                 :ovation.request-context/identity ..auth..}
-            (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [tag])))))
+            ..ctx.. =contains=> {:ovation.request-context/identity ..auth..}
+            (core/get-values ..ctx.. ..db.. [..uuid..]) => [tag])))))
 
   (facts "unauthorized user"
     (against-background [(auth/authenticated-user-uuid ..auth..) => ..other..]
@@ -163,9 +156,8 @@
                    :annotation      {:tag ..tag..}}]
           (a/update-annotation ..ctx.. ..db.. ..uuid.. {:tag ..new..}) => (throws ExceptionInfo)
           (provided
-            ..ctx.. =contains=> {:ovation.request-context/routes   ..rt..
-                                 :ovation.request-context/identity ..auth..}
-            (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [tag]))))))
+            ..ctx.. =contains=> {:ovation.request-context/identity ..auth..}
+            (core/get-values ..ctx.. ..db.. [..uuid..]) => [tag]))))))
 
 (facts "About `delete-annotations`"
   (fact "calls `delete-values"

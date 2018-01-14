@@ -151,7 +151,6 @@
               (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
               (core/get-entity ..ctx.. ..db.. ..fileid..) => file
               (pubsub/publish ..publisher.. :revisions {:id   ..id..
-                                                        :rev  ..rev..
                                                         :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
               (core/update-entities ..ctx.. ..db.. [updated-rev ..updated-file..] :allow-keys [:revisions]) => [{:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true} {:_id ..fileid..}])))
 
@@ -174,7 +173,6 @@
               (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
                 (pubsub/publish ..publisher.. :revisions {:id   ..id..
-                                                          :rev  ..rev..
                                                           :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
@@ -197,7 +195,6 @@
               (rev/update-metadata ..ctx.. ..db.. revision) => {:_id ..id.. :_rev ..rev.. :type k/REVISION-TYPE :result true}
               (provided
                 (pubsub/publish ..publisher.. :revisions {:id   ..id..
-                                                          :rev  ..rev..
                                                           :type k/REVISION-TYPE} anything) => (async/onto-chan c [..published..])
                 (rev/update-file-status file [revision] k/COMPLETE) => ..updated-file..
                 (core/get-entity ..ctx.. ..db.. ..fileid..) => file
@@ -225,12 +222,14 @@
         (fact "creates a Rails Resource"
           (let [revid "revid"]
             (with-fake-http [(util/join-path [config/RESOURCES_SERVER "api" "v1" "resources"]) {:status 201
-                                                                                                :body   (util/to-json {:resource {:public_url "url"
+                                                                                                :body   (util/to-json {:resource {:id         "1"
+                                                                                                                                  :public_url "url"
                                                                                                                                   :aws        "aws"
                                                                                                                                   :url        "post"}})}]
               (rev/make-resource ..ctx.. {:_id        revid
                                           :attributes {}}) => {:revision {:_id        revid
-                                                                          :attributes {:url           "url"
+                                                                          :attributes {:resource_id   "1"
+                                                                                       :url           "url"
                                                                                        :upload-status k/UPLOADING}}
                                                                :aws      "aws"
                                                                :post-url "post"}

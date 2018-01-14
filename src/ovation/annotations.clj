@@ -19,26 +19,22 @@
 
 
 ;; READ
-(defn- -get-annotations
-  [ctx db-fn ids]
+(defn get-annotations
+  [ctx db ids annotation-type]
   (let [{org-id ::request-context/org
          auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
-        user-id (auth/authenticated-user-id auth)]
-    (-> (db-fn {:ids ids
-                :owner_id user-id
-                :team_uuids teams
-                :organization_id org-id})
-      (tr/values-from-db ctx))))
-
-
-(defn get-annotations
-  [ctx db ids annotation-type]
-  (condp = annotation-type
-    c/NOTES           (-get-annotations ctx (partial notes/find-all-by-entity-uuid db) ids)
-    c/PROPERTIES      (-get-annotations ctx (partial properties/find-all-by-entity-uuid db) ids)
-    c/TAGS            (-get-annotations ctx (partial tags/find-all-by-entity-uuid db) ids)
-    c/TIMELINE_EVENTS (-get-annotations ctx (partial timeline_events/find-all-by-entity-uuid db) ids)))
+        user-id (auth/authenticated-user-id auth)
+        args {:ids ids
+              :owner_id user-id
+              :team_uuids teams
+              :organization_id org-id}]
+      (-> (condp = annotation-type
+            c/NOTES           (notes/find-all-by-entity-uuid db args)
+            c/PROPERTIES      (properties/find-all-by-entity-uuid db args)
+            c/TAGS            (tags/find-all-by-entity-uuid db args)
+            c/TIMELINE_EVENTS (timeline_events/find-all-by-entity-uuid db args))
+        (tr/values-from-db ctx))))
 
 
 ;; WRITE
@@ -133,8 +129,7 @@
 (defn update-annotation
   [ctx db id annotation]
 
-  (let [{auth ::request-context/identity
-         rt   ::request-context/routes} ctx
+  (let [{auth ::request-context/identity} ctx
         existing (first (core/get-values ctx db [id]))]
 
     (when-not (= (str (auth/authenticated-user-uuid auth)) (str (:user existing)))

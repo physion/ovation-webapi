@@ -86,11 +86,11 @@
                          :type  k/FILE-TYPE
                          :links {:_collaboration_roots [..root1..]}}]
 
-            (a/update-annotation ..ctx.. ..db.. ..uuid.. {:text ..new..}) => ..notified..
+            (a/update-annotation ..ctx.. ..db.. ..uuid.. {:text ..new..}) => ..result..
 
             (provided
-              (util/iso-short-now) => ..time..
-              (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [current]
+              (util/iso-now) => ..time..
+              (core/get-values ..ctx.. ..db.. [..uuid..]) =streams=> [[current] [..result..]]
               (core/get-entities ..ctx.. ..db.. [..entity..]) => [entity]
               (core/update-values ..ctx.. ..db.. [{:_id             ..uuid..
                                                    :entity          ..entity..

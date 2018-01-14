@@ -12,6 +12,7 @@
             [ovation.db.timeline_events :as timeline_events]
             [ovation.db.uuids :as uuids]
             [ovation.pubsub :as pubsub]
+            [ovation.teams :as teams]
             [ovation.transform.read :as tr]
             [ovation.transform.write :as tw]
             [ovation.auth :as auth]
@@ -33,20 +34,20 @@
                                         ?form))]
 
       (against-background [..ctx.. =contains=> {::request-context/identity ..auth..}]
-        (facts "About publish-updates"
-          (fact "publishes update record to publisher"
-            (let [ch    (chan)
-                  pchan (chan)
-                  _     (async/onto-chan pchan [..result..])]
-              (async/alts!! [(core/-publish-updates ..pub.. [..doc..] :channel ch)
-                             (async/timeout 100)]) => [..result.. ch]
-              (provided
-                (pubsub/publish ..pub.. (config/config :db-updates-topic :default :updates) {:id           (str ..id..)
-                                                                                             :type         ..type..
-                                                                                             :organization ..org..} anything) => pchan
-                ..doc.. =contains=> {:_id          ..id..
-                                     :type         ..type..
-                                     :organization ..org..}))))
+        ;; (facts "About publish-updates"
+        ;;   (fact "publishes update record to publisher"
+        ;;     (let [ch    (chan)
+        ;;           pchan (chan)
+        ;;           _     (async/onto-chan pchan [..result..])]
+        ;;       (async/alts!! [(core/-publish-updates ..pub.. [..doc..] :channel ch)
+        ;;                      (async/timeout 100)]) => [..result.. ch]
+        ;;       (provided
+        ;;         (pubsub/publish ..pub.. (config/config :db-updates-topic :default :updates) {:id           (str ..id..)
+        ;;                                                                                      :type         ..type..
+        ;;                                                                                      :organization ..org..} anything) => pchan
+        ;;         ..doc.. =contains=> {:_id          ..id..
+        ;;                              :type         ..type..
+        ;;                              :organization ..org..}))))
 
         (facts "About values"
           (facts "read"
@@ -208,21 +209,28 @@
         (facts "About Command"
           (facts "--create-entity"
             (let [db-fn (partial projects/create ..tx..)
-                  entity {:_id (str (util/make-uuid))
+                  entity-id (str (util/make-uuid))
+                  entity {:_id entity-id
                           :type c/PROJECT-TYPE}
                   record {:_id (:_id entity)
+                          :type c/PROJECT-TYPE
                           :organization_id ..org..
+                          :team_id ..team-id..
                           :owner_id ..user-id..}
+                  team {:id ..team-id..}
                   updated-record (assoc record :id ..id..)]
               (against-background [..ctx.. =contains=> {::request-context/identity ..auth..
                                                         ::request-context/org ..org..}
                                    (auth/authenticated-user-id ..auth..) => ..user-id..]
                 (fact "should call <entity>/create with transformed doc"
-                  (core/--create-entity ..ctx.. ..db.. entity) => (assoc entity :id ..id..)
+                  (core/--create-entity ..ctx.. ..db.. entity) => (assoc entity :id ..id..
+                                                                                :organization_id ..org..
+                                                                                :owner [])
                   (provided
-                    (tw/to-db ..ctx.. ..db.. [entity] :collaboration_roots nil
-                                                      :organization_id ..org..
-                                                      :user_id ..user-id..) => record
+                    (teams/create-team ..ctx.. ..db.. entity-id) => team
+                    (tw/to-db ..ctx.. ..db.. [(assoc entity :team_id ..team-id..)] :collaboration_roots nil
+                                                                                   :organization_id ..org..
+                                                                                   :user_id ..user-id..) => [record]
                     (projects/create ..db.. record) => {:generated_key ..id..})))))
 
           (facts "-create-entity"
@@ -299,6 +307,7 @@
                 (fact "it updates attributes"
                   (core/update-entities ..ctx.. ..db.. [update]) => [updated-entity]
                   (provided
+                    (core/get-entities ..ctx.. ..db.. [id]) =streams=> [[entity] [updated-entity]]
                     (auth/can? ..ctx.. ::auth/update anything) => true
                     (core/-update-entities-tx ..ctx.. ..db.. [updated-entity]) => [1]))
                 (fact "it updates allowed keys"
@@ -306,6 +315,7 @@
                         updated-entity-with-revs (assoc updated-entity :revisions ..revs..)]
                     (core/update-entities ..ctx.. ..db.. [update-with-revs] :allow-keys [:revisions]) => [updated-entity-with-revs]
                     (provided
+                      (core/get-entities ..ctx.. ..db.. [id]) =streams=> [[entity] [updated-entity-with-revs]]
                       (auth/can? ..ctx.. ::auth/update anything) => true
                       (core/-update-entities-tx ..ctx.. ..db.. [updated-entity-with-revs]) => [1])))
                 (fact "it updates collaboration roots"
@@ -314,6 +324,7 @@
                         updated-entity2 (assoc-in updated-entity [:links :_collaboration_roots] [..roots..])]
                     (core/update-entities ..ctx.. ..db.. [update2] :update-collaboration-roots true) => [updated-entity2]
                     (provided
+                      (core/get-entities ..ctx.. ..db.. [id]) =streams=> [[entity] [updated-entity2]]
                       (auth/can? ..ctx.. ::auth/update anything) => true
                       (core/-update-entities-tx ..ctx.. ..db.. [update2]) => [1])))
 
@@ -327,26 +338,17 @@
                   (provided
                     (core/get-entities ..ctx.. ..db.. [id]) => [(assoc entity :type "User")])))))
 
-          (facts "-restore-archived-entity"
-            (let [entity {:archived true
-                          :archived_at util/iso-now
-                          :archived_by_user_id 1}
-                  expected {:archived false
-                            :archived_at nil
-                            :archived_by_user_id nil}]
-              (core/-restore-archived-entity entity) => expected))
-
           (facts "restore-deleted-entities"
             (let [id       (str (util/make-uuid))
                   entity   {:_id        id
                             :type       c/ACTIVITY-TYPE
                             :owner      ..owner..}
-                  restored (core/-restore-archived-entity entity)]
+                  restored entity]
               (core/restore-deleted-entities ..ctx.. ..db.. [id]) => [entity]
               (provided
                 (core/get-entities ..ctx.. ..db.. [id] :include-trashed true) => [entity]
                 (auth/can? ..ctx.. ::auth/update restored) => true
-                (core/-update-entities-tx ..ctx.. ..db.. [restored]) => [1])))
+                (core/-unarchive-entities-tx ..ctx.. ..db.. [restored]) => [1])))
 
           (facts "archive-entity"
             (fact "sets archived information"
@@ -377,12 +379,12 @@
                 (against-background [(core/get-entities ..ctx.. ..db.. [id]) => [entity]
                                      (core/archive-entity ..owner-id.. entity) => archived
                                      (tw/to-db ..ctx.. ..db.. [archived]) => [archived]
-                                     (core/-update-entity ..tx.. archived) => 1]
+                                     (core/-archive-entity ..tx.. archived) => 1]
                   (fact "it trashes entity"
                     (core/delete-entities ..ctx.. ..db.. [id]) => [entity]
                     (provided
                       (auth/can? ..ctx.. ::auth/delete anything) => true
-                      (core/-update-entities-tx ..ctx.. ..db.. [archived]) => [1]))
+                      (core/-archive-entities-tx ..ctx.. ..db.. [archived]) => [1]))
 
                   (fact "it fails if authenticated user doesn't have write permission"
                     (core/delete-entities ..ctx.. ..db.. [id]) => (throws Exception)
@@ -409,7 +411,7 @@
 
           (facts "with other entity"
             (let [project-id (str (util/make-uuid))
-                  entity {:project_id project-id
+                  entity {:links {:_collaboration_roots [project-id]}
                           :type c/FOLDER-TYPE}]
               (fact "it returns :project_id"
                 (core/parent-collaboration-roots ..ctx.. ..db.. ..parent..) => [project-id]

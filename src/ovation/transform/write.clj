@@ -1,19 +1,16 @@
 (ns ovation.transform.write
-  (:require [clojure.tools.logging :as logging]
-            [ovation.auth :as auth]
+  (:require [ovation.auth :as auth]
             [ovation.constants :as c]
             [ovation.db.files :as files]
             [ovation.db.projects :as projects]
             [ovation.db.uuids :as uuids]
             [ovation.util :as util]
             [ovation.request-context :as request-context]
-            [clojure.tools.logging :as logging]
             [com.climate.newrelic.trace :refer [defn-traced]]))
 
 (defn ensure-organization
   "Adds organization reference"
   [doc ctx]
-  (logging/info "ensure-organization" doc)
   (if-not (:organization_id doc)
     (assoc doc :organization_id (::request-context/org ctx))
     doc))
@@ -21,7 +18,6 @@
 (defn ensure-project
   "Adds project reference"
   [doc ctx db project-id]
-  (logging/info "ensure-project" doc project-id)
   (if project-id
     (if-not (:project_id doc)
       (let [{auth ::request-context/identity,
@@ -163,7 +159,6 @@
 
 (defn doc-to-db
   [ctx db collaboration-roots doc]
-  (logging/info "doc-to-db" doc)
   (let [{auth ::request-context/identity} ctx
         owner-id (auth/authenticated-user-id auth)
         time (util/iso-now)
@@ -191,7 +186,6 @@
 (defn-traced to-db
   "Transform documents for DB"
   [ctx db docs & {:keys [collaboration_roots] :or {collaboration_roots nil}}]
-  (logging/info "Transforming to db" docs)
   (map #(doc-to-db ctx db collaboration_roots %) docs))
 
 (defn transform-annotation
@@ -236,7 +230,6 @@
         user-id (auth/authenticated-user-id auth)
         time (util/iso-now)
         project (first (get-in value [:links :_collaboration_roots] []))]
-    (logging/info "user-id " user-id)
     (-> value
       (transform-entity db (:entity value))
       (transform-target db (:target_id value))

@@ -27,8 +27,13 @@
         (fact "should insert source"
           (let [user-id (:id (factories/user tx {}))
                 org-id (:id (factories/organization tx {:owner_id user-id}))
+                team-id (:id (factories/team tx {:owner_id user-id}))
+                project-id (:id (factories/project tx {:organization_id org-id
+                                                       :team_id team-id
+                                                       :owner_id user-id}))
                 args {:_id (str (util/make-uuid))
                       :organization_id org-id
+                      :project_id project-id
                       :owner_id user-id
                       :name "A Source"
                       :attributes (util/to-json {})
@@ -40,7 +45,12 @@
         (fact "should update source"
           (let [user-id (:id (factories/user tx {}))
                 org-id (:id (factories/organization tx {:owner_id user-id}))
+                team-id (:id (factories/team tx {:owner_id user-id}))
+                project-id (:id (factories/project tx {:organization_id org-id
+                                                       :team_id team-id
+                                                       :owner_id user-id}))
                 source (factories/source tx {:organization_id org-id
+                                             :project_id project-id
                                              :owner_id user-id
                                              :archived false
                                              :archived_at nil
@@ -52,7 +62,12 @@
         (fact "should delete source"
           (let [user-id (:id (factories/user tx {}))
                 org-id (:id (factories/organization tx {:owner_id user-id}))
+                team-id (:id (factories/team tx {:owner_id user-id}))
+                project-id (:id (factories/project tx {:organization_id org-id
+                                                       :team_id team-id
+                                                       :owner_id user-id}))
                 source (factories/source tx {:organization_id org-id
+                                             :project_id project-id
                                              :owner_id user-id})
                 source-count (:count (sources/count tx))]
             (sources/delete tx source)

@@ -1,6 +1,5 @@
 (ns ovation.transform.serialize
-  (:require [clojure.tools.logging :as logging]
-            [ovation.util :as util]))
+  (:require [ovation.util :as util]))
 
 (defn -remove-ids
   [doc]
@@ -12,7 +11,6 @@
 
 (defn entity
   [doc]
-  (logging/info "serialize/entity " doc)
   (-> doc
     (-remove-ids)
     (-remove-timestamps)))

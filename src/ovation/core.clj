@@ -65,7 +65,7 @@
   (let [{org-id ::rc/org, auth ::rc/identity} ctx
         teams (auth/authenticated-teams auth)
         user (auth/authenticated-user-id auth)]
-    (logging/info "-get-entities " {:archived include-trashed
+    (logging/debug "-get-entities " {:archived include-trashed
                                     :organization_id org-id
                                     :team_uuids teams
                                     :owner_id user})
@@ -226,7 +226,6 @@
         record (first (tw/to-db ctx db [updated-entity] :collaboration_roots collaboration_roots
                                                         :organization_id org-id
                                                         :user_id user-id))
-        _ (logging/info "--create-entity record" record)
         result (condp = (:type entity)
                  c/ACTIVITY-TYPE (activities/create db record)
                  c/FILE-TYPE     (files/create db record)
@@ -248,7 +247,6 @@
         collaboration-roots (or collaboration_roots [uuid])
         updated-doc (assoc doc :_id uuid)
         entity-type (:type updated-doc)
-        _ (logging/info "UUID " uuid " Doc " updated-doc)
         uuid-entry {:uuid uuid
                     :entity_type entity-type
                     :created-at (util/iso-now)
@@ -296,7 +294,6 @@
 (defn- -create-relation-value
   [ctx db value]
   (let [record (tw/value-to-db ctx db value)
-        _ (logging/info "-create-relation-value " record)
         result (relations/create db record)]
     (-> value
       (assoc :id (:generated_key result)))))
@@ -323,7 +320,6 @@
                     :created-at (util/iso-now)
                     :updated-at (util/iso-now)}
         is-annotation (= entity-type c/ANNOTATION-TYPE)
-        _ (logging/info "uuid-entry " uuid-entry)
         uuid-result (and is-annotation (uuids/create db uuid-entry))
         record (condp = (:type authorized-value)
                  c/RELATION-TYPE (-create-relation-value ctx db updated-value)
@@ -394,7 +390,6 @@
 
 (defn -update-entity
   [db record]
-  (logging/info "-update-entity " record)
   (condp = (:type record)
     c/ACTIVITY-TYPE (activities/update db record)
     c/FILE-TYPE (files/update db record)
@@ -410,7 +405,6 @@
 
 (defn -archive-entity
   [db record]
-  (logging/info "-delete-entity " record)
   (condp = (:type record)
     c/ACTIVITY-TYPE (activities/archive db record)
     c/FILE-TYPE (files/archive db record)
@@ -427,7 +421,6 @@
 
 (defn -unarchive-entity
   [db record]
-  (logging/info "-delete-entity " record)
   (condp = (:type record)
     c/ACTIVITY-TYPE (activities/unarchive db record)
     c/FILE-TYPE (files/unarchive db record)
@@ -449,7 +442,6 @@
                                                                                    update-collaboration-roots false
                                                                                    allow-keys                 []}}]
 
-  (logging/info "update-entities " entities)
   (when (some #{c/USER-ENTITY} (map :type entities))
     (throw+ {:type ::auth/unauthorized :message "Not authorized to update a User"}))
 

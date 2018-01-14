@@ -14,7 +14,7 @@
               :name ..revision-name..
               :content_type ..revision-content-type..
               :content_length ..revision-content-length..
-              :upload_status ..revision-upload-status..
+              :upload-status ..revision-upload-status..
               :url ..revision-url..
               :created-at ..revision-created-at..
               :updated-at ..revision-updated-at..
@@ -49,7 +49,7 @@
                       :version nil
                       :content_type "text/plain"
                       :content_length nil
-                      :upload_status nil
+                      :upload-status nil
                       :url nil
                       :attributes (util/to-json {})
                       :created-at (util/iso-now)
@@ -69,6 +69,7 @@
                                                  :owner_id user-id}))
                 revision (factories/revision tx {:organization_id org-id
                                                  :owner_id user-id
+                                                 :upload-status nil
                                                  :file_id file-id
                                                  :archived false
                                                  :archived_at nil
@@ -89,6 +90,7 @@
                                                  :owner_id user-id}))
                 revision (factories/revision tx {:organization_id org-id
                                                  :owner_id user-id
+                                                 :upload-status nil
                                                  :file_id file-id})
                 revision-count (:count (revisions/count tx))]
             (revisions/delete tx revision)

@@ -23,6 +23,7 @@
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
             [ovation.routes :as routes]
+            [ovation.transform.serialize :as serialize]
             [compojure.api.validator]
             [ovation.test.system :as test.system]
             [ovation.test.helpers :refer [sling-throwable]]
@@ -209,7 +210,7 @@
                    (let [post# (request#)]
                      (body-json ~app post#) => {:entities [entity#]
                                                 :links    links#
-                                                :updates  {}})))
+                                                :updates  []})))
 
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (~app (request#))) => 401
@@ -293,7 +294,7 @@
                                      (dissoc :relationships)
                                      (assoc :attributes new-attributes#))
                    put-body#       {~(util/entity-type-name-keyword type-name) (assoc update# :_id (str id#))}
-                   updated-entity# (assoc update# :_rev "2" :links {:self "self"} :relationships {} :_id (str id#))
+                   updated-entity# (assoc update# :links {:self "self"} :relationships {} :_id (str id#))
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path (str entity-id#)]))
                                                                 (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
@@ -373,7 +374,7 @@
 
 (against-background [(around :contents (test.system/system-background ?form))]
   (let [app (test.system/get-app)
-        db  (-> (test.system/get-db) :db-spec)
+        db  (test.system/get-db)
         org 1]
 
 
@@ -564,7 +565,6 @@
       (entity-resources-read-tests app db org "Source")
       (entity-resource-read-tests app db org "Source")
       (entity-resource-create-tests app db org "Source")
-      (entity-resources-create-tests app db org "Source")
       (entity-resource-update-tests app db org "Source")
       (entity-resource-deletion-tests app db org "Source"))
 
@@ -707,7 +707,8 @@
             (auth/get-permissions anything) => PERMISSIONS
             (request-context/make-context anything org anything) => ..ctx..
             ..ctx.. =contains=> {::request-context/routes ..rt..}
-            (prov/local ..ctx.. db [id]) => expected))))))
+            (prov/local ..ctx.. db [id]) => expected
+            (serialize/entities expected) => expected))))))
 
     ;(facts "About breadcrumbs"
     ;  (facts "POST"

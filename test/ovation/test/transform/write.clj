@@ -32,12 +32,14 @@
   (facts "ensure-project"
     (fact "adds project_id if not present"
       (let [doc {}]
-        (tw/ensure-project doc ..db.. ..project..) => (assoc doc :project_id ..project-id..)
+        (tw/ensure-project doc ..ctx.. ..db.. ..project..) => (assoc doc :project_id ..project-id..)
         (provided
-          (projects/find-by-uuid ..db.. ..project..) => {:id ..project-id..})))
+          (projects/find-by-uuid ..db.. {:id ..project..,
+                                         :team_uuids [],
+                                         :organization_id ..org..}) => {:id ..project-id..})))
     (fact "doesn't add project_if if present"
       (let [doc {:project_id ..other..}]
-        (tw/ensure-project doc ..db.. ..project..) => doc)))
+        (tw/ensure-project doc ..ctx.. ..db.. ..project..) => doc)))
 
   (facts "About `ensure-owner`"
     (fact "it adds owner element"
@@ -78,85 +80,103 @@
       (let [doc {}]
         (tw/doc-to-db ..ctx.. ..db.. [..project..] doc) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. ..project..) => {:id ..project-id..})))
+          (projects/find-by-uuid ..db.. {:id ..project..,
+                                         :team_uuids [],
+                                         :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds project_id from collaboration roots"
       (let [doc {:links {:_collaboration_roots [..project..]}}]
         (tw/doc-to-db ..ctx.. ..db.. nil doc) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. ..project..) => {:id ..project-id..})))
+          (projects/find-by-uuid ..db.. {:id ..project..,
+                                         :team_uuids [],
+                                         :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds owner"
       (let [doc {}]
-        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:owner_id ..owner-id..})))
+        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:owner_id ..owner-id..})
+        (provided
+          (auth/authenticated-user-id ..auth..) => ..owner-id..)))
 
     (fact "adds user"
       (let [doc {}]
-        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:user_id ..owner-id..})))
+        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:user_id ..owner-id..})
+        (provided
+          (auth/authenticated-user-id ..auth..) => ..owner-id..)))
 
     (fact "adds created-at date"
-      (let [doc {}]
-        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:created-at ..time..})
+      (let [time (util/iso-now)
+            doc {}]
+        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:created-at time})
         (provided
-          (util/iso-short-now) => ..time..)))
+          (util/iso-now) => time)))
 
     (fact "adds created-at from attributes"
-      (let [doc {:attributes {:created-at ..time..}}]
-        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:created-at ..time..})))
+      (let [time (util/iso-now)
+            doc {:attributes {:created-at time}}]
+        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:created-at time})))
 
     (fact "adds updated-at date"
-      (let [doc {}]
-        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:updated-at ..time..})
+      (let [doc {}
+            time (util/iso-now)]
+        (tw/doc-to-db ..ctx.. ..db.. ..roots.. doc) => (contains {:updated-at time})
         (provided
-          (util/iso-short-now) => ..time..))))
+          (util/iso-now) => time))))
 
   (facts "value-to-db"
     (fact "adds project_id from collaboration roots"
       (let [value {:links {:_collaboration_roots [..project..]}}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. ..project..) => {:id ..project-id..})))
+          (projects/find-by-uuid ..db.. {:id ..project..,
+                                         :team_uuids [],
+                                         :organization_id ..org..}) => {:id ..project-id..})))
     (fact "transforms entity to entity_id and entity_type"
       (let [value {:entity ..entity..}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:entity_id ..entity-id..
                                                             :entity_type ..entity-type..})
         (provided
-          (uuids/find-by-uuid ..db.. ..entity..) => {:entity_id ..entity-id..
-                                                     :entity_type ..entity-type..})))
+          (uuids/find-by-uuid ..db.. {:uuid ..entity..}) => {:entity_id ..entity-id..
+                                                             :entity_type ..entity-type..})))
     (fact "adds user"
       (let [value {}]
-        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:user_id ..owner-id..})))
+        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:user_id ..owner-id..})
+        (provided
+          (auth/authenticated-user-id ..auth..) => ..owner-id..)))
     (fact "transforms annotation"
-      (let [value {:annotation {:text ..text..
-                                :timestamp ..timestamp..
+      (let [timestamp (util/iso-now)
+            start (util/iso-now)
+            end (util/iso-now)
+            value {:annotation {:text ..text..
+                                :timestamp timestamp
                                 :key ..key..
                                 :value ..value..
                                 :tag ..tag..
                                 :name ..name..
                                 :notes ..notes..
-                                :start ..start..
-                                :end ..end..}}]
+                                :start start
+                                :end end}}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:text ..text..
-                                                            :timestamp ..timestamp..
+                                                            :timestamp timestamp
                                                             :key ..key..
                                                             :value ..value..
                                                             :tag ..tag..
                                                             :name ..name..
                                                             :notes ..notes..
-                                                            :start ..start..
-                                                            :end ..end..})))
+                                                            :start start
+                                                            :end end})))
     (fact "transforms target_id to child_entity_id and type"
       (let [value {:target_id ..target..}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:child_entity_id ..entity-id..
                                                             :child_entity_type ..entity-type..})
         (provided
-          (uuids/find-by-uuid ..db.. ..target..) => {:entity_id ..entity-id..
+          (uuids/find-by-uuid ..db.. {:uuid ..target..}) => {:entity_id ..entity-id..
                                                      :entity_type ..entity-type..})))
      (fact "transforms source_id to parent_entity_id and type"
       (let [value {:source_id ..source..}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:parent_entity_id ..entity-id..
                                                             :parent_entity_type ..entity-type..})
         (provided
-          (uuids/find-by-uuid ..db.. ..source..) => {:entity_id ..entity-id..
+          (uuids/find-by-uuid ..db.. {:uuid ..source..}) => {:entity_id ..entity-id..
                                                      :entity_type ..entity-type..})))))
 

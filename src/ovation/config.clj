@@ -10,10 +10,10 @@
 
 (def JWT_SECRET (config :jwt-secret))
 
-;; (def SERVICES_API_URL (config :ovation-io-host-uri :default "https://app-services-staging.ovation.io"))
+(def SERVICES_API_URL (config :ovation-io-host-uri :default "https://app-services-staging.ovation.io"))
 ;; (def SERVICES_API_URL "http://10.0.0.7:3001")
 ;; (def SERVICES_API_URL "http://172.20.10.4:3001")
-(def SERVICES_API_URL "http://192.168.1.151:3001")
+;;(def SERVICES_API_URL "http://192.168.1.151:3001")
 
 ;; https://ovation-development-8664991823.us-east-1.bonsaisearch.net
 

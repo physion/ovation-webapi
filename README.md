@@ -43,6 +43,14 @@ Limit test to directory
 
     (midje.repl/autotest :dirs "test/ovation/test/db")
 
+Run one test file
+
+    (midje.repl/check-facts 'ovation.test.annotations)
+
+Reload facts
+
+    (midje.repl/load-facts 'ovation.test.annotations)
+
 ## Running
 
 To start a web server for the application on port 3000:

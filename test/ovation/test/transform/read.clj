@@ -187,14 +187,16 @@
         (fact "it adds collaboration roots and self link"
           ((tr/db-to-value ..ctx..) record) => transformed-record)))
     (facts "for annotations"
-      (let [record {:_id ..id..
+      (let [time (util/iso-now)
+            time-short (util/iso-short-now)
+            record {:_id ..id..
                     :organization_id ..org..
                     :project ..project..
                     :user ..user..
                     :entity ..entity..
                     :text ..text..
-                    :timestamp ..timestamp..
-                    :edited_at ..edited-at..
+                    :timestamp time
+                    :edited_at time
                     :annotation_type c/NOTES
                     :type c/ANNOTATION-TYPE}
             transformed-record {:_id ..id..
@@ -202,10 +204,10 @@
                                 :user ..user..
                                 :entity ..entity..
                                 :annotation {:text ..text..
-                                             :timestamp ..timestamp..}
+                                             :edited_at time-short
+                                             :timestamp time-short}
                                 :permissions {:update true
                                               :delete true}
-                                :edited_at ..edited-at..
                                 :annotation_type c/NOTES
                                 :type c/ANNOTATION-TYPE
                                 :links {:_collaboration_roots [..project..]}}]
