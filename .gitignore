@@ -50,3 +50,5 @@ ovation-io.json
 # SOPS/helm-secrets
 deploy/.sops.yaml
 *.dec
+
+db/

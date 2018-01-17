@@ -8,6 +8,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.global-static-ip-name: {{ .Values.ingress.staticIPAddressName }}
+    kubernetes.io/tls-acme: "true"
 spec:
   backend:
     serviceName: {{ $serviceName }}
