@@ -10,9 +10,16 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: {{ .Values.ingress.staticIPAddressName }}
     kubernetes.io/tls-acme: "true"
 spec:
-  backend:
-    serviceName: {{ $serviceName }}
-    servicePort: {{ $servicePort }}
+  rules:
+    {{- range $host := .Values.ingress.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+    {{- end -}}
   {{- if .Values.ingress.tls }}
   tls:
 {{ toYaml .Values.ingress.tls | indent 4 }}
