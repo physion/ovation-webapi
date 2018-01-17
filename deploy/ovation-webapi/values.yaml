@@ -9,7 +9,7 @@ image:
   pullPolicy: IfNotPresent
 
 service:
-  name: http
+  name: webapi
   type: ClusterIP
   externalPort: 80
   internalPort: 3000
@@ -48,6 +48,8 @@ elasticsearch:
   data:
     persistence:
       storageClass: ssd
+  client:
+  master:
 
   #   data:
   #     replicas: 3
