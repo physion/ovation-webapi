@@ -12,11 +12,10 @@ service:
   externalPort: 80
   internalPort: 3000
 ingress:
-  enabled: true
+  enabled: false
 #  staticIPAddressName: STATICIPNAME
+  hosts:
   tls:
-    # Secrets must be manually created in the namespace.
-    - secretName: star-ovation-io-tls-secret
 config:
   GOOGLE_CLOUD_PROJECT_ID: ovation-io
 secret:
