@@ -47,7 +47,7 @@ elasticsearch:
       serviceType: ClusterIP
   data:
     persistence:
-      storageClass: gce-pd # ssd
+      storageClass: standard # ssd
   client:
   master:
 
