@@ -9,9 +9,13 @@
    :elasticsearch {:url (config/config :elasticsearch-url :default "http://localhost:9200")}
    :authz         {:services-url (util/join-path [config/SERVICES_API_URL "api" "v2"])}
    :pubsub        {:project-id (config/config :google-cloud-project-id :default "gcp-project-id")}
-   :db            {:host     (config/config :cloudant-db-url :default "https://db-host")
-                   :username (config/config :cloudant-username :default "db-username")
-                   :password (config/config :cloudant-password :default "db-password")}})
+   :flyway        {:locations ["filesystem:/app/db/migrations"]}
+   :db            {:adapter       "mysql"
+                   :username      (config/config :mysql-username)
+                   :password      (config/config :mysql-password)
+                   :database-name (config/config :mysql-database-name)
+                   :server-name   (config/config :mysql-server)
+                   :port-number   (config/config :mysql-port)}})
 
 (def test-system nil)
 
@@ -42,4 +46,4 @@
   (get-in test-system [:api :handler]))
 
 (defn get-db []
-  (get-in test-system [:database]))
+  (get-in test-system [:database :db-spec]))

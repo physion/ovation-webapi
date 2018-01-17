@@ -8,6 +8,7 @@
             [ovation.links :as links]
             [ovation.constants :as k]
             [ovation.request-context :as request-context]
+            [ovation.transform.serialize :as serialize]
             [ovation.util :as util]
             [ovation.request-context :as request-context])
   (:import (clojure.lang ExceptionInfo)))
@@ -30,6 +31,7 @@
       (provided
         ..req.. =contains=> {:identity ..auth..}
         ..file.. =contains=> {:type "File"}
+        (serialize/entities ..revs..) => ..revs..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) => ..revs..))
 
     (fact "+throws not-found if HEADs throws not found"
@@ -53,6 +55,9 @@
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
         (provided
+          (serialize/entities [activity]) => [activity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
           (core/get-entities ..ctx.. ..db.. [..projectid..]) => [project]
           (core/create-entities ..ctx.. ..db.. [(dissoc new-activity :relationships)] :parent ..projectid..) => [activity]
@@ -78,6 +83,9 @@
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
         (provided
+          (serialize/entities [activity]) => [activity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (core/get-entities ..ctx.. ..db.. [..projectid..]) => [project]
           (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
           (links/add-links ..ctx.. ..db.. anything :activities [(:_id activity)] :inverse-rel :parents) => {:updates ..updates..
@@ -99,6 +107,9 @@
                                                                                            :links    ..links..
                                                                                            :updates  ..updates..}
         (provided
+          (serialize/entities [source-entity]) => [source-entity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (core/get-entities ..ctx.. ..db.. [..fileid..]) => (seq [file-entity])
           (core/get-entities ..ctx.. ..db.. [..id2..]) => (seq [source-entity])
           (core/create-entities ..ctx.. ..db.. [{:type "Source" :attributes {}}] :parent ..fileid..) => [source-entity]

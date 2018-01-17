@@ -14,7 +14,6 @@
             [clojure.string :refer [lower-case capitalize]]
             [ovation.annotations :as annotations]
             [ovation.routes :as r]
-            [ovation.constants :as k]
             [ovation.revisions :as revisions]
             [ovation.teams :as teams]
             [ovation.prov :as prov]
@@ -24,6 +23,7 @@
             [ovation.constants :as c]
             [ovation.breadcrumbs :as b]
             [ovation.routes :as routes]
+            [ovation.transform.serialize :as serialize]
             [compojure.api.validator]
             [ovation.test.system :as test.system]
             [ovation.test.helpers :refer [sling-throwable]]
@@ -121,7 +121,6 @@
            (facts "resources"
              (let [id#     (str (UUID/randomUUID))
                    entity# {:_id           id#
-                            :_rev          "123"
                             :type          ~type-name
                             :attributes    {}
                             :links         {:self "self"}
@@ -145,7 +144,6 @@
            (facts "resource"
              (let [id#     (str (UUID/randomUUID))
                    entity# {:_id           id#
-                            :_rev          "123"
                             :type          ~type-name
                             :attributes    {}
                             :links         {:self "self"}
@@ -157,7 +155,6 @@
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
                      (body-json ~app get-req#) => {~(keyword (lower-case type-name)) entity#})
                    (let [source# {:_id        id#
-                                  :_rev       "123"
                                   :type       "OtherType"
                                   :attributes {}
                                   :links      {:self ""}}]
@@ -213,7 +210,7 @@
                    (let [post# (request#)]
                      (body-json ~app post#) => {:entities [entity#]
                                                 :links    links#
-                                                :updates  {}})))
+                                                :updates  []})))
 
                (fact "POST /:id returns 401 if not can? :create"
                  (:status (~app (request#))) => 401
@@ -288,7 +285,6 @@
                    attributes#     {:foo "bar"}
                    entity#         {:type          ~type-name
                                     :_id           id#
-                                    :_rev          "1"
                                     :attributes    attributes#
                                     :links         {:self "self"}
                                     :relationships {}}
@@ -298,7 +294,7 @@
                                      (dissoc :relationships)
                                      (assoc :attributes new-attributes#))
                    put-body#       {~(util/entity-type-name-keyword type-name) (assoc update# :_id (str id#))}
-                   updated-entity# (assoc update# :_rev "2" :links {:self "self"} :relationships {} :_id (str id#))
+                   updated-entity# (assoc update# :links {:self "self"} :relationships {} :_id (str id#))
                    request#        (fn [entity-id#] (mock-req (-> (mock/request :put (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path (str entity-id#)]))
                                                                 (mock/body (json/write-str (walk/stringify-keys put-body#)))) apikey#))]
 
@@ -347,7 +343,6 @@
                    attributes#     {:foo "bar"}
                    entity#         {:type       "MyEntity"
                                     :_id        (str id#)
-                                    :_rev       "1"
                                     :attributes attributes#
                                     :links      {:self "self"}}
                    deleted-entity# (assoc entity# :transh_info {:trashing_user (str (UUID/randomUUID))
@@ -427,7 +422,6 @@
           (facts "GET /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
                   tags [{:_id             (str (util/make-uuid))
-                         :_rev            "1"
                          :entity          id
                          :user            (str (util/make-uuid))
                          :type            "Annotation"
@@ -444,7 +438,6 @@
             (let [id   (str (util/make-uuid))
                   post {:tags [{:tag "--tag--"}]}
                   tags [{:_id             (str (util/make-uuid))
-                         :_rev            "1"
                          :entity          id
                          :user            (str (util/make-uuid))
                          :type            "Annotation"
@@ -462,7 +455,6 @@
                   note-id   (util/make-uuid)
                   user-id   (util/make-uuid)
                   update    {:_id             (str note-id)
-                             :_rev            "1"
                              :entity          (str entity-id)
                              :user            (str user-id)
                              :type            "Annotation"
@@ -480,7 +472,6 @@
           (let [id            (str (util/make-uuid))
                 annotation-id (str (util/make-uuid))
                 tags          [{:_id             annotation-id
-                                :_rev            "1"
                                 :entity          id
                                 :user            (str (util/make-uuid))
                                 :type            "Annotation"
@@ -506,7 +497,6 @@
               (let [id  (str (UUID/randomUUID))
                     get (mock-req (mock/request :get (util/join-path ["" "api" ver/version ORGS org "entities" id])) apikey)
                     doc {:_id           id
-                         :_rev          "123"
                          :type          "Entity"
                          :links         {:self "self"}
                          :relationships {}
@@ -521,42 +511,38 @@
               (let [id   (str (UUID/randomUUID))
                     get  (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version ORGS org "entities" id]) "?includes=annotations")) apikey)
                     doc  {:_id           id
-                          :_rev          "123"
                           :type          "Entity"
                           :links         {:self "self"}
                           :relationships {}
                           :attributes    {}}
 
                     tag  {:_id             (str (UUID/randomUUID))
-                          :_rev            "1"
                           :entity          id
                           :user            (str (UUID/randomUUID))
                           :type            "Annotation"
-                          :annotation_type k/TAGS
+                          :annotation_type c/TAGS
                           :annotation      {}}
 
                     prop {:_id             (str (UUID/randomUUID))
-                          :_rev            "1"
                           :entity          id
                           :user            (str (UUID/randomUUID))
                           :type            "Annotation"
-                          :annotation_type k/PROPERTIES
+                          :annotation_type c/PROPERTIES
                           :annotation      {}}
 
                     note {:_id             (str (UUID/randomUUID))
-                          :_rev            "1"
                           :entity          id
                           :user            (str (UUID/randomUUID))
                           :type            "Annotation"
-                          :annotation_type k/NOTES
+                          :annotation_type c/NOTES
                           :annotation      {}}]
 
                 (against-background [(core/get-entities ..ctx.. db [id] :include-trashed false) => [doc]
                                      (request-context/router anything) => ..rt..
-                                     (annotations/get-annotations ..ctx.. db [id] k/TAGS) => [tag]
-                                     (annotations/get-annotations ..ctx.. db [id] k/PROPERTIES) => [prop]
-                                     (annotations/get-annotations ..ctx.. db [id] k/NOTES) => [note]
-                                     (annotations/get-annotations ..ctx.. db [id] k/TIMELINE_EVENTS) => []]
+                                     (annotations/get-annotations ..ctx.. db [id] c/TAGS) => [tag]
+                                     (annotations/get-annotations ..ctx.. db [id] c/PROPERTIES) => [prop]
+                                     (annotations/get-annotations ..ctx.. db [id] c/NOTES) => [note]
+                                     (annotations/get-annotations ..ctx.. db [id] c/TIMELINE_EVENTS) => []]
                   (fact "GET /entities/:id returns status 200 "
                     (:status (app get)) => 200)
                   (fact "GET /entities/:id includes annotations"
@@ -579,7 +565,6 @@
       (entity-resources-read-tests app db org "Source")
       (entity-resource-read-tests app db org "Source")
       (entity-resource-create-tests app db org "Source")
-      (entity-resources-create-tests app db org "Source")
       (entity-resource-update-tests app db org "Source")
       (entity-resource-deletion-tests app db org "Source"))
 
@@ -616,14 +601,12 @@
           (let [apikey TOKEN
                 id     (str (UUID/randomUUID))
                 doc    {:_id           id
-                        :_rev          "123"
-                        :type          k/FILE-TYPE
+                        :type          c/FILE-TYPE
                         :links         {:self "self"}
                         :relationships {}
                         :attributes    {}}
                 revs   [{:_id           id
-                         :_rev          "123"
-                         :type          k/REVISION-TYPE
+                         :type          c/REVISION-TYPE
                          :links         {:self "self"}
                          :relationships {}
                          :attributes    {:content_type ""
@@ -724,7 +707,8 @@
             (auth/get-permissions anything) => PERMISSIONS
             (request-context/make-context anything org anything) => ..ctx..
             ..ctx.. =contains=> {::request-context/routes ..rt..}
-            (prov/local ..ctx.. db [id]) => expected))))))
+            (prov/local ..ctx.. db [id]) => expected
+            (serialize/entities expected) => expected))))))
 
     ;(facts "About breadcrumbs"
     ;  (facts "POST"
@@ -738,21 +722,21 @@
     ;            apikey   TOKEN
     ;            get      (mock-req (-> (mock/request :post (util/join-path ["" "api" ver/version ORGS org-id "breadcrumbs"]))
     ;                                 (mock/body (json-post-body [id1 id2]))) apikey)
-    ;            expected {(keyword id1) [[{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                                      {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
-    ;                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-    ;                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-    ;                                     [{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]
-    ;                      (keyword id2) [[{:type k/FILE-TYPE :id id2 :name "filename2"}
-    ;                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                                      {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-    ;                                     [{:type k/FILE-TYPE :id id2 :name "filename2"}
-    ;                                      {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                                      {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
+    ;            expected {(keyword id1) [[{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                                      {:type c/FOLDER-TYPE :id folder1 :name "foldername1"}
+    ;                                      {:type c/PROJECT-TYPE :id project1 :name "projectname1"}]
+    ;                                     [{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                                      {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                                      {:type c/PROJECT-TYPE :id project1 :name "projectname1"}]
+    ;                                     [{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                                      {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                                      {:type c/PROJECT-TYPE :id project2 :name "projectname2"}]]
+    ;                      (keyword id2) [[{:type c/FILE-TYPE :id id2 :name "filename2"}
+    ;                                      {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                                      {:type c/PROJECT-TYPE :id project1 :name "projectname1"}]
+    ;                                     [{:type c/FILE-TYPE :id id2 :name "filename2"}
+    ;                                      {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                                      {:type c/PROJECT-TYPE :id project2 :name "projectname2"}]]}]
     ;        (body-json app get) => {:breadcrumbs expected}
     ;        (provided
     ;          (auth/identity anything) => ..auth..
@@ -764,21 +748,21 @@
     ;          (b/get-parents ..auth.. db org-id project1 ..rt..) => []
     ;          (b/get-parents ..auth.. db org-id project2 ..rt..) => []
     ;          (core/get-entities ..auth.. db org-id #{id1 folder1 folder2 id2 project1 project2} ..rt..) => [{:_id        id1
-    ;                                                                                                          :type       k/FILE-TYPE
+    ;                                                                                                          :type       c/FILE-TYPE
     ;                                                                                                          :attributes {:name "filename1"}}
     ;                                                                                                         {:_id        id2
-    ;                                                                                                          :type       k/FILE-TYPE
+    ;                                                                                                          :type       c/FILE-TYPE
     ;                                                                                                          :attributes {:name "filename2"}}
     ;                                                                                                         {:_id        folder1
     ;                                                                                                          :attributes {:name "foldername1"}}
     ;                                                                                                         {:_id        folder2
-    ;                                                                                                          :type       k/FOLDER-TYPE
+    ;                                                                                                          :type       c/FOLDER-TYPE
     ;                                                                                                          :attributes {:name "foldername2"}}
     ;                                                                                                         {:_id        project1
-    ;                                                                                                          :type       k/PROJECT-TYPE
+    ;                                                                                                          :type       c/PROJECT-TYPE
     ;                                                                                                          :attributes {:name "projectname1"}}
     ;                                                                                                         {:_id        project2
-    ;                                                                                                          :type       k/PROJECT-TYPE
+    ;                                                                                                          :type       c/PROJECT-TYPE
     ;                                                                                                          :attributes {:name "projectname2"}}]))))
     ;  (facts "GET"
     ;    (fact "returns file breadcrumbs"
@@ -790,15 +774,15 @@
     ;            project2 (str (UUID/randomUUID))
     ;            apikey   TOKEN
     ;            get      (mock-req (mock/request :get (str (util/join-path ["" "api" ver/version ORGS org-id "breadcrumbs"]) "?id=" id1)) apikey)
-    ;            expected [[{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                       {:type k/FOLDER-TYPE :id folder1 :name "foldername1"}
-    ;                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-    ;                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                       {:type k/PROJECT-TYPE :id project1 :name "projectname1"}]
-    ;                      [{:type k/FILE-TYPE :id id1 :name "filename1"}
-    ;                       {:type k/FOLDER-TYPE :id folder2 :name "foldername2"}
-    ;                       {:type k/PROJECT-TYPE :id project2 :name "projectname2"}]]]
+    ;            expected [[{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                       {:type c/FOLDER-TYPE :id folder1 :name "foldername1"}
+    ;                       {:type c/PROJECT-TYPE :id project1 :name "projectname1"}]
+    ;                      [{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                       {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                       {:type c/PROJECT-TYPE :id project1 :name "projectname1"}]
+    ;                      [{:type c/FILE-TYPE :id id1 :name "filename1"}
+    ;                       {:type c/FOLDER-TYPE :id folder2 :name "foldername2"}
+    ;                       {:type c/PROJECT-TYPE :id project2 :name "projectname2"}]]]
     ;        (body-json app get) => {:breadcrumbs expected}
     ;        (provided
     ;          (auth/identity anything) => ..auth..
@@ -809,18 +793,18 @@
     ;          (b/get-parents ..auth.. db org-id project1 ..rt..) => []
     ;          (b/get-parents ..auth.. db org-id project2 ..rt..) => []
     ;          (core/get-entities ..auth.. db org-id #{id1 folder1 folder2 project1 project2} ..rt..) => [{:_id id1
-    ;                                                                                               :type        k/FILE-TYPE
+    ;                                                                                               :type        c/FILE-TYPE
     ;                                                                                               :attributes  {:name "filename1"}}
     ;                                                                                              {:_id        folder1
-    ;                                                                                               :type       k/FOLDER-TYPE
+    ;                                                                                               :type       c/FOLDER-TYPE
     ;                                                                                               :attributes {:name "foldername1"}}
     ;                                                                                              {:_id        folder2
-    ;                                                                                               :type       k/FOLDER-TYPE
+    ;                                                                                               :type       c/FOLDER-TYPE
     ;                                                                                               :attributes {:name "foldername2"}}
     ;                                                                                              {:_id        project1
-    ;                                                                                               :type       k/PROJECT-TYPE
+    ;                                                                                               :type       c/PROJECT-TYPE
     ;                                                                                               :attributes {:name "projectname1"}}
     ;                                                                                              {:_id        project2
-    ;                                                                                               :type       k/PROJECT-TYPE
+    ;                                                                                               :type       c/PROJECT-TYPE
     ;                                                                                               :attributes {:name "projectname2"}}]))))
 

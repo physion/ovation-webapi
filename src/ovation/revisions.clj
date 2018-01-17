@@ -3,7 +3,7 @@
             [ovation.constants :as k]
             [slingshot.slingshot :refer [throw+]]
             [ovation.links :as links]
-            [ovation.couch :as couch]
+            [ovation.db.revisions :as revisions]
             [ovation.config :as config]
             [ovation.util :as util]
             [org.httpkit.client :as http]
@@ -23,27 +23,14 @@
   all Revisions with that parent count"
 
   [ctx db file-id]
-  (let [org (::request-context/org ctx)
-        docs (let [tops   (couch/get-view ctx db k/REVISIONS-VIEW {:startkey      [org file-id {}]
-                                                                    :endkey       [org file-id]
-                                                                    :descending   true
-                                                                    :include_docs true
-                                                                    :limit        2} :prefix-teams false)
-                   counts (map (fn [doc] (count (get-in doc [:attributes :previous]))) tops)]
-               (if (and (> (count tops) 1)
-                     (= (first counts) (second counts)))
-
-                 ;; HEAD conflict
-                 (couch/get-view ctx db k/REVISIONS-VIEW {:startkey       [org file-id (first counts)]
-                                                           :endkey        [org file-id (first counts)]
-                                                           :inclusive_end true
-                                                           :include_docs  true} :prefix-teams false)
-
-                 ;; Unique HEAD
-                 (take 1 tops)))]
+  (let [{org-id ::request-context/org
+         auth ::request-context/identity} ctx
+        teams (auth/authenticated-teams auth)
+        docs (revisions/find-head-by-file-id db {:organization_id org-id
+                                                 :team_uuids teams
+                                                 :file_id file-id})]
     (-> docs
-      (tr/entities-from-couch ctx)
-      (core/filter-trashed false))))
+      (tr/entities-from-db ctx))))
 
 (defn update-file-status
   [file revisions status]
@@ -105,10 +92,12 @@
         (throw+ {:type ::resource-creation-failed :message (util/from-json (:body @resp)) :status (:status @resp)}))
 
       (let [result   (:resource (util/from-json (:body @resp)))
+            id       (:id result)
             url      (:public_url result)
             aws      (:aws result)
             post-url (:url result)]
         {:revision (-> revision
+                     (assoc-in [:attributes :resource_id] id)
                      (assoc-in [:attributes :url] url)
                      (assoc-in [:attributes :upload-status] k/UPLOADING))
          :aws      aws
@@ -125,7 +114,6 @@
   (let [publisher (get-in db [:pubsub :publisher])
         topic     (config/config :revisions-topic :default :revisions)]
     (pubsub/publish publisher topic {:id   (:_id doc)
-                                     :rev  (:_rev doc)
                                      :type (:type doc)} (async/chan))))
 (defn update-metadata
   [ctx db revision & {:keys [complete] :or {complete true}}]

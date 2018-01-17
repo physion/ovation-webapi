@@ -1,29 +1,42 @@
-  version: "3.0"
-  services:
-    web:
-      build: .
-      command: lein run
-      ports:
-        - "3000:3000"
-      links:
-        - db
-      volumes:
-        - .:/app
-      env_file: dev.env
-#      links:
-#        - pubsub
-    repl:
-      build: .
-      command: lein repl :headless :host 0.0.0.0 :port 59789
-      ports:
-        - "59789:59789"
-      volumes:
-        - .:/app
-      env_file: dev.env
-    db:
-      image: mysql
-      environment:
-        - MYSQL_RANDOM_ROOT_PASSWORD="1"
+version: "3.0"
+services:
+  web:
+    build: .
+    command: lein run
+    ports:
+      - "3000:3000"
+    links:
+      - db
+#       - pubsub
+    volumes:
+      - .:/app
+    env_file: dev.env
+
+  repl:
+    build: .
+    command: lein repl :headless :host 0.0.0.0 :port 59789
+    ports:
+      - "59789:59789"
+        # - "3000:3000"
+    volumes:
+      - .:/app
+    env_file: dev.env
+    links:
+      - db
+
+  db:
+    image: mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD="1"
+      - MYSQL_USER=webapi
+      - MYSQL_PASSWORD=webapipass
+      - MYSQL_DATABASE=ovation_development
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
+      - ./db/data:/var/lib/mysql/
+
 #    pubsub:
 #      image: niallmccullagh/docker-google-cloud-emulators:latest
 #      ports:

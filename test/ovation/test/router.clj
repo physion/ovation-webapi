@@ -2,6 +2,7 @@
   (:use midje.sweet)
   (:require [ovation.routes :as routes]
             [ovation.util :as util]
+            [ovation.constants :as c]
             [ovation.request-context :as request-context]))
 
 (defn rt
@@ -30,7 +31,7 @@
             (util/entity-type-name ..doc..) => type)))
 
       (fact "provides self route for Relationship"
-        (let [type util/RELATION_TYPE]
+        (let [type c/RELATION-TYPE]
           (routes/self-route ..ctx.. ..doc..) => [(keyword (format "get-%s" type)) {:org ..org.. :id ..id..}]
           (provided
             (util/entity-type-name ..doc..) => type))))))

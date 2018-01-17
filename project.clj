@@ -12,10 +12,16 @@
                  ;; Component
                  [com.stuartsierra/component "0.3.2"]
                  [org.danielsz/system "0.4.0"]
+                 [metosin/palikka "0.5.2"]
+
+                 ;; Database
+                 [com.layerware/hugsql "0.4.7"]
+                 [hikari-cp "1.8.3"]
+                 [mysql/mysql-connector-java "5.1.44"]
+                 [org.flywaydb/flyway-core "4.2.0"]
 
                  ;; Compojure API and middleware
                  [metosin/compojure-api "1.1.11"]
-                 ;[metosin/ring-http-response "0.9.0"]
                  [ring-cors "0.1.11"]
                  [ring-logger "0.7.7"]
                  [buddy/buddy-auth "1.4.1"]

@@ -1,6 +1,6 @@
 - name: tests
   service: web
-  command: lein midje
+  command: /wait-for-it.sh db:3306 -t 60 -- lein midje
 
 ## Production
 - name: Push to GCR (production)

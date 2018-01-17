@@ -1,13 +1,19 @@
 (ns ovation.test.links
   (:use midje.sweet)
-  (:require [ovation.links :as links]
-            [ovation.couch :as couch]
-            [ovation.util :as util]
-            [ovation.auth :as auth]
-            [ovation.core :as core]
-            [ovation.version :as ver]
+  (:require [ovation.auth :as auth]
             [ovation.constants :as k]
-            [ovation.transform.read :as tr])
+            [ovation.core :as core]
+            [ovation.db.activities :as activities]
+            [ovation.db.files :as files]
+            [ovation.db.folders :as folders]
+            [ovation.db.projects :as projects]
+            [ovation.db.relations :as relations]
+            [ovation.db.revisions :as revisions]
+            [ovation.db.sources :as sources]
+            [ovation.links :as links]
+            [ovation.transform.read :as tr]
+            [ovation.util :as util]
+            [ovation.version :as ver])
   (:import (java.util UUID)))
 
 (facts "About links"
@@ -16,35 +22,33 @@
                                             :ovation.request-context/org      ..org..}]
 
     (facts "`get-link-targets`"
-      (let [doc1 {:attributes {:label ..label1..}}
-            doc2 {:attributes {:label ..label2..}}
-            doc3 {:attributes {}}]
-        (against-background [(couch/get-view ..ctx.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel..]
-                                                                          :endkey        [..id.. ..rel..]
-                                                                          :inclusive_end true
-                                                                          :reduce        false
-                                                                          :include_docs  true}) => [doc1 doc2 doc3]
-                             (couch/get-view ..ctx.. ..db.. k/LINKS-VIEW {:startkey      [..id.. ..rel.. ..name..]
-                                                                          :endkey        [..id.. ..rel.. ..name..]
-                                                                          :inclusive_end true
-                                                                          :reduce        false
-                                                                          :include_docs  true}) => [doc1]
-                             (auth/can? anything ::auth/update anything) => true
-                             (auth/authenticated-teams ..auth..) => []
-                             (ovation.request-context/team-ids ..ctx..) => []
-                             (ovation.request-context/user-id ..ctx..) => ..user..
-                             (auth/can? anything ::auth/read anything :teams anything) => true
-                             (tr/couch-to-entity ..ctx..) => (fn [doc] doc)]
-
-          (fact "gets entity rel targets"
-            (links/get-link-targets ..ctx.. ..db.. ..id.. ..rel..) => [doc1 doc2 doc3])
-
-          (fact "gets named entity rel targets"
-            (links/get-link-targets ..ctx.. ..db.. ..id.. ..rel.. :name ..name..) => [doc1])
-
-          (fact "filters by label"
-            (links/get-link-targets ..ctx.. ..db.. ..id.. ..rel.. :label ..label1..) => [doc1]))))
-
+      (let [activity ..activity..
+            file ..file..
+            folder ..folder..
+            project ..project..
+            revision ..revision..
+            source ..source..
+            args {:entity_id ..entity-id..
+                  :entity_type ..entity-type..
+                  :rel ..rel..
+                  :team_uuids ..teams..
+                  :owner_id ..user-id..
+                  :archived false
+                  :organization_id ..org..}]
+        (links/get-link-targets ..ctx.. ..db.. ..id.. ..rel..) => [..activity.. ..file.. ..folder.. ..project.. ..revision.. ..source..]
+        (provided
+          (core/get-entities ..ctx.. ..db.. [..id..]) => [{:id ..entity-id..
+                                                           :type ..entity-type..}]
+          (auth/authenticated-teams ..auth..) => ..teams..
+          (auth/authenticated-user-id ..auth..) => ..user-id..
+          (activities/find-all-by-rel ..db.. args) => [..activity..]
+          (files/find-all-by-rel ..db.. args) => [..file..]
+          (folders/find-all-by-rel ..db.. args) => [..folder..]
+          (projects/find-all-by-rel ..db.. args) => [..project..]
+          (revisions/find-all-by-rel ..db.. args) => [..revision..]
+          (sources/find-all-by-rel ..db.. args) => [..source..]
+          (tr/db-to-entity ..ctx..) => (fn [doc] doc)
+          (auth/can? ..ctx.. ::auth/read anything :teams ..teams..) => true)))
 
     (facts "`add-link`"
       (let [doc        {:_id   (str (UUID/randomUUID))
@@ -56,7 +60,7 @@
         (against-background [(core/get-entities ..ctx.. ..db.. [target-id]) => [{:_id   target-id
                                                                                  :type  "not-a-root"
                                                                                  :links {:_collaboration_roots [..targetroot..]}}]
-                             (auth/authenticated-user-id ..auth..) => ..id..]
+                             (auth/authenticated-user-uuid ..auth..) => ..id..]
 
 
           (fact "creates link document"
@@ -194,15 +198,15 @@
                 (auth/can? ..ctx.. ::auth/update doc) => true))))))
 
     (facts "`get-links`"
-      (against-background [(couch/get-view ..ctx.. ..db.. k/LINK-DOCS-VIEW {:startkey      [..id.. ..rel..]
-                                                                            :endkey        [..id.. ..rel..]
-                                                                            :inclusive_end true
-                                                                            :reduce        false
-                                                                            :include_docs  true}) => ..docs..
-                           (tr/values-from-couch ..docs.. ..ctx..) => ..values..]
-
-        (fact "gets relationship documents"
-          (links/get-links ..ctx.. ..db.. ..id.. ..rel..) => ..values..)))
+      (fact "returns relations"
+        (links/get-links ..ctx.. ..db.. ..id.. ..rel..) => [..relation..]
+        (provided
+          (core/get-entities ..ctx.. ..db.. [..id..]) => [{:id ..entity-id..
+                                                           :type ..entity-type..}]
+          (relations/find-all-by-parent-entity-rel ..db.. {:entity_id ..entity-id..
+                                                           :entity_type ..entity-type..
+                                                           :rel ..rel..}) => [..relation..]
+          (tr/values-from-db [..relation..] ..ctx..) => [..relation..])))
 
     (facts "`collaboration-roots`"
       (fact "returns _collaboration_roots"

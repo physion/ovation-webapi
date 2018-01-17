@@ -7,7 +7,6 @@
 ;            [ovation.context :as context]
 ;            [ovation.links :as links]
 ;            [com.ashafa.clutch :as cl]
-;            [ovation.couch :as couch]
 ;            [ovation.version :as ver])
 ;  (:import (us.physion.ovation.data EntityDao$Views)))
 ;

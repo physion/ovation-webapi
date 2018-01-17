@@ -2,17 +2,23 @@
   (:require [ovation.routes :as routes]
             [ovation.util :as util :refer [<??]]
             [ovation.config :as config]
+            [ovation.constants :as c]
+            [ovation.db.membership_roles :as membership_roles]
+            [ovation.db.memberships :as memberships]
+            [ovation.db.projects :as projects]
+            [ovation.db.roles :as roles]
+            [ovation.db.teams :as db.teams]
+            [ovation.transform.read :as transform.read]
             [org.httpkit.client :as httpkit.client]
             [clojure.tools.logging :as logging]
             [ring.util.http-response :refer [throw! bad-request! not-found! unprocessable-entity! unprocessable-entity]]
-            [ovation.constants :as k]
+            [ovation.constants :as c]
             [clojure.core.async :refer [chan >!! >! <! go promise-chan]]
             [slingshot.support :refer [get-throwable]]
             [ring.util.http-predicates :as hp]
             [ovation.http :as http]
             [slingshot.slingshot :refer [try+]]
             [ovation.request-context :as request-context]
-            [ovation.core :as core]
             [ovation.auth :as auth]))
 
 (def TEAMS "teams")
@@ -47,11 +53,11 @@
   [teams team-id]
   (let [role (get-in teams [(keyword (str team-id)) :role])]
     (condp = role
-      k/ADMIN-ROLE {:update true
+      c/ADMIN-ROLE {:update true
                     :delete true}
-      k/CURATOR-ROLE {:update false
+      c/CURATOR-ROLE {:update false
                       :delete false}
-      k/MEMBER-ROLE {:update false
+      c/MEMBER-ROLE {:update false
                      :delete false}
       {:update false
        :delete false})))
@@ -71,7 +77,7 @@
                                    {}))]
 
         (-> team
-          (assoc :type k/TEAM-TYPE)
+          (assoc :type c/TEAM-TYPE)
           (dissoc :project)
           (dissoc :organization)
           (dissoc :project_id)
@@ -81,21 +87,72 @@
           (assoc :links {:self        (routes/named-route ctx :get-team {:id team-id :org (:ovation.request-context/org ctx)})
                          :memberships (routes/named-route ctx :post-memberships {:id team-id :org (:ovation.request-context/org ctx)})}))))))
 
+(defn -create-team
+  [ctx db team-uuid]
+  (let [{auth ::request-context/identity
+         org-id ::request-context/org} ctx
+        owner (auth/authenticated-user-id auth)
+        record {:owner_id owner
+                :name (str team-uuid)
+                :uuid (str team-uuid)
+                :entity_id org-id
+                :entity_type c/ORGANIZATION-TYPE
+                :created-at (util/iso-now)
+                :updated-at (util/iso-now)}
+        _ (logging/info (str "-create-team" record))
+        result (db.teams/create db record)]
+    (-> record
+      (assoc :id (:generated_key result)))))
+
+(defn -create-membership
+  [ctx db team-record])
+
+(defn -create-membership
+  [ctx db team-record user-id]
+  (logging/info "-create-membership for " team-record user-id)
+  (let [record {:team_id (:id team-record)
+                :user_id user-id
+                :created-at (util/iso-now)
+                :updated-at (util/iso-now)}
+        _ (logging/info "-create-membership record " record)
+        result (memberships/create db record)]
+    (-> record
+      (assoc :id (:generated_key result)))))
+
+(defn -find-or-create-membership
+  [ctx db team-record user-id]
+  (or
+    (memberships/find-by db {:team_id (:id team-record)
+                             :user_id user-id})
+    (-create-membership ctx db team-record user-id)))
+
+(defn -create-membership-role
+  [ctx db team-record membership-record role-record]
+  (let [record {:membership_id (:id membership-record)
+                :team_id (:id team-record)
+                :role_id (:id role-record)}
+        result (membership_roles/create db record)]
+    (-> record
+      (assoc :id (:generated_key result)))))
+
+(defn -find-or-create-membership-role
+  [ctx db team-record membership-record role-record]
+  (or
+    (membership_roles/find-by db {:team_id (:id team-record)
+                                  :membership_id (:id membership-record)
+                                  :role_id (:id role-record)})
+    (-create-membership-role ctx db team-record membership-record role-record)))
+
 (defn create-team
-  [ctx team-uuid]
-
-  (let [ch   (chan)
-        org  (::request-context/org ctx)
-        body {:team {:uuid            (str team-uuid)
-                     :organization_id org}}]
-
-    (logging/info (str "Creating Team for " team-uuid))
-
-    (http/create-resource ctx config/TEAMS_SERVER "teams" body ch
-      :response-key :team
-      :make-tf make-read-team-tf)
-
-    (<?? ch)))
+  [ctx db team-uuid]
+  (logging/info (str "Creating Team for " team-uuid))
+  (let [{auth ::request-context/identity} ctx
+        user-id (auth/authenticated-user-id auth)
+        team (-create-team ctx db team-uuid)
+        membership (-create-membership ctx db team user-id)
+        role (roles/find-admin-role db)
+        membership-role (-create-membership-role ctx db team membership role)]
+    team))
 
 (defn get-team
   [ctx team-id ch]
@@ -103,6 +160,18 @@
     :response-key :team
     :make-tf make-read-team-tf))
 
+(defn get-project
+  [ctx db id]
+  (let [{org-id ::request-context/org, auth ::request-context/identity} ctx
+        teams (auth/authenticated-teams auth)
+        user (auth/authenticated-user-id auth)]
+    (-> (projects/find-all-by-uuid {:ids [id]
+                                    :archived false
+                                    :organization_id org-id
+                                    :team_uuids teams
+                                    :owner_id user})
+      (transform.read/entities-from-db ctx)
+      (first))))
 
 (defn get-team*
   [ctx db team-id]
@@ -114,7 +183,7 @@
       (let [team (<! team-ch)]
         (if (util/exception? team)
           (if (hp/not-found? (:response team))
-            (if-let [project (core/get-entity ctx db team-id)]
+            (if-let [project (get-project ctx db team-id)]
               (if (auth/can? ctx ::auth/update project)
                 (>! ch (create-team ctx team-id)))
               (>! ch team))
