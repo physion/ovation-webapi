@@ -45,7 +45,9 @@ helm upgrade --install kube-lego-${NAMESPACE} stable/kube-lego\
     --set rbac.create=true
 
 # Update dependencies
+helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 helm dependencies update ./deploy/ovation-webapi/
+
 
 helm-wrapper upgrade --install --namespace=${NAMESPACE} --timeout 600 --wait \
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
