@@ -9,7 +9,7 @@ image:
 service:
   name: http
   type: ClusterIP
-  externalPort: 80
+  externalPort: 8001
   internalPort: 3000
 ingress:
   enabled: false
