@@ -22,9 +22,9 @@ gcloud config set project $GOOGLE_PROJECT_ID
 echo "Setting default timezone $DEFAULT_ZONE"
 gcloud config set compute/zone $GOOGLE_PROJECT_ID
 
-# Install helm
-curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-helm init --upgrade || 0
+## Install helm
+#curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+#helm init --upgrade
 
 # Install helm-secrets
 echo "Installing helm-secrets"
