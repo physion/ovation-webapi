@@ -9,8 +9,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
   annotations:
-    checksum/secret: {{ include (print $.Template.BasePath "/pre-install-secret.yaml") . | sha256sum }}
-    checksum/service: {{ include (print $.Template.BasePath "/pre-install-service-key-secret.yaml") . | sha256sum }}
+    checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
 spec:
   replicas: {{ .Values.replicaCount }}
   template:
@@ -24,6 +23,9 @@ spec:
         - name: google-cloud-key
           secret:
             secretName: {{ .Release.Name }}-service-key-secret
+        - name: env-secrets
+          secret:
+            secretName: {{ .Release.Name }}-secret
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -34,9 +36,17 @@ spec:
             httpGet:
               path: /healthz
               port: {{ .Values.service.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.internalPort }}
+            initialDelaySeconds: 60
+            timeoutSeconds: 15
           volumeMounts:
             - name: google-cloud-key
               mountPath: /var/secrets/google
+            - name: env-secrets
+              mountPath: /var/secrets/env
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/secrets/google/key.json
