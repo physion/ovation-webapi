@@ -10,27 +10,33 @@ image:
 
 service:
   name: webapi
-  type: ClusterIP
+  type: NodePort
   externalPort: 80
   internalPort: 3000
 
 ingress:
-  enabled: false
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: <name>
+    kubernetes.io/tls-acme: <boolean>
+    kubernetes.io/ingress.allow-http: <boolean>
   hosts:
   tls:
 
 config:
   GOOGLE_CLOUD_PROJECT_ID: ovation-io
+  OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
 
 secret:
-  CLOUDANT_PASSWORD: password
-  CLOUDANT_USERNAME: cloudant
-  JWT_SECRET: jwt
-  RAYGUN_API_KEY: raygun
-  GCP_SERVICE_KEY_JSON: json
   ELASTICSEARCH_URL: "http://localhost:9200"
-  CLOUDANT_DB_URL: "https://ovation-io-dev.cloudant.com/staging/"
-  OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
+  GCP_SERVICE_KEY_JSON: json
+  JWT_SECRET: jwt
+  MYSQL_DATABASE_NAME: <name>
+  MYSQL_PASSWORD: <password>
+  MYSQL_PORT: <port>
+  MYSQL_SERVER: <dns-name>
+  MYSQL_USERNAME: <username>
+  RAYGUN_API_KEY: raygun
 
 gcloud-sqlproxy:
   serviceAccountKey: base64accountkey

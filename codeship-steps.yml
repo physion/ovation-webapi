@@ -1,25 +1,10 @@
 - name: tests
+  exclude: or-mysql-deployment
   service: web
   command: /wait-for-it.sh db:3306 -t 60 -- lein midje
 
-## Production
-- name: Push to GCR (production)
-  tag: master
-  service: web
-  type: push
-  image_name: gcr.io/ovation-io/webapi
-  image_tag: "production-{{ .Timestamp }}"
-  registry: https://gcr.io
-  dockercfg_service: gcr-dockercfg
-
-- name: Deploy (production)
-  tag: master
-  service: gke-deploy
-  command: deploy/deploy.sh production
-
-## All others
 - name: Push to GCR
-  tag: ^(staging|development|elasticsearc-cluster-154029899)
+  tag: ^(development|master|or-mysql-deployment|elasticsearc-cluster-154029899)
   service: web
   type: push
   image_name: gcr.io/ovation-io/webapi
@@ -28,7 +13,7 @@
   dockercfg_service: gcr-dockercfg
 
 - name: Deploy
-  tag: ^(staging|development|elasticsearc-cluster-154029899)
+  tag: ^(development|master|or-mysql-deployment|elasticsearc-cluster-154029899)
   service: gke-deploy
   command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 

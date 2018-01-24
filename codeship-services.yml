@@ -9,14 +9,6 @@ services:
       - db
     encrypted_env_file: dev.env.encrypted
 
-  # repl:
-  #   build:
-  #     image: repl
-  #     dockerfile: Dockerfile
-  #   links:
-  #     - db
-  #   encrypted_env_file: dev.env.encrypted
-
   db:
     image: mysql
     environment:
