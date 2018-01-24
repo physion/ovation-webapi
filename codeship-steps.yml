@@ -19,7 +19,7 @@
 
 ## All others
 - name: Push to GCR
-  tag: ^(staging|development)
+  tag: ^(staging|development|elasticsearc-cluster-154029899)
   service: web
   type: push
   image_name: gcr.io/ovation-io/webapi
@@ -28,7 +28,7 @@
   dockercfg_service: gcr-dockercfg
 
 - name: Deploy
-  tag: ^(staging|development)
+  tag: ^(staging|development|elasticsearc-cluster-154029899)
   service: gke-deploy
   command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 

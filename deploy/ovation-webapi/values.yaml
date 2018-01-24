@@ -2,23 +2,26 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replicaCount: 1
+
 image:
   repository: gcr.io/ovation-io/webapi
   tag: stable
   pullPolicy: IfNotPresent
+
 service:
-  name: http
+  name: webapi
   type: ClusterIP
   externalPort: 80
   internalPort: 3000
+
 ingress:
-  enabled: true
-#  staticIPAddressName: STATICIPNAME
+  enabled: false
+  hosts:
   tls:
-    # Secrets must be manually created in the namespace.
-    - secretName: star-ovation-io-tls-secret
+
 config:
   GOOGLE_CLOUD_PROJECT_ID: ovation-io
+
 secret:
   CLOUDANT_PASSWORD: password
   CLOUDANT_USERNAME: cloudant
@@ -28,6 +31,56 @@ secret:
   ELASTICSEARCH_URL: "http://localhost:9200"
   CLOUDANT_DB_URL: "https://ovation-io-dev.cloudant.com/staging/"
   OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
+
+gcloud-sqlproxy:
+  serviceAccountKey: base64accountkey
+  cloudsql.instance: project:region:instance
+
+tags:
+  sql: false
+  elasticsearch: true
+
+elasticsearch:
+  cluster:
+    config: {}
+    client:
+      serviceType: ClusterIP
+  data:
+    persistence:
+      storageClass: elasticsearch-ssd
+  client:
+  master:
+
+  #   data:
+  #     replicas: 3
+  #     resources:
+  #       requests:
+  #         cpu: '500m'
+  #         memory: 2Gi
+  #       limits:
+  #         cpu: '1'
+  #         memory: 3Gi
+  #     persistence:
+  #       size: 10Gi
+  #       storageClass: "es-fast"
+  #   client:
+  #     replicas: 2
+  #     resources:
+  #       requests:
+  #         cpu: '1'
+  #         memory: 2Gi
+  #       limits:
+  #         cpu: '2'
+  #         memory: 4Gi
+  #   master:
+  #     replicas: 3
+  #     resources:
+  #       requests:
+  #         cpu: '1'
+  #         memory: 2Gi
+  #       limits:
+  #         cpu: '2'
+  #         memory: 4Gi
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
