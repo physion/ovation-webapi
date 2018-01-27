@@ -91,10 +91,7 @@ spec:
                   name: {{ .Release.Name }}-config
                   key: DB_UPDATES_TOPIC
             - name: ELASTICSEARCH_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-secret
-                  key: ELASTICSEARCH_URL
+              value: "http://{{ .Release.Name }}-elasticsearch-client:9200"
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
