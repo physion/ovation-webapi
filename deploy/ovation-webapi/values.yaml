@@ -28,7 +28,7 @@ secret:
   JWT_SECRET: jwt
   RAYGUN_API_KEY: raygun
   GCP_SERVICE_KEY_JSON: json
-  ELASTICSEARCH_URL: "http://localhost:9200"
+  ELASTICSEARCH_URL: "http://elasticsearch-ovation-webapi:9200"
   CLOUDANT_DB_URL: "https://ovation-io-dev.cloudant.com/staging/"
   OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
 
