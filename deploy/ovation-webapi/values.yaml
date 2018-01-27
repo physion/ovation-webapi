@@ -48,8 +48,6 @@ elasticsearch:
   data:
     persistence:
       storageClass: elasticsearch-ssd
-  client:
-  master:
 
   #   data:
   #     replicas: 3
