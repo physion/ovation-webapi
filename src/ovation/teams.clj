@@ -77,7 +77,6 @@
                                    {}))]
 
         (-> team
-          (assoc :id team-id)
           (assoc :type c/TEAM-TYPE)
           (dissoc :project)
           (dissoc :organization)
