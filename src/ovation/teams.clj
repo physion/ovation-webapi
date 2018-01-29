@@ -67,7 +67,7 @@
   (let [authorization-ch (request-context/authorization-ch ctx)]
 
     (fn [team]
-      (let [team-id            (:name team)
+      (let [team-id            (:id team)
             memberships        (:memberships team)
             linked-memberships (map #(assoc-in % [:links :self] (routes/named-route ctx :put-membership {:id team-id :mid (:id %) :org (:ovation.request-context/org ctx)})) memberships)
             teams              (if authorization-ch
