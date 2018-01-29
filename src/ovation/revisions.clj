@@ -140,7 +140,7 @@
             update-result    (first (filter #(= (:_id %) (:_id revision))
                                       (core/update-entities ctx db updates :allow-keys [:revisions])))]
 
-        (publish-revision db update-result)
+        ;;(publish-revision db update-result)
         update-result))
 
     ;; Remote resource
@@ -155,7 +155,7 @@
               update-result    (first (filter #(= (:_id %) (:_id revision))
                                         (core/update-entities ctx db updates :allow-keys [:revisions])))]
 
-          (publish-revision db update-result)
+          ;;(publish-revision db update-result)
           update-result)))))
 
 
