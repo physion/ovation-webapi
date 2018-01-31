@@ -116,7 +116,6 @@ SET
   `or_files`.`updated_at` = :updated-at
 WHERE `or_files`.`uuid` = :_id
   AND `or_files`.`organization_id` = :organization_id
-  AND `or_files`.`project_id` = :project_id
 
 -- :name delete :! :n
 -- :doc Delete file

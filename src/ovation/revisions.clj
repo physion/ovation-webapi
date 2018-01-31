@@ -56,9 +56,9 @@
           revisions    (core/create-entities ctx tx new-revs)
           updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
           _ (files/update-head-revision tx {:_id (:_id file)
-                                          :organization_id (:organization_id file)
-                                          :head_revision_id (:id (first revisions))
-                                          :updated-at (util/iso-now)})
+                                            :organization_id (:organization_id file)
+                                            :head_revision_id (:id (first revisions))
+                                            :updated-at (util/iso-now)})
           links-result (links/add-links ctx tx [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
       {:revisions revisions
        :links     (:links links-result)
