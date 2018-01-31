@@ -6,6 +6,7 @@
             [ovation.links :as links]
             [ovation.auth :as auth]
             [ovation.constants :as k]
+            [ovation.db.files :as files]
             [ovation.db.revisions :as revisions]
             [ovation.config :as config]
             [org.httpkit.fake :refer [with-fake-http]]
@@ -73,7 +74,12 @@
               (core/get-entities ..ctx.. ..db.. [..rsrcid..]) => [file]
               (rev/update-file-status file [rev] k/UPLOADING) => ..updated-file..
               (links/add-links ..ctx.. ..db.. [..updated-file..] :revisions [..revid..] :inverse-rel :file) => {:updates []
-                                                                                                                :links   ..links..}))))
+                                                                                                                :links   ..links..}
+              (util/iso-now) => ..time..
+              (files/update-head-revision ..db.. {:_id ..fileid..
+                                                  :organization_id ..org..
+                                                  :head_revision_id ..revid..
+                                                  :update-at ..time..}) => ..anything..))))
       (facts "from a File"
         (facts "with single HEAD revision"
           (fact "creates a new revision"
@@ -90,17 +96,24 @@
               (provided
                 ..file.. =contains=> {:type         k/FILE-TYPE
                                       :_id          ..fileid..
+                                      :organization_id ..org..
                                       :attributes   {}}
                 (rev/get-head-revisions ..ctx.. ..db.. ..file..) => [{:type       k/REVISION-TYPE
                                                                       :_id        ..headid..
                                                                       :attributes {:previous []
                                                                                    :file_id  [..fileid..]}}]
-                (core/create-entities ..ctx.. ..db.. [{:type       "Revision"
+                (core/create-entities ..ctx.. ..db.. [{:id ..revid..
+                                                       :type       "Revision"
                                                        :attributes {:previous [..headid..]
                                                                     :file_id  ..fileid..}}]) => [rev]
                 (links/add-links ..ctx.. ..db.. [..updated-file..] :revisions [..revid..] :inverse-rel :file) => {:updates []
                                                                                                                   :links   ..links..}
-                (rev/update-file-status ..file.. [rev] k/UPLOADING) => ..updated-file..))))
+                (rev/update-file-status ..file.. [rev] k/UPLOADING) => ..updated-file..
+                (util/iso-now) => ..time..
+                (files/update-head-revision ..db.. {:_id ..fileid..
+                                                    :organization_id ..org..
+                                                    :head_revision_id ..revid..
+                                                    :update-at ..time..}) => ..anything..))))
 
         (facts "without HEAD revision"
           (fact "creates a new revision"
@@ -123,7 +136,12 @@
                                                                     :file_id  ..fileid..}}]) => [rev]
                 (rev/update-file-status ..file.. [rev] k/UPLOADING) => ..updated-file..
                 (links/add-links ..ctx.. ..db.... [..updated-file..] :revisions [..revid..] :inverse-rel :file) => {:updates []
-                                                                                                                    :links   ..links..}))))))
+                                                                                                                    :links   ..links..}
+                (util/iso-now) => ..time..
+                (files/update-head-revision ..db.. {:_id ..fileid..
+                                                    :organization_id ..org..
+                                                    :head_revision_id ..revid..
+                                                    :update-at ..time..}) => ..anything..))))))
 
     (facts "get-head-revisions"
       (against-background [..ctx.. =contains=> {:ovation.request-context/org ..org..}]

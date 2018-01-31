@@ -1,8 +1,10 @@
 (ns ovation.revisions
-  (:require [ovation.core :as core]
+  (:require [clojure.java.jdbc :as jdbc]
+            [ovation.core :as core]
             [ovation.constants :as k]
             [slingshot.slingshot :refer [throw+]]
             [ovation.links :as links]
+            [ovation.db.files :as files]
             [ovation.db.revisions :as revisions]
             [ovation.config :as config]
             [ovation.util :as util]
@@ -46,16 +48,21 @@
 
 (defn- create-revisions-from-file
   [ctx db file parent new-revisions]
-  (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
-        new-revs     (map #(-> %
-                             (assoc-in [:attributes :file_id] (:_id file))
-                             (assoc-in [:attributes :previous] previous)) new-revisions)
-        revisions    (core/create-entities ctx db new-revs)
-        updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
-        links-result (links/add-links ctx db [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
-    {:revisions revisions
-     :links     (:links links-result)
-     :updates   (:updates links-result)}))
+  (jdbc/with-db-transaction [tx db]
+    (let [previous     (if (nil? parent) [] (conj (get-in parent [:attributes :previous] []) (:_id parent)))
+          new-revs     (map #(-> %
+                               (assoc-in [:attributes :file_id] (:_id file))
+                               (assoc-in [:attributes :previous] previous)) new-revisions)
+          revisions    (core/create-entities ctx tx new-revs)
+          updated-file (update-file-status file revisions k/UPLOADING) ;; only if uploading, save
+          _ (files/update-head-revision tx {:_id (:_id file)
+                                          :organization_id (:organization_id file)
+                                          :head_revision_id (:id (first revisions))
+                                          :updated-at (util/iso-now)})
+          links-result (links/add-links ctx tx [updated-file] :revisions (map :_id revisions) :inverse-rel :file)]
+      {:revisions revisions
+       :links     (:links links-result)
+       :updates   (:updates links-result)})))
 
 (defn- create-revisions-from-revision
   [ctx db parent new-revisions]

@@ -113,7 +113,7 @@ WHERE `or_files`.`uuid` = :_id
 UPDATE `or_files`
 SET
   `or_files`.`head_revision_id` = :head_revision_id
-  `or_files`.`update_at` = :updated-at
+  `or_files`.`updated_at` = :updated-at
 WHERE `or_files`.`uuid` = :_id
   AND `or_files`.`organization_id` = :organization_id
   AND `or_files`.`project_id` = :project_id
