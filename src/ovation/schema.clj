@@ -1,8 +1,7 @@
 (ns ovation.schema
   (:require [ring.swagger.schema :refer [field describe]]
             [schema.core :as s]
-            [ovation.constants :as k]
-            [ovation.util :as util]))
+            [ovation.constants :as k]))
 
 (s/defschema Id (s/either s/Int s/Str))
 
@@ -14,7 +13,6 @@
 ;; -- ANNOTATIONS -- ;;
 
 (def AnnotationBase {:_id                              s/Str
-                     :_rev                             s/Str
                      :user                             s/Uuid
                      :entity                           s/Uuid
                      :type                             (s/eq "Annotation")
@@ -43,6 +41,7 @@
 
 (s/defschema NoteRecord {:text                             s/Str
                          (s/optional-key :organization_id) Id
+                         (s/optional-key :edited_at)       s/Str
                          :timestamp                        s/Str})
 (s/defschema NoteAnnotation (conj AnnotationBase {:annotation_type            (s/eq k/NOTES)
                                                   :annotation                 NoteRecord
@@ -63,8 +62,7 @@
                       (s/optional-key :name)        s/Str})
 
 (s/defschema LinkInfo {:_id                              s/Str
-                       (s/optional-key :_rev)            s/Str
-                       :type                             (s/eq util/RELATION_TYPE)
+                       :type                             (s/eq k/RELATION-TYPE)
 
                        :user_id                          s/Uuid
                        :source_id                        s/Uuid
@@ -89,8 +87,7 @@
                         :attributes                    {s/Keyword s/Any}
                         (s/optional-key :organization) s/Int})
 
-(s/defschema BaseEntity (assoc NewEntity :_rev s/Str
-                                         :_id s/Uuid
+(s/defschema BaseEntity (assoc NewEntity :_id s/Uuid
                                          (s/optional-key :organization) s/Int
                                          (s/optional-key :organization_id) Id
                                          (s/optional-key :api_version) s/Int
@@ -204,7 +201,6 @@
                            (assoc :attributes {:content_type             s/Str
                                                :name                     s/Str
                                                (s/optional-key :url)     s/Str
-                                               (s/optional-key :version) s/Str
                                                s/Keyword                 s/Any})))
 
 (s/defschema Revision (-> Entity
@@ -212,7 +208,6 @@
                         (assoc :attributes {:content_type             s/Str
                                             :url                      s/Str
                                             :name                     s/Str
-                                            (s/optional-key :version) s/Str
                                             :previous                 [s/Uuid]
                                             :file_id                  s/Uuid
                                             s/Keyword                 s/Any})))
@@ -221,7 +216,6 @@
                               (assoc :attributes {:content_type             s/Str
                                                   :url                      s/Str
                                                   :name                     s/Str
-                                                  (s/optional-key :version) s/Str
                                                   :previous                 [s/Uuid]
                                                   :file_id                  s/Uuid
                                                   s/Keyword                 s/Any})))
@@ -379,6 +373,8 @@
              :file     {:rel         "files"
                         :inverse-rel "parents"}
              :activity {:rel         "activities"
+                        :inverse-rel "parents"}
+             :source   {:rel         "sources"
                         :inverse-rel "parents"}}
 
    :folder  {:folder   {:rel         "folders"
@@ -399,10 +395,11 @@
 (def EntityRelationships                                    ;; rels to put into entity links at read
   {:project  {:folders    {:schema Folder}
               :files      {:schema File}
-              :activities {:schema Activity}}
+              :activities {:schema Activity}
+              :sources    {:schema Source}}
 
    :source   {:children   {:schema Source}
-              :parents    {:schema Source}
+              :parents    {:schema Entity}
               :files      {:schema File}
               :revisions  {:schema Revision}
               :activities {:schema Activity}

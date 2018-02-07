@@ -68,13 +68,13 @@
           (a/create-annotations ..ctx.. ..db.. [..id1..] ..type.. [{:tag ..tag..}]) => [..notified..]
           (provided
             (util/make-uuid) => ..uuid..
-            (auth/authenticated-user-id ..auth..) => ..user..
+            (auth/authenticated-user-uuid ..auth..) => ..user..
             (core/get-entities ..ctx.. ..db.. [..id1..]) => [entity]
             (core/create-values ..ctx.. ..db.. expected) => [note]
             (a/notify ..ctx.. entity note) => ..notified..))))
 
     (facts "update-annotations"
-      (against-background [(auth/authenticated-user-id ..auth..) => ..user..]
+      (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..]
         (fact "notifies"
           (let [current {:_id             ..uuid..
                          :entity          ..entity..
@@ -86,11 +86,11 @@
                          :type  k/FILE-TYPE
                          :links {:_collaboration_roots [..root1..]}}]
 
-            (a/update-annotation ..ctx.. ..db.. ..uuid.. {:text ..new..}) => ..notified..
+            (a/update-annotation ..ctx.. ..db.. ..uuid.. {:text ..new..}) => ..result..
 
             (provided
-              (util/iso-short-now) => ..time..
-              (core/get-values ..ctx.. ..db.. [..uuid..] :routes ..rt..) => [current]
+              (util/iso-now) => ..time..
+              (core/get-values ..ctx.. ..db.. [..uuid..]) =streams=> [[current] [..result..]]
               (core/get-entities ..ctx.. ..db.. [..entity..]) => [entity]
               (core/update-values ..ctx.. ..db.. [{:_id             ..uuid..
                                                    :entity          ..entity..

@@ -51,4 +51,4 @@ ovation-io.json
 deploy/.sops.yaml
 *.dec
 
-db/
+db/data

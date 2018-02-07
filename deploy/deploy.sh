@@ -20,11 +20,11 @@ echo "Setting Project ID $PROJECT_ID"
 gcloud config set project $GOOGLE_PROJECT_ID
 
 echo "Setting default timezone $DEFAULT_ZONE"
-gcloud config set compute/zone $GOOGLE_PROJECT_ID
+gcloud config set compute/zone $DEFAULT_ZONE
 
-# Install helm
+## Install helm
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-helm init --upgrade
+helm init --upgrade --force-upgrade
 
 # Install helm-secrets
 echo "Installing helm-secrets"
@@ -43,6 +43,11 @@ helm upgrade --install kube-lego-${NAMESPACE} stable/kube-lego\
     --set config.LEGO_EMAIL=dev@ovation.io \
     --set config.LEGO_DEFAULT_INGRESS_CLASS=gce \
     --set rbac.create=true
+
+# Update dependencies
+helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+helm dependencies update ./deploy/ovation-webapi/
+
 
 helm-wrapper upgrade --install --namespace=${NAMESPACE} --timeout 600 --wait \
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
