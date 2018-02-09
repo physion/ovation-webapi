@@ -33,16 +33,20 @@ spec:
           command: ["lein", "run"]
           ports:
             - containerPort: {{ .Values.service.internalPort }}
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.internalPort }}
           livenessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 5
             httpGet:
               path: /healthz
               port: {{ .Values.service.internalPort }}
+          readinessProbe:
             initialDelaySeconds: 60
-            timeoutSeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 5
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.internalPort }}
           volumeMounts:
             - name: google-cloud-key
               mountPath: /var/secrets/google
