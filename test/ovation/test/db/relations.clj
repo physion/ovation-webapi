@@ -38,10 +38,10 @@
                       :project_id project-id
                       :rel "Parent"
                       :inverse_rel "Child"
-                      :parent_entity_id project-id
-                      :parent_entity_type "Project"
-                      :child_entity_id project-id
-                      :child_entity_type "Project"}]
+                      :source_id project-id
+                      :source_type "Project"
+                      :target_id project-id
+                      :target_type "Project"}]
             (:generated_key (relations/create tx args)) => truthy)))
 
       (facts "About `update`"
@@ -55,10 +55,10 @@
                 relation (factories/relation tx {:user_id user-id
                                                  :organization_id org-id
                                                  :project_id project-id
-                                                 :parent_entity_id project-id
-                                                 :parent_entity_type "Project"
-                                                 :child_entity_id project-id
-                                                 :child_entity_type "Project"})]
+                                                 :source_id project-id
+                                                 :source_type "Project"
+                                                 :target_id project-id
+                                                 :target_type "Project"})]
             (relations/update tx relation) => 1)))
 
       (facts "About `delete`"
@@ -72,10 +72,10 @@
                 relation (factories/relation tx {:user_id user-id
                                                  :organization_id org-id
                                                  :project_id project-id
-                                                 :parent_entity_id project-id
-                                                 :parent_entity_type "Project"
-                                                 :child_entity_id project-id
-                                                 :child_entity_type "Project"})
+                                                 :source_id project-id
+                                                 :source_type "Project"
+                                                 :target_id project-id
+                                                 :target_type "Project"})
                 relation-count (:count (relations/count tx))]
             (relations/delete tx relation)
             (:count (relations/count tx)) => (- relation-count 1))))

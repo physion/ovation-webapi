@@ -165,17 +165,17 @@
                                                             :notes ..notes..
                                                             :start start
                                                             :end end})))
-    (fact "transforms target_id to child_entity_id and type"
+    (fact "transforms target_id to target_id and type"
       (let [value {:target_id ..target..}]
-        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:child_entity_id ..entity-id..
-                                                            :child_entity_type ..entity-type..})
+        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:target_id ..entity-id..
+                                                            :target_type ..entity-type..})
         (provided
           (uuids/find-by-uuid ..db.. {:uuid ..target..}) => {:entity_id ..entity-id..
                                                      :entity_type ..entity-type..})))
-     (fact "transforms source_id to parent_entity_id and type"
+     (fact "transforms source_id to source_id and type"
       (let [value {:source_id ..source..}]
-        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:parent_entity_id ..entity-id..
-                                                            :parent_entity_type ..entity-type..})
+        (tw/value-to-db ..ctx.. ..db.. value) => (contains {:source_id ..entity-id..
+                                                            :source_type ..entity-type..})
         (provided
           (uuids/find-by-uuid ..db.. {:uuid ..source..}) => {:entity_id ..entity-id..
                                                      :entity_type ..entity-type..})))))

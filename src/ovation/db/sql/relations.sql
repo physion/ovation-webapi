@@ -24,10 +24,10 @@ INSERT INTO `or_relations` (
   `user_id`,
   `rel`,
   `inverse_rel`,
-  `parent_entity_id`,
-  `parent_entity_type`,
-  `child_entity_id`,
-  `child_entity_type`
+  `source_id`,
+  `source_type`,
+  `target_id`,
+  `target_type`
 )
 VALUES (
   :_id,
@@ -36,10 +36,10 @@ VALUES (
   :user_id,
   :rel,
   :inverse_rel,
-  :parent_entity_id,
-  :parent_entity_type,
-  :child_entity_id,
-  :child_entity_type
+  :source_id,
+  :source_type,
+  :target_id,
+  :target_type
 )
 
 -- :name update :! :n
@@ -61,13 +61,13 @@ SET
   `or_relations`.`archived_by_user_id` = :archived_by_user_id
 WHERE
   (
-        `or_relations`.`parent_entity_id` = :id
-    AND `or_relations`.`parent_entity_type` = :type
+        `or_relations`.`source_id` = :id
+    AND `or_relations`.`source_type` = :type
   )
   OR
   (
-        `or_relations`.`child_entity_id` = :id
-    AND `or_relations`.`child_entity_type` = :type
+        `or_relations`.`target_id` = :id
+    AND `or_relations`.`target_type` = :type
   )
 
 -- :name unarchive-by-entity :! :n
@@ -79,13 +79,13 @@ SET
   `or_relations`.`archived_by_user_id` = NULL
 WHERE
   (
-        `or_relations`.`parent_entity_id` = :id
-    AND `or_relations`.`parent_entity_type` = :type
+        `or_relations`.`source_id` = :id
+    AND `or_relations`.`source_type` = :type
   )
   OR
   (
-        `or_relations`.`child_entity_id` = :id
-    AND `or_relations`.`child_entity_type` = :type
+        `or_relations`.`target_id` = :id
+    AND `or_relations`.`target_type` = :type
   )
 
 -- :name delete :! :n
@@ -107,15 +107,15 @@ SELECT
   `or_relations`.`organization_id` AS `organization_id`,
   `or_relations`.`rel`,
   `or_relations`.`inverse_rel`,
-  `parent_entity_uuid`.`uuid` AS `source_id`,
-  `child_entity_uuid`.`uuid` AS `target_id`,
+  `source_uuid`.`uuid` AS `source_id`,
+  `target_uuid`.`uuid` AS `target_id`,
   `users`.`uuid` AS `user_id`,
   "Relation" as `type`
 FROM `or_relations`
-INNER JOIN `uuids` AS `parent_entity_uuid` ON `parent_entity_uuid`.`entity_id` = `or_relations`.`parent_entity_id`
-  AND `parent_entity_uuid`.`entity_type` = `or_relations`.`parent_entity_type`
-INNER JOIN `uuids` AS `child_entity_uuid` ON `child_entity_uuid`.`entity_id` = `or_relations`.`child_entity_id`
-  AND `child_entity_uuid`.`entity_type` = `or_relations`.`child_entity_type`
+INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations`.`source_id`
+  AND `source_uuid`.`entity_type` = `or_relations`.`source_type`
+INNER JOIN `uuids` AS `target_uuid` ON `target_uuid`.`entity_id` = `or_relations`.`target_id`
+  AND `target_uuid`.`entity_type` = `or_relations`.`target_type`
 INNER JOIN `users` ON `users`.`id` = `or_relations`.`user_id`
 LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
 WHERE `or_relations`.`uuid` IN (:v*:ids)
@@ -128,19 +128,19 @@ SELECT
   `or_relations`.`organization_id` AS `organization_id`,
   `or_relations`.`rel`,
   `or_relations`.`inverse_rel`,
-  `parent_entity_uuid`.`uuid` AS `source_id`,
-  `child_entity_uuid`.`uuid` AS `target_id`,
+  `source_uuid`.`uuid` AS `source_id`,
+  `target_uuid`.`uuid` AS `target_id`,
   `users`.`uuid` AS `user_id`,
   "Relation" as `type`
 FROM `or_relations`
-INNER JOIN `uuids` AS `parent_entity_uuid` ON `parent_entity_uuid`.`entity_id` = `or_relations`.`parent_entity_id`
-  AND `parent_entity_uuid`.`entity_type` = `or_relations`.`parent_entity_type`
-INNER JOIN `uuids` AS `child_entity_uuid` ON `child_entity_uuid`.`entity_id` = `or_relations`.`child_entity_id`
-  AND `child_entity_uuid`.`entity_type` = `or_relations`.`child_entity_type`
+INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations`.`source_id`
+  AND `source_uuid`.`entity_type` = `or_relations`.`source_type`
+INNER JOIN `uuids` AS `target_uuid` ON `target_uuid`.`entity_id` = `or_relations`.`target_id`
+  AND `target_uuid`.`entity_type` = `or_relations`.`target_type`
 INNER JOIN `users` ON `users`.`id` = `or_relations`.`user_id`
 LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
-WHERE `or_relations`.`parent_entity_id` = :entity_id
-  AND `or_relations`.`parent_entity_type` = :entity_type
+WHERE `or_relations`.`source_id` = :entity_id
+  AND `or_relations`.`source_type` = :entity_type
   AND `or_relations`.`rel` = :rel
   AND `or_relations`.`archived` = false
 

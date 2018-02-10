@@ -209,8 +209,8 @@
   (if entity-id
     (if-let [uuid (uuids/find-by-uuid db {:uuid entity-id})]
       (-> value
-        (assoc :child_entity_id (:entity_id uuid))
-        (assoc :child_entity_type (:entity_type uuid)))
+        (assoc :target_id (:entity_id uuid))
+        (assoc :target_type (:entity_type uuid)))
       value)
     value))
 
@@ -219,8 +219,8 @@
   (if entity-id
     (if-let [uuid (uuids/find-by-uuid db {:uuid entity-id})]
       (-> value
-        (assoc :parent_entity_id (:entity_id uuid))
-        (assoc :parent_entity_type (:entity_type uuid)))
+        (assoc :source_id (:entity_id uuid))
+        (assoc :source_type (:entity_type uuid)))
       value)
     value))
 
