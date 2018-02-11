@@ -27,7 +27,7 @@
         user-id (auth/authenticated-user-id auth)
         args {:ids ids
               :owner_id user-id
-              :team_uuids teams
+              :team_uuids (if (empty teams) [nil] teams))
               :organization_id org-id}]
       (-> (condp = annotation-type
             c/NOTES           (notes/find-all-by-entity-uuid db args)
