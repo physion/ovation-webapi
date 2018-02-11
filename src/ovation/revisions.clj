@@ -29,7 +29,7 @@
          auth ::request-context/identity} ctx
         teams (auth/authenticated-teams auth)
         docs (revisions/find-head-by-file-id db {:organization_id org-id
-                                                 :team_uuids (if (empty teams) [nil] teams))
+                                                 :team_uuids (if (empty teams) [nil] teams)
                                                  :file_id file-id})]
     (-> docs
       (tr/entities-from-db ctx))))

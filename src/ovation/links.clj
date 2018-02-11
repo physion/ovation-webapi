@@ -50,7 +50,7 @@
           args {:entity_id (:id entity)
                 :entity_type entity-type
                 :rel rel
-                :team_uuids (if (empty teams) [nil] teams))
+                :team_uuids (if (empty teams) [nil] teams)
                 :owner_id user
                 :archived include-trashed
                 :organization_id org-id}]
