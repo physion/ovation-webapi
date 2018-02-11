@@ -24,7 +24,7 @@
              org-id ::request-context/org} ctx
             teams (auth/authenticated-teams auth)]
         (if-let [project (projects/find-by-uuid db {:id project-id
-                                                    :team_uuids (if (empty teams) [nil] teams)
+                                                    :team_uuids (if (empty? teams) [nil] teams)
                                                     :organization_id org-id})]
           (assoc doc :project_id (:id project))
           doc))
@@ -38,7 +38,7 @@
            org-id ::request-context/org} ctx
           teams (auth/authenticated-teams auth)]
       (if-let [file (files/find-by-uuid db {:id file-id
-                                            :team_uuids (if (empty teams) [nil] teams)
+                                            :team_uuids (if (empty? teams) [nil] teams)
                                             :organization_id org-id})]
         (assoc doc :file_id (:id file))
         doc))

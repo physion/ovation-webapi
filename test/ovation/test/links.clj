@@ -31,7 +31,7 @@
             args {:entity_id ..entity-id..
                   :entity_type ..entity-type..
                   :rel ..rel..
-                  :team_uuids ..teams..
+                  :team_uuids [..team..]
                   :owner_id ..user-id..
                   :archived false
                   :organization_id ..org..}]
@@ -39,7 +39,7 @@
         (provided
           (core/get-entities ..ctx.. ..db.. [..id..]) => [{:id ..entity-id..
                                                            :type ..entity-type..}]
-          (auth/authenticated-teams ..auth..) => ..teams..
+          (auth/authenticated-teams ..auth..) => [..team..]
           (auth/authenticated-user-id ..auth..) => ..user-id..
           (activities/find-all-by-rel ..db.. args) => [..activity..]
           (files/find-all-by-rel ..db.. args) => [..file..]
@@ -48,7 +48,7 @@
           (revisions/find-all-by-rel ..db.. args) => [..revision..]
           (sources/find-all-by-rel ..db.. args) => [..source..]
           (tr/db-to-entity ..ctx..) => (fn [doc] doc)
-          (auth/can? ..ctx.. ::auth/read anything :teams ..teams..) => true)))
+          (auth/can? ..ctx.. ::auth/read anything :teams [..team..]) => true)))
 
     (facts "`add-link`"
       (let [doc        {:_id   (str (UUID/randomUUID))

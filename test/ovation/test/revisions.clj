@@ -149,7 +149,7 @@
           (rev/get-head-revisions ..ctx.. ..db.. ..fileid..) => [..rev..]
           (provided
             (revisions/find-head-by-file-id ..db.. {:organization_id ..org..
-                                                    :team_uuids []
+                                                    :team_uuids [nil]
                                                     :file_id ..fileid..}) => [..doc..]
             (tr/entities-from-db [..doc..] ..ctx..) => [..rev..]))))
 

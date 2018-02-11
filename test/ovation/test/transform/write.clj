@@ -35,7 +35,7 @@
         (tw/ensure-project doc ..ctx.. ..db.. ..project..) => (assoc doc :project_id ..project-id..)
         (provided
           (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [],
+                                         :team_uuids [nil],
                                          :organization_id ..org..}) => {:id ..project-id..})))
     (fact "doesn't add project_if if present"
       (let [doc {:project_id ..other..}]
@@ -81,7 +81,7 @@
         (tw/doc-to-db ..ctx.. ..db.. [..project..] doc) => (contains {:project_id ..project-id..})
         (provided
           (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [],
+                                         :team_uuids [nil],
                                          :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds project_id from collaboration roots"
@@ -89,7 +89,7 @@
         (tw/doc-to-db ..ctx.. ..db.. nil doc) => (contains {:project_id ..project-id..})
         (provided
           (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [],
+                                         :team_uuids [nil],
                                          :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds owner"
@@ -129,7 +129,7 @@
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:project_id ..project-id..})
         (provided
           (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [],
+                                         :team_uuids [nil],
                                          :organization_id ..org..}) => {:id ..project-id..})))
     (fact "transforms entity to entity_id and entity_type"
       (let [value {:entity ..entity..}]

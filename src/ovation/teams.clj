@@ -168,7 +168,7 @@
     (-> (projects/find-all-by-uuid {:ids [id]
                                     :archived false
                                     :organization_id org-id
-                                    :team_uuids (if (empty teams) [nil] teams)
+                                    :team_uuids (if (empty? teams) [nil] teams)
                                     :owner_id user})
       (transform.read/entities-from-db ctx)
       (first))))
