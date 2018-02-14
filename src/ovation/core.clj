@@ -342,7 +342,7 @@
   [ctx db values]
   (let [new-values (-create-values-tx ctx db values)]
     (publish-updates db new-values)
-    new-values))
+    values))
 
 (defn -update-relation-value
   [ctx db value]

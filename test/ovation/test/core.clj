@@ -77,7 +77,7 @@
                 (fact "throws {:type ::core/illegal-argument} if value :type not \"Annotation\""
                   (core/create-values ..ctx.. ..db.. [{:type "Project"}]) => (throws Throwable))
                 (fact "bulk-updates values"
-                  (core/create-values ..ctx.. ..db.. [{:type "Annotation"}]) => ..result..
+                  (core/create-values ..ctx.. ..db.. [{:type "Annotation"}]) => [{:type "Annotation"}]
                   (provided
                     (core/-create-values-tx ..ctx.. ..db.. [{:type "Annotation"}]) => ..result..))))
 
