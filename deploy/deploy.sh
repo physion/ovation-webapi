@@ -24,7 +24,7 @@ gcloud config set compute/zone $DEFAULT_ZONE
 
 ## Install helm
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-helm init --upgrade --force-upgrade
+helm init --upgrade #--force-upgrade
 
 # Install helm-secrets
 echo "Installing helm-secrets"

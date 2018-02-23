@@ -3,9 +3,9 @@ dependencies:
 #    version: "0.2.1"
 #    tags:
 #      - sql
-#  - name: elasticsearch
-#    version: 0.4.3
-#    repository: https://kubernetes-charts-incubator.storage.googleapis.com/
-#    tags:
-#      - elasticsearch
+  - name: elasticsearch
+    version: 0.4.3
+    repository: https://kubernetes-charts-incubator.storage.googleapis.com/
+    tags:
+      - elasticsearch
 

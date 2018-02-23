@@ -45,7 +45,7 @@ gcloud-sqlproxy:
 
 tags:
   sql: false
-  elasticsearch: false
+  elasticsearch: true
 
 elasticsearch:
   cluster:
