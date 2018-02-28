@@ -29,7 +29,6 @@ config:
   OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
 
 secret:
-  ELASTICSEARCH_URL: "http://localhost:9200"
   GCP_SERVICE_KEY_JSON: json
   JWT_SECRET: jwt
   MYSQL_DATABASE_NAME: <name>
