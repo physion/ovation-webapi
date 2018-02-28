@@ -3,7 +3,7 @@
   command: /wait-for-it.sh db:3306 -t 60 -- lein midje
 
 - name: Push to GCR
-  tag: ^(development|master|elasticsearc-cluster-154029899)
+  tag: ^(development|master|elastic-search-154029899)
   service: web
   type: push
   image_name: gcr.io/ovation-io/webapi
@@ -12,7 +12,7 @@
   dockercfg_service: gcr-dockercfg
 
 - name: Deploy
-  tag: ^(development|master|elasticsearc-cluster-154029899)
+  tag: ^(development|master|elastic-search-154029899)
   service: gke-deploy
   command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 
