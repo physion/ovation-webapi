@@ -1,0 +1,182 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "fullname" . }}-data
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}
+    role: data
+spec:
+  serviceName: {{ template "fullname" . }}-data
+  replicas: {{ .Values.data.replicas }}
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        component: {{ template "fullname" . }}
+        role: data
+        {{- if .Values.data.labels }}
+{{ toYaml .Values.data.labels | indent 8 }}
+        {{- end }}
+      {{- if .Values.data.annotations }}
+      annotations:
+{{ toYaml .Values.data.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      subdomain: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      {{- if eq .Values.data.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: data
+      {{- else if eq .Values.data.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: data
+      {{- end }}
+      resources:
+{{ toYaml .Values.data.resources | indent 6 }}
+      initContainers:
+{{ include "init-containers" . | indent 6 }}
+      containers:
+      - name: elasticsearch
+        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
+        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc.{{ .Values.tls.clusterDomain }}
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.data.heapSize }} -Xmx{{ .Values.data.heapSize }}"
+        - name: NODE_DATA
+          value: "true"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "false"
+        - name: HTTP_ENABLE
+          value: "{{ .Values.data.enableHTTP }}"
+        - name: PROCESSORS
+          value: "{{ .Values.data.processors }}"
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.data.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        {{- if .Values.data.enableHTTP }}
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        {{- end }}
+        readinessProbe:
+          {{- if and .Values.master.enableHTTP (not .Values.searchguard.enable) }}
+          {{/* We cannot use http readinessProbe for searchguard since it requires client cert auth */}}
+          httpGet:
+            path: /_cluster/health?local=true
+            port: http
+            {{- if .Values.tls.enable }}
+            scheme: HTTPS
+            {{- end }}
+          {{- else }}
+          tcpSocket:
+            port: transport
+          {{- end }}
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          failureThreshold: 20
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        volumeMounts:
+        {{- if .Values.common.plugins }}
+        - mountPath: /usr/share/elasticsearch/config/
+          name: configdir
+        - mountPath: /usr/share/elasticsearch/plugins/
+          name: plugindir
+        {{- end }}
+        {{- if .Values.tls.enable }}
+        - mountPath: /usr/share/elasticsearch/config/tls/
+          name: tls
+          readOnly: true
+        {{- end }}
+        - mountPath: /storage/
+          name: storage
+        - mountPath: /usr/share/elasticsearch/config/jvm.options
+          name: config
+          subPath: jvm.options
+        - mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          name: config
+          subPath: log4j2.properties
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        {{- if .Values.searchguard.enable }}
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+          name: searchguard-config
+        {{- end }}
+      volumes:
+        {{- if .Values.common.plugins }}
+        - name: configdir
+          emptyDir: {}
+        - name: plugindir
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.tls.enable }}
+        - name: tls
+          emptyDir: {}
+        {{- end }}
+        - configMap:
+            name: {{ template "fullname" . }}-config
+          name: config
+        {{- if .Values.searchguard.enable }}
+        - configMap:
+            name: {{ template "fullname" . }}-searchguard-config
+          name: searchguard-config
+        {{- end }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.data.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.data.storage }}

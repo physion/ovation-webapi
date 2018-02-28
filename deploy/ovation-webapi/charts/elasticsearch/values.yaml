@@ -1,0 +1,143 @@
+common:
+  image:
+    repository: blacktop/elasticsearch
+    tag: "6.1.2"
+    pullPolicy: IfNotPresent
+
+  # Defines the service type for all outward-facing (non-discovery) services.
+  serviceType: ClusterIP
+  # Any extra or specific configuration that is needed can be added here.
+  config:
+    index.codec: best_compression
+  # If you want any plugins installed, give them here as a list. They will be
+  # passed to elasticsearch-plugin install {line here}
+  plugins:
+  # You need to enable this plugin if you want to use the TLS option at the bottom
+  # - com.floragunn:search-guard-ssl:6.0.0-24.beta1.1
+
+  env:
+    CLUSTER_NAME: "elasticsearch"
+    # Uncomment this if you get the "No up-and-running site-local (private)
+    # addresses" error.
+    # NETWORK_HOST: "_eth0_"
+    # The minimum number of masters that will be able to form a quorum. This
+    # should be (#masters / 2) + 1. Default is 2.
+    NUMBER_OF_MASTERS: "1"
+
+# Client/ingest nodes can execute pre-processing pipelines, composed of
+# one or more ingest processors. Depending on the type of operations performed
+# by the ingest processors and the required resources, it may make sense to
+# have dedicated ingest nodes, that will only perform this specific task.
+client:
+  # It isn't common to need more than 2 client nodes.
+  replicas: 2
+  antiAffinity: "soft"
+  heapSize: 256m
+  # More info on what this setting does is in the config map. Only change this
+  # if you set the cpu limit to over 1 full cpu.
+  processors: 1
+  labels:
+  annotations:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Data nodes hold the shards that contain the documents you have indexed. Data
+# nodes handle data related operations like CRUD, search, and aggregations.
+# These operations are I/O-, memory-, and CPU-intensive. It is important to
+# monitor these resources and to add more data nodes if they are overloaded.
+#
+# The main benefit of having dedicated data nodes is the separation of the
+# master and data roles.
+data:
+  # This count will depend on your data and computation needs.
+  replicas: 2
+  antiAffinity: "soft"
+  storage: 12Gi
+  storageClass: "default"
+  heapSize: 256m
+  enableHTTP: false
+  # More info on what this setting does is in the config map. Only change this
+  # if you set the cpu limit to over 1 full cpu.
+  processors: 1
+  labels:
+  annotations:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# The master node is responsible for lightweight cluster-wide actions such as
+# creating or deleting an index, tracking which nodes are part of the
+# cluster, and deciding which shards to allocate to which nodes. It is
+# important for cluster health to have a stable master node.
+master:
+  # Master replica count should be (#clients / 2) + 1, and generally at least 3.
+  replicas: 3
+  antiAffinity: "soft"
+  storage: 2Gi
+  storageClass: "default"
+  heapSize: 256m
+  enableHTTP: false
+  # More info on what this setting does is in the config map. Only change this
+  # if you set the cpu limit to over 1 full cpu.
+  processors: 1
+  labels:
+  annotations:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+curator:
+  enable: true
+  schedule: "0 1 * * *"
+  image: quay.io/lalamove/elasticsearch-curator
+  imageTag: "5.4.0"
+  imagePullPolicy: "IfNotPresent"
+  # Allows modification of the default age-based filter. If you require more
+  # sophisticated filtering, modify the action file specified in
+  # templates/es-curator-config.yaml.
+  age:
+    timestring: "%Y.%m.%d"
+    unit: "days"
+    unit_count: 3
+
+service:
+  httpPort: 9200
+  transportPort: 9300
+
+rbac:
+  create: true
+
+tls:
+  enable: false
+  clusterDomain: cluster.local
+  image: quay.io/lalamove/certificate-init-container
+  imageTag: v0.2.0
+  imagePullPolicy: "IfNotPresent"
+
+searchguard:
+  # If you enable searchguard, you must enable TLS as well, and pay close attention to the instructions after install
+  enable: false
+  plugin: com.floragunn:search-guard-6:6.1.2-20.1
+  enterprise_modules: false
+  kibana_user: kibana
+  admins:
+  users:
+  init:
+    image: quay.io/lalamove/sgadmin
+    imageTag: v6.1.2-20.1
+    imagePullPolicy: "IfNotPresent"
+    restartPolicy: Never
+    activeDeadlineSeconds: 600

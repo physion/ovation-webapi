@@ -1,0 +1,171 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-client
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}
+    role: client
+spec:
+  replicas: {{ .Values.client.replicas }}
+  template:
+    metadata:
+      labels:
+        component: {{ template "fullname" . }}
+        role: client
+        {{- if .Values.client.labels }}
+{{ toYaml .Values.client.labels | indent 8 }}
+        {{- end }}
+      {{- if .Values.client.annotations }}
+      annotations:
+{{ toYaml .Values.client.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      subdomain: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      {{- if eq .Values.client.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+      {{- else if eq .Values.client.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+      {{- end }}
+      resources:
+{{ toYaml .Values.client.resources | indent 6 }}
+      initContainers:
+{{ include "init-containers" . | indent 6 }}
+      containers:
+      - name: elasticsearch
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
+        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc.{{ .Values.tls.clusterDomain }}
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
+        - name: NODE_DATA
+          value: "false"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "true"
+        - name: HTTP_ENABLE
+          value: "true"
+        - name: PROCESSORS
+          value: "{{ .Values.client.processors }}"
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.client.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+        {{- if .Values.searchguard.enable }}
+          tcpSocket:
+            port: http
+        {{- else }}
+          httpGet:
+            path: /_cluster/health
+            port: http
+            {{- if .Values.tls.enable }}
+            scheme: HTTPS
+            {{- end }}
+        {{- end }}
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 20
+        volumeMounts:
+        {{- if .Values.common.plugins }}
+        - mountPath: /usr/share/elasticsearch/config/
+          name: configdir
+        - mountPath: /usr/share/elasticsearch/plugins/
+          name: plugindir
+        {{- end }}
+        {{- if .Values.tls.enable }}
+        - mountPath: /usr/share/elasticsearch/config/tls/
+          name: tls
+          readOnly: true
+        {{- end }}
+        - mountPath: /storage/
+          name: storage
+        - mountPath: /usr/share/elasticsearch/config/jvm.options
+          name: config
+          subPath: jvm.options
+        - mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          name: config
+          subPath: log4j2.properties
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        {{- if .Values.searchguard.enable }}
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+          name: searchguard-config
+        {{- end }}
+      volumes:
+        {{- if .Values.common.plugins }}
+        - name: configdir
+          emptyDir: {}
+        - name: plugindir
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.tls.enable }}
+        - name: tls
+          emptyDir: {}
+        {{- end }}
+        - configMap:
+            name: {{ template "fullname" . }}-config
+          name: config
+        - emptyDir:
+            medium: ""
+          name: storage
+        {{- if .Values.searchguard.enable }}
+        - configMap:
+            name: {{ template "fullname" . }}-searchguard-config
+          name: searchguard-config
+        {{- end }}

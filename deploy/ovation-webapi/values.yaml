@@ -44,18 +44,23 @@ gcloud-sqlproxy:
 
 tags:
   sql: false
-  elasticsearch: true
 
 elasticsearch:
+  enable: true
+  common:
+    plugins:
+      - ingest-attachment
+  env:
+    NUMBER_OF_MASTERS: "2"
   rbac:
     create: true
-  cluster:
-    config: {}
-    client:
-      serviceType: ClusterIP
+  tls:
+    enable: false
+  searchguard:
+    enable: false
   data:
-    persistence:
-      storageClass: elasticsearch-ssd
+    storage: 100Gi
+    storageClass: elasticsearch-ssd
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
