@@ -52,12 +52,6 @@ elasticsearch:
       - ingest-attachment
   env:
     NUMBER_OF_MASTERS: "2"
-  rbac:
-    create: true
-  tls:
-    enable: false
-  searchguard:
-    enable: false
   data:
     storage: 100Gi
     storageClass: elasticsearch-ssd
