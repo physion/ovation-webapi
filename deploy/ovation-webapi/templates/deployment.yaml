@@ -33,13 +33,13 @@ spec:
           command: ["lein", "run"]
           ports:
             - containerPort: {{ .Values.service.internalPort }}
-#          livenessProbe:
-#            initialDelaySeconds: 60
-#            periodSeconds: 60
-#            timeoutSeconds: 5
-#            httpGet:
-#              path: /healthz
-#              port: {{ .Values.service.internalPort }}
+          livenessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 5
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.internalPort }}
           readinessProbe:
             initialDelaySeconds: 60
             periodSeconds: 60
