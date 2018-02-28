@@ -47,6 +47,8 @@ tags:
   elasticsearch: true
 
 elasticsearch:
+  rbac:
+    create: true
   cluster:
     config: {}
     client:
@@ -54,37 +56,6 @@ elasticsearch:
   data:
     persistence:
       storageClass: elasticsearch-ssd
-
-  #   data:
-  #     replicas: 3
-  #     resources:
-  #       requests:
-  #         cpu: '500m'
-  #         memory: 2Gi
-  #       limits:
-  #         cpu: '1'
-  #         memory: 3Gi
-  #     persistence:
-  #       size: 10Gi
-  #       storageClass: "es-fast"
-  #   client:
-  #     replicas: 2
-  #     resources:
-  #       requests:
-  #         cpu: '1'
-  #         memory: 2Gi
-  #       limits:
-  #         cpu: '2'
-  #         memory: 4Gi
-  #   master:
-  #     replicas: 3
-  #     resources:
-  #       requests:
-  #         cpu: '1'
-  #         memory: 2Gi
-  #       limits:
-  #         cpu: '2'
-  #         memory: 4Gi
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
