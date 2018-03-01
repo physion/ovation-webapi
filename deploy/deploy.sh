@@ -45,6 +45,7 @@ helm upgrade --install kube-lego-${NAMESPACE} stable/kube-lego\
     --set rbac.create=true
 
 # Update dependencies
+helm repo add cos https://centerforopenscience.github.io/helm-charts/
 helm dependencies update ./deploy/ovation-webapi/
 
 

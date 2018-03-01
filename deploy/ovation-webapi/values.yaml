@@ -53,7 +53,6 @@ elasticsearch:
   plugins:
     install:
       - ingest-attachment
-#      - com.floragunn:search-guard-ssl:6.1.2-25.0
   tls:
     enabled: false
   master:
