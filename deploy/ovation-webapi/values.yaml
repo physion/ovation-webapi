@@ -46,14 +46,13 @@ tags:
   sql: false
 
 elasticsearch:
-  enabled: true
+  cluster:
+    env:
+      MINIMUM_MASTER_NODES: "2"
   plugins:
     install:
       - ingest-attachment
 #      - com.floragunn:search-guard-ssl:6.1.2-25.0
-
-  env:
-    MINIMUM_MASTER_NODES: "2"
   tls:
     enabled: false
   master:

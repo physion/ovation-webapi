@@ -21,12 +21,9 @@ cluster:
     MINIMUM_MASTER_NODES: "2"
 
 plugins:
-  enabled: false
-#  install:
-#    - com.floragunn:search-guard-ssl:6.1.2-25.0
-#    - ingest-attachment
-  # remove:
-  #   - x-pack
+  enabled: true
+  install:
+    - ingest-attachment
 
 xpack:
   enabled: false
@@ -142,7 +139,7 @@ master:
   persistence:
     enabled: true
     name: data
-    storageClass: "standard"
+    storageClass: "elasticsearch-ssd"
     accessMode: ReadWriteOnce
     size: 4Gi
   resources:
@@ -181,9 +178,9 @@ data:
   persistence:
     enabled: true
     name: data
-    storageClass: "standard"
+    storageClass: "elasticsearch-ssd"
     accessMode: ReadWriteOnce
-    size: 4Gi
+    size: 50Gi
   resources:
     limits:
       cpu: "1"
