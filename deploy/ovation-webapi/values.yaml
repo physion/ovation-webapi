@@ -46,24 +46,23 @@ tags:
   sql: false
 
 elasticsearch:
-  enable: true
-  common:
-    plugins:
+  enabled: true
+  plugins:
+    install:
       - ingest-attachment
+#      - com.floragunn:search-guard-ssl:6.1.2-25.0
+
   env:
-    NUMBER_OF_MASTERS: "2"
+    MINIMUM_MASTER_NODES: "2"
+  tls:
+    enabled: false
+  master:
+    persistance:
+      storageClass: "standard"
   data:
-    storage: 100Gi
-    storageClass: elasticsearch-ssd
+    persistance:
+      storageClass: "elasticsearch-ssd"
+      size: 50Gi
 
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi
+

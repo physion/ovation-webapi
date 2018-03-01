@@ -3,18 +3,26 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "elasticsearch.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ template "fullname" . }}
+  name: {{ template "elasticsearch.fullname" . }}
 rules:
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
+- nonResourceURLs:
+  - /
   verbs:
-  - create
   - get
-  - delete
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - get
 {{- end -}}
