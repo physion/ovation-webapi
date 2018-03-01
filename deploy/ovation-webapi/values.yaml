@@ -57,10 +57,10 @@ elasticsearch:
   tls:
     enabled: false
   master:
-    persistance:
+    persistence:
       storageClass: "elasticsearch-ssd"
   data:
-    persistance:
+    persistence:
       storageClass: "elasticsearch-ssd"
       size: 50Gi
   rbac:
