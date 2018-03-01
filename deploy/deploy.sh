@@ -46,6 +46,7 @@ helm upgrade --install kube-lego-${NAMESPACE} stable/kube-lego\
 
 # Update dependencies
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+helm repo add cos https://centerforopenscience.github.io/helm-charts/
 helm dependencies update ./deploy/ovation-webapi/
 
 
