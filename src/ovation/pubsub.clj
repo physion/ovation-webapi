@@ -66,7 +66,7 @@
 (defrecord TopicPublisher [topics project-id]
   Topics
   (publish [this topic msg ch]
-    (logging/debug "Publishing message" (str msg) "to" topic)
+    (logging/info "Publishing message" (str msg) "to" topic)
     (let [publisher (make-publisher (:project-id this) topic)]
       (publish-message publisher msg :channel ch)))
 
