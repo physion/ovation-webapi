@@ -46,11 +46,12 @@ tags:
   sql: false
 
 elasticsearch:
-  enabled: false
+  enabled: true
   cluster:
     env:
       MINIMUM_MASTER_NODES: "2"
   plugins:
+    enabled: true
     install:
       - ingest-attachment
   tls:
@@ -62,6 +63,8 @@ elasticsearch:
     persistance:
       storageClass: "elasticsearch-ssd"
       size: 50Gi
+  rbac:
+    create: true
 
 resources: {}
 
