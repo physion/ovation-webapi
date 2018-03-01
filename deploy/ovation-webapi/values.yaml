@@ -58,7 +58,7 @@ elasticsearch:
     enabled: false
   master:
     persistance:
-      storageClass: "standard"
+      storageClass: "elasticsearch-ssd"
   data:
     persistance:
       storageClass: "elasticsearch-ssd"
