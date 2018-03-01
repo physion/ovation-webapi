@@ -46,7 +46,7 @@ tags:
   sql: false
 
 elasticsearch:
-  enabled: true
+  enabled: false
   cluster:
     env:
       MINIMUM_MASTER_NODES: "2"
