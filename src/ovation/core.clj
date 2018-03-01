@@ -43,7 +43,8 @@
   (let [{pubsub     :pubsub} db
         publisher (:publisher pubsub)
         pub-ch (chan (max 1 (count docs)))]
-    (logging/info (format "Publishing %d updates to PubSub" (count docs)))
+    (logging/info "publish-updates#pubsub" pubsub)
+    (logging/info "publish-updates#pubsub.:publisher" (:publisher pubsub))
     (-publish-updates publisher docs :channel pub-ch)))
 
 ;; QUERY
