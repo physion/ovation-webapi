@@ -30,12 +30,12 @@
 
 
 ;; API
-(defrecord Api [db authz search]
+(defrecord Api [db authz search pubsub]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db authz search)))
+    (assoc this :handler (handler/create-app db authz search pubsub)))
 
   (stop [this]
     (logging/info "Stopping API")

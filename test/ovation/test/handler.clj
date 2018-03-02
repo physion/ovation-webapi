@@ -115,7 +115,7 @@
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
-                            (request-context/make-context anything ~org anything) => ..ctx..
+                            (request-context/make-context anything ~org anything anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "resources"
@@ -149,7 +149,7 @@
                             :links         {:self "self"}
                             :relationships {}}]
                (let [get-req# (mock-req (mock/request :get (util/join-path ["" "api" ~ver/version ~ORGS ~org ~type-path id#])) apikey#)]
-                 (against-background [(request-context/make-context anything ~org anything) => ..ctx..
+                 (against-background [(request-context/make-context anything ~org anything anything)  => ..ctx..
                                       ..ctx.. =contains=> {::request-context/routes ..rt..}
                                       (core/get-entities ..ctx.. ~db [id#]) => [entity#]]
                    (fact ~(str "GET /:id gets a single " (lower-case type-name))
@@ -173,9 +173,9 @@
     `(let [apikey# TOKEN]
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
-                            (teams/create-team anything anything) => ..team..
+                            (teams/create-team ..ctx.. anything anything) => ..team..
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org anything) => ..ctx..
+                            (request-context/make-context anything ~org anything anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "resource"
@@ -228,9 +228,9 @@
 
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
-                            (teams/create-team anything anything) => ..team..
+                            (teams/create-team ..ctx.. anything anything) => ..team..
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org anything) => ..ctx..
+                            (request-context/make-context anything ~org anything anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "create"
@@ -277,7 +277,7 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org anything) => ..ctx..
+                            (request-context/make-context anything ~org anything anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
          (facts ~(util/join-path ["" type-path])
            (facts "update"
@@ -334,7 +334,7 @@
        (against-background [(teams/get-teams anything) => TEAMS
                             (auth/get-permissions anything) => PERMISSIONS
                             (auth/identity anything) => ..auth..
-                            (request-context/make-context anything ~org anything) => ..ctx..
+                            (request-context/make-context anything ~org anything anything) => ..ctx..
                             ..ctx.. =contains=> {::request-context/routes ..rt..}]
 
          (facts ~(util/join-path ["" type-path])
@@ -417,7 +417,7 @@
         (against-background [(teams/get-teams anything) => TEAMS
                              (auth/get-permissions anything) => PERMISSIONS
                              (auth/identity anything) => ..auth..
-                             (request-context/make-context anything org anything) => ..ctx..
+                             (request-context/make-context anything org anything anything) => ..ctx..
                              ..ctx.. =contains=> {::request-context/routes ..rt..}]
           (facts "GET /entities/:id/annotations/:type"
             (let [id   (str (util/make-uuid))
@@ -479,7 +479,7 @@
                                 :annotation      {:tag "--tag--"}}]]
             (against-background [(teams/get-teams anything) => TEAMS
                                  (auth/get-permissions anything) => PERMISSIONS
-                                 (request-context/make-context anything org anything) => ..ctx..
+                                 (request-context/make-context anything org anything anything) => ..ctx..
                                  (annotations/delete-annotations ..ctx.. db [annotation-id]) => tags]
               (fact "deletes annotations"
                 (let [path (str "/api/v1/" ORGS "/" org "/entities/" id "/annotations/tags/" annotation-id)
@@ -491,7 +491,7 @@
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/get-permissions anything) => PERMISSIONS
-                               (request-context/make-context anything org anything) => ..ctx..]
+                               (request-context/make-context anything org anything anything) => ..ctx..]
 
             (facts "read"
               (let [id  (str (UUID/randomUUID))
@@ -585,7 +585,7 @@
         (let [apikey TOKEN]
           (against-background [(teams/get-teams anything) => TEAMS
                                (auth/get-permissions anything) => PERMISSIONS
-                               (request-context/make-context anything org anything) => ..ctx..]
+                               (request-context/make-context anything org anything anything) => ..ctx..]
             (future-fact "associates created Source")))))
 
     (facts "About Activities"
@@ -619,7 +619,7 @@
             (provided
               (teams/get-teams anything) => TEAMS
               (auth/get-permissions anything) => PERMISSIONS
-              (request-context/make-context anything org anything) => ..ctx..
+              (request-context/make-context anything org anything anything) => ..ctx..
               ..ctx.. =contains=> {::request-context/routes ..rt..}
               (revisions/get-head-revisions ..ctx.. db id) => revs)))))
 
@@ -634,8 +634,8 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org anything id body) => expected
-            (request-context/make-context anything org anything) => ..ctx..
+            (rh/move-contents* anything db org anything anything id body) => expected
+            (request-context/make-context anything org anything anything) => ..ctx..
             (routes/self-route ..ctx.. "file" id) => "location")))
 
       (fact "moves folder"
@@ -648,8 +648,8 @@
               expected {:something "awesome"}]
           (body-json app post) => expected
           (provided
-            (rh/move-contents* anything db org anything id body) => expected
-            (request-context/make-context anything org anything) => ..ctx..
+            (rh/move-contents* anything db org anything anything id body) => expected
+            (request-context/make-context anything org anything anything) => ..ctx..
             (routes/self-route ..ctx.. "folder" id) => "location"))))
 
     (facts "About Teams API"
@@ -705,7 +705,7 @@
           (provided
             (teams/get-teams anything) => TEAMS
             (auth/get-permissions anything) => PERMISSIONS
-            (request-context/make-context anything org anything) => ..ctx..
+            (request-context/make-context anything org anything anything) => ..ctx..
             ..ctx.. =contains=> {::request-context/routes ..rt..}
             (prov/local ..ctx.. db [id]) => expected
             (serialize/entities expected) => expected))))))
