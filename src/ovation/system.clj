@@ -14,7 +14,7 @@
             [ovation.config :as config]))
 
 ;; Database
-(defrecord Database [jdbc pubsub]
+(defrecord Database [jdbc]
   component/Lifecycle
 
   (start [this]
@@ -98,8 +98,7 @@
                                       :port-number        (:port-number db)})
       :database (component/using
                   (new-database)
-                  {:pubsub :pubsub
-                   :jdbc   :jdbc})
+                  {:jdbc   :jdbc})                          ; Send PubSub to api direct & add to context; remove from database
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
@@ -109,5 +108,6 @@
              (new-api)
              {:db    :database
               :authz :authz
-              :search :search}))))
+              :search :search
+              :pubsub :pubsub}))))
 

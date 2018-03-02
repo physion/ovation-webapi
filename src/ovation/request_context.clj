@@ -39,10 +39,11 @@
 
 (defn make-context
   "Constructs a RequestContext from a request"
-  [request org authz]
+  [request org authz pubsub]
   (map->RequestContext {:authz         authz
                         ::org          org
                         ::routes       (router request)
                         ::identity     (auth/identity request)
                         ::request      request
+                        ::pubsub       pubsub
                         ::query-params (walk/keywordize-keys (:query-params request))}))

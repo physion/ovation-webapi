@@ -39,13 +39,10 @@
     (async/pipe (async/merge channels) channel close?)))
 
 (defn publish-updates
-  [db docs]
+  [db docs]                                                 ; take pubsub
   (let [{pubsub     :pubsub} db
         publisher (:publisher pubsub)
         pub-ch (chan (max 1 (count docs)))]
-    (logging/info "publish-updates#db" db)
-    (logging/info "publish-updates#pubsub" pubsub)
-    (logging/info "publish-updates#pubsub.:publisher" (:publisher pubsub))
     (-publish-updates publisher docs :channel pub-ch)))
 
 ;; QUERY
@@ -275,7 +272,7 @@
     (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
   (let [new-entities (-create-entities-tx ctx db entities :parent parent)]
-    (publish-updates db new-entities)
+    (publish-updates db new-entities)                       ;; send pubsub from ctx
     new-entities))
 
 (defn add-organization
