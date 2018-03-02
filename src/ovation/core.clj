@@ -39,9 +39,8 @@
     (async/pipe (async/merge channels) channel close?)))
 
 (defn publish-updates
-  [db docs]                                                 ; take pubsub
-  (let [{pubsub     :pubsub} db
-        publisher (:publisher pubsub)
+  [pubsub docs]
+  (let [publisher (:publisher pubsub)
         pub-ch (chan (max 1 (count docs)))]
     (-publish-updates publisher docs :channel pub-ch)))
 
@@ -272,7 +271,7 @@
     (throw+ {:type ::auth/unauthorized :message "You can't create a User via the Ovation REST API"}))
 
   (let [new-entities (-create-entities-tx ctx db entities :parent parent)]
-    (publish-updates db new-entities)                       ;; send pubsub from ctx
+    (publish-updates (::rc/pubsub ctx) new-entities)
     new-entities))
 
 (defn add-organization
@@ -341,7 +340,7 @@
   "POSTs value(s) direct to Couch"
   [ctx db values]
   (let [new-values (-create-values-tx ctx db values)]
-    (publish-updates db new-values)
+    (publish-updates (::rc/pubsub ctx) new-values)
     values))
 
 (defn -update-relation-value
@@ -374,7 +373,7 @@
   "PUTs value(s) direct to Couch"
   [ctx db values]
   (-update-values-tx ctx db values)
-  (publish-updates db values)
+  (publish-updates (::rc/pubsub ctx) values)
   values)
 
 (defn- merge-updates-fn
@@ -454,16 +453,15 @@
                               (map merge-fn docs))
           auth-checked-docs (if authorize (doall (map (auth/check! ctx ::auth/update) bulk-docs)) bulk-docs)]
       (-update-entities-tx ctx db auth-checked-docs)
-      (publish-updates db auth-checked-docs))
+      (publish-updates (::rc/pubsub ctx) auth-checked-docs))
     (get-entities ctx db ids)))
 
 (defn restore-deleted-entities
   [ctx db ids]
-  (let [{auth ::rc/identity} ctx
-        docs              (get-entities ctx db ids :include-trashed true)
+  (let [docs              (get-entities ctx db ids :include-trashed true)
         auth-checked-docs (vec (map (auth/check! ctx ::auth/update) docs))]
     (-unarchive-entities-tx ctx db auth-checked-docs)
-    (publish-updates db auth-checked-docs)
+    (publish-updates (::rc/pubsub ctx) auth-checked-docs)
     docs))
 
 (defn archive-entity
@@ -485,7 +483,7 @@
           trashed (map #(archive-entity user-id %) docs)
           auth-checked-docs (vec (map (auth/check! ctx ::auth/delete) trashed))]
       (-archive-entities-tx ctx db auth-checked-docs)
-      (publish-updates db auth-checked-docs)
+      (publish-updates (::rc/pubsub ctx) auth-checked-docs)
       (get-entities ctx db ids))))
 
 (defn -delete-relation-value

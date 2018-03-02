@@ -98,7 +98,7 @@
                                       :port-number        (:port-number db)})
       :database (component/using
                   (new-database)
-                  {:jdbc   :jdbc})                          ; Send PubSub to api direct & add to context; remove from database
+                  {:jdbc :jdbc})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
