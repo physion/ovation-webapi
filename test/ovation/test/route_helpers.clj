@@ -21,13 +21,13 @@
                                      nil
                                      (slingshot.support/stack-trace))))
 
-(against-background [(request-context/make-context ..req.. ..org.. anything) => ..ctx..
+(against-background [(request-context/make-context ..req.. ..org.. anything ..pubsub..) => ..ctx..
                      ..ctx.. =contains=> {::request-context/identity ..auth..
                                           ::request-context/routes   ..rt..}]
 
   (facts "About get-head-revisions*"
     (fact "returns HEAD revisions for file"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         ..file.. =contains=> {:type "File"}
@@ -35,7 +35,7 @@
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) => ..revs..))
 
     (fact "+throws not-found if HEADs throws not found"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => (throws ExceptionInfo)
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..id..) => (throws ExceptionInfo)
       (provided
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) =throws=> (sling-throwable {:type ::revisions/not-found}))))
 
@@ -125,7 +125,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -139,7 +139,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz..  ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx. ..db.. [..dest..]) => (seq [dest])
@@ -153,7 +153,7 @@
             dest {:type "Whoa"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -170,7 +170,7 @@
                   :_id          ..dest..}]
 
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
                                                                                                        :links   ..created-links..
                                                                                                        :updates ..updated-entities..}
         (provided
