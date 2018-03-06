@@ -67,10 +67,12 @@
     (logging/debug "-get-entities " {:archived include-trashed
                                     :organization_id org-id
                                     :team_uuids (if (empty? teams) [nil] teams)
+                                    :service_account (auth/service-account auth)
                                     :owner_id user})
     (-> (db-fn {:archived include-trashed
                 :organization_id org-id
                 :team_uuids (if (empty? teams) [nil] teams)
+                :service_account (auth/service-account auth)
                 :owner_id user})
       (tr/entities-from-db ctx))))
 
@@ -84,11 +86,13 @@
     (logging/debug "-get-entities-by-id " {:ids ids-str
                                            :organization_id org-id
                                            :team_uuids (if (empty? teams) [nil] teams)
+                                           :service_account (auth/service-account auth)
                                            :owner_id user})
     (-> (db-fn {:ids ids-str
                 :archived include-trashed
                 :organization_id org-id
                 :team_uuids (if (empty? teams) [nil] teams)
+                :service_account (auth/service-account auth)
                 :owner_id user})
       (tr/entities-from-db ctx))))
 
@@ -162,7 +166,8 @@
         teams (auth/authenticated-teams auth)]
     (-> (db-fn {:ids ids
                 :organization_id org-id
-                :team_uuids (if (empty? teams) [nil] teams)})
+                :team_uuids (if (empty? teams) [nil] teams)
+                :service_account (auth/service-account auth)})
       (tr/values-from-db ctx))))
 
 (defn get-notes-by-id

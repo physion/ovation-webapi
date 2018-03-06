@@ -77,6 +77,7 @@
       (facts "About `find-all`"
         (fact "should be empty"
           (let [args {:team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (folders/find-all tx args) => ())))
@@ -85,6 +86,7 @@
         (fact "should be empty"
           (let [args {:ids [nil]
                       :team_uuids [nil]
+                      :service_account 0
                       :owner_id 1
                       :archived 0
                       :organization_id 0}]
@@ -96,6 +98,7 @@
                       :entity_type "Project"
                       :rel "Parent"
                       :team_uuids [nil]
+                      :service_account 0
                       :owner_id 1
                       :archived 0
                       :organization_id 0}]

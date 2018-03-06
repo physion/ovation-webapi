@@ -28,6 +28,7 @@
         args {:ids ids
               :owner_id user-id
               :team_uuids (if (empty? teams) [nil] teams)
+              :service_account (auth/service-account auth)
               :organization_id org-id}]
       (-> (condp = annotation-type
             c/NOTES           (notes/find-all-by-entity-uuid db args)

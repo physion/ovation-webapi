@@ -49,7 +49,9 @@
   (and (authenticated? request)
     (not (service-account? (identity request)))))
 
-
+(defn service-account
+  [auth]
+  (if (service-account? auth) 1 0))
 
 ;; Authorization
 

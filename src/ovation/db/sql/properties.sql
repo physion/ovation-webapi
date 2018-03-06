@@ -84,7 +84,7 @@ SELECT
 FROM `or_properties`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_properties`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `uuids` AS `entity_uuid` ON `entity_uuid`.`entity_id` = `or_properties`.`entity_id`
   AND `entity_uuid`.`entity_type` = `or_properties`.`entity_type`
 INNER JOIN `users` ON `users`.`id` = `or_properties`.`user_id`
@@ -108,7 +108,7 @@ SELECT
 FROM `or_properties`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_properties`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `uuids` AS `entity_uuid` ON `entity_uuid`.`entity_id` = `or_properties`.`entity_id`
   AND `entity_uuid`.`entity_type` = `or_properties`.`entity_type`
 INNER JOIN `users` ON `users`.`id` = `or_properties`.`user_id`
@@ -138,6 +138,6 @@ LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_properties`.`project_id`
 LEFT JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
 LEFT JOIN `or_sources`  ON `or_sources`.`id` = `or_properties`.`entity_id`
 WHERE `or_properties`.`organization_id` = :organization_id
-  AND (`teams`.`uuid` IN (:v*:team_uuids)
+  AND ((`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
     OR (`entity_uuid`.`entity_type` = 'Source' AND `or_sources`.`owner_id` = :owner_id))
 

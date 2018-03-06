@@ -69,6 +69,7 @@
         (fact "should be empty"
           (let [args {:id 1
                       :team_uuids [nil]
+                      :service_account 0
                       :organization_id 0}]
             (projects/find-by-uuid tx args) => nil)))
 
@@ -76,6 +77,7 @@
         (fact "should be empty"
           (let [args {:ids [nil]
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (projects/find-all-by-uuid tx args) => ())))
@@ -83,6 +85,7 @@
       (facts "About `find-all`"
         (fact "should be empty"
           (let [args {:team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (projects/find-all tx args) => ())))
@@ -93,6 +96,7 @@
                       :entity_type "Project"
                       :rel "Parent"
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (projects/find-all-by-rel tx args) => ())))

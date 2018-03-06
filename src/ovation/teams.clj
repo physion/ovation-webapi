@@ -169,6 +169,7 @@
                                     :archived false
                                     :organization_id org-id
                                     :team_uuids (if (empty? teams) [nil] teams)
+                                    :service_account (auth/service-account auth)
                                     :owner_id user})
       (transform.read/entities-from-db ctx)
       (first))))

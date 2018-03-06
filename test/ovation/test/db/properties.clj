@@ -81,6 +81,7 @@
         (fact "should be nil"
           (let [args {:id "uuid"
                       :team_uuids [nil]
+                      :service_account 0
                       :organization_id 0}]
             (properties/find-by-uuid tx args) => nil)))
 
@@ -88,6 +89,7 @@
         (fact "should be empty"
           (let [args {:ids [nil]
                       :team_uuids [nil]
+                      :service_account 0
                       :organization_id 0}]
             (properties/find-all-by-uuid tx args) => ())))
 

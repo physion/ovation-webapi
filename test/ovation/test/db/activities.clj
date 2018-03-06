@@ -76,14 +76,33 @@
       (facts "About `find-all`"
         (fact "should be empty"
           (let [args {:team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
-            (activities/find-all tx args) => ())))
+            (activities/find-all tx args) => ()))
+        (fact "with service account"
+          (let [user-id (:id (factories/user tx {}))
+                org-id (:id (factories/organization tx {:owner_id user-id}))
+                team-id (:id (factories/team tx {:owner_id user-id}))
+                project-id (:id (factories/project tx {:organization_id org-id
+                                                       :team_id team-id
+                                                       :owner_id user-id}))
+                activity (factories/activity tx {:organization_id org-id
+                                                 :project_id project-id
+                                                 :owner_id user-id
+                                                 :archived false
+                                                 :archived_at nil
+                                                 :archived_by_user_id nil})]
+            ((first (activities/find-all tx {:team_uuids [nil]
+                                             :service_account 1
+                                             :archived 0
+                                             :organization_id org-id})) :_id) => (activity :_id))))
 
       (facts "About `find-all-by-uuid`"
         (fact "should be empty"
           (let [args {:ids [nil]
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (activities/find-all-by-uuid tx args) => ())))
@@ -94,6 +113,7 @@
                       :entity_type "Project"
                       :rel "Parent"
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (activities/find-all-by-rel tx args) => ())))

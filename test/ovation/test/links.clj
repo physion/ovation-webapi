@@ -32,6 +32,7 @@
                   :entity_type ..entity-type..
                   :rel ..rel..
                   :team_uuids [..team..]
+                  :service_account 0
                   :owner_id ..user-id..
                   :archived false
                   :organization_id ..org..}]
