@@ -746,12 +746,12 @@
                     :query-params [q :- s/Str
                                    {bookmark :- (s/maybe s/Str) nil}
                                    {limit :- s/Int 25}]
-                    :summary "Searches the organization data"
+                    :summary "Searches the given organization"
 
-                    :return {:search_results [{:id            s/Uuid
+                    :return {:search_results [{:id            s/Str
                                                :entity_type   s/Str
                                                :name          s/Str
-                                               :owner         s/Uuid
+                                               :owner         (s/maybe s/Str)
                                                :updated-at    (s/maybe s/Str) ;; allow nil updated-at
                                                :project_names [s/Str]
                                                :organization  Id
@@ -762,4 +762,4 @@
 
                     (let [ctx (request-context/make-context request org authz)
                           result (search/search ctx db es-client q :bookmark bookmark :limit limit)]
-                      (ok (serialize/entities result)))))))))))))
+                      (ok result))))))))))))

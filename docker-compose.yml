@@ -1,27 +1,27 @@
 version: "3.0"
 services:
-  web:
-    build: .
-    command: lein run
-    ports:
-      - "3000:3000"
-    links:
-      - db
-#       - pubsub
-    volumes:
-      - .:/app
-    env_file: dev.env
+#  web:
+#    build: .
+#    command: lein run
+#    ports:
+#      - "3001:3001"
+#    links:
+#      - db
+##       - pubsub
+#    volumes:
+#      - .:/app
+#    env_file: dev.env
 
   repl:
     build: .
     command: lein repl :headless :host 0.0.0.0 :port 59789
     ports:
       - "59789:59789"
-        # - "3000:3000"
+      - "3000:3000"
     volumes:
       - .:/app
     env_file: dev.env
-    links:
+    depends_on:
       - db
 
   db:

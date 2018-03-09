@@ -7,7 +7,8 @@
             [qbits.spandex :as spandex]
             [clojure.data.json :as json]
             [clojure.core.async :as async :refer [<! <!! chan]]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [clojure.tools.logging :as logging]))
 
 (defn breadcrumbs-url
   [ctx id]
@@ -45,7 +46,7 @@
   (let [org              (::request-context/org ctx)
         query-base       {:size  (max MIN-SEARCH limit)
                           :query {:simple_query_string {:query q}}
-                          :sort  [{:_score "desc"}, {:_uid "asc"}]}
+                          :sort  [{:_score "desc"}, {:_id "asc"}]}
         query            (if (nil? bookmark) query-base (assoc query-base :search_after (json/read-str (util/b64decode bookmark))))
         es-response      (spandex/request client {:url    (util/join-path ["" (org-index org) "_search"])
                                                   :method :post
