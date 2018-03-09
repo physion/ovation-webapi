@@ -34,8 +34,9 @@
       (let [doc {}]
         (tw/ensure-project doc ..ctx.. ..db.. ..project..) => (assoc doc :project_id ..project-id..)
         (provided
-          (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [nil],
+          (projects/find-by-uuid ..db.. {:id ..project..
+                                         :team_uuids [nil]
+                                         :service_account 0
                                          :organization_id ..org..}) => {:id ..project-id..})))
     (fact "doesn't add project_if if present"
       (let [doc {:project_id ..other..}]
@@ -80,16 +81,18 @@
       (let [doc {}]
         (tw/doc-to-db ..ctx.. ..db.. [..project..] doc) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [nil],
+          (projects/find-by-uuid ..db.. {:id ..project..
+                                         :team_uuids [nil]
+                                         :service_account 0
                                          :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds project_id from collaboration roots"
       (let [doc {:links {:_collaboration_roots [..project..]}}]
         (tw/doc-to-db ..ctx.. ..db.. nil doc) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [nil],
+          (projects/find-by-uuid ..db.. {:id ..project..
+                                         :team_uuids [nil]
+                                         :service_account 0
                                          :organization_id ..org..}) => {:id ..project-id..})))
 
     (fact "adds owner"
@@ -128,8 +131,9 @@
       (let [value {:links {:_collaboration_roots [..project..]}}]
         (tw/value-to-db ..ctx.. ..db.. value) => (contains {:project_id ..project-id..})
         (provided
-          (projects/find-by-uuid ..db.. {:id ..project..,
-                                         :team_uuids [nil],
+          (projects/find-by-uuid ..db.. {:id ..project..
+                                         :team_uuids [nil]
+                                         :service_account 0
                                          :organization_id ..org..}) => {:id ..project-id..})))
     (fact "transforms entity to entity_id and entity_type"
       (let [value {:entity ..entity..}]

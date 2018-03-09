@@ -95,7 +95,7 @@ SELECT
 FROM `or_folders`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_folders`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_folders`.`owner_id`
 WHERE `or_folders`.`archived` = :archived
   AND `or_folders`.`organization_id` = :organization_id
@@ -118,7 +118,7 @@ SELECT
 FROM `or_folders`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_folders`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_folders`.`owner_id`
 WHERE `or_folders`.`uuid` IN (:v*:ids)
   AND `or_folders`.`archived` = :archived
@@ -142,7 +142,7 @@ SELECT
 FROM `or_folders`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_folders`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_folders`.`owner_id`
 LEFT JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_folders`.`id`
   AND `rel`.`target_type` = 'Folder'

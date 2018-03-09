@@ -30,6 +30,7 @@
         teams (auth/authenticated-teams auth)
         docs (revisions/find-head-by-file-id db {:organization_id org-id
                                                  :team_uuids (if (empty? teams) [nil] teams)
+                                                 :service_account (auth/service-account auth)
                                                  :file_id file-id})]
     (-> docs
       (tr/entities-from-db ctx))))

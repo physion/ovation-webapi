@@ -57,7 +57,8 @@
                 (fact "gets values"
                   (let [args {:ids [..id..]
                               :organization_id nil
-                              :team_uuids [..team..]}]
+                              :team_uuids [..team..]
+                              :service_account 0}]
                     (core/get-values ..ctx.. ..db.. [..id..]) => [..doc1.. ..doc2.. ..doc3.. ..doc4.. ..doc5..]
                     (provided
                       (notes/find-all-by-uuid           ..db.. args) => [..doc1..]

@@ -169,7 +169,7 @@ FROM `or_revisions`
 INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
 WHERE `or_revisions`.`uuid` IN (:v*:ids)
   AND `or_revisions`.`archived` = :archived
@@ -199,7 +199,7 @@ FROM `or_revisions`
 INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
 LEFT JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_revisions`.`id`
   AND `rel`.`target_type` = 'Revision'
@@ -268,7 +268,7 @@ FROM `or_revisions`
 INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
 INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
 INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
 WHERE `or_files`.`uuid` = :file_id
   AND `or_revisions`.`id` = `or_files`.`head_revision_id`

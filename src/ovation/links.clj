@@ -51,6 +51,7 @@
                 :entity_type entity-type
                 :rel rel
                 :team_uuids (if (empty? teams) [nil] teams)
+                :service_account (auth/service-account auth)
                 :owner_id user
                 :archived include-trashed
                 :organization_id org-id}]

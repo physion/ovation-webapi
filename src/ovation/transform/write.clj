@@ -25,6 +25,7 @@
             teams (auth/authenticated-teams auth)]
         (if-let [project (projects/find-by-uuid db {:id project-id
                                                     :team_uuids (if (empty? teams) [nil] teams)
+                                                    :service_account (auth/service-account auth)
                                                     :organization_id org-id})]
           (assoc doc :project_id (:id project))
           doc))
@@ -39,6 +40,7 @@
           teams (auth/authenticated-teams auth)]
       (if-let [file (files/find-by-uuid db {:id file-id
                                             :team_uuids (if (empty? teams) [nil] teams)
+                                            :service_account (auth/service-account auth)
                                             :organization_id org-id})]
         (assoc doc :file_id (:id file))
         doc))

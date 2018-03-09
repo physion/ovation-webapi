@@ -123,7 +123,7 @@ SELECT
   "Project" AS `type`
 FROM `or_projects`
 INNER JOIN `teams` on `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_projects`.`owner_id`
 WHERE `or_projects`.`archived` = :archived
   AND `or_projects`.`organization_id` = :organization_id
@@ -144,7 +144,7 @@ SELECT
   "Project" AS `type`
 FROM `or_projects`
 INNER JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_projects`.`owner_id`
 WHERE `or_projects`.`uuid` = :id
   AND `or_projects`.`organization_id` = :organization_id
@@ -165,7 +165,7 @@ SELECT
   "Project" AS `type`
 FROM `or_projects`
 INNER JOIN `teams` on `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_projects`.`owner_id`
 WHERE `or_projects`.`uuid` IN (:v*:ids)
   AND `or_projects`.`archived` = :archived
@@ -187,7 +187,7 @@ SELECT
   "Project" AS `type`
 FROM `or_projects`
 INNER JOIN `teams` ON `teams`.`id` = `or_projects`.`team_id`
-  AND `teams`.`uuid` IN (:v*:team_uuids)
+  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
 INNER JOIN `users` ON `users`.`id` = `or_projects`.`owner_id`
 LEFT JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_projects`.`id`
   AND `rel`.`target_type` = 'Project'

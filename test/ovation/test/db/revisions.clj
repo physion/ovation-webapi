@@ -100,6 +100,7 @@
         (fact "should be empty"
           (let [args {:ids [nil]
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (revisions/find-all-by-uuid tx args) => ())))
@@ -110,6 +111,7 @@
                       :entity_type "Project"
                       :rel "Parent"
                       :team_uuids [nil]
+                      :service_account 0
                       :archived 0
                       :organization_id 0}]
             (revisions/find-all-by-rel tx args) => ())))
@@ -130,6 +132,7 @@
         (fact "should be empty"
           (let [args {:organization_id 0
                       :team_uuids [nil]
+                      :service_account 0
                       :file_id "<uuid>"}]
             (revisions/find-head-by-file-id tx args) => ())))
 

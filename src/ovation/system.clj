@@ -14,7 +14,7 @@
             [ovation.config :as config]))
 
 ;; Database
-(defrecord Database [jdbc pubsub]
+(defrecord Database [jdbc]
   component/Lifecycle
 
   (start [this]
@@ -30,12 +30,12 @@
 
 
 ;; API
-(defrecord Api [db authz search]
+(defrecord Api [db authz search pubsub]
   component/Lifecycle
 
   (start [this]
     (logging/info "Starting API")
-    (assoc this :handler (handler/create-app db authz search)))
+    (assoc this :handler (handler/create-app db authz search pubsub)))
 
   (stop [this]
     (logging/info "Stopping API")
@@ -98,8 +98,7 @@
                                       :port-number        (:port-number db)})
       :database (component/using
                   (new-database)
-                  {:pubsub :pubsub
-                   :jdbc   :jdbc})
+                  {:jdbc :jdbc})
       :web (component/using
              (system-http-kit/new-web-server (:port web))
              {:handler :api})
@@ -109,5 +108,6 @@
              (new-api)
              {:db    :database
               :authz :authz
-              :search :search}))))
+              :search :search
+              :pubsub :pubsub}))))
 
