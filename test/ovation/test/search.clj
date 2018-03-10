@@ -91,7 +91,7 @@
                                        :method :post
                                        :body   {:size  search/MIN-SEARCH
                                                 :query {:simple_query_string {:query query}}
-                                                :sort  [{:_score "desc"}, {:_uid "asc"}]}}) => {:body query-response})))
+                                                :sort  [{:_score "desc"}, {:_id "asc"}]}}) => {:body query-response})))
 
 
     (fact "Generates breadcrumbs URL"
