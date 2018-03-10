@@ -5,7 +5,7 @@ services:
     build:
       image: web
       dockerfile: Dockerfile
-    links:
+    depends_on:
       - db
     encrypted_env_file: dev.env.encrypted
 
