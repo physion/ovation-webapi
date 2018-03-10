@@ -10,7 +10,9 @@
             [clojure.data.json :as json]
             [ovation.config :as config]
             [ovation.constants :as k]
-            [ovation.core :as core])
+            [ovation.core :as core]
+            [ovation.middleware.auth :as middleware.auth]
+            [ovation.authz :as authz])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
 
@@ -19,10 +21,15 @@
   (String. (b64/encode (.getBytes original)) "UTF-8"))
 
 (facts "About authentication"
-  (fact "`authorized-user-id` returns user UUID"
+  (fact "`authorized-user-uuid` returns user UUID"
+    (auth/authenticated-user-uuid ..auth..) => ..id..
+    (provided
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})}))
+
+  (fact "`authorized-user-id` returns user ID"
     (auth/authenticated-user-id ..auth..) => ..id..
     (provided
-      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_uuid ..id..})})))
+      ..auth.. =contains=> {::auth/authenticated-teams (future {:user_id ..id..})})))
 
 (facts "About `organization-ids`"
   (fact "returns organization-ids from authenticated-teams"
@@ -30,22 +37,90 @@
     (provided
       ..auth.. =contains=> {::auth/authenticated-teams (future {:organization_ids ..ids..})})))
 
+(facts "About `service-account?`"
+  (fact "with ::service-account true"
+    (auth/service-account? {::auth/service-account true}) => true)
+  (fact "with ::service-account false"
+    (auth/service-account? {::auth/service-account false}) => false)
+  (fact "with ::service-account nil"
+    (auth/service-account? {}) => false))
+
+(facts "About `middleware.auth.service-sub?`"
+  (fact "recognizes user accounts"
+    (middleware.auth/service-sub? {:sub (str (util/make-uuid))}) => false)
+  (fact "recognizes service accounts"
+    (middleware.auth/service-sub? {:sub (format "%s@clients" (util/make-uuid))}) => true)
+  (fact "recognizes identity without sub as non-service account"
+    (middleware.auth/service-sub? {}) => false))
+
+(facts "About `authenticated-service-account?"
+  (fact "requires service account"
+    (auth/authenticated-service-account? ..req..) => true
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account true}}))
+  (fact "rejects user account"
+    (auth/authenticated-service-account? ..req..) => false
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account false}})))
+
+(facts "About `authenticated-user-account?"
+  (fact "rejects service account"
+    (auth/authenticated-user-account? ..req..) => false
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account true}}))
+  (fact "requires user account"
+    (auth/authenticated-user-account? ..req..) => true
+    (provided
+      ..req.. =contains=> {:identity {::auth/service-account false}})))
+
+(facts "About `middleware.auth.scopes`"
+  (facts "parsing"
+    (fact "for :scope"
+      (middleware.auth/scopes {:scope  "scope1 scope2"}) => ["scope1" "scope2"])
+    (fact "for :https://ovation.io/scope"
+      (middleware.auth/scopes {(keyword "https://ovation.io/scope") "scope1 scope2"}) => ["scope1" "scope2"])
+    (fact "without any scope"
+      (middleware.auth/scopes {}) => ["read:global" "write:global"])))
+
+(facts "About has-scope?"
+  (fact "with scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:global") => true)
+  (fact "without scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "write:global") => false)
+  (fact "with wildcard scope"
+    (auth/has-scope? {::auth/scopes ["read:global foo:bar"]} "read:*") => true)
+  (fact "without wildcard scope"
+    (auth/has-scope? {::auth/scopes ["foo:bar"]} "read:*") => false)
+  (fact "throws IllegalArgumentException if scope is missing permission and scope"
+    (auth/has-scope? {} "*") => (throws IllegalArgumentException))
+  (fact "throws IllegalArgumentException if scope is missing scope"
+    (auth/has-scope? {} "foo") => (throws IllegalArgumentException))
+  (fact "throws IllegalArgumentException if scope is missing permission"
+    (auth/has-scope? {} ":global") => (throws IllegalArgumentException)))
 
 (facts "About `can?`"
+  (fact "returns true when auth.identity is a service account"
+    ;; When it's a service account, authz is handled via scopes at the handler
+    (auth/can? ..ctx.. ::auth/read {:type  "Project"
+                                    :owner ..user..}) => true
+    (provided
+      ..ctx.. =contains=> {::request-context/identity {::auth/service-account true}}))
+
   (fact "throws not-found! if authenticated organization not in authenticated teams"
     (auth/can? ..ctx.. ::auth/read {:type  "Project"
                                     :owner ..user..}) => (throws ExceptionInfo)
     (provided
       (auth/organization-ids ..auth..) => [..org2..]
-      ..ctx.. =contains=> {::request-context/auth ..auth..
-                           ::request-context/org  ..org..}))
+      ..ctx.. =contains=> {::request-context/identity ..auth..
+                           ::request-context/org      ..org..}))
 
   (facts ":read"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/authenticated-teams ..auth..) => [..team1.. ..team2..]
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/READ-GLOBAL-SCOPE) => true]
       (facts "entities"
         (fact "allowed when user is owner"
           (auth/can? ..ctx.. ::auth/read {:type   "Project"
@@ -115,10 +190,11 @@
                                            :links   {:_collaboration_roots [..team1.. ..team2..]}}) => true))))
 
   (facts ":create"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (facts "Annotations"
         (fact "allowed when :user is authenticated user and can read all roots"
           (auth/can? ..ctx.. ::auth/create {:type    "Annotation"
@@ -179,7 +255,7 @@
                                              :owner nil
                                              :links {:_collaboration_roots [..root..]}}) => true
           (provided
-            (auth/authenticated-user-id ..auth..) => ..user..
+            (auth/authenticated-user-uuid ..auth..) => ..user..
             (auth/permissions ..auth.. [..root..]) => [{:uuid            ..root..
                                                             :permissions {:read true}}]))
 
@@ -190,8 +266,8 @@
           (provided
             (auth/permissions ..auth.. [..root..]) => [{:uuid            ..root..
                                                             :permissions {:read false}}
-                                                           {:uuid        ..root2..
-                                                            :permissions {:read true}}]))
+                                                       {:uuid        ..root2..
+                                                        :permissions {:read true}}]))
 
 
         (fact "allows when :owner is auth user and can read all roots"
@@ -207,15 +283,16 @@
                                              :owner ..user..
                                              :links {:_collaboration_roots [..root..]}}) => false
           (provided
-            (auth/authenticated-user-id ..auth..) => ..user..
+            (auth/authenticated-user-uuid ..auth..) => ..user..
             (auth/permissions ..auth.. [..root..]) => ..permissions..
             (auth/collect-permissions ..permissions.. :read) => [true false])))))
 
   (facts ":update"
-    (against-background [(auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+    (against-background [(auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (fact "Delegates to get-permissions when not owner"
         (auth/can? ..ctx.. ::auth/update {:type   "Entity"
                                            :owner (str (UUID/randomUUID))
@@ -225,15 +302,16 @@
                                                          :permissions {:read  true
                                                                        :write false
                                                                        :admin false}}
-                                                        {:uuid        :uuid2
-                                                         :permissions {:read  true
-                                                                       :write true
-                                                                       :admin false}}]))))
+                                                    {:uuid        :uuid2
+                                                     :permissions {:read  true
+                                                                   :write true
+                                                                   :admin false}}]))))
   (facts ":delete"
-    (against-background [(auth/authenticated-user-id ..auth..) => ..user..
+    (against-background [(auth/authenticated-user-uuid ..auth..) => ..user..
                          (auth/organization-ids ..auth..) => [..org..]
-                         ..ctx.. =contains=> {::request-context/auth ..auth..
-                                              ::request-context/org  ..org..}]
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/org      ..org..}
+                         (auth/has-scope? ..auth.. k/WRITE-GLOBAL-SCOPE) => true]
       (facts "Relations"
         (fact "allowed if user is owner"
           (auth/can? ..ctx.. ::auth/delete {:type     k/RELATION-TYPE
@@ -265,30 +343,30 @@
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => true
         (provided
-          (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+          (auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
           (auth/permissions ..auth.. ..roots..) => [{:uuid            :uuid1
                                                          :permissions {:read  true
                                                                        :write true
                                                                        :admin true}}
-                                                        {:uuid        :uuid2
-                                                         :permissions {:read  true
-                                                                       :write true
-                                                                       :admin false}}]))
+                                                    {:uuid        :uuid2
+                                                     :permissions {:read  true
+                                                                   :write true
+                                                                   :admin false}}]))
 
       (fact "Requires :write on all roots when not owner"
         (auth/can? ..ctx.. ::auth/delete {:type   "Entity"
                                            :owner (str (UUID/randomUUID))
                                            :links {:_collaboration_roots ..roots..}}) => false
         (provided
-          (auth/authenticated-user-id ..auth..) => (str (UUID/randomUUID))
+          (auth/authenticated-user-uuid ..auth..) => (str (UUID/randomUUID))
           (auth/permissions ..auth.. ..roots..) => {:permissions [{:uuid            :uuid1
                                                                        :permissions {:read  true
                                                                                      :write false
                                                                                      :admin false}}
-                                                                      {:uuid        :uuid2
-                                                                       :permissions {:read  true
-                                                                                     :write false
-                                                                                     :admin true}}]})))))
+                                                                  {:uuid        :uuid2
+                                                                   :permissions {:read  true
+                                                                                 :write false
+                                                                                 :admin true}}]})))))
 
 (facts "About permissions"
   (fact "gets permissions from auth server"

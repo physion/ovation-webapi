@@ -1,0 +1,10 @@
+dependencies:
+#  - name: gcloud-sqlproxy
+#    version: "0.2.1"
+#    tags:
+#      - sql
+  - name: elasticsearch
+    version: 0.4.0
+    repository: https://centerforopenscience.github.io/helm-charts/
+    condition: elasticsearch.enabled
+

@@ -8,6 +8,7 @@
             [ovation.links :as links]
             [ovation.constants :as k]
             [ovation.request-context :as request-context]
+            [ovation.transform.serialize :as serialize]
             [ovation.util :as util]
             [ovation.request-context :as request-context])
   (:import (clojure.lang ExceptionInfo)))
@@ -20,20 +21,21 @@
                                      nil
                                      (slingshot.support/stack-trace))))
 
-(against-background [(request-context/make-context ..req.. ..org.. anything) => ..ctx..
-                     ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                          ::request-context/routes ..rt..}]
+(against-background [(request-context/make-context ..req.. ..org.. anything ..pubsub..) => ..ctx..
+                     ..ctx.. =contains=> {::request-context/identity ..auth..
+                                          ::request-context/routes   ..rt..}]
 
   (facts "About get-head-revisions*"
     (fact "returns HEAD revisions for file"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..id..) => {:body {:revisions ..revs..} :headers {} :status 200}
       (provided
         ..req.. =contains=> {:identity ..auth..}
         ..file.. =contains=> {:type "File"}
+        (serialize/entities ..revs..) => ..revs..
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) => ..revs..))
 
     (fact "+throws not-found if HEADs throws not found"
-      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..id..) => (throws ExceptionInfo)
+      (r/get-head-revisions* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..id..) => (throws ExceptionInfo)
       (provided
         (revisions/get-head-revisions ..ctx.. ..db.. ..id..) =throws=> (sling-throwable {:type ::revisions/not-found}))))
 
@@ -53,6 +55,9 @@
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
         (provided
+          (serialize/entities [activity]) => [activity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
           (core/get-entities ..ctx.. ..db.. [..projectid..]) => [project]
           (core/create-entities ..ctx.. ..db.. [(dissoc new-activity :relationships)] :parent ..projectid..) => [activity]
@@ -78,6 +83,9 @@
                                                                                                   :links    ..links..
                                                                                                   :updates  ..updates..}
         (provided
+          (serialize/entities [activity]) => [activity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (core/get-entities ..ctx.. ..db.. [..projectid..]) => [project]
           (r/remove-embedded-relationships [new-activity]) => [(dissoc new-activity :relationships)]
           (links/add-links ..ctx.. ..db.. anything :activities [(:_id activity)] :inverse-rel :parents) => {:updates ..updates..
@@ -99,6 +107,9 @@
                                                                                            :links    ..links..
                                                                                            :updates  ..updates..}
         (provided
+          (serialize/entities [source-entity]) => [source-entity]
+          (serialize/entities ..updates..) => ..updates..
+          (serialize/values ..links..) => ..links..
           (core/get-entities ..ctx.. ..db.. [..fileid..]) => (seq [file-entity])
           (core/get-entities ..ctx.. ..db.. [..id2..]) => (seq [source-entity])
           (core/create-entities ..ctx.. ..db.. [{:type "Source" :attributes {}}] :parent ..fileid..) => [source-entity]
@@ -114,7 +125,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -128,7 +139,7 @@
             dest {:type "Folder"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz..  ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx. ..db.. [..dest..]) => (seq [dest])
@@ -142,7 +153,7 @@
             dest {:type "Whoa"
                   :_id  ..dest..}]
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => (throws ExceptionInfo)
         (provided
           (core/get-entities ..ctx.. ..db.. [..src..]) => (seq [src])
           (core/get-entities ..ctx.. ..db.. [..dest..]) => (seq [dest])
@@ -159,7 +170,7 @@
                   :_id          ..dest..}]
 
 
-        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
+        (r/move-contents* ..req.. ..db.. ..org.. ..authz.. ..pubsub.. ..file.. {:source ..src.. :destination ..dest..}) => {:file    file
                                                                                                        :links   ..created-links..
                                                                                                        :updates ..updated-entities..}
         (provided

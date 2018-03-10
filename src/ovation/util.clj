@@ -1,18 +1,17 @@
 (ns ovation.util
   (:import (java.net URI)
-           (java.util UUID Date))
+           (java.util UUID Date Base64))
   (:require [clojure.string :refer [join]]
             [ovation.version :refer [version]]
             [clojure.walk :as walk]
             [clojure.data.json :as json]
             [clojure.string :as s]
             [clj-time.core :as t]
+            [clj-time.coerce :as coerce]
             [clj-time.format :as tf]
             [clojure.core.async :refer [<!! <! go-loop] :as async]
             [slingshot.slingshot :refer [throw+]]
             [clojure.tools.logging :as logging]))
-
-(def RELATION_TYPE "Relation")
 
 (defn make-uuid
   "Wraps java.util.UUID/randomUUID for test mocking."
@@ -57,6 +56,11 @@
     id
     (URI. (format "ovation://entities/%s" id))))
 
+(defn format-iso8601-short
+  "Formats the date instance as an ISO-8601 string"
+  [d]
+  (tf/unparse (tf/formatters :date-time) d))
+
 (defn format-iso8601
   "Formats the date instance as an ISO-8601 string"
   [d]
@@ -81,6 +85,11 @@
 
   (walk/keywordize-keys (json/read-str s)))
 
+(defn b64encode [to-encode]
+  (.encodeToString (Base64/getEncoder) (.getBytes to-encode)))
+
+(defn b64decode [to-decode]
+  (String. (.decode (Base64/getDecoder) to-decode)))
 
 (defn join-path
   [comps]
@@ -107,10 +116,34 @@
   []
   (format-iso8601 (t/now)))
 
+(defn timestamp-to-iso
+  [timestamp]
+  (format-iso8601 (coerce/from-long (.getTime timestamp))))
+
+(defn joda-timestamp-to-iso
+  [timestamp]
+  (format-iso8601 (coerce/from-long (.getMillis timestamp))))
+
+(defn timestamp-to-iso-short
+  [timestamp]
+  (format-iso8601-short (coerce/from-long (.getTime timestamp))))
+
+(defn joda-timestamp-to-iso-short
+  [timestamp]
+  (format-iso8601-short (coerce/from-long (.getMillis timestamp))))
+
 (defn iso-short-now
   "Gets the short ISO date time string for (t/now)"
   []
   (tf/unparse (tf/formatters :date-time) (t/now)))
+
+(defn parse-iso-short
+  [date-time]
+  (tf/parse (tf/formatters :date-time) date-time))
+
+(defn parse-iso
+  [date-time]
+  (tf/parse (tf/formatters :date-hour-minute-second-ms) date-time))
 
 (defn filter-type
   [entity-type docs]

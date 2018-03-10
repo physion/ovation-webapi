@@ -1,5 +1,5 @@
 (ns ovation.storage
-  (:require [ovation.couch :as couch]
+  (:require [ovation.db.revisions :as revisions]
             [ovation.constants :as k]
             [clojure.core.async :refer [go >! close!]]
             [ovation.request-context :as request-context]))
@@ -15,26 +15,9 @@
 
   (let [org0?       (= 0 org-id)
         user-id     (request-context/user-id ctx)
-        startkey    (if org0? [user-id] [org-id])
-        endkey      (if org0? [user-id {}] [org-id {}])
-        view-result (couch/get-view ctx db k/REVISION-BYTES-VIEW {:startkey    startkey
-                                                                  :endkey      endkey
-                                                                  :reduce      true
-                                                                  :group_level 2}
-                      :prefix-teams org0?)
-
-        tf          (fn [row]
-                      (let [[org proj] (:key row)
-                            usage (:value row)]
-                        {:organization_id org
-                         :id              proj
-                         :usage           usage}))
-
         result      (if org0?
-                      (mapcat (fn [r]
-                                (let [rows (:rows r)]
-                                  (map tf rows))) view-result)
-                      (map tf view-result))]
+                      (revisions/storage-by-project-for-public-org db {:owner_id user-id})
+                      (revisions/storage-by-project-for-private-org db {:organization_id org-id}))]
     (go
       (>! ch result)
       (if close?

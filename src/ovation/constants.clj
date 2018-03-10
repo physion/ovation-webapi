@@ -1,27 +1,30 @@
 (ns ovation.constants
   (:require [ovation.util :as util]))
 
-(def USER-ENTITY "User")
+
+(def READ-GLOBAL-SCOPE "read:global")
+(def WRITE-GLOBAL-SCOPE "write:global")
+
+(def ACTIVITY-TYPE "Activity")
 (def ANNOTATION-TYPE "Annotation")
-(def REVISION-TYPE "Revision")
 (def FILE-TYPE "File")
 (def FOLDER-TYPE "Folder")
-(def RELATION-TYPE util/RELATION_TYPE)
-(def TEAM-TYPE "Team")
+(def ORGANIZATION-TYPE "Organization")
 (def PROJECT-TYPE "Project")
+(def RELATION-TYPE "Relation")
+(def REVISION-TYPE "Revision")
 (def SOURCE-TYPE "Source")
-(def ACTIVITY-TYPE "Activity")
+(def TEAM-TYPE "Team")
+(def USER-ENTITY "User")
 
 (def TEAM-GROUP-TYPE "TeamGroup")
-
-(def RELATION-TYPE-NAME (clojure.string/lower-case util/RELATION_TYPE))
-(def ANNOTATION-TYPE-NAME (clojure.string/lower-case ANNOTATION-TYPE))
 
 ;; Important rels
 (def ACTIVITIES-REL "activities")
 (def INPUTS-REL "inputs")
 (def OUTPUTS-REL "outputs")
 (def ACTIONS-REL "actions")
+(def OPERATORS-REL "operators")
 (def ORIGINS-REL "origins")
 (def PARENTS-REL "parents")
 

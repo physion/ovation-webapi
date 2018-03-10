@@ -57,10 +57,12 @@
   (let [rt (:ovation.request-context/routes ctx)
         org-id (:ovation.request-context/org ctx)]
     (fn [group]
-      (-> group
-        (assoc :type "OrganizationGroup")
-        (assoc :links {:self              (routes/self-route ctx "org-group" (:id group))
-                       :group-memberships (routes/group-memberships-route rt org-id (:id group))})))))
+      (let [result (-> group
+                     (assoc :type "OrganizationGroup")
+                     (assoc :logo_image (:logo_image group))
+                     (assoc :links {:self              (routes/self-route ctx "org-group" (:id group))
+                                    :group-memberships (routes/group-memberships-route rt org-id (:id group))}))]
+        (util/remove-nil-values result)))))
 
 (defn make-read-group-membership-tf
   [ctx]

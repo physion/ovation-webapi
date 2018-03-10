@@ -24,11 +24,12 @@
   (reify ApiFutureCallback
     (onSuccess [_ result]
       (go
+        (logging/info "Success publishing to pubsub")
         (>! ch result)
         (if close?
           (close! ch))))
     (onFailure [_ throwable]
-      (logging/error throwable "Error publishing to pubsub")
+      (logging/error throwable "Error publishing to pubsub:" (.getMessage throwable))
       (go
         (>! ch throwable)
         (if close?
@@ -53,7 +54,7 @@
 
   (let [msg           (make-msg message)
         msg-id-future (send-msg publisher msg)]
-
+    (logging/debug "Message sent" msg)
     (add-api-callback msg-id-future (future-to-ch channel :close? close?))
     channel))
 
@@ -65,11 +66,8 @@
 (defrecord TopicPublisher [topics project-id]
   Topics
   (publish [this topic msg ch]
-    (when-not (get this [:topics topic])
-      (if-let [publisher (make-publisher (:project-id this) topic)]
-        (update-in this [:topics] assoc topic publisher)))
-
-    (if-let [publisher (get-in this [:topics topic])]
+    (logging/info "Publishing message" (str msg) "to" topic)
+    (let [publisher (make-publisher (:project-id this) topic)]
       (publish-message publisher msg :channel ch)))
 
   (shutdown [this]

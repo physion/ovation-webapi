@@ -1,0 +1,70 @@
+# Default values for ovation-webapi.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+image:
+  repository: gcr.io/ovation-io/webapi
+  tag: stable
+  pullPolicy: IfNotPresent
+
+service:
+  name: webapi
+  type: NodePort
+  externalPort: 80
+  internalPort: 3000
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: <name>
+    kubernetes.io/tls-acme: <boolean>
+    kubernetes.io/ingress.allow-http: <boolean>
+  hosts:
+  tls:
+
+config:
+  DB_UPDATES_TOPIC: <topic>
+  GOOGLE_CLOUD_PROJECT_ID: ovation-io
+  OVATION_IO_HOST_URI: "https://app-services-staging.ovation.io"
+
+secret:
+  GCP_SERVICE_KEY_JSON: json
+  JWT_SECRET: jwt
+  MYSQL_DATABASE_NAME: <name>
+  MYSQL_PASSWORD: <password>
+  MYSQL_PORT: <port>
+  MYSQL_SERVER: <dns-name>
+  MYSQL_USERNAME: <username>
+  RAYGUN_API_KEY: raygun
+
+gcloud-sqlproxy:
+  serviceAccountKey: base64accountkey
+  cloudsql.instance: project:region:instance
+
+tags:
+  sql: false
+
+elasticsearch:
+  enabled: true
+  cluster:
+    env:
+      MINIMUM_MASTER_NODES: "2"
+  plugins:
+    enabled: true
+    install:
+      - ingest-attachment
+  tls:
+    enabled: false
+  master:
+    persistence:
+      storageClass: "elasticsearch-ssd"
+  data:
+    persistence:
+      storageClass: "elasticsearch-ssd"
+      size: 50Gi
+  rbac:
+    create: true
+
+resources: {}
+

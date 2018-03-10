@@ -1,30 +1,36 @@
-web:
-  build:
-    image: web
-    dockerfile: Dockerfile
-  links:
-    - db
-    - pubsub
-  env_file: dev.env
-  cached: true
+version: '2'
 
-db:
-  image: mysql
+services:
+  web:
+    build:
+      image: web
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    encrypted_env_file: dev.env.encrypted
 
-pubsub:
-  image: niallmccullagh/docker-google-cloud-emulators:latest
-  ports:
-    - "8538:8538"
-  command: /bin/bash -c "gcloud config set project emulator && gcloud beta emulators pubsub start --data-dir /mnt/data/pubsub --host-port 0.0.0.0:8538"
+  db:
+    image: mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD="1"
+      - MYSQL_USER=webapi
+      - MYSQL_PASSWORD=webapipass
+      - MYSQL_DATABASE=ovation_development
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
 
-google_cloud_deployment:
-  image: codeship/google-cloud-deployment
-  add_docker: true
-  encrypted_env_file: gc.env.encrypted
-  volumes:
-    - ./:/deploy
+  gcr-dockercfg:
+    image: codeship/gcr-dockercfg-generator
+    add_docker: true
+    encrypted_env_file: google-credentials.encrypted
 
-gcr_dockercfg:
-  image: codeship/gcr-dockercfg-generator
-  add_docker: true
-  encrypted_env_file: gc.env.encrypted
+  gke-deploy:
+    build:
+      image: deploy
+      dockerfile: Dockerfile.deploy
+    encrypted_env_file: google-credentials.encrypted
+    add_docker: true
+    volumes:
+      - ./deploy:/deploy

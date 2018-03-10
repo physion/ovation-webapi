@@ -8,7 +8,8 @@
             [clojure.tools.logging :as logging]
             [buddy.auth]
             [ovation.config :as config]
-            [com.climate.newrelic.trace :refer [defn-traced]]))
+            [ovation.constants :as c]
+            [clojure.string :as string]))
 
 
 
@@ -34,29 +35,47 @@
       (assoc id ::token (token request))
       id)))
 
-(defn unauthorized-response
-  "A default response constructor for an unathorized request."
-  [request value]
-  (if (authenticated? request)
-    (forbidden "Permission denied")
-    (unauthorized "Unauthorized")))
-
-
-(defn authenticated-user-id
-  "The UUID of the authorized user"
+(defn service-account?
   [auth]
-  (if-let [ateams (::authenticated-teams auth)]
-    (:user_uuid (deref ateams 500 {:user_uuid nil}))))
+  (boolean (::service-account auth)))
 
+(defn authenticated-service-account?
+  [request]
+  (and (authenticated? request)
+    (service-account? (identity request))))
+
+(defn authenticated-user-account?
+  [request]
+  (and (authenticated? request)
+    (not (service-account? (identity request)))))
+
+(defn service-account
+  [auth]
+  (if (service-account? auth) 1 0))
 
 ;; Authorization
-(defn-traced get-permissions
+
+(defn has-scope?
+  [auth scope]
+  (let [scopes           (get auth ::scopes [])
+        permission       (first (string/split scope #":"))
+        permission-scope (second (string/split scope #":"))
+        rx               (re-pattern (format "%s:%s" permission permission-scope))]
+
+    (when (or (string/blank? permission)
+            (string/blank? permission-scope))
+      (throw+ (IllegalArgumentException. "Missing permission and scope")))
+
+    (boolean (some #(re-find rx %) scopes))))
+
+
+(defn get-permissions                                ;; TODO move to authz
   [token]
   (let [url (util/join-path [config/AUTH_SERVER "api" "v2" "permissions"])
         opts {:oauth-token   token
               :accept       :json}]
 
-    (future (let [response @(http/get url opts)]
+    (future (let [response @(http/get url opts)]            ;;TODO use ovation.http
               (when (not (hp/ok? response))
                 (logging/error "Unable to retrieve object permissions" (-> response
                                                                          :body
@@ -69,29 +88,39 @@
                 :permissions)))))
 
 
-(defn-traced permissions
+(defn permissions                                    ;;TODO move to authz
   [auth collaboration-roots]
-  (let [permissions (deref (::authenticated-permissions auth) 500 [])
+  (let [permissions (deref (::authenticated-permissions auth) 5000 [])
         root-set (set collaboration-roots)]
     (filter #(contains? root-set (:uuid %)) permissions)))  ;;TODO we should collect once and then select-keys
 
 
-(defn-traced collect-permissions
+(defn collect-permissions                            ;;TODO move to authz
   [permissions perm]
   (map #(-> % :permissions perm) permissions))
 
-(defn- authenticated-team-value
+(defn- authenticated-team-value                             ;;TODO move to authz
   [auth k & {:keys [default] :or {default []}}]
   (if-let [ateams (::authenticated-teams auth)]
-    (k (deref ateams 500 {k default}))
+    (k (deref ateams 5000 {k default}))
     []))
 
-(defn authenticated-teams
+(defn authenticated-teams                                   ;;TODO move to authz
   "Get all teams to which the authenticated user belongs or nil on failure or non-JSON response"
   [auth]
   (authenticated-team-value auth :team_uuids))
 
-(defn organization-ids
+(defn authenticated-user-uuid                                 ;; TODO use authorizations
+  "The UUID of the authorized user"
+  [auth]
+  (authenticated-team-value auth :user_uuid))
+
+(defn authenticated-user-id
+  "The ID of the authenticated user"
+  [auth]
+  (authenticated-team-value auth :user_id))
+
+(defn organization-ids                                      ;;TODO move to authz
   "Get all organization (ids) that the authenticated user belongs to or empty array on timeout"
   [auth]
   (authenticated-team-value auth :organization_ids))
@@ -100,37 +129,39 @@
 
 (defn effective-collaboration-roots
   [doc]
-  (case (:type doc)
-    "Project" (conj (get-in doc [:links :_collaboration_roots]) (:_id doc))
+  (condp = (:type doc)
+    c/PROJECT-TYPE [(:_id doc)]
 
     ;; default
-    (get-in doc [:links :_collaboration_roots])))
+    (if-let [project-id (:project doc)]
+      [project-id]
+      (get-in doc [:links :_collaboration_roots]))))
 
 (defn- can-create?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
 
-    (case (:type doc)
+    (condp = (:type doc)
       ;; User owns annotations and can read all collaboration roots
-      "Annotation" (= auth-user-id (:user doc))
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
 
-      "Relation" (= auth-user-id (:user_id doc))
+      c/RELATION-TYPE (= auth-user-uuid (:user_id doc))
 
-      "Project" (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+      c/PROJECT-TYPE (or (nil? (:owner doc)) (= auth-user-uuid (:owner doc)))
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
             permissions            (permissions auth collaboration-root-ids)]
 
-        (and (or (nil? (:owner doc)) (= auth-user-id (:owner doc)))
+        (and (or (nil? (:owner doc)) (= auth-user-uuid (:owner doc)))
           (every? true? (collect-permissions permissions :read)))))))
 
 (defn- can-update?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
-    (case (:type doc)
-      "Annotation" (= auth-user-id (:user doc))
-      "Relation" (= auth-user-id (:user_id doc))
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
+    (condp = (:type doc)
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
+      c/RELATION-TYPE (= auth-user-uuid (:user_id doc))
 
       ;; default (Entity)
       (let [collaboration-root-ids (effective-collaboration-roots doc)
@@ -138,7 +169,7 @@
         ;; handle entity with collaboration roots
         (or
           ;; user is owner and can read all roots
-          (and (= auth-user-id (:owner doc))
+          (and (= auth-user-uuid (:owner doc))
               (every? true? (collect-permissions permissions :read)))
 
           ;; user can write any of the roots
@@ -147,10 +178,10 @@
 
 (defn- can-delete?
   [auth doc]
-  (let [auth-user-id (authenticated-user-id auth)]
-    (case (:type doc)
-      "Annotation" (= auth-user-id (:user doc))
-      "Relation" (or (= auth-user-id (:user_id doc))
+  (let [auth-user-uuid (authenticated-user-uuid auth)]
+    (condp = (:type doc)
+      c/ANNOTATION-TYPE (= auth-user-uuid (:user doc))
+      c/RELATION-TYPE (or (= auth-user-uuid (:user_id doc))
                    (let [roots       (get-in doc [:links :_collaboration_roots])
                          permissions (permissions auth roots)]
                      (every? true? (collect-permissions permissions :write))))
@@ -158,15 +189,15 @@
       ;; default
       (let [permissions (permissions auth (effective-collaboration-roots doc))]
         (or (every? true? (collect-permissions permissions :write))
-          (= auth-user-id (:owner doc)))))))
+          (= auth-user-uuid (:owner doc)))))))
 
 (defn- can-read?
   [auth doc & {:keys [cached-teams] :or [cached-teams nil]}]
-  (let [authenticated-user  (authenticated-user-id auth)
+  (let [authenticated-user  (authenticated-user-uuid auth)
         authenticated-teams (or cached-teams (authenticated-teams auth))
-        owner               (case (:type doc)
-                              "Annotation" (:user doc)
-                              "Relation" (:user_id doc)
+        owner               (condp = (:type doc)
+                              c/ANNOTATION-TYPE (:user doc)
+                              c/RELATION-TYPE (:user_id doc)
                               ;; default
                               (:owner doc))
         roots               (effective-collaboration-roots doc)]
@@ -179,22 +210,30 @@
 (defn can?
   [ctx op doc & {:keys [teams] :or {:teams nil}}]
 
-  (let [{auth :ovation.request-context/auth
-         org  :ovation.request-context/org} ctx
-        organization-ids (organization-ids auth)]
+  (let [auth (:ovation.request-context/identity ctx)]
+    ;; Service accounts are always can? -> true
+    (if (service-account? auth)
+      true
 
-    (when (not (some #{org} organization-ids))
-      (logging/debug "Organization" org "not in users' organizations:" organization-ids)
-      (not-found!))
+      (let [{org :ovation.request-context/org} ctx
+            organization-ids (organization-ids auth)]
 
-    (case op
-      ::create (can-create? auth doc)
-      ::update (can-update? auth doc)
-      ::delete (can-delete? auth doc)
-      ::read (can-read? auth doc :teams teams)
+        (when (not (some #{org} organization-ids))
+          (logging/debug "Organization" org "not in users' organizations:" organization-ids)
+          (not-found!))
 
-      ;;default
-      (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))
+        (case op
+          ::create (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
+                     (can-create? auth doc))
+          ::update (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
+                     (can-update? auth doc))
+          ::delete (and (has-scope? auth c/WRITE-GLOBAL-SCOPE)
+                     (can-delete? auth doc))
+          ::read (and (has-scope? auth c/READ-GLOBAL-SCOPE)
+                   (can-read? auth doc :teams teams))
+
+          ;;default
+          (throw+ {:type ::unauthorized :operation op :message "Operation not recognized"}))))))
 
 
 (defn check!

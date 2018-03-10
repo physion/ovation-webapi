@@ -40,3 +40,15 @@ dev.env
 ovation-staging.json
 
 dev-local.env
+
+*.env
+
+codeship.aes
+
+ovation-io.json
+
+# SOPS/helm-secrets
+deploy/.sops.yaml
+*.dec
+
+db/data

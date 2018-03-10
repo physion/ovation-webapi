@@ -7,7 +7,6 @@
             [ring.util.http-predicates :as hp]
             [slingshot.slingshot :refer [try+]]
             [clojure.tools.logging :as logging]
-            [ring.util.http-response :refer [throw!]]
             [clojure.walk :as walk])
   (:import (java.io EOFException)))
 
@@ -45,7 +44,7 @@
 (defn request-opts
   [ctx]
   {:timeout     10000                                       ; ms
-   :oauth-token (if (string? ctx) ctx (get-in ctx [:ovation.request-context/auth :ovation.auth/token]))
+   :oauth-token (if (string? ctx) ctx (get-in ctx [:ovation.request-context/identity :ovation.auth/token]))
    :headers     {"Content-Type" "application/json; charset=utf-8"
                  "Accept"       "application/json"}})
 

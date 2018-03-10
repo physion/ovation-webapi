@@ -24,10 +24,10 @@
                           "user_id"         user-id
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth    ..auth..
-                                              ::request-context/routes  ..rt..
-                                              ::request-context/org     org-id
-                                              ::request-context/request {:params {:id group-id}}}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id
+                                              ::request-context/request  {:params {:id group-id}}}
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-memberships`"
         (with-fake-http [{:url (util/join-path [service-url orgs/GROUP-MEMBERSHIPS]) :method :get} (fn [_ {query-params :query-params} _]
@@ -129,14 +129,16 @@
         org-id      3
         service-url (util/join-path [config/SERVICES_API_URL "api" "v2"])
         team-uuids  [(str (util/make-uuid)) (str (util/make-uuid))]
+        logo-data   "DATA!"
         rails-group {"id"              id
                      "user_id"         user-id
-                     "team_ids"      team-uuids
-                     "organization_id" org-id}]
+                     "team_ids"        team-uuids
+                     "organization_id" org-id
+                     "logo_image"      logo-data}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..
-                                              ::request-context/org    org-id}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id}
                          (request-context/router ..request..) => ..rt..]
       (facts "`get-groups`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :get} {:status 200
@@ -147,7 +149,8 @@
                                   :type            "OrganizationGroup"
                                   :user_id         user-id
                                   :organization_id org-id
-                                  :team_ids      team-uuids
+                                  :team_ids        team-uuids
+                                  :logo_image      logo-data
                                   :links           {:self              {:id id, :org org-id}
                                                     :group-memberships {:id id, :org org-id}}}]
               (orgs/get-groups ..ctx.. service-url c)
@@ -163,6 +166,7 @@
                                   :user_id         user-id
                                   :organization_id org-id
                                   :team_ids        team-uuids
+                                  :logo_image      logo-data
                                   :links           {:self              {:id id, :org org-id}
                                                     :group-memberships {:id id, :org org-id}}}]
               (orgs/get-group ..ctx.. service-url id c)
@@ -182,10 +186,12 @@
       (facts "`create-group`"
         (with-fake-http [{:url (util/join-path [service-url orgs/ORGANIZATION-GROUPS]) :method :post} (fn [_ {body :body} _]
                                                                                                         (if (= {:organization_group {:organization_id org-id
-                                                                                                                                     :user_id         user-id}} (util/from-json body))
+                                                                                                                                     :user_id         user-id
+                                                                                                                                     :logo_image      logo-data}} (util/from-json body))
                                                                                                           (let [result {:organization_group {:id              id
                                                                                                                                              :organization_id org-id
-                                                                                                                                             :user_id         user-id}}]
+                                                                                                                                             :user_id         user-id
+                                                                                                                                             :logo_image      logo-data}}]
                                                                                                             {:status 201
                                                                                                              :body   (util/to-json result)})
                                                                                                           {:status 422}))]
@@ -195,17 +201,20 @@
                             :type            "OrganizationGroup"
                             :user_id         user-id
                             :organization_id org-id
+                            :logo_image      logo-data
                             :links           {:self              {:id id, :org org-id}
                                               :group-memberships {:id id, :org org-id}}}
                   new      {:user_id         user-id
-                            :organization_id org-id}]
+                            :organization_id org-id
+                            :logo_image      logo-data}]
               (orgs/create-group ..ctx.. service-url new c)
               (<?? c) => expected))
 
           (fact "raises 422 for organizaiton mismatch"
             (let [c   (chan)
                   new {:user_id         user-id
-                       :organization_id "other-org"}]
+                       :organization_id "other-org"
+                       :logo_image      logo-data}]
               (orgs/create-group ..ctx.. service-url new c)
               (<?? c) => (throws ExceptionInfo)))))
 
@@ -214,10 +223,12 @@
                                                                                                           (if (= {:organization_group {:id              id
                                                                                                                                        :type            "OrganizationGroup"
                                                                                                                                        :organization_id org-id
-                                                                                                                                       :user_id         user-id}} (util/from-json body))
+                                                                                                                                       :user_id         user-id
+                                                                                                                                       :logo_image      logo-data}} (util/from-json body))
                                                                                                             (let [result {:organization_group {:id              id
                                                                                                                                                :organization_id org-id
-                                                                                                                                               :user_id         user-id}}]
+                                                                                                                                               :user_id         user-id
+                                                                                                                                               :logo_image      logo-data}}]
                                                                                                               {:status 200
                                                                                                                :body   (util/to-json result)})
                                                                                                             {:status 422}))]
@@ -227,12 +238,14 @@
                             :type            "OrganizationGroup"
                             :user_id         user-id
                             :organization_id org-id
+                            :logo_image      logo-data
                             :links           {:self              {:id id, :org org-id}
                                               :group-memberships {:id id, :org org-id}}}
                   updated  {:id              id
                             :type            "OrganizationGroup"
                             :user_id         user-id
-                            :organization_id org-id}]
+                            :organization_id org-id
+                            :logo_image      logo-data}]
               (orgs/update-group ..ctx.. service-url id updated c)
               (<?? c) => expected))
 
@@ -241,7 +254,8 @@
                   updated {:id              id
                            :type            "OrganizationGroup"
                            :user_id         user-id
-                           :organization_id "other-org"}]
+                           :organization_id "other-org"
+                           :logo_image      logo-data}]
               (orgs/update-group ..ctx.. service-url id updated c)
               (<?? c) => (throws ExceptionInfo)))))
 
@@ -270,9 +284,9 @@
                           "email"           user-email
                           "organization_id" org-id}]
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..
-                                              ::request-context/org    org-id}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..
+                                              ::request-context/org      org-id}
                          (request-context/router ..request..) => ..rt..]
 
       (facts "member-team-ids"
@@ -422,8 +436,8 @@
 
 
     (against-background [(request-context/token ..ctx..) => ..auth..
-                         ..ctx.. =contains=> {::request-context/auth   ..auth..
-                                              ::request-context/routes ..rt..}
+                         ..ctx.. =contains=> {::request-context/identity ..auth..
+                                              ::request-context/routes   ..rt..}
                          (request-context/router ..request..) => ..rt..]
 
       (let [orgs-url (util/join-path [config/ORGS_SERVER "organizations"])]

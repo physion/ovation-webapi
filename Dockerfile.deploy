@@ -1,0 +1,10 @@
+FROM codeship/google-cloud-deployment
+MAINTAINER support@ovation.io
+
+RUN apt-get update -y && \
+  apt-get install -y git
+
+RUN apt-get update -y && \
+  apt-get install -y wget && \
+  wget https://github.com/mozilla/sops/releases/download/3.0.0/sops_3.0.0_amd64.deb && \
+  dpkg -i ./sops_3.0.0_amd64.deb

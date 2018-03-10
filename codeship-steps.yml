@@ -1,24 +1,18 @@
-- type: parallel
-  steps:
-    - name: test
-      service: web
-      command: lein midje
+- name: tests
+  service: web
+  command: /wait-for-it.sh db:3306 -t 60 -- lein midje
 
-- type: serial
-  steps:
-    - name: gce_push #TODO https://documentation.codeship.com/pro/continuous-deployment/google-cloud/, https://documentation.codeship.com/pro/continuous-deployment/deployment-with-kubernetes/
-      type: push
-      tag: master
-      service: web
-      image_name: gcr.io/ovation/ovation-webapi
-      image_tag: "{{ .Timestamp }}"
-      registry: https://gcr.io
-      dockercfg_service: gcr_dockercfg
-    - name: gce_deploy #TODO https://documentation.codeship.com/pro/continuous-deployment/deployment-with-kubernetes/
-      tag: master
-      command: /deploy/gce_deploy.sh
-    - name: heroku_push #TODO https://documentation.codeship.com/pro/continuous-deployment/heroku/
-      tag: development
-      service: web
-      type: push
+- name: Push to GCR
+  tag: ^(development|master)
+  service: web
+  type: push
+  image_name: gcr.io/ovation-io/webapi
+  image_tag: "{{ .Branch }}-{{ .Timestamp }}"
+  registry: https://gcr.io
+  dockercfg_service: gcr-dockercfg
+
+- name: Deploy
+  tag: ^(development|master)
+  service: gke-deploy
+  command: "/bin/bash -c 'deploy/deploy.sh $CI_BRANCH'"
 

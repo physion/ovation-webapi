@@ -21,11 +21,11 @@
 
   AuthToken
   (token [c]
-    (get-in c [::auth ::auth/token]))
+    (get-in c [::identity ::auth/token]))
   (team-ids [c]
-    (auth/authenticated-teams (::auth c)))
+    (auth/authenticated-teams (::identity c)))
   (user-id [c]
-    (auth/authenticated-user-id (::auth c)))
+    (auth/authenticated-user-id (::identity c)))
   (organization-ids [c]
     (auth/organization-ids (::request c)))
   (authorization-ch [c]
@@ -39,10 +39,11 @@
 
 (defn make-context
   "Constructs a RequestContext from a request"
-  [request org authz]
-  (map->RequestContext {:authz        authz
+  [request org authz pubsub]
+  (map->RequestContext {:authz         authz
                         ::org          org
                         ::routes       (router request)
-                        ::auth         (auth/identity request)
+                        ::identity     (auth/identity request)
                         ::request      request
+                        ::pubsub       pubsub
                         ::query-params (walk/keywordize-keys (:query-params request))}))
