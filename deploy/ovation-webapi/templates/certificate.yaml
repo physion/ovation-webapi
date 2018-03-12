@@ -13,6 +13,7 @@ spec:
   secretName: .Values.ingress.tls[0].secretName
   issuerRef:
     name: letsencrypt-v01
+    kind: ClusterIssuer
   commonName: ovation.io
   dnsNames:
 {{ toYaml .Values.ingress.tls[0].hosts | indent 2}}
