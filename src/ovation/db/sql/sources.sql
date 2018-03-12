@@ -176,34 +176,54 @@ WHERE `or_sources`.`uuid` IN (:v*:ids)
 
 -- :name find-all-by-rel :? :*
 -- :doc Find all sources by entity and rel
-SELECT
-  `or_sources`.`id` AS `id`,
-  `or_sources`.`uuid` AS `_id`,
-  `or_sources`.`organization_id` AS `organization_id`,
-  `or_projects`.`id` AS `project_id`,
-  `or_projects`.`uuid` AS `project`,
-  `users`.`uuid` AS `owner`,
-  `or_sources`.`name` AS `name`,
-  `or_sources`.`created_at` AS `created-at`,
-  `or_sources`.`updated_at` AS `updated-at`,
-  `or_sources`.`attributes` AS `attributes`,
-  "Source" as `type`
-FROM `or_sources`
-INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
-INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
-INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
-LEFT JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_sources`.`id`
-  AND `rel`.`target_type` = 'Source'
-  AND `rel`.`source_id` = :entity_id
-  AND `rel`.`source_type` = :entity_type
-  AND `rel`.`rel` = :rel
-LEFT JOIN `or_relations` AS `inverse_rel` ON `inverse_rel`.`source_id` = `or_sources`.`id`
-  AND `inverse_rel`.`source_type` = 'Source'
-  AND `inverse_rel`.`target_id` = :entity_id
-  AND `inverse_rel`.`target_type` = :entity_type
-  AND `inverse_rel`.`inverse_rel` = :rel
-WHERE `or_sources`.`archived` = :archived
-  AND `or_sources`.`organization_id` = :organization_id
-  AND (`rel`.`id` OR `inverse_rel`.`id`)
-
+SELECT * FROM (
+    SELECT
+      `or_sources`.`id` AS `id`,
+      `or_sources`.`uuid` AS `_id`,
+      `or_sources`.`organization_id` AS `organization_id`,
+      `or_projects`.`id` AS `project_id`,
+      `or_projects`.`uuid` AS `project`,
+      `users`.`uuid` AS `owner`,
+      `or_sources`.`name` AS `name`,
+      `or_sources`.`created_at` AS `created-at`,
+      `or_sources`.`updated_at` AS `updated-at`,
+      `or_sources`.`attributes` AS `attributes`,
+      "Source" as `type`
+    FROM `or_sources`
+    INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
+    INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+      AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
+    INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
+    INNER JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_sources`.`id`
+      AND `rel`.`target_type` = 'Source'
+      AND `rel`.`source_id` = :entity_id
+      AND `rel`.`source_type` = :entity_type
+      AND `rel`.`rel` = :rel
+    WHERE `or_sources`.`archived` = :archived
+      AND `or_sources`.`organization_id` = :organization_id
+  UNION ALL
+    SELECT
+      `or_sources`.`id` AS `id`,
+      `or_sources`.`uuid` AS `_id`,
+      `or_sources`.`organization_id` AS `organization_id`,
+      `or_projects`.`id` AS `project_id`,
+      `or_projects`.`uuid` AS `project`,
+      `users`.`uuid` AS `owner`,
+      `or_sources`.`name` AS `name`,
+      `or_sources`.`created_at` AS `created-at`,
+      `or_sources`.`updated_at` AS `updated-at`,
+      `or_sources`.`attributes` AS `attributes`,
+      "Source" as `type`
+    FROM `or_sources`
+    INNER JOIN `or_projects` ON `or_projects`.`id` = `or_sources`.`project_id`
+    INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+      AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
+    INNER JOIN `users` ON `users`.`id` = `or_sources`.`owner_id`
+    INNER JOIN `or_relations` AS `inverse_rel` ON `inverse_rel`.`source_id` = `or_sources`.`id`
+      AND `inverse_rel`.`source_type` = 'Source'
+      AND `inverse_rel`.`target_id` = :entity_id
+      AND `inverse_rel`.`target_type` = :entity_type
+      AND `inverse_rel`.`inverse_rel` = :rel
+    WHERE `or_sources`.`archived` = :archived
+      AND `or_sources`.`organization_id` = :organization_id
+) AS `or_sources`
