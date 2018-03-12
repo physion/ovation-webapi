@@ -36,14 +36,6 @@ echo "NAMESPACE = $NAMESPACE"
 echo "RELEASE_NAME = $RELEASE_NAME"
 echo "CI_TIMESTAMP = $CI_TIMESTAMP"
 
-# Ensure kube-lego is available
-helm upgrade --install kube-lego-${NAMESPACE} stable/kube-lego\
-    --namespace ${NAMESPACE} \
-    --set config.LEGO_URL=https://acme-v01.api.letsencrypt.org/directory \
-    --set config.LEGO_EMAIL=dev@ovation.io \
-    --set config.LEGO_DEFAULT_INGRESS_CLASS=gce \
-    --set rbac.create=true
-
 # Update dependencies
 helm repo add cos https://centerforopenscience.github.io/helm-charts/
 helm dependencies update ./deploy/ovation-webapi/

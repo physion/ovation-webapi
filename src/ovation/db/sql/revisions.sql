@@ -178,43 +178,69 @@ WHERE `or_revisions`.`uuid` IN (:v*:ids)
 
 -- :name find-all-by-rel :? :*
 -- :doc Find all revisions by entity and rel
-SELECT
-  `or_revisions`.`id` AS `id`,
-  `or_revisions`.`uuid` AS `_id`,
-  `or_revisions`.`organization_id` AS `organization_id`,
-  `or_projects`.`uuid` AS `project`,
-  `users`.`uuid` AS `owner`,
-  `or_revisions`.`name` AS `name`,
-  `or_revisions`.`version` AS `version`,
-  `or_revisions`.`content_type` AS `content_type`,
-  `or_revisions`.`content_length` AS `content_length`,
-  `or_revisions`.`upload_status` AS `upload-status`,
-  `or_revisions`.`url` AS `url`,
-  `or_revisions`.`created_at` AS `created-at`,
-  `or_revisions`.`updated_at` AS `updated-at`,
-  `or_revisions`.`attributes` AS `attributes`,
-  `or_files`.`uuid` AS `file_id`,
-  "Revision" as `type`
-FROM `or_revisions`
-INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
-INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
-INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
-  AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
-INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
-LEFT JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_revisions`.`id`
-  AND `rel`.`target_type` = 'Revision'
-  AND `rel`.`source_id` = :entity_id
-  AND `rel`.`source_type` = :entity_type
-  AND `rel`.`rel` = :rel
-LEFT JOIN `or_relations` AS `inverse_rel` ON `inverse_rel`.`source_id` = `or_revisions`.`id`
-  AND `inverse_rel`.`source_type` = 'Revision'
-  AND `inverse_rel`.`target_id` = :entity_id
-  AND `inverse_rel`.`target_type` = :entity_type
-  AND `inverse_rel`.`inverse_rel` = :rel
-WHERE `or_revisions`.`archived` = :archived
-  AND `or_revisions`.`organization_id` = :organization_id
-  AND (`rel`.`id` OR `inverse_rel`.`id`)
-
+SELECT * FROM (
+    SELECT
+      `or_revisions`.`id` AS `id`,
+      `or_revisions`.`uuid` AS `_id`,
+      `or_revisions`.`organization_id` AS `organization_id`,
+      `or_projects`.`uuid` AS `project`,
+      `users`.`uuid` AS `owner`,
+      `or_revisions`.`name` AS `name`,
+      `or_revisions`.`version` AS `version`,
+      `or_revisions`.`content_type` AS `content_type`,
+      `or_revisions`.`content_length` AS `content_length`,
+      `or_revisions`.`upload_status` AS `upload-status`,
+      `or_revisions`.`url` AS `url`,
+      `or_revisions`.`created_at` AS `created-at`,
+      `or_revisions`.`updated_at` AS `updated-at`,
+      `or_revisions`.`attributes` AS `attributes`,
+      `or_files`.`uuid` AS `file_id`,
+      "Revision" as `type`
+    FROM `or_revisions`
+    INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
+    INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
+    INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+      AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
+    INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
+    INNER JOIN `or_relations` AS `rel` ON `rel`.`target_id` = `or_revisions`.`id`
+      AND `rel`.`target_type` = 'Revision'
+      AND `rel`.`source_id` = :entity_id
+      AND `rel`.`source_type` = :entity_type
+      AND `rel`.`rel` = :rel
+    WHERE `or_revisions`.`archived` = :archived
+      AND `or_revisions`.`organization_id` = :organization_id
+  UNION ALL
+    SELECT
+      `or_revisions`.`id` AS `id`,
+      `or_revisions`.`uuid` AS `_id`,
+      `or_revisions`.`organization_id` AS `organization_id`,
+      `or_projects`.`uuid` AS `project`,
+      `users`.`uuid` AS `owner`,
+      `or_revisions`.`name` AS `name`,
+      `or_revisions`.`version` AS `version`,
+      `or_revisions`.`content_type` AS `content_type`,
+      `or_revisions`.`content_length` AS `content_length`,
+      `or_revisions`.`upload_status` AS `upload-status`,
+      `or_revisions`.`url` AS `url`,
+      `or_revisions`.`created_at` AS `created-at`,
+      `or_revisions`.`updated_at` AS `updated-at`,
+      `or_revisions`.`attributes` AS `attributes`,
+      `or_files`.`uuid` AS `file_id`,
+      "Revision" as `type`
+    FROM `or_revisions`
+    INNER JOIN `or_files`    ON `or_files`.`id` = `or_revisions`.`file_id`
+    INNER JOIN `or_projects` ON `or_projects`.`id` = `or_files`.`project_id`
+    INNER JOIN `teams`       ON `teams`.`id` = `or_projects`.`team_id`
+      AND (`teams`.`uuid` IN (:v*:team_uuids) OR 1 = :service_account)
+    INNER JOIN `users` ON `users`.`id` = `or_revisions`.`owner_id`
+    INNER JOIN `or_relations` AS `inverse_rel` ON `inverse_rel`.`source_id` = `or_revisions`.`id`
+      AND `inverse_rel`.`source_type` = 'Revision'
+      AND `inverse_rel`.`target_id` = :entity_id
+      AND `inverse_rel`.`target_type` = :entity_type
+      AND `inverse_rel`.`inverse_rel` = :rel
+    WHERE `or_revisions`.`archived` = :archived
+      AND `or_revisions`.`organization_id` = :organization_id
+) AS `or_revisions`
 
 -- :name storage-by-project-for-public-org :? :*
 -- :doc Returns storage by project for public organization
