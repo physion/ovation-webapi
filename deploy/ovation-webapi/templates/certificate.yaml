@@ -1,0 +1,27 @@
+{{- if .Values.ingress.tls }}
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  secretName: .Values.ingress.tls[0].secretName
+  issuerRef:
+    name: letsencrypt-v01
+  commonName: ovation.io
+  dnsNames:
+{{ toYaml .Values.ingress.tls[0].hosts | indent 2}}
+{{- end - }}
+  acme:
+    config:
+    - http01:
+        ingress: {{ template "fullname" . }}
+      domains:
+      {{ toYaml .Values.ingress.tls[0].hosts | indent 4}}
+      {{- end - }}
+{{- end -}}
