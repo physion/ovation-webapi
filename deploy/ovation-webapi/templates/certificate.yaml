@@ -25,9 +25,10 @@ spec:
      - http01:
          ingress: {{ $ingressName }}
      domains:
-       {{- range $host := $tls.hosts }}
+       {{- range $host := $tls.hosts -}}
        - {{ $host }}
        {{- end -}}
+
 ---
 
 {{- end -}}
