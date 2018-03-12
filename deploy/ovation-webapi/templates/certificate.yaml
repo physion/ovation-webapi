@@ -24,10 +24,10 @@ spec:
    config:
      - http01:
          ingress: {{ $ingressName }}
-     domains:
-       {{- range $host := $tls.hosts -}}
-       - {{ $host }}
-       {{- end -}}
+       domains:
+         {{- range $host := $tls.hosts }}
+         - {{ $host }}
+         {{- end }}
 
 ---
 
