@@ -1,8 +1,27 @@
-{{- if .Values.ingress.tls }}
+#ingress:
+#    enabled: true
+#    # Secrets must be manually created in the namespace.
+#    hosts:
+#    - api-dev.ovation.io
+#    - api-development.ovation.io
+#    - api-staging.ovation.io
+#    tls:
+#    -   secretName: webapi-tls
+#        hosts:
+#        - api-dev.ovation.io
+#        - api-development.ovation.io
+#        - api-staging.ovation.io
+#    annotations:
+#        kubernetes.io/ingress.global-static-ip-name: development-webapi-static-ip
+#        kubernetes.io/ingress.allow-http: "false"
+
+{{- if .Values.ingress.tls -}}
+{{- range $tls := .Values.ingress.tls }}
+{{- $ingressName := include "fullname" . -}}
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
-  name: {{ template "fullname" . }}
+  name: foo
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "name" . }}
@@ -10,19 +29,24 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  secretName: .Values.ingress.tls[0].secretName
+  secretName: {{ $tls.secretName }}
   issuerRef:
     name: letsencrypt-v01
     kind: ClusterIssuer
   commonName: ovation.io
   dnsNames:
-{{ toYaml .Values.ingress.tls[0].hosts | indent 2}}
-{{- end - }}
+    {{- range $host := $tls.hosts }}
+    - {{ $host }}
+    {{- end -}}
   acme:
     config:
     - http01:
-        ingress: {{ template "fullname" . }}
-      domains:
-      {{ toYaml .Values.ingress.tls[0].hosts | indent 4}}
-      {{- end - }}
+        ingress: {{ $ingressName }}
+    domains:
+      {{- range $host := $tls.hosts }}
+      - {{ $host }}
+      {{- end -}}
+
+---
+{{- end -}}
 {{- end -}}
