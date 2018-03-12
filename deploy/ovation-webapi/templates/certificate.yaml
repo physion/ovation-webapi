@@ -16,7 +16,6 @@ spec:
  issuerRef:
    name: letsencrypt-v01
    kind: ClusterIssuer
- commonName: ovation.io
  dnsNames:
    {{- range $host := $tls.hosts }}
    - {{ $host }}
