@@ -52,3 +52,4 @@ deploy/.sops.yaml
 *.dec
 
 db/data
+deploy/ovation-webapi/charts/elasticsearch-0.4.0.tgz

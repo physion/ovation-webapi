@@ -5,12 +5,12 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
   name: {{ template "fullname" $ }}
-   namespace: {{ $.Release.Namespace }}
-   labels:
-     app: {{ template "name" $ }}
-     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-     release: {{ $.Release.Name }}
-     heritage: {{ $.Release.Service }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ template "name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
 spec:
  secretName: {{ $tls.secretName }}
  issuerRef:
