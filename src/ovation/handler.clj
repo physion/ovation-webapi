@@ -102,10 +102,15 @@
                     :access-control-allow-methods [:get :put :post :delete :options]
                     :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
-                   [wrap-authentication (jws-backend {:secret               config/JWT_SECRET
-                                                      :options              {:alg :hs256}
-                                                      :token-name           "Bearer"
-                                                      :unauthorized-handler authz/unauthorized-response})]
+                   [wrap-authentication                     ;; Try Auth0 and internal JWT keys for authentication
+                    (jws-backend {:secret               (config/config :auth0-jwt-public-key)
+                                  :options              {:alg :rs256}
+                                  :token-name           "Bearer"
+                                  :unauthorized-handler authz/unauthorized-response})
+                    (jws-backend {:secret               (config/config :jwt-secret)
+                                  :options              {:alg :hs256}
+                                  :token-name           "Bearer"
+                                  :unauthorized-handler authz/unauthorized-response})]
 
                    [wrap-access-rules {:rules    rules
                                        :on-error authz/unauthorized-response}]
