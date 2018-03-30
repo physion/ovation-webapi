@@ -3,6 +3,7 @@
             [buddy.auth.accessrules :refer [wrap-access-rules]]
             [buddy.auth.backends.token :refer [jws-backend]]
             [buddy.auth.middleware :refer [wrap-authentication]]
+            [buddy.core.keys :refer [str->public-key]]
             [clojure.core.async :refer [chan]]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -70,8 +71,7 @@
     (api
       {:swagger {:ui   "/"
                  :spec "/swagger.json"
-                 :data {:info {
-                               :version        "2.0.0"
+                 :data {:info {:version        "2.0.0"
                                :title          "Ovation"
                                :description    DESCRIPTION
                                :contact        {:name "Ovation"
@@ -102,10 +102,17 @@
                     :access-control-allow-methods [:get :put :post :delete :options]
                     :access-control-allow-headers [:accept :content-type :authorization :origin]]
 
-                   [wrap-authentication (jws-backend {:secret               config/JWT_SECRET
-                                                      :options              {:alg :hs256}
+                   (vec (remove nil? [wrap-authentication   ;; Try Auth0 and internal JWT keys for authentication
+
+                                      (if (config/config :auth0-jwt-public-key)
+                                        (jws-backend {:secret               (str->public-key (config/config :auth0-jwt-public-key))
+                                                      :options              {:alg :rs256}
                                                       :token-name           "Bearer"
-                                                      :unauthorized-handler authz/unauthorized-response})]
+                                                      :unauthorized-handler authz/unauthorized-response}))
+                                      (jws-backend {:secret               (config/config :jwt-secret)
+                                                    :options              {:alg :hs256}
+                                                    :token-name           "Bearer"
+                                                    :unauthorized-handler authz/unauthorized-response})]))
 
                    [wrap-access-rules {:rules    rules
                                        :on-error authz/unauthorized-response}]
