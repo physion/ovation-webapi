@@ -45,7 +45,8 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.util.http-response :refer [created ok no-content accepted not-found unauthorized bad-request conflict temporary-redirect]]
             [schema.core :as s]
-            [slingshot.slingshot :refer [try+ throw+]]))
+            [slingshot.slingshot :refer [try+ throw+]]
+            [clojure.data.codec.base64 :as b64]))
 
 
 (def rules [{:pattern        #"^/api.*"
@@ -105,10 +106,16 @@
                    (vec (remove nil? [wrap-authentication   ;; Try Auth0 and internal JWT keys for authentication
 
                                       (if (config/config :auth0-jwt-public-key)
-                                        (jws-backend {:secret               (str->public-key (config/config :auth0-jwt-public-key))
-                                                      :options              {:alg :rs256}
-                                                      :token-name           "Bearer"
-                                                      :unauthorized-handler authz/unauthorized-response}))
+                                        (let [public-key (config/config :auth0-jwt-public-key)
+                                              jwt-key    (if (clojure.string/starts-with? public-key "-----BEGIN CERTIFICATE-----") ;; Decode Base64 key, if necessary
+                                                           (str->public-key public-key)
+                                                           (let [encoded-key (.getBytes public-key)
+                                                                 decoded-key (String. (b64/decode encoded-key))]
+                                                             (str->public-key decoded-key)))]
+                                              (jws-backend {:secret               jwt-key
+                                                            :options              {:alg :rs256}
+                                                            :token-name           "Bearer"
+                                                            :unauthorized-handler authz/unauthorized-response})))
                                       (jws-backend {:secret               (config/config :jwt-secret)
                                                     :options              {:alg :hs256}
                                                     :token-name           "Bearer"
