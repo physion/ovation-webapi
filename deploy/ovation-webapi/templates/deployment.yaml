@@ -95,11 +95,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-secret
                   key: RAYGUN_API_KEY
-            - name: AUTH0_JWT_PUTLIC_KEY
+            - name: AUTH0_JWT_PUBLIC_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-secret
-                  key: AUTH0_JWT_PUTLIC_KEY
+                  key: AUTH0_JWT_PUBLIC_KEY
             - name: DB_UPDATES_TOPIC
               valueFrom:
                 configMapKeyRef:
