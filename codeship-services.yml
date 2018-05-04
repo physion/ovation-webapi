@@ -10,7 +10,7 @@ services:
     encrypted_env_file: dev.env.encrypted
 
   db:
-    image: mysql
+    image: mysql:5.7.22
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD="1"
       - MYSQL_USER=webapi
