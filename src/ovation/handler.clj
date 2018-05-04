@@ -107,7 +107,7 @@
 
                                       (if (config/config :auth0-jwt-public-key)
                                         (let [public-key (config/config :auth0-jwt-public-key)
-                                              jwt-key    (if (clojure.string/starts-with? public-key "-----BEGIN CERTIFICATE-----") ;; Decode Base64 key, if necessary
+                                              jwt-key    (if (clojure.string/starts-with? public-key "-----BEGIN") ;; Decode Base64 key, if necessary
                                                            (str->public-key public-key)
                                                            (let [encoded-key (.getBytes public-key)
                                                                  decoded-key (String. (b64/decode encoded-key))]
