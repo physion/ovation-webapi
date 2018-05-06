@@ -22,7 +22,7 @@
     ["read:global" "write:global"]))
 
 (defn wrap-auth
-  "Wrap the response with a future authenticated-teams andscopes"
+  "Wrap the response with a future authenticated-teams and scopes"
   [handler]
   (fn [request]
     (if (auth/authenticated? request)
