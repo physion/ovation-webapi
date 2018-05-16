@@ -240,17 +240,12 @@
                         (dissoc :start)
                         (dissoc :end))))
 
-(defn add-relation-collaboration-roots
-  [doc ctx]
-  (-> doc
-    (assoc-in [:links :_collaboration_roots] [(:source_id doc)])))
-
 (defn-traced db-to-value
   [ctx]
   (fn [doc]
     (condp = (:type doc)
       c/RELATION-TYPE (-> doc
-                        (add-relation-collaboration-roots ctx)
+                        (add-collaboration-roots ctx)
                         (add-self-link ctx)
                         (remove-id))
       c/ANNOTATION-TYPE (-> doc

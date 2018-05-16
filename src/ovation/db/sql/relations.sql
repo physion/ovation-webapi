@@ -110,6 +110,7 @@ SELECT
   `source_uuid`.`uuid` AS `source_id`,
   `target_uuid`.`uuid` AS `target_id`,
   `users`.`uuid` AS `user_id`,
+  `or_projects`.`uuid` AS `project`,
   "Relation" as `type`
 FROM `or_relations`
 INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations`.`source_id`
@@ -117,7 +118,7 @@ INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations
 INNER JOIN `uuids` AS `target_uuid` ON `target_uuid`.`entity_id` = `or_relations`.`target_id`
   AND `target_uuid`.`entity_type` = `or_relations`.`target_type`
 INNER JOIN `users` ON `users`.`id` = `or_relations`.`user_id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
 WHERE `or_relations`.`uuid` IN (:v*:ids)
 
 -- :name find-all-by-parent-entity-rel :? :*
@@ -131,6 +132,7 @@ SELECT
   `source_uuid`.`uuid` AS `source_id`,
   `target_uuid`.`uuid` AS `target_id`,
   `users`.`uuid` AS `user_id`,
+  `or_projects`.`uuid` AS `project`,
   "Relation" as `type`
 FROM `or_relations`
 INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations`.`source_id`
@@ -138,7 +140,7 @@ INNER JOIN `uuids` AS `source_uuid` ON `source_uuid`.`entity_id` = `or_relations
 INNER JOIN `uuids` AS `target_uuid` ON `target_uuid`.`entity_id` = `or_relations`.`target_id`
   AND `target_uuid`.`entity_type` = `or_relations`.`target_type`
 INNER JOIN `users` ON `users`.`id` = `or_relations`.`user_id`
-LEFT JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
+INNER JOIN `or_projects` ON `or_projects`.`id` = `or_relations`.`project_id`
 WHERE `or_relations`.`source_id` = :entity_id
   AND `or_relations`.`source_type` = :entity_type
   AND `or_relations`.`rel` = :rel
