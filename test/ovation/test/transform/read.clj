@@ -177,11 +177,12 @@
     (facts "for relations"
       (let [record {:_id ..id..
                     :type c/RELATION-TYPE
-                    :source_id ..source..}
+                    :source_id ..source..
+                    :project ..project..}
             transformed-record {:_id ..id..
                                 :type c/RELATION-TYPE
                                 :source_id ..source..
-                                :links {:_collaboration_roots [..source..]
+                                :links {:_collaboration_roots [..project..]
                                         :self {:id ..id..
                                                :org ..org..}}}]
         (fact "it adds collaboration roots and self link"
