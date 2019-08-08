@@ -20,14 +20,9 @@ spec:
    {{- range $host := $tls.hosts }}
    - {{ $host }}
    {{- end }}
- acme:
-   config:
-     - http01:
-         ingress: {{ $ingressName }}
-       domains:
-         {{- range $host := $tls.hosts }}
-         - {{ $host }}
-         {{- end }}
+ issuerRef:
+   name: letsencrypt-v01
+   kind: ClusterIssuer
 
 ---
 
