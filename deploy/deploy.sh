@@ -41,7 +41,7 @@ helm repo add cos https://centerforopenscience.github.io/helm-charts/
 helm dependencies update ./deploy/ovation-webapi/
 
 
-helm-wrapper upgrade --install --debug --namespace=${NAMESPACE} --timeout 600 --wait \
+helm secrets upgrade --install --debug --namespace=${NAMESPACE} --timeout 600 --wait \
     --set image.tag=${NAMESPACE}-${CI_TIMESTAMP} \
     -f ./deploy/values/${NAMESPACE}/secrets.yaml \
     ${RELEASE_NAME} \
