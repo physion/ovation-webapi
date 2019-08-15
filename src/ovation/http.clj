@@ -19,8 +19,7 @@
   (httpkit.client/request (merge {:method method :url url} opts)
     (fn [resp]
       (logging/info "Received HTTP response:" method url (:query-params opts) "-" (:status resp))
-      (if log-response?
-        (logging/debug "Raw:" (:body resp)))
+      (logging/debug "Raw:" (:body resp))
       (if (success-fn resp)
         (try+
           (if (hp/no-content? resp)
