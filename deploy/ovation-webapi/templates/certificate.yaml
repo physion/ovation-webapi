@@ -20,9 +20,6 @@ spec:
    {{- range $host := $tls.hosts }}
    - {{ $host }}
    {{- end }}
- issuerRef:
-   name: letsencrypt-v01
-   kind: ClusterIssuer
 
 ---
 
